@@ -26,6 +26,18 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <HomePage /> },
           { path: ROUTES.profile, element: <ProfilePage /> },
+          { path: ROUTES.tickets, lazy: async () => ({ Component: (await import('../features/tickets/MyTicketsPage')).MyTicketsPage }) },
+          { path: ROUTES.newIncident, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewIncidentPage }) },
+          { path: ROUTES.newRequest, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewRequestPage }) },
+          { path: `${ROUTES.tickets}/:number`, lazy: async () => ({ Component: (await import('../features/tickets/TicketDetailPage')).TicketDetailPage }) },
+          {
+            element: (
+              <RequireRole roles={ADMIN_ONLY}>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [{ path: ROUTES.approvals, lazy: async () => ({ Component: (await import('../features/approvals/ApprovalsPage')).ApprovalsPage }) }],
+          },
           { path: ROUTES.myAssets, lazy: async () => ({ Component: (await import('../features/assets/MyAssetsPage')).MyAssetsPage }) },
           {
             element: (
@@ -34,6 +46,8 @@ export const routes: RouteObject[] = [
               </RequireRole>
             ),
             children: [
+              { path: ROUTES.workspace, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).WorkspacePage }) },
+              { path: ROUTES.workspaceQueue, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).QueuePage }) },
               { path: ROUTES.assets, lazy: async () => ({ Component: (await import('../features/assets/AssetsPage')).AssetsPage }) },
               { path: ROUTES.assetImport, lazy: async () => ({ Component: (await import('../features/assets/AssetImportPage')).AssetImportPage }) },
               { path: `${ROUTES.assets}/:id`, lazy: async () => ({ Component: (await import('../features/assets/AssetDetailPage')).AssetDetailPage }) },
@@ -54,6 +68,8 @@ export const routes: RouteObject[] = [
           { path: ROUTES.adminDepartments, lazy: async () => ({ Component: (await import('../features/admin/departments/DepartmentsPage')).DepartmentsPage }) },
           { path: ROUTES.adminLocations, lazy: async () => ({ Component: (await import('../features/admin/locations/LocationsPage')).LocationsPage }) },
           { path: ROUTES.adminTeams, lazy: async () => ({ Component: (await import('../features/admin/teams/TeamsPage')).TeamsPage }) },
+          { path: ROUTES.adminCategories, lazy: async () => ({ Component: (await import('../features/admin/catalog/CategoriesPage')).CategoriesPage }) },
+          { path: ROUTES.adminRequestTypes, lazy: async () => ({ Component: (await import('../features/admin/catalog/RequestTypesPage')).RequestTypesPage }) },
           { path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
         ],
       },

@@ -42,8 +42,8 @@ export function useCreateTeam() {
 export function useUpdateTeam() {
   const invalidate = useInvalidateTeams();
   return useMutation({
-    mutationFn: ({ id, version, name }: { id: string; version: number; name: string }) =>
-      unwrap(api.PUT('/api/v1/admin/teams/{id}', { params: { path: { id } }, body: { version, name } })),
+    mutationFn: ({ id, version, name, isDefaultIntake }: { id: string; version: number; name: string; isDefaultIntake: boolean }) =>
+      unwrap(api.PUT('/api/v1/admin/teams/{id}', { params: { path: { id } }, body: { version, name, isDefaultIntake } })),
     onSuccess: invalidate,
   });
 }

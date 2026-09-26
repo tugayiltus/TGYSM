@@ -15,6 +15,29 @@ public sealed record ReferenceUser(Guid Id, string FullName, string Email, strin
 
 public sealed record SearchReferenceUsersQuery(string? Search);
 
+public sealed record ReferenceTeamMember(Guid Id, string FullName);
+
+public sealed record ReferenceTeam(Guid Id, string Name, IReadOnlyList<ReferenceTeamMember> Members);
+
+/// <summary>Active teams with their active IT members, for ticket transfers (IT staff and admins only).</summary>
+public sealed class ListReferenceTeamsHandler(IAppDbContext db)
+{
+    private const string NameSeparator = " ";
+
+    public async Task<IReadOnlyList<ReferenceTeam>> HandleAsync(CancellationToken cancellationToken)
+    {
+        var teams = await db.Teams.AsNoTracking().Where(t => t.IsActive).OrderBy(t => t.NormalizedName).Select(t => new { t.Id, t.Name }).ToListAsync(cancellationToken);
+        var members = await (
+            from m in db.TeamMemberships.AsNoTracking()
+            join u in db.Users on m.UserId equals u.Id
+            where u.IsActive && u.Role != Domain.Users.UserRole.Employee
+            orderby u.SearchName
+            select new { m.TeamId, u.Id, Name = u.FirstName + NameSeparator + u.LastName }).ToListAsync(cancellationToken);
+        var byTeam = members.ToLookup(m => m.TeamId, m => new ReferenceTeamMember(m.Id, m.Name));
+        return [.. teams.Select(t => new ReferenceTeam(t.Id, t.Name, [.. byTeam[t.Id]]))];
+    }
+}
+
 public sealed record ReferenceCategory(Guid Id, string Path, Guid? ParentId);
 
 public sealed record ReferenceRequestType(Guid Id, string Name, bool RequiresApproval);

@@ -5,6 +5,8 @@
     "users": "Kullanıcılar",
     "departments": "Departmanlar",
     "locations": "Lokasyonlar",
+    "categories": "Kategoriler",
+    "requestTypes": "Talep tipleri",
     "teams": "Ekipler",
     "audit": "Denetim kayıtları",
     "backToApp": "Uygulamaya dön"
@@ -86,7 +88,8 @@
     "removeMember": "Çıkar",
     "noMembers": "Bu ekipte henüz üye yok.",
     "fields": {
-      "name": "Ekip adı"
+      "name": "Ekip adı",
+      "isDefaultIntake": "Yeni kayıtları bu ekip alsın"
     },
     "columns": {
       "name": "Ad",
@@ -95,7 +98,9 @@
       "actions": "İşlemler"
     },
     "confirmDeactivate": "{{name}} pasifleştirilsin mi?",
-    "confirmReactivate": "{{name}} aktifleştirilsin mi?"
+    "confirmReactivate": "{{name}} aktifleştirilsin mi?",
+    "intakeHint": "Yalnızca bir ekip seçilebilir; seçtiğinizde önceki ekipten kaldırılır.",
+    "intakeBadge": "Kayıt alan ekip"
   },
   "audit": {
     "title": "Denetim kayıtları",
@@ -208,5 +213,50 @@
       "reassigned": "Onaylayıcı değiştirildi",
       "voided": "Onay geçersiz kılındı"
     }
+  },
+  "categories": {
+    "title": "Kategoriler",
+    "new": "Yeni kategori",
+    "edit": "Kategoriyi düzenle",
+    "listCaption": "Kategori listesi",
+    "fields": {
+      "name": "Kategori adı",
+      "parent": "Üst kategori",
+      "scope": "Kullanım"
+    },
+    "noParent": "Üst kategori yok",
+    "scopes": {
+      "incident": "Arıza",
+      "request": "Talep",
+      "both": "Arıza ve talep"
+    },
+    "columns": {
+      "name": "Ad",
+      "scope": "Kullanım",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "confirmDeactivate": "{{name}} pasifleştirilsin mi?",
+    "confirmReactivate": "{{name}} aktifleştirilsin mi?"
+  },
+  "requestTypes": {
+    "title": "Talep tipleri",
+    "new": "Yeni talep tipi",
+    "edit": "Talep tipini düzenle",
+    "listCaption": "Talep tipi listesi",
+    "fields": {
+      "name": "Talep tipi adı",
+      "requiresApproval": "Yönetici onayı gerekir"
+    },
+    "approval": "Onay gerekir",
+    "noApproval": "Onaysız",
+    "columns": {
+      "name": "Ad",
+      "approval": "Onay",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "confirmDeactivate": "{{name}} pasifleştirilsin mi?",
+    "confirmReactivate": "{{name}} aktifleştirilsin mi?"
   }
 }

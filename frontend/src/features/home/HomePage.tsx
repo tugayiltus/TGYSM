@@ -9,6 +9,7 @@ const CARD_CLASS = 'block rounded-2xl border border-slate-200 bg-white p-5 shado
 export function HomePage() {
   const { t } = useTranslation('auth');
   const { t: ta } = useTranslation('assets');
+  const { t: tt } = useTranslation('tickets');
   const me = useSession();
 
   return (
@@ -18,6 +19,40 @@ export function HomePage() {
         <p className="mt-1 text-slate-600">{t('home.intro')}</p>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">
+        <li>
+          <Link to={ROUTES.newIncident} className={CARD_CLASS}>
+            <span className="block font-medium">{tt('home.incidentCard')}</span>
+            <span className="mt-1 block text-sm text-slate-600">{tt('home.incidentCardDescription')}</span>
+          </Link>
+        </li>
+        <li>
+          <Link to={ROUTES.newRequest} className={CARD_CLASS}>
+            <span className="block font-medium">{tt('home.requestCard')}</span>
+            <span className="mt-1 block text-sm text-slate-600">{tt('home.requestCardDescription')}</span>
+          </Link>
+        </li>
+        <li>
+          <Link to={ROUTES.tickets} className={CARD_CLASS}>
+            <span className="block font-medium">{tt('home.ticketsCard')}</span>
+            <span className="mt-1 block text-sm text-slate-600">{tt('home.ticketsCardDescription')}</span>
+          </Link>
+        </li>
+        {isItStaffOrAdmin(me.role) && (
+          <li>
+            <Link to={ROUTES.workspace} className={CARD_CLASS}>
+              <span className="block font-medium">{tt('home.workspaceCard')}</span>
+              <span className="mt-1 block text-sm text-slate-600">{tt('home.workspaceCardDescription')}</span>
+            </Link>
+          </li>
+        )}
+        {me.role === 'admin' && (
+          <li>
+            <Link to={ROUTES.approvals} className={CARD_CLASS}>
+              <span className="block font-medium">{tt('home.approvalsCard')}</span>
+              <span className="mt-1 block text-sm text-slate-600">{tt('home.approvalsCardDescription')}</span>
+            </Link>
+          </li>
+        )}
         <li>
           <Link to={ROUTES.profile} className={CARD_CLASS}>
             <span className="block font-medium">{t('home.profileCard')}</span>

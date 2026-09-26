@@ -14,8 +14,12 @@ const NAV_LINK_CLASS = 'block rounded-lg px-3 py-2 text-sm font-medium text-slat
 function MainLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation('auth');
   const { t: ta } = useTranslation('assets');
+  const { t: tt } = useTranslation('tickets');
   const me = useSession();
   const links = [
+    { to: ROUTES.tickets, label: tt('nav.tickets'), visible: true },
+    { to: ROUTES.workspace, label: tt('nav.workspace'), visible: isItStaffOrAdmin(me.role) },
+    { to: ROUTES.approvals, label: tt('nav.approvals'), visible: me.role === 'admin' },
     { to: ROUTES.myAssets, label: ta('nav.mine'), visible: true },
     { to: ROUTES.assets, label: ta('nav.inventory'), visible: isItStaffOrAdmin(me.role) },
     { to: ROUTES.profile, label: t('shell.profile'), visible: true },
@@ -25,15 +29,15 @@ function MainLinks({ onNavigate }: { onNavigate?: () => void }) {
     .filter((link) => link.visible)
     .map((link) => (
       <li key={link.to}>
-        {/* "end" keeps "Envanter" from staying current on /assets/mine. */}
-        <NavLink to={link.to} end={link.to === ROUTES.assets} className={NAV_LINK_CLASS} onClick={onNavigate}>
+        {/* "end" keeps "Envanter" from staying current on /assets/mine (and "Kayıtlarım" on its sub-pages). */}
+        <NavLink to={link.to} end={link.to === ROUTES.assets || link.to === ROUTES.tickets} className={NAV_LINK_CLASS} onClick={onNavigate}>
           {link.label}
         </NavLink>
       </li>
     ));
 }
 
-/** Inline links from 768 px, a drawer below (mobile-first, ADR-0003). */
+/** Inline links from 1024 px, a drawer below (mobile-first, ADR-0003). */
 export function AppShell() {
   const { t } = useTranslation('auth');
   const { t: tc } = useTranslation();
@@ -44,14 +48,14 @@ export function AppShell() {
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4">
-          <Button variant="ghost" className="md:hidden" aria-label={tc('actions.openMenu')} onClick={() => setMenuOpen(true)}>
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4">
+          <Button variant="ghost" className="lg:hidden" aria-label={tc('actions.openMenu')} onClick={() => setMenuOpen(true)}>
             <span aria-hidden="true">☰</span>
           </Button>
           <Link to={ROUTES.home} className="mr-auto text-base font-semibold text-brand-900">
             {tc('appName')}
           </Link>
-          <nav aria-label={t('shell.mainNav')} className="hidden md:block">
+          <nav aria-label={t('shell.mainNav')} className="hidden lg:block">
             <ul className="flex items-center gap-1">
               <MainLinks />
             </ul>
@@ -68,7 +72,7 @@ export function AppShell() {
           </ul>
         </nav>
       </Sheet>
-      <main className="mx-auto w-full max-w-5xl p-4 sm:p-6">
+      <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
         <Outlet />
       </main>
     </div>

@@ -33,8 +33,9 @@ export interface AssetListParams {
   pageSize: number;
 }
 
-export function useAssets(params: AssetListParams) {
+export function useAssets(params: AssetListParams, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: assetKeys.list(params),
     queryFn: () =>
       unwrap(
@@ -54,8 +55,8 @@ export function useAssetHistory(id: string) {
   return useQuery({ queryKey: assetKeys.history(id), queryFn: () => unwrap(api.GET('/api/v1/assets/{id}/history', { params: { path: { id } } })) });
 }
 
-export function useMyAssets() {
-  return useQuery({ queryKey: assetKeys.mine, queryFn: () => unwrap(api.GET('/api/v1/me/assets')) });
+export function useMyAssets(enabled = true) {
+  return useQuery({ queryKey: assetKeys.mine, queryFn: () => unwrap(api.GET('/api/v1/me/assets')), enabled });
 }
 
 export function useReferenceLocations() {

@@ -20,6 +20,8 @@ internal static class ReferenceEndpoints
             TypedResults.Ok(await handler.HandleAsync(new ListReferenceCategoriesQuery(QueryParsing.ParseEnum<TicketKind>(kind, KindParameter)), ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest);
         reference.MapGet("/request-types", async (ListReferenceRequestTypesHandler handler, CancellationToken ct) => TypedResults.Ok(await handler.HandleAsync(ct)));
+        reference.MapGet("/teams", async (ListReferenceTeamsHandler handler, CancellationToken ct) => TypedResults.Ok(await handler.HandleAsync(ct)))
+            .RequireAuthorization(Policies.ItStaffOrAdmin);
         reference.MapGet("/users", async (string? search, SearchReferenceUsersHandler handler, CancellationToken ct) =>
                 TypedResults.Ok(await handler.HandleAsync(new SearchReferenceUsersQuery(search), ct)))
             .RequireAuthorization(Policies.ItStaffOrAdmin);

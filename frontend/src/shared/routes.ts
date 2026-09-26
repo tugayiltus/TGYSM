@@ -7,12 +7,22 @@ export const ROUTES = {
   assets: '/assets',
   assetImport: '/assets/import',
   myAssets: '/assets/mine',
+  tickets: '/tickets',
+  newIncident: '/tickets/new/incident',
+  newRequest: '/tickets/new/request',
+  workspace: '/workspace',
+  workspaceQueue: '/workspace/queue',
+  approvals: '/approvals',
   admin: '/admin',
   adminUsers: '/admin/users',
   adminDepartments: '/admin/departments',
   adminLocations: '/admin/locations',
   adminTeams: '/admin/teams',
   adminAudit: '/admin/audit',
+  adminCategories: '/admin/categories',
+  adminRequestTypes: '/admin/request-types',
 } as const;
 
 export const assetPath = (id: string) => `${ROUTES.assets}/${id}`;
+
+export const ticketPath = (number: string) => `${ROUTES.tickets}/${number}`;

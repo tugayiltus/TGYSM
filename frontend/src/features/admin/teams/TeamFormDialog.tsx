@@ -16,7 +16,10 @@ import { useCreateTeam, useUpdateTeam, type TeamItem } from './api';
 /** Mirrors backend Team.NameMaxLength. */
 const TEAM_NAME_MAX_LENGTH = 150;
 
-const teamSchema = z.object({ name: z.string().trim().min(1, ERROR_CODES.required).max(TEAM_NAME_MAX_LENGTH, ERROR_CODES.tooLong) });
+const teamSchema = z.object({
+  name: z.string().trim().min(1, ERROR_CODES.required).max(TEAM_NAME_MAX_LENGTH, ERROR_CODES.tooLong),
+  isDefaultIntake: z.boolean(),
+});
 type TeamFormValues = z.infer<typeof teamSchema>;
 
 const FORM_FIELDS = ['name'] as const;
@@ -34,14 +37,17 @@ export function TeamFormDialog({ team, onClose }: { team: TeamItem | null; onClo
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<TeamFormValues>({ resolver: zodResolver(teamSchema), defaultValues: { name: team?.name ?? '' } });
+  } = useForm<TeamFormValues>({
+    resolver: zodResolver(teamSchema),
+    defaultValues: { name: team?.name ?? '', isDefaultIntake: team?.isDefaultIntake ?? false },
+  });
 
-  const onSubmit = handleSubmit(({ name }) => {
+  const onSubmit = handleSubmit(({ name, isDefaultIntake }) => {
     const callbacks = { onSuccess: onClose, onError: (error: unknown) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS) };
     if (team === null) {
       create.mutate(name, callbacks);
     } else {
-      update.mutate({ id: team.id, version: team.version, name }, callbacks);
+      update.mutate({ id: team.id, version: team.version, name, isDefaultIntake }, callbacks);
     }
   });
 
@@ -70,6 +76,15 @@ export function TeamFormDialog({ team, onClose }: { team: TeamItem | null; onClo
       <form id={formId} noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('teams.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
+        {team !== null && (
+          <label className="flex min-h-11 items-center gap-3 text-sm">
+            <input type="checkbox" className="size-5" {...register('isDefaultIntake')} />
+            <span>
+              {t('teams.fields.isDefaultIntake')}
+              <span className="block text-xs text-slate-600">{t('teams.intakeHint')}</span>
+            </span>
+          </label>
+        )}
       </form>
     </Dialog>
   );

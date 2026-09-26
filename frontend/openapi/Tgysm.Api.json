@@ -2881,6 +2881,28 @@
         }
       }
     },
+    "/api/v1/reference/teams": {
+      "get": {
+        "tags": [
+          "Reference"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReferenceTeam"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/reference/users": {
       "get": {
         "tags": [
@@ -6094,6 +6116,45 @@
           },
           "requiresApproval": {
             "type": "boolean"
+          }
+        }
+      },
+      "ReferenceTeam": {
+        "required": [
+          "id",
+          "name",
+          "members"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReferenceTeamMember"
+            }
+          }
+        }
+      },
+      "ReferenceTeamMember": {
+        "required": [
+          "id",
+          "fullName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
           }
         }
       },

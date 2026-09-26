@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { to: ROUTES.adminDepartments, labelKey: 'nav.departments' },
   { to: ROUTES.adminLocations, labelKey: 'nav.locations' },
   { to: ROUTES.adminTeams, labelKey: 'nav.teams' },
+  { to: ROUTES.adminCategories, labelKey: 'nav.categories' },
+  { to: ROUTES.adminRequestTypes, labelKey: 'nav.requestTypes' },
   { to: ROUTES.adminAudit, labelKey: 'nav.audit' },
 ] as const;
 

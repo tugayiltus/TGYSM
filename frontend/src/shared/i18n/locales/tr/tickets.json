@@ -1,0 +1,219 @@
+{
+  "kinds": {
+    "incident": "Arıza",
+    "request": "Talep"
+  },
+  "statuses": {
+    "open": "Açık",
+    "in_progress": "İşlemde",
+    "on_hold": "Beklemede",
+    "completed": "Tamamlandı",
+    "cancelled": "İptal edildi"
+  },
+  "holdReasons": {
+    "user": "Kullanıcıdan yanıt bekleniyor",
+    "manager_approval": "Yönetici onayı bekleniyor",
+    "vendor": "Tedarikçi bekleniyor",
+    "technical_team": "Teknik ekip bekleniyor",
+    "third_party": "Üçüncü taraf bekleniyor",
+    "scheduled_date": "Planlanan tarih bekleniyor",
+    "other": "Diğer"
+  },
+  "levels": {
+    "high": "Yüksek",
+    "medium": "Orta",
+    "low": "Düşük"
+  },
+  "priorities": {
+    "p1": "P1 · Kritik",
+    "p2": "P2 · Yüksek",
+    "p3": "P3 · Normal",
+    "p4": "P4 · Düşük"
+  },
+  "outcomes": {
+    "resolved": "Çözüldü",
+    "service_request_required": "Hizmet talebi gerekli",
+    "fulfilled": "Karşılandı",
+    "approval_rejected": "Onay reddedildi"
+  },
+  "transferReasons": {
+    "expertise_needed": "Uzmanlık gerekiyor",
+    "wrong_assignment": "Yanlış atama",
+    "other_team_responsibility": "Diğer ekibin sorumluluğu",
+    "authorization_needed": "Yetki gerekiyor",
+    "workload": "İş yükü",
+    "escalation": "Üst seviyeye aktarım",
+    "location": "Konum",
+    "other": "Diğer"
+  },
+  "approvalStatuses": {
+    "pending": "Onay bekliyor",
+    "approved": "Onaylandı",
+    "rejected": "Reddedildi",
+    "void": "Geçersiz"
+  },
+  "events": {
+    "created": "Kayıt oluşturuldu",
+    "assigned": "Kayıt üstlenildi",
+    "transferred": "Kayıt aktarıldı",
+    "status_changed": "Durum değişti",
+    "public_comment": "Yanıt yazıldı",
+    "internal_note": "İç not eklendi",
+    "priority_changed": "Öncelik değişti",
+    "approval_requested": "Onay istendi",
+    "approval_decided": "Onay kararı verildi",
+    "approval_voided": "Onay geçersiz kılındı",
+    "approval_reassigned": "Onaylayıcı değiştirildi",
+    "related_request_created": "İlgili talep oluşturuldu",
+    "asset_linked": "Cihaz bağlandı",
+    "asset_unlinked": "Cihaz ayrıldı",
+    "completed": "Kayıt tamamlandı",
+    "cancelled": "Kayıt iptal edildi"
+  },
+  "new": {
+    "incidentTitle": "Bir şey çalışmıyor",
+    "incidentIntro": "Yaşadığınız sorunu kısaca anlatın. IT ekibi en kısa sürede dönüş yapar.",
+    "requestTitle": "Bir şey istiyorum",
+    "requestIntro": "İhtiyacınızı seçin ve açıklayın. Bazı talepler yöneticinizin onayından sonra işleme alınır.",
+    "subject": "Konu",
+    "description": "Açıklama",
+    "category": "Kategori",
+    "location": "Konum",
+    "requestType": "Talep tipi",
+    "selectRequestType": "Talep tipi seçin",
+    "approvalHint": "Bu talep yöneticinizin onayından sonra işleme alınır.",
+    "files": "Dosya ekle (en fazla 5, her biri en fazla 10 MB)",
+    "filesHint": "PDF, PNG, JPEG, TXT veya CSV.",
+    "submit": "Gönder",
+    "filesFailed": "Kayıt oluşturuldu ancak dosyalar yüklenemedi: {{message}}"
+  },
+  "list": {
+    "title": "Kayıtlarım",
+    "caption": "Kayıt listesi",
+    "empty": "Henüz kaydınız yok.",
+    "newIncident": "Arıza bildir",
+    "newRequest": "Talep oluştur",
+    "search": "Numara veya konu ara",
+    "statusFilter": "Durum",
+    "kindFilter": "Tür",
+    "priorityFilter": "Öncelik",
+    "all": "Tümü",
+    "open": "Aç",
+    "columns": {
+      "number": "Numara",
+      "subject": "Konu",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "team": "Ekip",
+      "assignee": "Atanan",
+      "updated": "Son işlem"
+    }
+  },
+  "detail": {
+    "back": "Kayıtlara dön",
+    "requester": "Talep sahibi",
+    "team": "Ekip",
+    "assignee": "Atanan kişi",
+    "priority": "Öncelik",
+    "category": "Kategori",
+    "location": "Konum",
+    "requestType": "Talep tipi",
+    "createdAt": "Oluşturulma",
+    "description": "Açıklama",
+    "resolution": "Çözüm",
+    "rootCause": "Kök neden",
+    "cancelReason": "İptal nedeni",
+    "holdNote": "Bekleme notu",
+    "approval": "Onay",
+    "approver": "Onaylayıcı: {{name}}",
+    "noApprover": "Onaylayıcı atanmadı",
+    "related": "İlgili kayıtlar",
+    "assets": "Bağlı cihazlar",
+    "noAssets": "Bağlı cihaz yok.",
+    "timeline": "Geçmiş",
+    "comments": "Yazışmalar",
+    "noComments": "Henüz yazışma yok.",
+    "internal": "İç not",
+    "by": "{{name}}",
+    "download": "İndir"
+  },
+  "comment": {
+    "public": "Yanıt",
+    "internal": "İç not",
+    "tabs": "Yazışma türü",
+    "body": "Mesajınız",
+    "send": "Gönder",
+    "files": "Dosya ekle"
+  },
+  "actions": {
+    "title": "İşlemler",
+    "claim": "Üstlen",
+    "start": "Başla",
+    "hold": "Beklet",
+    "resume": "Devam et",
+    "complete": "Tamamla",
+    "cancel": "İptal et",
+    "priority": "Öncelik değiştir",
+    "transfer": "Aktar",
+    "relatedRequest": "İlgili talep oluştur",
+    "invalidate": "Onayı geçersiz kıl",
+    "linkAsset": "Cihaz bağla",
+    "unlinkAsset": "Ayır"
+  },
+  "fields": {
+    "reason": "Neden",
+    "holdReason": "Bekleme nedeni",
+    "note": "Not",
+    "resolution": "Çözüm (kullanıcı görür)",
+    "outcome": "Sonuç",
+    "rootCause": "Kök neden (yalnızca IT görür)",
+    "impact": "Etki",
+    "urgency": "Aciliyet",
+    "team": "Hedef ekip",
+    "assignee": "Atanacak kişi",
+    "anyone": "Ekipte kimse",
+    "transferReason": "Aktarma nedeni",
+    "requestType": "Talep tipi",
+    "assetSearch": "Demirbaş no ile ara",
+    "asset": "Cihaz",
+    "select": "Seçin"
+  },
+  "workspace": {
+    "title": "İş listem",
+    "assigned_to_me": "Bana atanan",
+    "team": "Ekiplerim",
+    "unassigned": "Atanmamış",
+    "on_hold": "Beklemede",
+    "mine": "Açtıklarım",
+    "count": "{{count}} kayıt",
+    "back": "İş listesine dön"
+  },
+  "approvals": {
+    "title": "Onay bekleyenler",
+    "empty": "Onay bekleyen talep yok.",
+    "approve": "Onayla",
+    "reject": "Reddet",
+    "reassign": "Onaylayıcı ata",
+    "reason": "Neden",
+    "approver": "Onaylayıcı",
+    "unassigned": "Onaylayıcı yok",
+    "requestedBy": "Talep sahibi: {{name}}"
+  },
+  "nav": {
+    "tickets": "Kayıtlarım",
+    "workspace": "İş listem",
+    "approvals": "Onaylar"
+  },
+  "home": {
+    "incidentCard": "Bir şey çalışmıyor",
+    "incidentCardDescription": "Arıza bildirin, IT ekibi ilgilensin.",
+    "requestCard": "Bir şey istiyorum",
+    "requestCardDescription": "Cihaz, yazılım veya erişim talep edin.",
+    "ticketsCard": "Kayıtlarım",
+    "ticketsCardDescription": "Açtığınız kayıtların durumunu izleyin.",
+    "workspaceCard": "İş listem",
+    "workspaceCardDescription": "Size ve ekiplerinize düşen kayıtlar.",
+    "approvalsCard": "Onaylar",
+    "approvalsCardDescription": "Onayınızı bekleyen talepler."
+  }
+}

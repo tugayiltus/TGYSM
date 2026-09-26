@@ -63,4 +63,22 @@ public sealed class ReferenceTests(ApiFactory factory) : IAsyncLifetime
         Assert.Empty(none);
         Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
     }
+
+    [Fact]
+    public async Task It_staff_lists_active_teams_with_active_it_members()
+    {
+        var (it, itUser) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.ItStaff, "it@example.com");
+        await TestData.TeamAsync(factory, "Saha Destek", false, itUser.Id);
+        var old = await TestData.TeamAsync(factory, "Eski Ekip");
+        await TestData.SaveAsync(factory, db => db.Teams.Attach(old).Entity.Deactivate());
+        var (employee, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Employee, "e@example.com");
+
+        var teams = await ListAsync(it, "/api/v1/reference/teams");
+        using var forbidden = await employee.GetAsync("/api/v1/reference/teams");
+
+        var team = Assert.Single(teams);
+        Assert.Equal("Saha Destek", team.GetProperty("name").GetString());
+        Assert.Equal(itUser.Id, team.GetProperty("members")[0].GetProperty("id").GetGuid());
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+    }
 }

@@ -65,7 +65,16 @@ export function TeamsPage() {
   const columns: Column<TeamItem>[] = [
     { key: 'name', header: t('teams.columns.name'), renderCell: (team) => <span className="font-medium">{team.name}</span> },
     { key: 'members', header: t('teams.columns.members'), renderCell: (team) => t('teams.memberCount', { count: team.memberCount }) },
-    { key: 'status', header: t('teams.columns.status'), renderCell: (team) => <StatusBadge isActive={team.isActive} /> },
+    { key: 'status', header: t('teams.columns.status'), renderCell: (team) => (
+        <>
+          <div>
+          <StatusBadge isActive={team.isActive} />
+          {team.isDefaultIntake && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-900">{t('teams.intakeBadge')}</span>}
+        </div>
+          {team.isDefaultIntake && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-900">{t('teams.intakeBadge')}</span>}
+        </>
+      ),
+    },
     { key: 'actions', header: t('teams.columns.actions'), renderCell: (team) => <TeamActions team={team} onEdit={edit} onMembers={setMembersOf} onToggle={openToggle} /> },
   ];
 
