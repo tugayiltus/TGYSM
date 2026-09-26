@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Tgysm.Application.Abstractions;
+using Tgysm.Infrastructure.Files;
 using Tgysm.Infrastructure.Persistence;
 using Tgysm.Infrastructure.Security;
 
@@ -24,6 +25,9 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
         services.AddSingleton<IPasswordService, PasswordService>();
+        services.AddOptions<FileStorageOptions>().BindConfiguration(FileStorageOptions.SectionName);
+        services.AddSingleton<IFileStore, LocalFileStore>();
+        services.AddSingleton<IFileScanner, DevelopmentFileScanner>();
         return services;
     }
 }

@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Tgysm.Api.Contracts;
+using Tgysm.Api.Http;
 using Tgysm.Api.Security;
 using Tgysm.Application.Features.Approvals;
 using Tgysm.Application.Features.Tickets;
@@ -20,11 +23,45 @@ public sealed record ReassignApproverRequest(Guid ApproverId, string Reason);
 
 internal static partial class TicketEndpoints
 {
+    private static async Task<Created<CommentItem>> AddCommentAsync(string number, HttpRequest request, AddCommentHandler handler, CancellationToken cancellationToken)
+    {
+        var form = await request.ReadFormAsync(cancellationToken);
+        var visibility = QueryParsing.ParseEnum<Visibility>(form[VisibilityField].FirstOrDefault(), VisibilityField);
+        var files = form.Files.GetFiles(AddCommentHandler.FilesField)
+            .Select(f => new UploadedFile(f.FileName, f.Length, f.OpenReadStream)).ToList();
+        var item = await handler.HandleAsync(new AddCommentCommand(number, form[BodyField].FirstOrDefault(), visibility, files), cancellationToken);
+        return TypedResults.Created($"{ApiRoutes.V1}{ApiRoutes.Tickets}/{number}/comments/{item.Id}", item);
+    }
+
     private const string NumberRoute = "/{number}";
+    private const string BodyField = "body";
+    private const string VisibilityField = "visibility";
+    private const string NoSniffHeader = "X-Content-Type-Options";
+    private const string NoSniff = "nosniff";
+
+    /// <summary>Five files of 10 MB plus multipart overhead; larger bodies are cut before model binding.</summary>
+    private const long CommentRequestLimitBytes = (AttachmentTypes.MaxFilesPerUpload * AttachmentTypes.MaxBytes) + (1024 * 1024);
 
     /// <summary>Ticket workflow actions. Every body carries the ticket's version (optimistic concurrency).</summary>
     private static void MapTicketActionEndpoints(this RouteGroupBuilder tickets)
     {
+        // Antiforgery is checked for every unsafe /api request by CsrfValidationMiddleware (header token), not by form binding.
+        tickets.MapPost($"{NumberRoute}/comments", AddCommentAsync)
+            .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(CommentRequestLimitBytes))
+            .Accepts<IFormCollection>("multipart/form-data")
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapGet($"{NumberRoute}/comments", async (string number, ListCommentsHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new ListCommentsQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        tickets.MapGet($"{NumberRoute}/timeline", async (string number, GetTimelineHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new GetTimelineQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        tickets.MapGet($"{NumberRoute}/attachments/{{id:guid}}", async (string number, Guid id, DownloadAttachmentHandler h, HttpContext http, CancellationToken ct) =>
+        {
+            var file = await h.HandleAsync(new DownloadAttachmentQuery(number, id), ct);
+            http.Response.Headers[NoSniffHeader] = NoSniff;
+            return TypedResults.File(file.Content, file.ContentType, file.FileName);
+        }).ProducesProblem(StatusCodes.Status404NotFound);
+
         tickets.MapPost($"{NumberRoute}/claim", async (string number, VersionRequest r, ClaimTicketHandler h, CancellationToken ct) =>
             TypedResults.Ok(await h.HandleAsync(new ClaimTicketCommand(number, r.Version), ct))).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapPost($"{NumberRoute}/transfer", async (string number, TransferTicketRequest r, TransferTicketHandler h, CancellationToken ct) =>

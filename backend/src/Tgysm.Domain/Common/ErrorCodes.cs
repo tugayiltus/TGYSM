@@ -73,6 +73,11 @@ public static class ErrorCodes
     public const string ApprovalReasonRequired = "approvals.reason_required";
     public const string ApprovalApproverInvalid = "approvals.approver_invalid";
 
+    public const string CommentInternalNotAllowed = "comments.internal_not_allowed";
+    public const string AttachmentTooLarge = "attachments.too_large";
+    public const string AttachmentTooMany = "attachments.too_many";
+    public const string AttachmentTypeNotAllowed = "attachments.type_not_allowed";
+
     public const string CategoryTooDeep = "categories.too_deep";
     public const string CategoryNameTaken = "categories.name_taken";
     public const string RequestTypeNameTaken = "request_types.name_taken";

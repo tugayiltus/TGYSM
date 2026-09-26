@@ -90,5 +90,13 @@
   },
   "request_types": {
     "name_taken": "Bu adla bir talep tipi zaten var."
+  },
+  "comments": {
+    "internal_not_allowed": "İç not yalnızca IT ekibi tarafından yazılabilir."
+  },
+  "attachments": {
+    "too_large": "Her dosya en fazla 10 MB olabilir.",
+    "too_many": "Bir seferde en fazla 5 dosya eklenebilir.",
+    "type_not_allowed": "Yalnızca PDF, PNG, JPEG, TXT ve CSV dosyaları eklenebilir."
   }
 }

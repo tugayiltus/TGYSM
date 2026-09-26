@@ -101,6 +101,32 @@ public sealed class ApiClient
         return await Http.SendAsync(request, Ct);
     }
 
+    /// <summary>Posts text fields and files as <c>multipart/form-data</c>.</summary>
+    public async Task<HttpResponseMessage> PostMultipartAsync(string url, IReadOnlyDictionary<string, string> fields, IEnumerable<(string Name, byte[] Content, string ContentType)> files, string fileField = "files")
+    {
+        if (_csrfToken is null)
+        {
+            await RefreshCsrfAsync();
+        }
+
+        using var form = new MultipartFormDataContent();
+        foreach (var (name, value) in fields)
+        {
+            form.Add(new StringContent(value), name);
+        }
+
+        foreach (var (name, content, contentType) in files)
+        {
+            var part = new ByteArrayContent(content);
+            part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+            form.Add(part, fileField, name);
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = form };
+        request.Headers.Add(CsrfHeader, _csrfToken);
+        return await Http.SendAsync(request, Ct);
+    }
+
     /// <summary>Logs in and refreshes the antiforgery token, which is bound to the signed-in user.</summary>
     public async Task LoginAsync(string email, string password = TestUsers.DefaultPassword)
     {

@@ -12,6 +12,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public PostgresDatabase Database { get; } = new();
 
+    /// <summary>Attachment storage of this host; removed on dispose.</summary>
+    public string FilesRoot { get; } = Path.Combine(Path.GetTempPath(), "tgysm-test-files-" + Guid.NewGuid().ToString("N"));
+
     /// <summary>High by default so tests that log in many times never hit the rate limit.</summary>
     protected virtual int LoginPermitLimitPerMinute => GenerousLoginLimit;
 
@@ -23,6 +26,11 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         await base.DisposeAsync();
         await Database.DisposeAsync();
+        if (Directory.Exists(FilesRoot))
+        {
+            Directory.Delete(FilesRoot, recursive: true);
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -30,6 +38,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         builder.UseEnvironment(TestingEnvironment);
         builder.UseSetting($"ConnectionStrings:{DependencyInjection.ConnectionStringName}", Database.ConnectionString);
+        builder.UseSetting("Files:RootPath", FilesRoot);
         builder.UseSetting("Security:LoginPermitLimitPerMinute", LoginPermitLimitPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 }
