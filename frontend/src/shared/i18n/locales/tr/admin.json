@@ -118,7 +118,9 @@
     "user": "Kullanıcı",
     "department": "Departman",
     "location": "Lokasyon",
-    "team": "Ekip"
+    "team": "Ekip",
+    "asset": "Cihaz",
+    "asset_import": "Cihaz içe aktarımı"
   },
   "auditActions": {
     "setup": {
@@ -157,6 +159,19 @@
       "reactivated": "Ekip aktifleştirildi",
       "member_added": "Ekibe üye eklendi",
       "member_removed": "Ekipten üye çıkarıldı"
+    },
+    "assets": {
+      "created": "Cihaz eklendi",
+      "updated": "Cihaz güncellendi",
+      "assigned": "Cihaz teslim edildi",
+      "returned": "Cihaz iade alındı",
+      "transferred": "Cihaz devredildi",
+      "maintenance_started": "Cihaz bakıma alındı",
+      "maintenance_ended": "Cihaz bakımı bitti",
+      "lost": "Cihaz kayıp bildirildi",
+      "found": "Cihaz bulundu",
+      "retired": "Cihaz kullanım dışı bırakıldı",
+      "imported": "Cihazlar içe aktarıldı"
     }
   }
 }

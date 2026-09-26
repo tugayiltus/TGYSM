@@ -65,6 +65,7 @@ internal static class ApiServiceCollectionExtensions
             // A bare RequireAuthorization() must not skip the pending-password gate.
             .SetDefaultPolicy(signedInWithChangedPassword)
             .AddPolicy(Policies.PasswordChangePending, policy => policy.RequireAuthenticatedUser())
+            .AddPolicy(Policies.ItStaffOrAdmin, policy => policy.RequireAuthenticatedUser().AddRequirements(passwordChanged).RequireRole(UserRoleNames.ItStaff, UserRoleNames.Admin))
             .AddPolicy(Policies.Admin, policy => policy.RequireAuthenticatedUser().AddRequirements(passwordChanged).RequireRole(UserRoleNames.Admin));
         services.AddSingleton<IAuthorizationHandler, PasswordChangedHandler>();
         services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, ApiAuthorizationResultHandler>();

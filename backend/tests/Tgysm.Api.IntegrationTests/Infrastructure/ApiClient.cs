@@ -84,6 +84,23 @@ public sealed class ApiClient
         return await Http.SendAsync(request, Ct);
     }
 
+    /// <summary>Posts one file as <c>multipart/form-data</c> field <paramref name="field"/>, like a browser upload.</summary>
+    public async Task<HttpResponseMessage> PostFileAsync(string url, string fileName, byte[] content, string contentType, string field = "file")
+    {
+        if (_csrfToken is null)
+        {
+            await RefreshCsrfAsync();
+        }
+
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(content);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        form.Add(file, field, fileName);
+        using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = form };
+        request.Headers.Add(CsrfHeader, _csrfToken);
+        return await Http.SendAsync(request, Ct);
+    }
+
     /// <summary>Logs in and refreshes the antiforgery token, which is bound to the signed-in user.</summary>
     public async Task LoginAsync(string email, string password = TestUsers.DefaultPassword)
     {

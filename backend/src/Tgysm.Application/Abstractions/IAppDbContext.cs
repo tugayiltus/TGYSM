@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Tgysm.Domain.Assets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Organization;
@@ -14,6 +15,10 @@ public interface IAppDbContext
     DbSet<Team> Teams { get; }
     DbSet<TeamMembership> TeamMemberships { get; }
     DbSet<AuditEvent> AuditEvents { get; }
+    DbSet<Asset> Assets { get; }
+    DbSet<AssetAssignment> AssetAssignments { get; }
+    DbSet<AssetMovement> AssetMovements { get; }
+    DbSet<AssetImportJob> AssetImportJobs { get; }
 
     /// <summary>
     /// Saves all tracked changes in one transaction. Throws <see cref="Common.ConcurrencyException"/> on a stale

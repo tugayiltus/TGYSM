@@ -8,4 +8,10 @@ public static class SerializationLocks
 
     /// <summary>Location moves: guards the "no cycles" rule.</summary>
     public const long LocationTree = 7_002;
+
+    /// <summary>Asset lifecycle operations: gives each handover its transaction (close then open) and serializes them.</summary>
+    public const long AssetLifecycle = 7_003;
+
+    /// <summary>Commits of CSV import jobs, so one job cannot insert its rows twice.</summary>
+    public const long AssetImport = 7_004;
 }

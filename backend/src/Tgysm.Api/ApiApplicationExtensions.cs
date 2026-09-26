@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Tgysm.Api.Endpoints;
 using Tgysm.Api.Endpoints.Admin;
+using Tgysm.Api.Endpoints.Assets;
 using Tgysm.Api.Http;
 using Tgysm.Api.Security;
 using Tgysm.Domain.Common;
@@ -49,6 +50,9 @@ internal static class ApiApplicationExtensions
         var api = app.MapGroup(ApiRoutes.V1);
         api.MapAuthEndpoints();
         api.MapAdminEndpoints();
+        api.MapAssetEndpoints();
+        api.MapMyAssetEndpoints();
+        api.MapAssetImportEndpoints();
 
         // Unknown API routes are API errors, not SPA pages.
         app.MapFallback(ApiFallbackPattern, context => ApiProblem.WriteAsync(context, StatusCodes.Status404NotFound, ErrorCodes.NotFound))

@@ -36,4 +36,16 @@ public static class AuditActions
     public const string TeamReactivated = "teams.reactivated";
     public const string TeamMemberAdded = "teams.member_added";
     public const string TeamMemberRemoved = "teams.member_removed";
+
+    public const string AssetCreated = "assets.created";
+    public const string AssetUpdated = "assets.updated";
+    public const string AssetAssigned = "assets.assigned";
+    public const string AssetReturned = "assets.returned";
+    public const string AssetTransferred = "assets.transferred";
+    public const string AssetMaintenanceStarted = "assets.maintenance_started";
+    public const string AssetMaintenanceEnded = "assets.maintenance_ended";
+    public const string AssetLost = "assets.lost";
+    public const string AssetFound = "assets.found";
+    public const string AssetRetired = "assets.retired";
+    public const string AssetsImported = "assets.imported";
 }

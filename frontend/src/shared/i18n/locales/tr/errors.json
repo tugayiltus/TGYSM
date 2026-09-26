@@ -47,5 +47,22 @@
     "membership_exists": "Kullanıcı zaten bu ekipte.",
     "member_inactive": "Pasif kullanıcı ekibe eklenemez.",
     "member_role_invalid": "Ekibe yalnızca IT personeli ve yöneticiler eklenebilir."
+  },
+  "assets": {
+    "invalid_transition": "Bu işlem cihazın mevcut durumunda yapılamaz.",
+    "tag_taken": "Bu demirbaş numarası başka bir cihazda kayıtlı.",
+    "serial_taken": "Bu seri numarası başka bir cihazda kayıtlı.",
+    "user_inactive": "Cihaz yalnızca aktif bir kullanıcıya teslim edilebilir."
+  },
+  "imports": {
+    "invalid_header": "Dosyanın başlık satırı şablonla uyuşmuyor. Şablonu indirip kullanın.",
+    "file_too_large": "Dosya en fazla 10 MB olabilir.",
+    "too_many_rows": "Dosyada en fazla 5.000 satır olabilir.",
+    "has_errors": "Hatalı satırlar düzeltilmeden içe aktarma yapılamaz.",
+    "duplicate_in_file": "Bu değer dosyada birden fazla satırda var.",
+    "status_not_allowed": "Durum yalnızca stokta, bakımda ya da hurda olabilir. Teslim için zimmet işlemini kullanın.",
+    "location_not_found": "Konum bulunamadı. Tam yolu yazın (ör. Kampüs / Bina).",
+    "location_ambiguous": "Bu adla birden fazla konum var. Tam yolu yazın (ör. Kampüs / Bina).",
+    "department_not_found": "Departman bulunamadı."
   }
 }

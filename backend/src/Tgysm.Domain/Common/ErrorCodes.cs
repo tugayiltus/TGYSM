@@ -41,6 +41,21 @@ public static class ErrorCodes
     public const string LocationCycle = "locations.cycle";
     public const string LocationHasActiveChildren = "locations.has_active_children";
 
+    public const string AssetInvalidTransition = "assets.invalid_transition";
+    public const string AssetTagTaken = "assets.tag_taken";
+    public const string AssetSerialTaken = "assets.serial_taken";
+    public const string AssetUserInactive = "assets.user_inactive";
+
+    public const string ImportInvalidHeader = "imports.invalid_header";
+    public const string ImportFileTooLarge = "imports.file_too_large";
+    public const string ImportTooManyRows = "imports.too_many_rows";
+    public const string ImportHasErrors = "imports.has_errors";
+    public const string ImportDuplicateInFile = "imports.duplicate_in_file";
+    public const string ImportStatusNotAllowed = "imports.status_not_allowed";
+    public const string ImportLocationNotFound = "imports.location_not_found";
+    public const string ImportLocationAmbiguous = "imports.location_ambiguous";
+    public const string ImportDepartmentNotFound = "imports.department_not_found";
+
     public const string TeamNameTaken = "teams.name_taken";
     public const string MembershipExists = "teams.membership_exists";
     public const string MemberInactive = "teams.member_inactive";

@@ -22,6 +22,307 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Tgysm.Domain.Assets.Asset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AssetTag")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("asset_tag");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("brand");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("location_id");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model");
+
+                    b.Property<string>("NormalizedAssetTag")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("normalized_asset_tag");
+
+                    b.Property<string>("NormalizedSerialNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_serial_number");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateOnly?>("PurchasedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("purchased_on");
+
+                    b.Property<string>("SerialNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("serial_number");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateOnly?>("WarrantyEndsOn")
+                        .HasColumnType("date")
+                        .HasColumnName("warranty_ends_on");
+
+                    b.HasKey("Id")
+                        .HasName("pk_assets");
+
+                    b.HasIndex("DepartmentId")
+                        .HasDatabaseName("ix_assets_department_id");
+
+                    b.HasIndex("LocationId")
+                        .HasDatabaseName("ix_assets_location_id");
+
+                    b.HasIndex("NormalizedAssetTag")
+                        .IsUnique()
+                        .HasDatabaseName("ix_assets_normalized_asset_tag");
+
+                    b.HasIndex("NormalizedSerialNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_assets_normalized_serial_number");
+
+                    b.HasIndex("Status", "Type")
+                        .HasDatabaseName("ix_assets_status_type");
+
+                    b.ToTable("assets", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_assets_status", "status IN ('in_stock', 'assigned', 'maintenance', 'lost', 'retired')");
+
+                            t.HasCheckConstraint("ck_assets_type", "type IN ('desktop', 'laptop', 'phone', 'tablet')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<DateTimeOffset>("AssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assigned_at");
+
+                    b.Property<Guid>("AssignedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_by");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid?>("RequestTicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("request_ticket_id");
+
+                    b.Property<DateTimeOffset?>("ReturnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("returned_at");
+
+                    b.Property<Guid?>("ReturnedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("returned_by");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_asset_assignments");
+
+                    b.HasIndex("AssetId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_asset_assignments_active")
+                        .HasFilter("returned_at IS NULL");
+
+                    b.HasIndex("UserId", "ReturnedAt")
+                        .HasDatabaseName("ix_asset_assignments_user_id_returned_at");
+
+                    b.ToTable("asset_assignments", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetImportJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CommittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("committed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("ErrorRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("error_rows");
+
+                    b.Property<string>("ErrorsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("errors");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("RowsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rows");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_rows");
+
+                    b.Property<int>("ValidRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("valid_rows");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_import_jobs");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_import_jobs_created_by_user_id");
+
+                    b.ToTable("import_jobs", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_import_jobs_status", "status IN ('previewed', 'committed')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<string>("FromStatus")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("from_status");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("ToStatus")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("to_status");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool?>("UserResponsibilityRetained")
+                        .HasColumnType("boolean")
+                        .HasColumnName("user_responsibility_retained");
+
+                    b.HasKey("Id")
+                        .HasName("pk_asset_movements");
+
+                    b.HasIndex("AssetId", "OccurredAt")
+                        .HasDatabaseName("ix_asset_movements_asset_id_occurred_at");
+
+                    b.ToTable("asset_movements", (string)null);
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Audit.AuditEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -357,6 +658,59 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_users_role", "role IN ('employee', 'it_staff', 'admin')");
                         });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.Asset", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Organization.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_assets_departments_department_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_assets_locations_location_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetAssignment", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Assets.Asset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_asset_assignments_assets_asset_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_asset_assignments_users_user_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetImportJob", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_import_jobs_users_created_by_user_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetMovement", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Assets.Asset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_asset_movements_assets_asset_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Organization.Department", b =>
