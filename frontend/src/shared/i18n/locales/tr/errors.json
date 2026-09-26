@@ -64,5 +64,24 @@
     "location_not_found": "Konum bulunamadı. Tam yolu yazın (ör. Kampüs / Bina).",
     "location_ambiguous": "Bu adla birden fazla konum var. Tam yolu yazın (ör. Kampüs / Bina).",
     "department_not_found": "Departman bulunamadı."
+  },
+  "tickets": {
+    "invalid_transition": "Bu işlem kaydın mevcut durumunda yapılamaz.",
+    "no_intake_team": "Kayıt alacak varsayılan ekip tanımlı değil. Lütfen yöneticinize bildirin.",
+    "hold_note_required": "\"Diğer\" bekleme nedeni için açıklama yazın.",
+    "approval_pending": "Kayıt yönetici onayı bekliyor; onay sonucunda devam eder.",
+    "resolution_required": "Kullanıcının göreceği çözüm açıklamasını yazın.",
+    "outcome_required": "Arıza kaydı için sonuç seçin.",
+    "related_request_required": "\"Hizmet talebi gerekli\" sonucu için önce ilgili talebi oluşturun.",
+    "approval_required": "Onay gerektiren talep, onaylanmadan tamamlanamaz.",
+    "cancel_reason_required": "İptal nedenini yazın."
+  },
+  "approvals": {
+    "not_approver": "Bu onayı yalnızca atanmış onaylayıcı verebilir.",
+    "not_pending": "Bu onay artık bekleyen durumda değil.",
+    "reason_required": "Nedeni yazın."
+  },
+  "categories": {
+    "too_deep": "Kategoriler en fazla iki seviyeli olabilir."
   }
 }

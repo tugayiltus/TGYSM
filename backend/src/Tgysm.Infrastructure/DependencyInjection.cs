@@ -22,6 +22,7 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
         });
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
         services.AddSingleton<IPasswordService, PasswordService>();
         return services;
     }

@@ -387,6 +387,101 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_events", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Catalog.Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("scope");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_categories");
+
+                    b.HasIndex("ParentId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_categories_parent_id_normalized_name");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("ParentId", "NormalizedName"), false);
+
+                    b.ToTable("categories", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_categories_scope", "scope IN ('incident', 'request', 'both')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Catalog.RequestType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_approval");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_request_types");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_request_types_normalized_name");
+
+                    b.ToTable("request_types", (string)null);
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Organization.Department", b =>
                 {
                     b.Property<Guid>("Id")
@@ -486,6 +581,10 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<bool>("IsDefaultIntake")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default_intake");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -506,6 +605,11 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_teams");
+
+                    b.HasIndex("IsDefaultIntake")
+                        .IsUnique()
+                        .HasDatabaseName("ux_teams_default_intake")
+                        .HasFilter("is_default_intake");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
@@ -549,6 +653,572 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_team_memberships_team_id_user_id");
 
                     b.ToTable("team_memberships", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.Approval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ApproverId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approver_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_approvals");
+
+                    b.HasIndex("DecidedBy")
+                        .HasDatabaseName("ix_approvals_decided_by");
+
+                    b.HasIndex("TicketId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_approvals_pending")
+                        .HasFilter("status = 'pending'");
+
+                    b.HasIndex("ApproverId", "Status")
+                        .HasDatabaseName("ix_approvals_approver_id_status");
+
+                    b.ToTable("approvals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_approvals_status", "status IN ('pending', 'approved', 'rejected', 'void')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.Ticket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assignee_id");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("cancel_reason");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("HoldNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("hold_note");
+
+                    b.Property<string>("HoldReason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<string>("Impact")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("impact");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("location_id");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("number");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("priority");
+
+                    b.Property<Guid?>("RequestTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("request_type_id");
+
+                    b.Property<Guid>("RequesterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requester_id");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_approval");
+
+                    b.Property<string>("Resolution")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("resolution");
+
+                    b.Property<string>("RootCause")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("root_cause");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("subject");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("Urgency")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("urgency");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tickets");
+
+                    b.HasIndex("AssigneeId")
+                        .HasDatabaseName("ix_tickets_assignee_id");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("ix_tickets_category_id");
+
+                    b.HasIndex("LocationId")
+                        .HasDatabaseName("ix_tickets_location_id");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_tickets_number");
+
+                    b.HasIndex("RequestTypeId")
+                        .HasDatabaseName("ix_tickets_request_type_id");
+
+                    b.HasIndex("RequesterId")
+                        .HasDatabaseName("ix_tickets_requester_id");
+
+                    b.HasIndex("TeamId", "Status")
+                        .HasDatabaseName("ix_tickets_team_id_status");
+
+                    b.ToTable("tickets", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_tickets_cancel_reason", "status <> 'cancelled' OR cancel_reason IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_tickets_hold", "(status = 'on_hold') = (hold_reason IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_tickets_hold_reason", "hold_reason IN ('user', 'manager_approval', 'vendor', 'technical_team', 'third_party', 'scheduled_date', 'other')");
+
+                            t.HasCheckConstraint("ck_tickets_impact", "impact IN ('high', 'medium', 'low')");
+
+                            t.HasCheckConstraint("ck_tickets_kind", "kind IN ('incident', 'request')");
+
+                            t.HasCheckConstraint("ck_tickets_outcome", "outcome IN ('resolved', 'service_request_required', 'fulfilled', 'approval_rejected')");
+
+                            t.HasCheckConstraint("ck_tickets_priority", "priority IN ('p1', 'p2', 'p3', 'p4')");
+
+                            t.HasCheckConstraint("ck_tickets_request_type", "(kind = 'request') = (request_type_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_tickets_resolution", "status <> 'completed' OR resolution IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_tickets_status", "status IN ('open', 'in_progress', 'on_hold', 'completed', 'cancelled')");
+
+                            t.HasCheckConstraint("ck_tickets_urgency", "urgency IN ('high', 'medium', 'low')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ticket_assets");
+
+                    b.HasIndex("AssetId")
+                        .HasDatabaseName("ix_ticket_assets_asset_id");
+
+                    b.HasIndex("TicketId", "AssetId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ticket_assets_ticket_id_asset_id");
+
+                    b.ToTable("ticket_assets", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<Guid?>("FromAssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_assignee_id");
+
+                    b.Property<Guid>("FromTeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_team_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<Guid?>("ToAssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_assignee_id");
+
+                    b.Property<Guid>("ToTeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_team_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ticket_assignments");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_ticket_assignments_actor_user_id");
+
+                    b.HasIndex("FromAssigneeId")
+                        .HasDatabaseName("ix_ticket_assignments_from_assignee_id");
+
+                    b.HasIndex("FromTeamId")
+                        .HasDatabaseName("ix_ticket_assignments_from_team_id");
+
+                    b.HasIndex("ToAssigneeId")
+                        .HasDatabaseName("ix_ticket_assignments_to_assignee_id");
+
+                    b.HasIndex("ToTeamId")
+                        .HasDatabaseName("ix_ticket_assignments_to_team_id");
+
+                    b.HasIndex("TicketId", "OccurredAt")
+                        .HasDatabaseName("ix_ticket_assignments_ticket_id_occurred_at");
+
+                    b.ToTable("ticket_assignments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_ticket_assignments_reason", "reason IN ('expertise_needed', 'wrong_assignment', 'other_team_responsibility', 'authorization_needed', 'workload', 'escalation', 'location', 'other')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CommentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("comment_id");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("OriginalName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("original_name");
+
+                    b.Property<string>("ScanStatus")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("scan_status");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("storage_key");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<Guid>("UploadedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("uploaded_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ticket_attachments");
+
+                    b.HasIndex("CommentId")
+                        .HasDatabaseName("ix_ticket_attachments_comment_id");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ticket_attachments_storage_key");
+
+                    b.HasIndex("TicketId")
+                        .HasDatabaseName("ix_ticket_attachments_ticket_id");
+
+                    b.HasIndex("UploadedBy")
+                        .HasDatabaseName("ix_ticket_attachments_uploaded_by");
+
+                    b.ToTable("ticket_attachments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_ticket_attachments_scan_status", "scan_status IN ('pending', 'clean', 'rejected')");
+
+                            t.HasCheckConstraint("ck_ticket_attachments_visibility", "visibility IN ('public', 'internal')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ticket_comments");
+
+                    b.HasIndex("AuthorId")
+                        .HasDatabaseName("ix_ticket_comments_author_id");
+
+                    b.HasIndex("TicketId", "CreatedAt")
+                        .HasDatabaseName("ix_ticket_comments_ticket_id_created_at");
+
+                    b.ToTable("ticket_comments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_ticket_comments_visibility", "visibility IN ('public', 'internal')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ticket_events");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_ticket_events_actor_user_id");
+
+                    b.HasIndex("TicketId", "OccurredAt")
+                        .HasDatabaseName("ix_ticket_events_ticket_id_occurred_at");
+
+                    b.ToTable("ticket_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_ticket_events_kind", "kind IN ('created', 'assigned', 'transferred', 'status_changed', 'public_comment', 'internal_note', 'priority_changed', 'approval_requested', 'approval_decided', 'approval_voided', 'approval_reassigned', 'related_request_created', 'asset_linked', 'asset_unlinked', 'completed', 'cancelled')");
+
+                            t.HasCheckConstraint("ck_ticket_events_visibility", "visibility IN ('public', 'internal')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketRelation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("IncidentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("incident_id");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("request_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ticket_relations");
+
+                    b.HasIndex("RequestId")
+                        .HasDatabaseName("ix_ticket_relations_request_id");
+
+                    b.HasIndex("IncidentId", "RequestId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ticket_relations_incident_id_request_id");
+
+                    b.ToTable("ticket_relations", (string)null);
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Users.User", b =>
@@ -660,6 +1330,27 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tgysm.Infrastructure.Persistence.TicketCounter", b =>
+                {
+                    b.Property<string>("Kind")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.Property<long>("LastValue")
+                        .HasColumnType("bigint")
+                        .HasColumnName("last_value");
+
+                    b.HasKey("Kind", "Year")
+                        .HasName("pk_ticket_counters");
+
+                    b.ToTable("ticket_counters", (string)null);
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Assets.Asset", b =>
                 {
                     b.HasOne("Tgysm.Domain.Organization.Department", null)
@@ -713,6 +1404,15 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_asset_movements_assets_asset_id");
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Catalog.Category", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Catalog.Category", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_categories_categories_parent_id");
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Organization.Department", b =>
                 {
                     b.HasOne("Tgysm.Domain.Users.User", null)
@@ -746,6 +1446,202 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_team_memberships_users_user_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.Approval", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ApproverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_approvals_users_approver_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_approvals_users_decided_by");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_approvals_tickets_ticket_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.Ticket", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_tickets_users_assignee_id");
+
+                    b.HasOne("Tgysm.Domain.Catalog.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_tickets_categories_category_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_tickets_locations_location_id");
+
+                    b.HasOne("Tgysm.Domain.Catalog.RequestType", null)
+                        .WithMany()
+                        .HasForeignKey("RequestTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_tickets_request_types_request_type_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_tickets_users_requester_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_tickets_teams_team_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAsset", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Assets.Asset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_assets_assets_asset_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_assets_tickets_ticket_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAssignment", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_assignments_users_actor_user_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("FromAssigneeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ticket_assignments_users_from_assignee_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Team", null)
+                        .WithMany()
+                        .HasForeignKey("FromTeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_assignments_teams_from_team_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_assignments_tickets_ticket_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ToAssigneeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ticket_assignments_users_to_assignee_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Team", null)
+                        .WithMany()
+                        .HasForeignKey("ToTeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_assignments_teams_to_team_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAttachment", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Tickets.TicketComment", null)
+                        .WithMany()
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ticket_attachments_ticket_comments_comment_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_attachments_tickets_ticket_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UploadedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_attachments_users_uploaded_by");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketComment", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_comments_users_author_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_comments_tickets_ticket_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketEvent", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ticket_events_users_actor_user_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_events_tickets_ticket_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketRelation", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_relations_tickets_incident_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_relations_tickets_request_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Users.User", b =>

@@ -3,6 +3,8 @@ using Npgsql;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Catalog;
+using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Organization;
@@ -22,6 +24,17 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<AssetAssignment> AssetAssignments => Set<AssetAssignment>();
     public DbSet<AssetMovement> AssetMovements => Set<AssetMovement>();
     public DbSet<AssetImportJob> AssetImportJobs => Set<AssetImportJob>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<Approval> Approvals => Set<Approval>();
+    public DbSet<TicketAssignment> TicketAssignments => Set<TicketAssignment>();
+    public DbSet<TicketComment> TicketComments => Set<TicketComment>();
+    public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
+    public DbSet<TicketEvent> TicketEvents => Set<TicketEvent>();
+    public DbSet<TicketRelation> TicketRelations => Set<TicketRelation>();
+    public DbSet<TicketAsset> TicketAssets => Set<TicketAsset>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<RequestType> RequestTypes => Set<RequestType>();
+    public DbSet<TicketCounter> TicketCounters => Set<TicketCounter>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

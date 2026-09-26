@@ -56,6 +56,22 @@ public static class ErrorCodes
     public const string ImportLocationAmbiguous = "imports.location_ambiguous";
     public const string ImportDepartmentNotFound = "imports.department_not_found";
 
+    public const string TicketInvalidTransition = "tickets.invalid_transition";
+    public const string TicketNoIntakeTeam = "tickets.no_intake_team";
+    public const string TicketHoldNoteRequired = "tickets.hold_note_required";
+    public const string TicketApprovalPending = "tickets.approval_pending";
+    public const string TicketResolutionRequired = "tickets.resolution_required";
+    public const string TicketOutcomeRequired = "tickets.outcome_required";
+    public const string TicketRelatedRequestRequired = "tickets.related_request_required";
+    public const string TicketApprovalRequired = "tickets.approval_required";
+    public const string TicketCancelReasonRequired = "tickets.cancel_reason_required";
+
+    public const string ApprovalNotApprover = "approvals.not_approver";
+    public const string ApprovalNotPending = "approvals.not_pending";
+    public const string ApprovalReasonRequired = "approvals.reason_required";
+
+    public const string CategoryTooDeep = "categories.too_deep";
+
     public const string TeamNameTaken = "teams.name_taken";
     public const string MembershipExists = "teams.membership_exists";
     public const string MemberInactive = "teams.member_inactive";

@@ -14,6 +14,9 @@ public sealed class Team : Entity
     public string NormalizedName { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
 
+    /// <summary>New tickets go to this team; at most one team has it (unique partial index).</summary>
+    public bool IsDefaultIntake { get; private set; }
+
     public static Team Create(string name)
     {
         var team = new Team { IsActive = true };
@@ -30,4 +33,8 @@ public sealed class Team : Entity
     public void Deactivate() => IsActive = false;
 
     public void Reactivate() => IsActive = true;
+
+    public void MarkDefaultIntake() => IsDefaultIntake = true;
+
+    public void ClearDefaultIntake() => IsDefaultIntake = false;
 }

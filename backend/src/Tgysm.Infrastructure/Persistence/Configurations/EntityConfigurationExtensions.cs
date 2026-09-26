@@ -26,4 +26,14 @@ internal static class EntityConfigurationExtensions
             .ValueGeneratedNever();
 
     private const string ApplicationVersionColumn = "version";
+
+    /// <summary>Stores the enum as its snake_case name (<see cref="Converters.SnakeCaseEnumConversion{TEnum}"/>).</summary>
+    public static PropertyBuilder<TEnum> HasEnumName<TEnum>(this PropertyBuilder<TEnum> property)
+        where TEnum : struct, Enum =>
+        property.HasConversion(Converters.SnakeCaseEnumConversion<TEnum>.Converter).HasMaxLength(Converters.SnakeCaseEnumConversion<TEnum>.MaxLength);
+
+    /// <summary>Nullable variant of <see cref="HasEnumName{TEnum}(PropertyBuilder{TEnum})"/>; NULL stays NULL.</summary>
+    public static PropertyBuilder<TEnum?> HasEnumName<TEnum>(this PropertyBuilder<TEnum?> property)
+        where TEnum : struct, Enum =>
+        property.HasConversion(Converters.SnakeCaseEnumConversion<TEnum>.Converter).HasMaxLength(Converters.SnakeCaseEnumConversion<TEnum>.MaxLength);
 }

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Catalog;
+using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Organization;
@@ -19,6 +21,16 @@ public interface IAppDbContext
     DbSet<AssetAssignment> AssetAssignments { get; }
     DbSet<AssetMovement> AssetMovements { get; }
     DbSet<AssetImportJob> AssetImportJobs { get; }
+    DbSet<Ticket> Tickets { get; }
+    DbSet<Approval> Approvals { get; }
+    DbSet<TicketAssignment> TicketAssignments { get; }
+    DbSet<TicketComment> TicketComments { get; }
+    DbSet<TicketAttachment> TicketAttachments { get; }
+    DbSet<TicketEvent> TicketEvents { get; }
+    DbSet<TicketRelation> TicketRelations { get; }
+    DbSet<TicketAsset> TicketAssets { get; }
+    DbSet<Category> Categories { get; }
+    DbSet<RequestType> RequestTypes { get; }
 
     /// <summary>
     /// Saves all tracked changes in one transaction. Throws <see cref="Common.ConcurrencyException"/> on a stale
