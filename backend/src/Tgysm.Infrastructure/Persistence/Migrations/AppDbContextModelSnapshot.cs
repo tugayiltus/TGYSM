@@ -190,6 +190,9 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ux_asset_assignments_active")
                         .HasFilter("returned_at IS NULL");
 
+                    b.HasIndex("RequestTicketId")
+                        .HasDatabaseName("ix_asset_assignments_request_ticket_id");
+
                     b.HasIndex("UserId", "ReturnedAt")
                         .HasDatabaseName("ix_asset_assignments_user_id_returned_at");
 
@@ -1381,6 +1384,12 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_asset_assignments_assets_asset_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("RequestTicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_asset_assignments_tickets_request_ticket_id");
 
                     b.HasOne("Tgysm.Domain.Users.User", null)
                         .WithMany()

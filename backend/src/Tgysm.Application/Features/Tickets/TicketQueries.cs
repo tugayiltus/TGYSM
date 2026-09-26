@@ -13,7 +13,7 @@ internal static class TicketQueries
         db.Approvals.AsNoTracking().Where(a => a.TicketId == ticketId)
             .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id)
             .Select(a => new ApprovalSummary(
-                a.Id, a.Status, a.ApproverId,
+                a.Id, a.Version, a.Status, a.ApproverId,
                 db.Users.Where(u => u.Id == a.ApproverId).Select(u => u.FirstName + NameSeparator + u.LastName).FirstOrDefault(),
                 a.Reason, a.CreatedAt, a.DecidedAt))
             .FirstOrDefaultAsync(cancellationToken);

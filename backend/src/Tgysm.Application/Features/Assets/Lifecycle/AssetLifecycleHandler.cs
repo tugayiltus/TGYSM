@@ -29,6 +29,11 @@ public sealed class AssetLifecycleHandler(
         return await RunAsync(command.AssetId, command.Version, AuditActions.AssetAssigned, async (asset, _, actorId, now, ct) =>
         {
             await EnsureActiveUserAsync(command.UserId, ct);
+            if (command.RequestTicketId is { } requestId)
+            {
+                await Tickets.ApprovalRules.EnsureHandoverAllowedAsync(db, requestId, ct);
+            }
+
             return asset.Assign(command.UserId, actorId, command.RequestTicketId, command.Note, now);
         }, cancellationToken);
     }

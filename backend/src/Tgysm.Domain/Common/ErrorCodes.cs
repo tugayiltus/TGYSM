@@ -71,6 +71,7 @@ public static class ErrorCodes
     public const string ApprovalNotApprover = "approvals.not_approver";
     public const string ApprovalNotPending = "approvals.not_pending";
     public const string ApprovalReasonRequired = "approvals.reason_required";
+    public const string ApprovalApproverInvalid = "approvals.approver_invalid";
 
     public const string CategoryTooDeep = "categories.too_deep";
     public const string CategoryNameTaken = "categories.name_taken";

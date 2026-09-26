@@ -81,7 +81,8 @@
   "approvals": {
     "not_approver": "Bu onayı yalnızca atanmış onaylayıcı verebilir.",
     "not_pending": "Bu onay artık bekleyen durumda değil.",
-    "reason_required": "Nedeni yazın."
+    "reason_required": "Nedeni yazın.",
+    "approver_invalid": "Onaylayıcı, talep sahibi dışında aktif bir yönetici olmalıdır."
   },
   "categories": {
     "too_deep": "Kategoriler en fazla iki seviyeli olabilir.",

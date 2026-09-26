@@ -1,4 +1,6 @@
 using Tgysm.Api.Contracts;
+using Tgysm.Api.Security;
+using Tgysm.Application.Features.Approvals;
 using Tgysm.Application.Features.Tickets;
 using Tgysm.Domain.Tickets;
 
@@ -13,6 +15,8 @@ public sealed record CompleteTicketRequest(uint Version, string Resolution, Tick
 public sealed record TicketReasonRequest(uint Version, string Reason);
 
 public sealed record ChangePriorityRequest(uint Version, Level? Impact, Level? Urgency, string Reason);
+
+public sealed record ReassignApproverRequest(Guid ApproverId, string Reason);
 
 internal static partial class TicketEndpoints
 {
@@ -41,6 +45,13 @@ internal static partial class TicketEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapPost($"{NumberRoute}/priority", async (string number, ChangePriorityRequest r, ChangePriorityHandler h, CancellationToken ct) =>
             TypedResults.Ok(await h.HandleAsync(new ChangePriorityCommand(number, r.Version, r.Impact, r.Urgency, r.Reason), ct)))
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapPost($"{NumberRoute}/approval/reassign", async (string number, ReassignApproverRequest r, ReassignApproverHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new ReassignApproverCommand(number, r.ApproverId, r.Reason), ct)))
+            .RequireAuthorization(Policies.Admin)
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapPost($"{NumberRoute}/approval/invalidate", async (string number, TicketReasonRequest r, InvalidateApprovalHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new InvalidateApprovalCommand(number, r.Version, r.Reason), ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
     }
 }

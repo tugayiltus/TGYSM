@@ -15,7 +15,7 @@ public sealed record TicketListItem(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 
-public sealed record ApprovalSummary(Guid Id, ApprovalStatus Status, Guid? ApproverId, string? ApproverName, string? Reason, DateTimeOffset CreatedAt, DateTimeOffset? DecidedAt);
+public sealed record ApprovalSummary(Guid Id, uint Version, ApprovalStatus Status, Guid? ApproverId, string? ApproverName, string? Reason, DateTimeOffset CreatedAt, DateTimeOffset? DecidedAt);
 
 public sealed record TicketDetail(
     Guid Id,

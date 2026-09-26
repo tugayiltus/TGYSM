@@ -11,6 +11,7 @@ internal sealed class AssetAssignmentConfiguration : IEntityTypeConfiguration<As
 
     public void Configure(EntityTypeBuilder<AssetAssignment> builder)
     {
+        builder.HasOne<Domain.Tickets.Ticket>().WithMany().HasForeignKey(a => a.RequestTicketId).OnDelete(DeleteBehavior.Restrict);
         builder.ToTable("asset_assignments");
         builder.ConfigureEntityBase();
 

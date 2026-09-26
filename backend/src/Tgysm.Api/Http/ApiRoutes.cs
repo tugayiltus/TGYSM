@@ -19,4 +19,5 @@ internal static class ApiRoutes
     public const string AssetImport = "/assets/import";
     public const string Reference = "/reference";
     public const string Tickets = "/tickets";
+    public const string Approvals = "/approvals";
 }
