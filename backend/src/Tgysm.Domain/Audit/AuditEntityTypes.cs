@@ -9,4 +9,6 @@ public static class AuditEntityTypes
     public const string Team = "team";
     public const string Asset = "asset";
     public const string AssetImport = "asset_import";
+    public const string Category = "category";
+    public const string RequestType = "request_type";
 }

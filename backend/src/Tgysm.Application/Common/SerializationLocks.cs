@@ -14,4 +14,7 @@ public static class SerializationLocks
 
     /// <summary>Commits of CSV import jobs, so one job cannot insert its rows twice.</summary>
     public const long AssetImport = 7_004;
+
+    /// <summary>Moving the default intake flag between teams.</summary>
+    public const long DefaultIntake = 7_005;
 }

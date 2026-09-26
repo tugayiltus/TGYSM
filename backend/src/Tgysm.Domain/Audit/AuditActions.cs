@@ -48,4 +48,14 @@ public static class AuditActions
     public const string AssetFound = "assets.found";
     public const string AssetRetired = "assets.retired";
     public const string AssetsImported = "assets.imported";
+
+    public const string CategoryCreated = "categories.created";
+    public const string CategoryUpdated = "categories.updated";
+    public const string CategoryDeactivated = "categories.deactivated";
+    public const string CategoryReactivated = "categories.reactivated";
+
+    public const string RequestTypeCreated = "request_types.created";
+    public const string RequestTypeUpdated = "request_types.updated";
+    public const string RequestTypeDeactivated = "request_types.deactivated";
+    public const string RequestTypeReactivated = "request_types.reactivated";
 }

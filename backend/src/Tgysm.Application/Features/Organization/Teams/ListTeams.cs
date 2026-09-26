@@ -25,7 +25,7 @@ public sealed class ListTeamsHandler(IAppDbContext db)
 
         return teams
             .OrderBy(t => t.Name).ThenBy(t => t.Id)
-            .Select(t => new TeamItem(t.Id, t.Name, t.IsActive, db.TeamMemberships.Count(m => m.TeamId == t.Id), t.Version))
+            .Select(t => new TeamItem(t.Id, t.Name, t.IsActive, t.IsDefaultIntake, db.TeamMemberships.Count(m => m.TeamId == t.Id), t.Version))
             .ToPagedResultAsync(new PageRequest(query.Page, query.PageSize), cancellationToken);
     }
 }

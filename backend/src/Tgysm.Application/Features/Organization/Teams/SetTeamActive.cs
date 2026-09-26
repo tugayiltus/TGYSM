@@ -23,6 +23,7 @@ public sealed class SetTeamActiveHandler(IAppDbContext db, IAuditLog audit)
             else
             {
                 team.Deactivate();
+                team.ClearDefaultIntake();
             }
 
             audit.Record(command.IsActive ? AuditActions.TeamReactivated : AuditActions.TeamDeactivated, AuditEntityTypes.Team, team.Id);

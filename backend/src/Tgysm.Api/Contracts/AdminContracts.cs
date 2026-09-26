@@ -17,6 +17,6 @@ public sealed record UpdateDepartmentRequest(uint Version, string Name, Guid? Ap
 
 public sealed record UpdateLocationRequest(uint Version, string Name, Guid? ParentId);
 
-public sealed record UpdateTeamRequest(uint Version, string Name);
+public sealed record UpdateTeamRequest(uint Version, string Name, bool? IsDefaultIntake = null);
 
 public sealed record AddTeamMemberRequest(Guid UserId);

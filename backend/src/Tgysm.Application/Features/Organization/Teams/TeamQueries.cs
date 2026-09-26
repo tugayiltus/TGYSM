@@ -28,7 +28,7 @@ internal static class TeamQueries
             select new TeamMemberItem(user.Id, user.FirstName, user.LastName, user.Email, user.Role, user.IsActive))
             .ToListAsync(cancellationToken);
 
-        return new TeamDetail(team.Id, team.Name, team.IsActive, team.Version, members);
+        return new TeamDetail(team.Id, team.Name, team.IsActive, team.IsDefaultIntake, team.Version, members);
     }
 
     public static async Task EnsureNameFreeAsync(IAppDbContext db, string name, Guid? exceptId, CancellationToken cancellationToken)

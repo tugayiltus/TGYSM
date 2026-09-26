@@ -11,6 +11,8 @@ internal static class ApiRoutes
     public const string Departments = "/departments";
     public const string Locations = "/locations";
     public const string Teams = "/teams";
+    public const string Categories = "/categories";
+    public const string RequestTypes = "/request-types";
     public const string AuditEvents = "/audit-events";
     public const string Assets = "/assets";
     public const string MyAssets = "/me/assets";

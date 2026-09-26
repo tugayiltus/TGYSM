@@ -71,6 +71,8 @@ public static class ErrorCodes
     public const string ApprovalReasonRequired = "approvals.reason_required";
 
     public const string CategoryTooDeep = "categories.too_deep";
+    public const string CategoryNameTaken = "categories.name_taken";
+    public const string RequestTypeNameTaken = "request_types.name_taken";
 
     public const string TeamNameTaken = "teams.name_taken";
     public const string MembershipExists = "teams.membership_exists";

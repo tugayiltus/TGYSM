@@ -120,7 +120,9 @@
     "location": "Lokasyon",
     "team": "Ekip",
     "asset": "Cihaz",
-    "asset_import": "Cihaz içe aktarımı"
+    "asset_import": "Cihaz içe aktarımı",
+    "category": "Kategori",
+    "request_type": "Talep tipi"
   },
   "auditActions": {
     "setup": {
@@ -172,6 +174,18 @@
       "found": "Cihaz bulundu",
       "retired": "Cihaz kullanım dışı bırakıldı",
       "imported": "Cihazlar içe aktarıldı"
+    },
+    "categories": {
+      "created": "Kategori oluşturuldu",
+      "updated": "Kategori güncellendi",
+      "deactivated": "Kategori pasifleştirildi",
+      "reactivated": "Kategori aktifleştirildi"
+    },
+    "request_types": {
+      "created": "Talep tipi oluşturuldu",
+      "updated": "Talep tipi güncellendi",
+      "deactivated": "Talep tipi pasifleştirildi",
+      "reactivated": "Talep tipi aktifleştirildi"
     }
   }
 }

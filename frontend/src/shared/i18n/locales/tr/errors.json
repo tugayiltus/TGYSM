@@ -82,6 +82,10 @@
     "reason_required": "Nedeni yazın."
   },
   "categories": {
-    "too_deep": "Kategoriler en fazla iki seviyeli olabilir."
+    "too_deep": "Kategoriler en fazla iki seviyeli olabilir.",
+    "name_taken": "Aynı üst kategoride bu adla bir kategori zaten var."
+  },
+  "request_types": {
+    "name_taken": "Bu adla bir talep tipi zaten var."
   }
 }

@@ -41,7 +41,7 @@ internal static class TeamEndpoints
     }
 
     private static async Task<Ok<TeamDetail>> UpdateAsync(Guid id, UpdateTeamRequest request, UpdateTeamHandler handler, CancellationToken cancellationToken) =>
-        TypedResults.Ok(await handler.HandleAsync(new UpdateTeamCommand(id, request.Version, request.Name), cancellationToken));
+        TypedResults.Ok(await handler.HandleAsync(new UpdateTeamCommand(id, request.Version, request.Name, request.IsDefaultIntake), cancellationToken));
 
     private static async Task<Ok<TeamDetail>> DeactivateAsync(Guid id, VersionRequest request, SetTeamActiveHandler handler, CancellationToken cancellationToken) =>
         TypedResults.Ok(await handler.HandleAsync(new SetTeamActiveCommand(id, request.Version, IsActive: false), cancellationToken));
