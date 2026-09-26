@@ -30,6 +30,7 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
 
         builder.Property(t => t.Number).HasMaxLength(TicketNumber.MaxLength).IsRequired();
         builder.Property(t => t.Subject).HasMaxLength(Ticket.SubjectMaxLength).IsRequired();
+        builder.Property(t => t.SearchText).HasMaxLength(Ticket.SubjectMaxLength).IsRequired();
         builder.Property(t => t.Description).HasMaxLength(Ticket.DescriptionMaxLength).IsRequired();
         builder.Property(t => t.HoldNote).HasMaxLength(Ticket.ReasonMaxLength);
         builder.Property(t => t.RootCause).HasMaxLength(Ticket.TextMaxLength);

@@ -52,6 +52,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         }
     }
 
+    public async Task RunInTransactionAsync(Func<CancellationToken, Task> work, CancellationToken cancellationToken)
+    {
+        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        await work(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
     public async Task RunSerializedAsync(long lockKey, Func<CancellationToken, Task> work, CancellationToken cancellationToken)
     {
         await using var transaction = await Database.BeginTransactionAsync(cancellationToken);

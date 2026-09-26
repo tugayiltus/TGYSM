@@ -58,4 +58,19 @@ public static class AuditActions
     public const string RequestTypeUpdated = "request_types.updated";
     public const string RequestTypeDeactivated = "request_types.deactivated";
     public const string RequestTypeReactivated = "request_types.reactivated";
+
+    public const string TicketCreated = "tickets.created";
+    public const string TicketAssigned = "tickets.assigned";
+    public const string TicketTransferred = "tickets.transferred";
+    public const string TicketStatusChanged = "tickets.status_changed";
+    public const string TicketPriorityChanged = "tickets.priority_changed";
+    public const string TicketCompleted = "tickets.completed";
+    public const string TicketCancelled = "tickets.cancelled";
+    public const string TicketAssetLinked = "tickets.asset_linked";
+    public const string TicketAssetUnlinked = "tickets.asset_unlinked";
+    public const string RelatedRequestCreated = "tickets.related_request_created";
+    public const string ApprovalApproved = "approvals.approved";
+    public const string ApprovalRejected = "approvals.rejected";
+    public const string ApprovalReassigned = "approvals.reassigned";
+    public const string ApprovalVoided = "approvals.voided";
 }

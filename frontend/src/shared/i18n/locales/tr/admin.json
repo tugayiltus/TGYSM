@@ -122,7 +122,10 @@
     "asset": "Cihaz",
     "asset_import": "Cihaz içe aktarımı",
     "category": "Kategori",
-    "request_type": "Talep tipi"
+    "request_type": "Talep tipi",
+    "ticket": "Kayıt",
+    "approval": "Onay",
+    "attachment": "Dosya"
   },
   "auditActions": {
     "setup": {
@@ -186,6 +189,24 @@
       "updated": "Talep tipi güncellendi",
       "deactivated": "Talep tipi pasifleştirildi",
       "reactivated": "Talep tipi aktifleştirildi"
+    },
+    "tickets": {
+      "created": "Kayıt oluşturuldu",
+      "assigned": "Kayıt üstlenildi",
+      "transferred": "Kayıt aktarıldı",
+      "status_changed": "Kayıt durumu değişti",
+      "priority_changed": "Öncelik değişti",
+      "completed": "Kayıt tamamlandı",
+      "cancelled": "Kayıt iptal edildi",
+      "asset_linked": "Kayda cihaz bağlandı",
+      "asset_unlinked": "Kayıttan cihaz ayrıldı",
+      "related_request_created": "İlgili talep oluşturuldu"
+    },
+    "approvals": {
+      "approved": "Talep onaylandı",
+      "rejected": "Talep reddedildi",
+      "reassigned": "Onaylayıcı değiştirildi",
+      "voided": "Onay geçersiz kılındı"
     }
   }
 }

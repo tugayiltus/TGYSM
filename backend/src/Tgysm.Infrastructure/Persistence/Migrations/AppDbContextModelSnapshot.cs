@@ -816,6 +816,12 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("root_cause");
 
+                    b.Property<string>("SearchText")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("search_text");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)

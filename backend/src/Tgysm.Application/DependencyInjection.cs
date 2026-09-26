@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<OrganizationReferences>();
         services.AddScoped<LastAdminGuard>();
+        services.AddScoped<Features.Tickets.TicketScope>();
+        services.AddScoped<Features.Tickets.TicketFactory>();
         return services;
     }
 }

@@ -42,6 +42,9 @@ public interface IAppDbContext
     void SetExpectedVersion<TEntity>(TEntity entity, uint expectedVersion)
         where TEntity : Entity;
 
+    /// <summary>Runs <paramref name="work"/> in one transaction (several saves commit together).</summary>
+    Task RunInTransactionAsync(Func<CancellationToken, Task> work, CancellationToken cancellationToken);
+
     /// <summary>
     /// Runs <paramref name="work"/> in one transaction that first takes the advisory lock <paramref name="lockKey"/>,
     /// so check-then-write rules that span rows (last admin, location cycles) cannot race.

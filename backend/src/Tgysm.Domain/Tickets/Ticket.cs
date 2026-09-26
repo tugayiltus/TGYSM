@@ -21,6 +21,9 @@ public sealed class Ticket : Entity
     public TicketKind Kind { get; private set; }
     public string Subject { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
+
+    /// <summary>Turkish-insensitive search key of the subject (<see cref="TurkishText.ToSearchKey"/>).</summary>
+    public string SearchText { get; private set; } = string.Empty;
     public Guid? CategoryId { get; private set; }
     public Guid? LocationId { get; private set; }
     public Guid RequesterId { get; private set; }
@@ -71,6 +74,7 @@ public sealed class Ticket : Entity
             Number = number,
             Kind = kind,
             Subject = subject.Trim(),
+            SearchText = TurkishText.ToSearchKey(subject),
             Description = description.Trim(),
             CategoryId = categoryId,
             LocationId = locationId,
