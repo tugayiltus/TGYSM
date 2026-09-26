@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- Off for normal builds; tools/gen-api-types.sh turns it on. -->
+    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../../frontend/openapi</OpenApiDocumentsDirectory>
+  </PropertyGroup><PropertyGroup>  <UserSecretsId>68fee2aa-ce8f-4fa1-b0de-8de80eb91571</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Tgysm.Application\Tgysm.Application.csproj" />
+    <ProjectReference Include="..\Tgysm.Infrastructure\Tgysm.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tgysm.Api.IntegrationTests" />
+  </ItemGroup>
+</Project>

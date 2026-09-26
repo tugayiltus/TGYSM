@@ -1,0 +1,51 @@
+{
+  "common": {
+    "not_found": "Kayıt bulunamadı.",
+    "forbidden": "Bu işlem için yetkiniz yok.",
+    "unexpected": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+    "duplicate": "Bu kayıt zaten var.",
+    "reference_inactive": "Seçilen kayıt pasif ya da bulunamadı."
+  },
+  "validation": {
+    "failed": "Lütfen formdaki hataları düzeltin.",
+    "required": "Bu alan zorunludur.",
+    "too_long": "Bu alan çok uzun.",
+    "invalid_email": "Geçerli bir e-posta adresi girin.",
+    "invalid": "Geçersiz değer."
+  },
+  "concurrency": {
+    "conflict": "Bu kayıt siz düzenlerken başka biri tarafından değiştirildi. Listeyi yenileyip tekrar deneyin."
+  },
+  "auth": {
+    "unauthenticated": "Oturumunuz sona erdi. Lütfen tekrar giriş yapın.",
+    "invalid_credentials": "E-posta veya şifre hatalı.",
+    "password_change_required": "Devam etmek için şifrenizi değiştirmeniz gerekiyor.",
+    "csrf_invalid": "Güvenlik doğrulaması başarısız oldu. Lütfen tekrar deneyin.",
+    "current_password_invalid": "Mevcut şifre hatalı.",
+    "password_policy": "Şifre en az 12 karakter olmalı, harf ve rakam içermelidir.",
+    "password_same_as_old": "Yeni şifre mevcut şifreyle aynı olamaz.",
+    "rate_limited": "Çok fazla deneme yapıldı. Lütfen bir dakika sonra tekrar deneyin."
+  },
+  "setup": {
+    "already_completed": "Kurulum zaten tamamlanmış."
+  },
+  "users": {
+    "email_taken": "Bu e-posta adresi başka bir hesapta kullanılıyor.",
+    "last_admin": "Sistemdeki son aktif yönetici pasifleştirilemez ve rolü değiştirilemez."
+  },
+  "departments": {
+    "name_taken": "Bu adla bir departman zaten var.",
+    "approver_invalid": "Onaylayıcı aktif bir yönetici olmalıdır."
+  },
+  "locations": {
+    "name_taken": "Aynı üst lokasyonda bu adla bir lokasyon zaten var.",
+    "cycle": "Lokasyon kendi altına taşınamaz.",
+    "has_active_children": "Önce alt lokasyonları pasifleştirin."
+  },
+  "teams": {
+    "name_taken": "Bu adla bir ekip zaten var.",
+    "membership_exists": "Kullanıcı zaten bu ekipte.",
+    "member_inactive": "Pasif kullanıcı ekibe eklenemez.",
+    "member_role_invalid": "Ekibe yalnızca IT personeli ve yöneticiler eklenebilir."
+  }
+}

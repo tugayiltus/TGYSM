@@ -1,0 +1,51 @@
+{
+  "appName": "TGYSM",
+  "none": "Yok",
+  "network": "Sunucuya ulaşılamadı. Bağlantınızı kontrol edin.",
+  "actions": {
+    "save": "Kaydet",
+    "cancel": "Vazgeç",
+    "create": "Oluştur",
+    "edit": "Düzenle",
+    "close": "Kapat",
+    "retry": "Tekrar dene",
+    "logout": "Çıkış yap",
+    "deactivate": "Pasifleştir",
+    "reactivate": "Aktifleştir",
+    "confirm": "Onayla",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "openMenu": "Menüyü aç"
+  },
+  "states": {
+    "loading": "Yükleniyor…",
+    "empty": "Kayıt bulunamadı.",
+    "error": "Bir hata oluştu."
+  },
+  "status": {
+    "all": "Tümü",
+    "active": "Aktif",
+    "inactive": "Pasif"
+  },
+  "roles": {
+    "all": "Tüm roller",
+    "employee": "Çalışan",
+    "it_staff": "IT personeli",
+    "admin": "Yönetici"
+  },
+  "pagination": {
+    "label": "Sayfalama",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "summary": "{{from}}–{{to}} / {{total}} kayıt"
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "back": "Ana sayfaya dön"
+  },
+  "temporaryPassword": {
+    "title": "Geçici şifre",
+    "description": "Bu şifre yalnızca bir kez gösterilir. Kullanıcıya güvenli bir yoldan iletin; ilk girişte değiştirmesi istenir.",
+    "label": "Geçici şifre"
+  }
+}

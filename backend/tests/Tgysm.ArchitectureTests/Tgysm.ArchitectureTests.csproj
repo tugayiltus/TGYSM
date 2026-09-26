@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tgysm.Domain\Tgysm.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Tgysm.Application\Tgysm.Application.csproj" />
+    <ProjectReference Include="..\..\src\Tgysm.Infrastructure\Tgysm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Tgysm.Api\Tgysm.Api.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

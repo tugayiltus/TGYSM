@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Tgysm.Application\Tgysm.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- PasswordHasher<T> (Microsoft.Extensions.Identity.Core) and configuration abstractions -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- Pin: Design (build-only) pulls Relational 10.0.12, Npgsql alone resolves an older one at runtime. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tgysm.Api.IntegrationTests" />
+  </ItemGroup>
+</Project>

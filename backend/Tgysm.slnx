@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Tgysm.Api/Tgysm.Api.csproj" />
+    <Project Path="src/Tgysm.Application/Tgysm.Application.csproj" />
+    <Project Path="src/Tgysm.Domain/Tgysm.Domain.csproj" />
+    <Project Path="src/Tgysm.Infrastructure/Tgysm.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Tgysm.Api.IntegrationTests/Tgysm.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Tgysm.Application.Tests/Tgysm.Application.Tests.csproj" />
+    <Project Path="tests/Tgysm.ArchitectureTests/Tgysm.ArchitectureTests.csproj" />
+    <Project Path="tests/Tgysm.Domain.Tests/Tgysm.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,162 @@
+{
+  "title": "Yönetim",
+  "nav": {
+    "label": "Yönetim menüsü",
+    "users": "Kullanıcılar",
+    "departments": "Departmanlar",
+    "locations": "Lokasyonlar",
+    "teams": "Ekipler",
+    "audit": "Denetim kayıtları",
+    "backToApp": "Uygulamaya dön"
+  },
+  "users": {
+    "title": "Kullanıcılar",
+    "new": "Yeni kullanıcı",
+    "edit": "Kullanıcıyı düzenle",
+    "searchLabel": "Kullanıcı ara",
+    "searchPlaceholder": "Ad, soyad veya e-posta",
+    "statusFilter": "Durum",
+    "roleFilter": "Rol",
+    "listCaption": "Kullanıcı listesi",
+    "resetPassword": "Şifre sıfırla",
+    "columns": {
+      "name": "Ad soyad",
+      "email": "E-posta",
+      "role": "Rol",
+      "department": "Departman",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "fields": {
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "email": "E-posta",
+      "role": "Rol",
+      "department": "Departman",
+      "location": "Lokasyon"
+    },
+    "confirmDeactivate": "{{name}} pasifleştirilsin mi? Kullanıcının açık oturumu hemen kapanır.",
+    "confirmReactivate": "{{name}} tekrar aktifleştirilsin mi?",
+    "confirmReset": "{{name}} için yeni geçici şifre oluşturulsun mu? Kullanıcının açık oturumu kapanır."
+  },
+  "departments": {
+    "title": "Departmanlar",
+    "new": "Yeni departman",
+    "edit": "Departmanı düzenle",
+    "searchLabel": "Departman ara",
+    "listCaption": "Departman listesi",
+    "fields": {
+      "name": "Departman adı",
+      "approver": "Onaylayıcı yönetici"
+    },
+    "columns": {
+      "name": "Ad",
+      "approver": "Onaylayıcı",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "confirmDeactivate": "{{name}} pasifleştirilsin mi?",
+    "confirmReactivate": "{{name}} aktifleştirilsin mi?"
+  },
+  "locations": {
+    "title": "Lokasyonlar",
+    "new": "Yeni lokasyon",
+    "edit": "Lokasyonu düzenle",
+    "addChild": "Alt lokasyon ekle",
+    "treeLabel": "Lokasyon ağacı",
+    "noParent": "Yok (en üst seviye)",
+    "fields": {
+      "name": "Lokasyon adı",
+      "parent": "Üst lokasyon"
+    },
+    "confirmDeactivate": "{{name}} pasifleştirilsin mi?",
+    "confirmReactivate": "{{name}} aktifleştirilsin mi?"
+  },
+  "teams": {
+    "title": "Ekipler",
+    "new": "Yeni ekip",
+    "edit": "Ekibi düzenle",
+    "searchLabel": "Ekip ara",
+    "listCaption": "Ekip listesi",
+    "memberCount": "{{count}} üye",
+    "manageMembers": "Üyeleri yönet",
+    "membersTitle": "{{name}} üyeleri",
+    "addMember": "Üye ekle",
+    "memberToAdd": "Eklenecek kişi",
+    "removeMember": "Çıkar",
+    "noMembers": "Bu ekipte henüz üye yok.",
+    "fields": {
+      "name": "Ekip adı"
+    },
+    "columns": {
+      "name": "Ad",
+      "members": "Üye sayısı",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "confirmDeactivate": "{{name}} pasifleştirilsin mi?",
+    "confirmReactivate": "{{name}} aktifleştirilsin mi?"
+  },
+  "audit": {
+    "title": "Denetim kayıtları",
+    "listCaption": "Denetim kayıtları",
+    "entityFilter": "Kayıt türü",
+    "allEntities": "Tümü",
+    "system": "Sistem",
+    "details": "Ayrıntılar",
+    "before": "Önce",
+    "after": "Sonra",
+    "correlation": "İzleme kimliği",
+    "columns": {
+      "time": "Zaman",
+      "actor": "Kişi",
+      "action": "İşlem",
+      "entity": "Kayıt"
+    }
+  },
+  "entityTypes": {
+    "user": "Kullanıcı",
+    "department": "Departman",
+    "location": "Lokasyon",
+    "team": "Ekip"
+  },
+  "auditActions": {
+    "setup": {
+      "first_admin_created": "İlk yönetici oluşturuldu"
+    },
+    "auth": {
+      "login_succeeded": "Başarılı giriş",
+      "login_failed": "Başarısız giriş",
+      "locked_out": "Hesap kilitlendi",
+      "password_changed": "Şifre değiştirildi"
+    },
+    "users": {
+      "created": "Kullanıcı oluşturuldu",
+      "updated": "Kullanıcı güncellendi",
+      "role_changed": "Rol değiştirildi",
+      "deactivated": "Kullanıcı pasifleştirildi",
+      "reactivated": "Kullanıcı aktifleştirildi",
+      "password_reset": "Şifre sıfırlandı"
+    },
+    "departments": {
+      "created": "Departman oluşturuldu",
+      "updated": "Departman güncellendi",
+      "deactivated": "Departman pasifleştirildi",
+      "reactivated": "Departman aktifleştirildi"
+    },
+    "locations": {
+      "created": "Lokasyon oluşturuldu",
+      "updated": "Lokasyon güncellendi",
+      "deactivated": "Lokasyon pasifleştirildi",
+      "reactivated": "Lokasyon aktifleştirildi"
+    },
+    "teams": {
+      "created": "Ekip oluşturuldu",
+      "updated": "Ekip güncellendi",
+      "deactivated": "Ekip pasifleştirildi",
+      "reactivated": "Ekip aktifleştirildi",
+      "member_added": "Ekibe üye eklendi",
+      "member_removed": "Ekipten üye çıkarıldı"
+    }
+  }
+}
