@@ -15,6 +15,11 @@ if (args is [SetupAdminCommand.Name, .. var commandArgs])
     return await SetupAdminCommand.RunAsync(app.Services, commandArgs, Console.Out, Console.Error);
 }
 
+if (args is [ResetPasswordCommand.Name, .. var resetArgs])
+{
+    return await ResetPasswordCommand.RunAsync(app.Services, resetArgs, Console.Out, Console.Error);
+}
+
 app.UseApiPipeline();
 app.MapApi();
 await app.RunAsync();
