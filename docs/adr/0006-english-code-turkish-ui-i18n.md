@@ -34,3 +34,7 @@ The owner requires English for code, identifiers, database names, API endpoints 
 
 ### Risks
 - Suffix rules have exceptions; the dictionary must grow as real names appear.
+
+## Amendment 2026-09-26
+
+- Search and uniqueness keys fold dotless `ı` to `i` after `tr-TR` lower-casing (commit 8b3357d). Turkish lower-casing turns ASCII "I" into "ı", so "IT Destek" and "it destek" were different keys. Migration `FoldDotlessIInKeys` recomputed stored keys.

@@ -41,3 +41,9 @@ The web app must be mobile-first, accessible (keyboard, visible focus, form erro
 
 ### Risks
 - Vite 8 (Rolldown) chunk options differ from Rollup; check current docs when tuning chunks.
+
+## Amendment 2026-09-26
+
+- TypeScript is pinned to ~5.9, not ~6.0: `openapi-typescript` 7.13 requires TypeScript 5 (commit 8b3357d). zod is v4.
+- Backend tests run on Microsoft.Testing.Platform (repo-root `global.json`), because the .NET 10 SDK no longer runs xUnit v3 4.x through VSTest; coverage uses coverlet.MTP.
+- The API serializes numbers strictly (`JsonNumberHandling.Strict`) so generated TypeScript types are plain `number`.

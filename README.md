@@ -18,8 +18,8 @@ Solution: `backend/Tgysm.slnx`. Browser and API are same-origin; Vite proxies `/
 
 - Backend: .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + Npgsql 10, FluentValidation 12; `TreatWarningsAsErrors=true`, `Nullable=enable`.
 - Database: PostgreSQL 17 (ADR-0002).
-- Frontend: React 19, TypeScript ~6.0 (strict), Vite 8, Tailwind CSS v4, Radix UI, React Router, TanStack Query 5, react-hook-form + zod 4, i18next (ADR-0008).
-- Tests: xUnit v3, NetArchTest, Vitest + React Testing Library, Playwright.
+- Frontend: React 19, TypeScript ~5.9 (strict), Vite 8, Tailwind CSS v4, Radix UI, React Router, TanStack Query 5, react-hook-form + zod 4, i18next (ADR-0008).
+- Tests: xUnit v3 on Microsoft.Testing.Platform (`global.json`; run `dotnet test --solution backend/Tgysm.slnx`), NetArchTest, coverlet.MTP, Vitest + React Testing Library, Playwright.
 
 ## Commands
 

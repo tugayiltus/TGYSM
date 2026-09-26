@@ -42,3 +42,10 @@ The owner selected PostgreSQL (`tgysm.md` §1). Business rules need relational c
 
 ### Risks
 - Turkish sort order depends on the database collation. Revisit with an ICU collation when list sorting matters to users.
+
+## Amendment 2026-09-26
+
+- `users` uses an application-managed `version` column instead of `xmin` (commit 8b3357d). Sign-in bookkeeping and a user's own password change update the row often and made admins' open edits stale; the domain now bumps `version` only on admin-editable changes (profile, role, activation). Other tables keep `xmin`.
+- Rules that span rows run in one transaction under a PostgreSQL advisory lock (`IAppDbContext.RunSerializedAsync`, keys in `SerializationLocks`): last active admin and location cycles (commit 8b3357d). Plain optimistic concurrency cannot see a write to a different row.
+- The failed-login counter is updated with a single `UPDATE … SET access_failed_count = access_failed_count + 1` so parallel attempts cannot lose counts.
+- `audit_events` also rejects `TRUNCATE` (statement trigger) and has an index on `(actor_user_id, occurred_at)` (commit 512a3e5).

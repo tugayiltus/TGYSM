@@ -42,3 +42,10 @@ Accounts are local (no SSO, no LDAP in the first release; `tgysm.md` §2). Only 
 
 ### Risks
 - Data Protection keys must be persisted in production, or all sessions end on restart. Address with the hosting decision (Phase 6).
+
+## Amendment 2026-09-26
+
+- The default authorization policy equals the fallback policy, so a bare `RequireAuthorization()` also enforces the pending-password gate (commit 512a3e5).
+- Inactive and locked accounts run one password hash check, like unknown emails, so response time does not reveal account state (commit 8b3357d).
+- Development and Testing trust `X-Forwarded-Proto` from loopback proxies only; the Vite proxy sends `https` so Secure cookies and antiforgery work on `http://localhost`. Production forwarded-header trust is decided with hosting (Phase 6).
+- Known limit: the login rate limit is per client IP; many users behind one NAT share it. Per-account limiting waits for the hosting/proxy decision.

@@ -15,7 +15,7 @@ Run through `tools/` scripts.
 - `tools/setup-admin.sh --email … --first-name … --last-name …` — create first admin (once).
 - `tools/run.sh` — API on `http://localhost:5080` + Vite on `http://localhost:5173`.
 - `tools/lint.sh` — `dotnet format --verify-no-changes` + ESLint + TypeScript.
-- `tools/test.sh` — backend tests with coverage gate + frontend tests with coverage gate.
+- `tools/test.sh` — backend tests with coverage gate + frontend tests with coverage gate. Backend uses Microsoft.Testing.Platform (repo-root `global.json`): `dotnet test --solution backend/Tgysm.slnx`, filters `--filter-class` / `--filter-method`.
 - `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database.
 - `tools/gen-api-types.sh` — regenerate OpenAPI JSON and `schema.d.ts` after API contract changes.
 - `tools/build.sh` — lint + tests, then Release build + frontend build with chunk sizes.
@@ -30,6 +30,8 @@ Run through `tools/` scripts.
 ## Conventions
 - English code, identifiers, DB names, endpoints, URL paths; Turkish only in `frontend/src/shared/i18n/locales/tr/*.json` (ADR-0006).
 - New API error → add a constant to `ErrorCodes` and a Turkish text to `errors.json`.
+- Cross-row rules (last admin, location cycles) run inside `IAppDbContext.RunSerializedAsync` with a key from `SerializationLocks`.
+- `users` has an application-managed `version` (bump only on admin-editable changes via `BumpVersion`); other tables use `xmin`.
 - Handlers: one class per use case in `Tgysm.Application/Features/<Area>/`, `HandleAsync(command, ct)`; validators `internal sealed`.
 - Git: stage named paths only — never `git add -A`/`.`; no dotfiles/dot-dirs unless told. No commit/push without owner approval.
 - Owner: Tugay İLTUŞ. Never add AI attribution to any file, commit, or PR.
