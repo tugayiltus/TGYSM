@@ -91,13 +91,14 @@ export function TicketDetailPage() {
       <TicketActions ticket={item} />
       <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <div className="flex flex-col gap-4">
+      {/* min-w-0: grid items otherwise grow to their content's min width and push the page wider than 360 px. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-4">
           {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}
           {comments.data && <CommentList ticket={item} comments={comments.data} />}
           <CommentBox ticket={item} />
         </div>
-        <section aria-labelledby="ticket-timeline" className="flex flex-col gap-3">
+        <section aria-labelledby="ticket-timeline" className="flex min-w-0 flex-col gap-3">
           <h2 id="ticket-timeline" className="text-lg font-semibold">
             {t('detail.timeline')}
           </h2>

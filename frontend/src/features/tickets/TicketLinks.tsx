@@ -129,7 +129,7 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
   const open = ticket.status !== 'completed' && ticket.status !== 'cancelled';
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-2 [&>*]:min-w-0">
       <section aria-labelledby="ticket-assets" className="flex flex-col gap-2">
         <h2 id="ticket-assets" className="text-lg font-semibold">
           {t('detail.assets')}

@@ -114,4 +114,26 @@ describe('TicketActions', () => {
 
     await waitFor(() => expect(visibility).toBe('internal'));
   });
+
+  it('locks the reply box while a message is sending so later typing is not lost', async () => {
+    let release: () => void = () => undefined;
+    mockApi(
+      routes({
+        [`POST ${BASE}/comments`]: () =>
+          new Promise((resolve) => {
+            release = () => resolve({ status: 201, body: {} });
+          }),
+      }) as never,
+    );
+    const { user } = renderRoute(`/tickets/${INCIDENT.number}`);
+
+    const box = await screen.findByRole('form', { name: 'Yazışmalar' });
+    await user.type(within(box).getByLabelText('Mesajınız'), 'Birinci');
+    await user.click(within(box).getByRole('button', { name: 'Gönder' }));
+
+    await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).toBeDisabled());
+    release();
+    await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).toBeEnabled());
+    expect(within(box).getByLabelText('Mesajınız')).toHaveValue('');
+  });
 });

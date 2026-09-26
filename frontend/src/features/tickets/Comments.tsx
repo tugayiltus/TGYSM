@@ -105,6 +105,7 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
               type="button"
               role="tab"
               aria-selected={visibility === tab}
+              disabled={add.isPending}
               className="min-h-11 rounded-lg px-3 text-sm font-medium aria-selected:bg-brand-50 aria-selected:text-brand-900"
               onClick={() => setVisibility(tab)}
             >
@@ -114,7 +115,8 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
         </div>
       )}
       <FormAlert message={add.error ? describeCommentError(add.error) : null} />
-      <TextAreaField label={t('comment.body')} value={body} onChange={(event) => setBody(event.target.value)} />
+      {/* Locked while sending: the success handler clears the box, which would drop anything typed meanwhile. */}
+      <TextAreaField label={t('comment.body')} value={body} disabled={add.isPending} onChange={(event) => setBody(event.target.value)} />
       <AttachmentInput key={formKey} label={t('comment.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
       <Button type="submit" className="self-start" disabled={body.trim() === '' && files.length === 0} isLoading={add.isPending}>
         {t('comment.send')}

@@ -34,6 +34,8 @@ export default defineConfig({
             { name: 'vendor-other', test: /node_modules/, priority: 10 },
             // App code; everything else falls to the entry chunk.
             { name: 'feature-admin', test: /[\\/]src[\\/]features[\\/]admin[\\/]/, priority: 40 },
+            { name: 'feature-assets', test: /[\\/]src[\\/]features[\\/]assets[\\/]/, priority: 40 },
+            { name: 'feature-tickets', test: /[\\/]src[\\/]features[\\/](tickets|workspace|approvals)[\\/]/, priority: 40 },
             { name: 'app-shared', test: /[\\/]src[\\/]shared[\\/]/, priority: 30 },
           ],
         },

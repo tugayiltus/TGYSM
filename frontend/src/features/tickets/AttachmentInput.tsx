@@ -24,7 +24,7 @@ export function AttachmentInput({ label, hint, files, onChange }: AttachmentInpu
         multiple
         accept={ACCEPT}
         aria-describedby={hintId}
-        className="min-h-11 text-base"
+        className="min-h-11 w-full min-w-0 text-base"
         onChange={(event) => onChange(Array.from(event.target.files ?? []))}
       />
       {hint && (
