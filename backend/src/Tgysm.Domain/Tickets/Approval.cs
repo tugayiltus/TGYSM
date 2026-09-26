@@ -57,6 +57,14 @@ public sealed class Approval : Entity
         DecidedAt = now;
     }
 
+    /// <summary>The ticket was cancelled while waiting: the pending approval is closed as void.</summary>
+    public void Withdraw(DateTimeOffset now)
+    {
+        RequireStatus(ApprovalStatus.Pending);
+        Status = ApprovalStatus.Void;
+        DecidedAt = now;
+    }
+
     private void Decide(ApprovalStatus status, Guid actorUserId, string? reason, DateTimeOffset now)
     {
         RequireStatus(ApprovalStatus.Pending);

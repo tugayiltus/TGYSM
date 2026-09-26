@@ -57,4 +57,15 @@ public sealed class ApprovalTests
         Assert.Equal((ApprovalStatus.Void, "Kapsam değişti"), (approval.Status, approval.Reason));
         Assert.Equal(ErrorCodes.ApprovalNotPending, CodeOf(() => approval.Reassign(Other)));
     }
+
+    [Fact]
+    public void Withdraw_closes_only_a_pending_approval()
+    {
+        var approval = Approval.Request(Ticket, Approver, Now);
+
+        approval.Withdraw(Now);
+
+        Assert.Equal(ApprovalStatus.Void, approval.Status);
+        Assert.Equal(ErrorCodes.ApprovalNotPending, CodeOf(() => approval.Withdraw(Now)));
+    }
 }
