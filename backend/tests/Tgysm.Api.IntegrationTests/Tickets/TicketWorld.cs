@@ -37,10 +37,11 @@ public sealed class TicketWorld
     public RequestType Software { get; private set; } = null!;
     public Category Hardware { get; private set; } = null!;
     public Location Office { get; private set; } = null!;
+    public ApiFactory Factory { get; private set; } = null!;
 
     public static async Task<TicketWorld> CreateAsync(ApiFactory factory, bool withIntakeTeam = true)
     {
-        var world = new TicketWorld();
+        var world = new TicketWorld { Factory = factory };
         (world.Admin, world.AdminUser) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "admin@example.com");
         world.Accounting = await TestData.DepartmentAsync(factory, "Muhasebe", world.AdminUser.Id);
         world.Office = await TestData.LocationAsync(factory, "Merkez");

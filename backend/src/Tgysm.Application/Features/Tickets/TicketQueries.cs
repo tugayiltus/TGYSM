@@ -30,12 +30,29 @@ internal static class TicketQueries
         var team = await db.Teams.Where(x => x.Id == t.TeamId).Select(x => x.Name).SingleAsync(cancellationToken);
         var requestType = t.RequestTypeId is null ? null : await db.RequestTypes.Where(r => r.Id == t.RequestTypeId).Select(r => r.Name).FirstOrDefaultAsync(cancellationToken);
         var approval = await LatestApprovalAsync(db, t.Id, cancellationToken);
+        var relatedIds = await db.TicketRelations.AsNoTracking()
+            .Where(r => r.IncidentId == t.Id || r.RequestId == t.Id)
+            .Select(r => r.IncidentId == t.Id ? r.RequestId : r.IncidentId)
+            .ToListAsync(cancellationToken);
+        var related = await VisibleTicketsAsync(db, relatedIds, viewer, cancellationToken);
 
         return new TicketDetail(
             t.Id, t.Number, t.Kind, t.Subject, t.Description, t.Status, t.HoldReason, t.HoldNote, t.Impact, t.Urgency, t.Priority,
             t.CategoryId, category, t.LocationId, location, t.RequesterId, UserName(t.RequesterId)!, t.TeamId, team, t.AssigneeId, UserName(t.AssigneeId),
             t.RequestTypeId, requestType, t.RequiresApproval,
             viewer.SeesInternal ? t.RootCause : null,
-            t.Resolution, t.Outcome, t.CancelReason, t.CreatedAt, t.UpdatedAt, t.CompletedAt, approval, viewer.CanWork(t), t.Version);
+            t.Resolution, t.Outcome, t.CancelReason, t.CreatedAt, t.UpdatedAt, t.CompletedAt, approval, related, viewer.CanWork(t), t.Version);
+    }
+
+    /// <summary>Tickets by id, keeping only those the viewer may see (relations and asset links respect scope).</summary>
+    public static async Task<IReadOnlyList<RelatedTicketItem>> VisibleTicketsAsync(IAppDbContext db, IReadOnlyCollection<Guid> ids, TicketViewer viewer, CancellationToken cancellationToken)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        var tickets = await db.Tickets.AsNoTracking().Where(x => ids.Contains(x.Id)).OrderBy(x => x.CreatedAt).ToListAsync(cancellationToken);
+        return [.. tickets.Where(viewer.CanSee).Select(x => new RelatedTicketItem(x.Number, x.Kind, x.Subject, x.Status))];
     }
 }

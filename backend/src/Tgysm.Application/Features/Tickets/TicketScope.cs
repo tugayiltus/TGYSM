@@ -13,6 +13,10 @@ public sealed record TicketViewer(Guid UserId, UserRole Role, IReadOnlyList<Guid
     /// <summary>IT staff and admins see internal notes, files and fields.</summary>
     public bool SeesInternal => Role != UserRole.Employee;
 
+    /// <summary>Same rule as <see cref="TicketScope.Visible"/>, for tickets already loaded.</summary>
+    public bool CanSee(Ticket ticket) =>
+        Role == UserRole.Admin || ticket.RequesterId == UserId || (Role == UserRole.ItStaff && TeamIds.Contains(ticket.TeamId));
+
     /// <summary>May work on the ticket: admin always, IT staff for tickets of their teams.</summary>
     public bool CanWork(Ticket ticket) => Role == UserRole.Admin || (Role == UserRole.ItStaff && TeamIds.Contains(ticket.TeamId));
 }

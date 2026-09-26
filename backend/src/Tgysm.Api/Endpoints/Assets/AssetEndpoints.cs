@@ -47,6 +47,8 @@ internal static class AssetEndpoints
         assets.MapGet("", ListAsync).ProducesProblem(StatusCodes.Status400BadRequest);
         assets.MapGet("/{id:guid}", GetAsync).ProducesProblem(StatusCodes.Status404NotFound);
         assets.MapGet("/{id:guid}/history", GetHistoryAsync).ProducesProblem(StatusCodes.Status404NotFound);
+        assets.MapGet("/{id:guid}/tickets", async (Guid id, Application.Features.Tickets.ListAssetTicketsHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new Application.Features.Tickets.ListAssetTicketsQuery(id), ct))).ProducesProblem(StatusCodes.Status404NotFound);
         assets.MapPost("", CreateAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status409Conflict);
         assets.MapPut("/{id:guid}", UpdateAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status409Conflict);
 

@@ -21,6 +21,10 @@ public sealed record ChangePriorityRequest(uint Version, Level? Impact, Level? U
 
 public sealed record ReassignApproverRequest(Guid ApproverId, string Reason);
 
+public sealed record RelatedRequestRequest(Guid RequestTypeId);
+
+public sealed record LinkAssetRequest(Guid AssetId);
+
 internal static partial class TicketEndpoints
 {
     private static async Task<Created<CommentItem>> AddCommentAsync(string number, HttpRequest request, AddCommentHandler handler, CancellationToken cancellationToken)
@@ -83,6 +87,18 @@ internal static partial class TicketEndpoints
         tickets.MapPost($"{NumberRoute}/priority", async (string number, ChangePriorityRequest r, ChangePriorityHandler h, CancellationToken ct) =>
             TypedResults.Ok(await h.HandleAsync(new ChangePriorityCommand(number, r.Version, r.Impact, r.Urgency, r.Reason), ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapPost($"{NumberRoute}/related-request", async (string number, RelatedRequestRequest r, CreateRelatedRequestHandler h, CancellationToken ct) =>
+            {
+                var request = await h.HandleAsync(new CreateRelatedRequestCommand(number, r.RequestTypeId), ct);
+                return TypedResults.Created($"{ApiRoutes.V1}{ApiRoutes.Tickets}/{request.Number}", request);
+            })
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapGet($"{NumberRoute}/assets", async (string number, ListTicketAssetsHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new ListTicketAssetsQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        tickets.MapPost($"{NumberRoute}/assets", async (string number, LinkAssetRequest r, LinkTicketAssetHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new LinkTicketAssetCommand(number, r.AssetId), ct))).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapDelete($"{NumberRoute}/assets/{{assetId:guid}}", async (string number, Guid assetId, UnlinkTicketAssetHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new UnlinkTicketAssetCommand(number, assetId), ct))).ProducesProblem(StatusCodes.Status404NotFound);
         tickets.MapPost($"{NumberRoute}/approval/reassign", async (string number, ReassignApproverRequest r, ReassignApproverHandler h, CancellationToken ct) =>
             TypedResults.Ok(await h.HandleAsync(new ReassignApproverCommand(number, r.ApproverId, r.Reason), ct)))
             .RequireAuthorization(Policies.Admin)

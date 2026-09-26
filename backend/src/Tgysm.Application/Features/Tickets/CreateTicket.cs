@@ -36,10 +36,13 @@ public sealed class TicketFactory(IAppDbContext db, ITicketNumberGenerator numbe
 {
     private const string InactiveReferenceMessage = "A selected category, location or request type is inactive or does not apply.";
 
+    /// <param name="requesterId">Requester when IT creates on someone's behalf (related request); default: the actor.</param>
     public async Task<TicketDetail> CreateAsync(
-        TicketKind kind, Guid? categoryId, Guid? locationId, Func<string, Guid, Guid, DateTimeOffset, Task<Ticket>> build, CancellationToken cancellationToken)
+        TicketKind kind, Guid? categoryId, Guid? locationId, Func<string, Guid, Guid, DateTimeOffset, Task<Ticket>> build, CancellationToken cancellationToken,
+        Guid? requesterId = null)
     {
-        var requesterId = actor.UserId ?? throw new AuthenticationFailedException();
+        var actorId = actor.UserId ?? throw new AuthenticationFailedException();
+        var requester = requesterId ?? actorId;
         await EnsureReferencesAsync(kind, categoryId, locationId, cancellationToken);
         var teamId = await db.Teams.Where(t => t.IsDefaultIntake && t.IsActive).Select(t => (Guid?)t.Id).SingleOrDefaultAsync(cancellationToken)
             ?? throw new DomainException(ErrorCodes.TicketNoIntakeTeam, "No default intake team is set.");
@@ -49,9 +52,9 @@ public sealed class TicketFactory(IAppDbContext db, ITicketNumberGenerator numbe
         {
             var now = clock.GetUtcNow();
             var number = TicketNumber.Format(kind, now.Year, await numbers.NextAsync(kind, now.Year, ct));
-            ticket = await build(number, requesterId, teamId, now);
+            ticket = await build(number, requester, teamId, now);
             db.Tickets.Add(ticket);
-            TicketTimeline.Record(db, ticket, TicketEventKind.Created, Visibility.Public, requesterId, now);
+            TicketTimeline.Record(db, ticket, TicketEventKind.Created, Visibility.Public, actorId, now);
             audit.Record(AuditActions.TicketCreated, AuditEntityTypes.Ticket, ticket.Id, newValues: new { ticket.Number, ticket.Kind, ticket.Status });
             await db.SaveChangesAsync(ct);
         }, cancellationToken);
