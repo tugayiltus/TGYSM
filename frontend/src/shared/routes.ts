@@ -4,6 +4,9 @@ export const ROUTES = {
   login: '/login',
   changePassword: '/change-password',
   profile: '/profile',
+  assets: '/assets',
+  assetImport: '/assets/import',
+  myAssets: '/assets/mine',
   admin: '/admin',
   adminUsers: '/admin/users',
   adminDepartments: '/admin/departments',
@@ -11,3 +14,5 @@ export const ROUTES = {
   adminTeams: '/admin/teams',
   adminAudit: '/admin/audit',
 } as const;
+
+export const assetPath = (id: string) => `${ROUTES.assets}/${id}`;

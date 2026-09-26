@@ -1,0 +1,131 @@
+{
+  "types": {
+    "desktop": "Masaüstü",
+    "laptop": "Dizüstü",
+    "phone": "Telefon",
+    "tablet": "Tablet"
+  },
+  "statuses": {
+    "in_stock": "Stokta",
+    "assigned": "Zimmetli",
+    "maintenance": "Bakımda",
+    "lost": "Kayıp",
+    "retired": "Kullanım dışı"
+  },
+  "movements": {
+    "created": "Kayıt oluşturuldu",
+    "updated": "Bilgiler güncellendi",
+    "assigned": "Teslim edildi",
+    "returned": "İade alındı",
+    "transferred": "Devredildi",
+    "maintenance_started": "Bakıma alındı",
+    "maintenance_ended": "Bakımdan çıktı",
+    "lost": "Kayıp bildirildi",
+    "found": "Bulundu",
+    "retired": "Kullanım dışı bırakıldı"
+  },
+  "list": {
+    "title": "Envanter",
+    "new": "Yeni cihaz",
+    "import": "İçe aktar",
+    "searchLabel": "Demirbaş no, seri no veya model ara",
+    "typeFilter": "Tür",
+    "statusFilter": "Durum",
+    "allTypes": "Tüm türler",
+    "allStatuses": "Tüm durumlar",
+    "caption": "Cihaz listesi",
+    "open": "Aç",
+    "columns": {
+      "tag": "Demirbaş No",
+      "device": "Cihaz",
+      "status": "Durum",
+      "location": "Konum",
+      "holder": "Zimmetli kişi",
+      "actions": "İşlemler"
+    }
+  },
+  "fields": {
+    "assetTag": "Demirbaş numarası",
+    "type": "Tür",
+    "brand": "Marka",
+    "model": "Model",
+    "serialNumber": "Seri numarası",
+    "location": "Konum",
+    "department": "Departman",
+    "warrantyEndsOn": "Garanti bitiş tarihi",
+    "purchasedOn": "Satın alma tarihi",
+    "notes": "Notlar",
+    "holder": "Zimmetli kişi",
+    "status": "Durum",
+    "createdAt": "Kayıt tarihi"
+  },
+  "form": {
+    "new": "Yeni cihaz",
+    "edit": "Cihazı düzenle",
+    "selectType": "Tür seçin",
+    "selectLocation": "Konum seçin"
+  },
+  "detail": {
+    "back": "Envantere dön",
+    "operations": "İşlemler",
+    "history": "Geçmiş",
+    "noOperations": "Bu durumda yapılabilecek işlem yok.",
+    "retained": "Kullanıcının sorumluluğu devam ediyor",
+    "by": "İşlemi yapan: {{name}}",
+    "to": "Kişi: {{name}}"
+  },
+  "actions": {
+    "assign": "Teslim et",
+    "return": "İade al",
+    "transfer": "Devret",
+    "maintenanceStart": "Bakıma al",
+    "maintenanceEnd": "Bakımı bitir",
+    "lost": "Kayıp bildir",
+    "found": "Bulundu",
+    "retire": "Kullanım dışı bırak"
+  },
+  "actionFields": {
+    "userSearch": "Kullanıcı ara",
+    "user": "Kullanıcı",
+    "selectUser": "Kullanıcı seçin",
+    "location": "Konum",
+    "reason": "Neden",
+    "note": "Not",
+    "retain": "Kullanıcının sorumluluğu devam etsin",
+    "maintenanceEndHint": "Cihaz bakımdan çıkar; sorumluluğu devam eden kullanıcı varsa ona döner, yoksa stoğa girer."
+  },
+  "import": {
+    "title": "Cihaz içe aktar",
+    "intro": "Şablonu indirip doldurun. Tür: desktop, laptop, phone, tablet. Durum: in_stock (boş bırakılabilir), maintenance, retired. Tarihler: 2025-01-31 ya da 31.01.2025. Konum: tam yol, ör. Merkez Kampüs / A Blok.",
+    "template": "Şablonu indir",
+    "file": "CSV dosyası",
+    "preview": "Önizle",
+    "commit": "İçe aktar",
+    "summary": "{{total}} satır: {{valid}} geçerli, {{errors}} hatalı.",
+    "errorsCaption": "Hatalı satırlar",
+    "rowsCaption": "Eklenecek cihazlar",
+    "fixAndRetry": "Hataları dosyada düzeltip yeniden yükleyin. Hatalı satır varken hiçbir cihaz eklenmez.",
+    "done": "{{count}} cihaz envantere eklendi.",
+    "columns": {
+      "row": "Satır",
+      "field": "Alan",
+      "problem": "Sorun"
+    }
+  },
+  "mine": {
+    "title": "Zimmetlerim",
+    "empty": "Üzerinize kayıtlı cihaz yok.",
+    "assignedAt": "Teslim tarihi: {{date}}",
+    "caption": "Zimmetli cihazlarım"
+  },
+  "nav": {
+    "inventory": "Envanter",
+    "mine": "Zimmetlerim"
+  },
+  "home": {
+    "mineCard": "Zimmetlerim",
+    "mineCardDescription": "Üzerinize kayıtlı cihazları görün.",
+    "inventoryCard": "Envanter",
+    "inventoryCardDescription": "Cihazları ekleyin, teslim edin, takip edin."
+  }
+}

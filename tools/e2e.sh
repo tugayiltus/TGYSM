@@ -39,6 +39,14 @@ wait_for() {
   return 1
 }
 
+# A running dev server (tools/run.sh) on these ports would answer instead of the E2E servers.
+for port in "${API_URL##*:}" "${PREVIEW_URL##*:}"; do
+  if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Port $port is already in use; stop tools/run.sh (or the process on it) before E2E." >&2
+    exit 1
+  fi
+done
+
 mkdir -p "$LOG_DIR"
 dotnet build backend/src/Tgysm.Api --nologo -v quiet
 (cd frontend && npm run build >/dev/null)

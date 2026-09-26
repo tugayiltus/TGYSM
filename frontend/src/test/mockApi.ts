@@ -41,6 +41,15 @@ export const EMPLOYEE_ME = {
   role: 'employee',
 } as const;
 
+export const IT_ME = {
+  ...ADMIN_ME,
+  id: '00000000-0000-7000-8000-000000000003',
+  firstName: 'Can',
+  lastName: 'Demir',
+  email: 'can@example.com',
+  role: 'it_staff',
+} as const;
+
 function toResponse({ status, body }: MockResponse): Response {
   if (status === HTTP_NO_CONTENT) {
     return new Response(null, { status });

@@ -5,6 +5,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Common;

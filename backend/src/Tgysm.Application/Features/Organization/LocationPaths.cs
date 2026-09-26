@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Common;
 
-namespace Tgysm.Application.Features.Assets.Import;
+namespace Tgysm.Application.Features.Organization;
 
 /// <summary>Full location paths ("Kampüs / Bina") built from the location tree, for CSV matching and the template.</summary>
 internal sealed class LocationPaths

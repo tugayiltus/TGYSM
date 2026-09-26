@@ -15,6 +15,8 @@ export const ERROR_CODES = {
   locationNameTaken: 'locations.name_taken',
   locationCycle: 'locations.cycle',
   teamNameTaken: 'teams.name_taken',
+  assetTagTaken: 'assets.tag_taken',
+  assetSerialTaken: 'assets.serial_taken',
 } as const;
 
 const NETWORK_STATUS = 0;

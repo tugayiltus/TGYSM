@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import admin from './locales/tr/admin.json';
+import assets from './locales/tr/assets.json';
 import auth from './locales/tr/auth.json';
 import common from './locales/tr/common.json';
 import errors from './locales/tr/errors.json';
@@ -10,7 +11,7 @@ export const DEFAULT_LANGUAGE = 'tr';
 export const DEFAULT_NAMESPACE = 'common';
 
 export const resources = {
-  tr: { common, auth, admin, errors },
+  tr: { common, auth, admin, assets, errors },
 } as const;
 
 void i18n.use(initReactI18next).init({

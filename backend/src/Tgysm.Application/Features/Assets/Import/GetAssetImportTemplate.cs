@@ -1,4 +1,5 @@
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Features.Organization;
 
 namespace Tgysm.Application.Features.Assets.Import;
 

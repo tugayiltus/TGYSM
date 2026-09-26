@@ -4,7 +4,7 @@ import { AdminLayout } from '../features/admin/AdminLayout';
 import { ChangePasswordPage } from '../features/auth/ChangePasswordPage';
 import { RequireRole, RequireSession } from '../features/auth/guards';
 import { LoginPage } from '../features/auth/LoginPage';
-import { ADMIN_ONLY } from '../features/auth/session';
+import { ADMIN_ONLY, IT_STAFF_OR_ADMIN } from '../features/auth/session';
 import { HomePage } from '../features/home/HomePage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { ROUTES } from '../shared/routes';
@@ -26,6 +26,19 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <HomePage /> },
           { path: ROUTES.profile, element: <ProfilePage /> },
+          { path: ROUTES.myAssets, lazy: async () => ({ Component: (await import('../features/assets/MyAssetsPage')).MyAssetsPage }) },
+          {
+            element: (
+              <RequireRole roles={IT_STAFF_OR_ADMIN}>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [
+              { path: ROUTES.assets, lazy: async () => ({ Component: (await import('../features/assets/AssetsPage')).AssetsPage }) },
+              { path: ROUTES.assetImport, lazy: async () => ({ Component: (await import('../features/assets/AssetImportPage')).AssetImportPage }) },
+              { path: `${ROUTES.assets}/:id`, lazy: async () => ({ Component: (await import('../features/assets/AssetDetailPage')).AssetDetailPage }) },
+            ],
+          },
         ],
       },
       {

@@ -1,43 +1,73 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 
 import { useLogout } from '../../features/auth/api';
-import { useSession } from '../../features/auth/session';
+import { isItStaffOrAdmin, useSession } from '../../features/auth/session';
 import { ROUTES } from '../routes';
 
 import { Button } from './Button';
+import { Sheet } from './Sheet';
 
-const NAV_LINK_CLASS = 'rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-900';
+const NAV_LINK_CLASS = 'block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-900';
 
+function MainLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useTranslation('auth');
+  const { t: ta } = useTranslation('assets');
+  const me = useSession();
+  const links = [
+    { to: ROUTES.myAssets, label: ta('nav.mine'), visible: true },
+    { to: ROUTES.assets, label: ta('nav.inventory'), visible: isItStaffOrAdmin(me.role) },
+    { to: ROUTES.profile, label: t('shell.profile'), visible: true },
+    { to: ROUTES.admin, label: t('shell.admin'), visible: me.role === 'admin' },
+  ];
+  return links
+    .filter((link) => link.visible)
+    .map((link) => (
+      <li key={link.to}>
+        {/* "end" keeps "Envanter" from staying current on /assets/mine. */}
+        <NavLink to={link.to} end={link.to === ROUTES.assets} className={NAV_LINK_CLASS} onClick={onNavigate}>
+          {link.label}
+        </NavLink>
+      </li>
+    ));
+}
+
+/** Inline links from 768 px, a drawer below (mobile-first, ADR-0003). */
 export function AppShell() {
   const { t } = useTranslation('auth');
   const { t: tc } = useTranslation();
-  const me = useSession();
   const logout = useLogout();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4">
+          <Button variant="ghost" className="md:hidden" aria-label={tc('actions.openMenu')} onClick={() => setMenuOpen(true)}>
+            <span aria-hidden="true">☰</span>
+          </Button>
           <Link to={ROUTES.home} className="mr-auto text-base font-semibold text-brand-900">
             {tc('appName')}
           </Link>
-          <nav aria-label={t('shell.mainNav')} className="flex items-center gap-1">
-            <NavLink to={ROUTES.profile} className={NAV_LINK_CLASS}>
-              {t('shell.profile')}
-            </NavLink>
-            {me.role === 'admin' && (
-              <NavLink to={ROUTES.admin} className={NAV_LINK_CLASS}>
-                {t('shell.admin')}
-              </NavLink>
-            )}
+          <nav aria-label={t('shell.mainNav')} className="hidden md:block">
+            <ul className="flex items-center gap-1">
+              <MainLinks />
+            </ul>
           </nav>
           <Button variant="ghost" isLoading={logout.isPending} onClick={() => logout.mutate(undefined, { onSuccess: () => void navigate(ROUTES.login, { replace: true }) })}>
             {tc('actions.logout')}
           </Button>
         </div>
       </header>
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen} title={t('shell.mainNav')}>
+        <nav aria-label={t('shell.mainNav')}>
+          <ul className="flex flex-col gap-1">
+            <MainLinks onNavigate={() => setMenuOpen(false)} />
+          </ul>
+        </nav>
+      </Sheet>
       <main className="mx-auto w-full max-w-5xl p-4 sm:p-6">
         <Outlet />
       </main>
