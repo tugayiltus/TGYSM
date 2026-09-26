@@ -31,7 +31,7 @@ public sealed class AssetLifecycleHandler(
             await EnsureActiveUserAsync(command.UserId, ct);
             if (command.RequestTicketId is { } requestId)
             {
-                await Tickets.ApprovalRules.EnsureHandoverAllowedAsync(db, requestId, ct);
+                await Tickets.ApprovalRules.EnsureHandoverAllowedAsync(db, requestId, command.UserId, ct);
             }
 
             return asset.Assign(command.UserId, actorId, command.RequestTicketId, command.Note, now);

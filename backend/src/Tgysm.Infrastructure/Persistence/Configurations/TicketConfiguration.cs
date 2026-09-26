@@ -49,6 +49,14 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.HasIndex(t => new { t.TeamId, t.Status });
         builder.HasIndex(t => t.AssigneeId);
 
+        // Lists sort by latest activity; queues filter by assignee or team first.
+        builder.HasIndex(t => new { t.UpdatedAt, t.Id }, "ix_tickets_updated_at_id").IsDescending(true, true);
+        builder.HasIndex(t => new { t.AssigneeId, t.UpdatedAt }, "ix_tickets_assignee_updated_at").IsDescending(false, true);
+        builder.HasIndex(t => new { t.TeamId, t.UpdatedAt }, "ix_tickets_team_updated_at").IsDescending(false, true);
+
+        // Substring search (LIKE '%x%') needs trigrams; a B-tree cannot serve it.
+        builder.HasIndex(t => t.SearchText, "ix_tickets_search_text_trgm").HasMethod(TrigramIndex.Method).HasOperators(TrigramIndex.Operators);
+
         builder.HasOne<Category>().WithMany().HasForeignKey(t => t.CategoryId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Location>().WithMany().HasForeignKey(t => t.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(t => t.RequesterId).OnDelete(DeleteBehavior.Restrict);

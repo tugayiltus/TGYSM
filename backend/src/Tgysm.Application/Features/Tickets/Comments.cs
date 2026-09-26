@@ -67,10 +67,13 @@ public sealed class AddCommentHandler(
             }
 
             db.TicketComments.Add(comment);
-            ticket.Touch(now);
             TicketTimeline.Record(db, ticket, visibility == Visibility.Public ? TicketEventKind.PublicComment : TicketEventKind.InternalNote, visibility, viewer.UserId, now,
                 new { commentId = comment.Id, files = contents.Count });
-            await db.SaveChangesAsync(cancellationToken);
+            await db.RunInTransactionAsync(async ct =>
+            {
+                await db.SaveChangesAsync(ct);
+                await TicketActivity.TouchAsync(db, ticket.Id, now, ct);
+            }, cancellationToken);
         }
         catch
         {

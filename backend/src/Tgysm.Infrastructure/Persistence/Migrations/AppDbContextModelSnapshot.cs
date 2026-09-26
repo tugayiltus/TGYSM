@@ -20,6 +20,7 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                 .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Tgysm.Domain.Assets.Asset", b =>
@@ -128,6 +129,18 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Status", "Type")
                         .HasDatabaseName("ix_assets_status_type");
+
+                    b.HasIndex(new[] { "NormalizedSerialNumber" }, "ix_assets_serial_trgm")
+                        .HasDatabaseName("ix_assets_normalized_serial_number1");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "NormalizedSerialNumber" }, "ix_assets_serial_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "NormalizedSerialNumber" }, "ix_assets_serial_trgm"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex(new[] { "NormalizedAssetTag" }, "ix_assets_tag_trgm")
+                        .HasDatabaseName("ix_assets_normalized_asset_tag1");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "NormalizedAssetTag" }, "ix_assets_tag_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "NormalizedAssetTag" }, "ix_assets_tag_trgm"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("assets", null, t =>
                         {
@@ -881,6 +894,24 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TeamId", "Status")
                         .HasDatabaseName("ix_tickets_team_id_status");
+
+                    b.HasIndex(new[] { "AssigneeId", "UpdatedAt" }, "ix_tickets_assignee_updated_at")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_tickets_assignee_id_updated_at");
+
+                    b.HasIndex(new[] { "SearchText" }, "ix_tickets_search_text_trgm")
+                        .HasDatabaseName("ix_tickets_search_text");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "SearchText" }, "ix_tickets_search_text_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "SearchText" }, "ix_tickets_search_text_trgm"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex(new[] { "TeamId", "UpdatedAt" }, "ix_tickets_team_updated_at")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_tickets_team_id_updated_at");
+
+                    b.HasIndex(new[] { "UpdatedAt", "Id" }, "ix_tickets_updated_at_id")
+                        .IsDescending()
+                        .HasDatabaseName("ix_tickets_updated_at_id");
 
                     b.ToTable("tickets", null, t =>
                         {

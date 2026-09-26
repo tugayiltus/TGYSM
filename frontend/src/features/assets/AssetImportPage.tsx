@@ -109,7 +109,13 @@ export function AssetImportPage() {
           }
         }}
       >
-        <TextField type="file" accept={CSV_ACCEPT} label={t('import.file')} className="sm:flex-1" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+        <TextField type="file" accept={CSV_ACCEPT} label={t('import.file')} className="sm:flex-1" onChange={(event) => {
+            // A new file invalidates the previous preview; its job must not be committable any more.
+            preview.reset();
+            commit.reset();
+            setFile(event.target.files?.[0] ?? null);
+          }}
+        />
         <Button type="submit" variant="secondary" disabled={file === null} isLoading={preview.isPending}>
           {t('import.preview')}
         </Button>

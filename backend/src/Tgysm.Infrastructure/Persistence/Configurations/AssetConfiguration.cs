@@ -33,6 +33,10 @@ internal sealed class AssetConfiguration : IEntityTypeConfiguration<Asset>
         builder.HasIndex(a => a.NormalizedSerialNumber).IsUnique();
         builder.HasIndex(a => new { a.Status, a.Type });
 
+        // Substring search on tag and serial (LIKE '%x%'); lower(brand/model) trigram indexes are in migration AssetSearchIndexes.
+        builder.HasIndex(a => a.NormalizedAssetTag, "ix_assets_tag_trgm").HasMethod(TrigramIndex.Method).HasOperators(TrigramIndex.Operators);
+        builder.HasIndex(a => a.NormalizedSerialNumber, "ix_assets_serial_trgm").HasMethod(TrigramIndex.Method).HasOperators(TrigramIndex.Operators);
+
         builder.HasOne<Location>().WithMany().HasForeignKey(a => a.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Department>().WithMany().HasForeignKey(a => a.DepartmentId).OnDelete(DeleteBehavior.Restrict);
     }

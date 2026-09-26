@@ -71,6 +71,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         where TEntity : Entity =>
         Entry(entity).Property(e => e.Version).OriginalValue = expectedVersion;
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasPostgresExtension(Configurations.TrigramIndex.Extension);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
 }

@@ -65,14 +65,19 @@ function toOperation(kind: AssetOperationKind, v: OperationValues): AssetOperati
   }
 }
 
-function UserPicker({ error, register }: { error: string | undefined; register: ReturnType<typeof useForm<OperationValues>>['register'] }) {
+function UserPicker({ error, register, onSearchChange }: { error: string | undefined; register: ReturnType<typeof useForm<OperationValues>>['register']; onSearchChange: () => void }) {
   const { t } = useTranslation('assets');
   const [search, setSearch] = useState('');
   const users = useUserSearch(useDebouncedValue(search, SEARCH_DEBOUNCE_MS));
   const options = useMemo(() => (users.data ?? []).map((u) => ({ value: u.id, label: `${u.fullName} (${u.email})` })), [users.data]);
   return (
     <>
-      <TextField type="search" label={t('actionFields.userSearch')} value={search} onChange={(event) => setSearch(event.target.value)} />
+      <TextField type="search" label={t('actionFields.userSearch')} value={search} onChange={(event) => {
+          // The chosen user may vanish from the new results; a stale hidden value must not be sent.
+          onSearchChange();
+          setSearch(event.target.value);
+        }}
+      />
       <SelectField label={t('actionFields.user')} options={options} placeholder={t('actionFields.selectUser')} error={error} {...register('userId')} />
     </>
   );
@@ -87,6 +92,7 @@ export function AssetOperationDialog({ asset, kind, onClose }: { asset: AssetIte
   const locationOptions = useMemo(() => (locations.data ?? []).map((l) => ({ value: l.id, label: l.path })), [locations.data]);
   const {
     register,
+    setValue,
     handleSubmit,
     formState: { errors },
   } = useForm<OperationValues>({ resolver: zodResolver(SCHEMAS[kind]), defaultValues: DEFAULT_VALUES });
@@ -117,7 +123,7 @@ export function AssetOperationDialog({ asset, kind, onClose }: { asset: AssetIte
         <FormAlert message={operation.error ? describeError(operation.error) : null} />
         {(kind === 'assign' || kind === 'transfer') && (
           <>
-            <UserPicker error={fieldError(errors.userId)} register={register} />
+            <UserPicker error={fieldError(errors.userId)} register={register} onSearchChange={() => setValue('userId', '')} />
             <TextField label={t('actionFields.note')} autoComplete="off" error={fieldError(errors.note)} {...register('note')} />
           </>
         )}

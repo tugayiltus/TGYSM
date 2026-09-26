@@ -1,8 +1,6 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { describeError } from '../../shared/api/errorMessage';
-import { ApiError } from '../../shared/api/errors';
 import { formatDateTime } from '../../shared/lib/format';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
@@ -10,23 +8,11 @@ import { TextAreaField } from '../../shared/ui/TextAreaField';
 
 import { useAddComment, type CommentItem, type TicketDetail, type Visibility } from './api';
 import { AttachmentInput } from './AttachmentInput';
+import { describeCommentError } from './commentErrors';
 
-const FILES_FIELD = 'files';
-const BODY_FIELD = 'body';
 const ATTACHMENTS_PATH = 'attachments';
 
 const attachmentUrl = (number: string, id: string) => `/api/v1/tickets/${number}/${ATTACHMENTS_PATH}/${id}`;
-
-/** File errors arrive as a field error on "files"; body errors on "body". */
-function describeCommentError(error: unknown): string {
-  if (error instanceof ApiError) {
-    const code = error.fieldErrors[FILES_FIELD]?.[0] ?? error.fieldErrors[BODY_FIELD]?.[0];
-    if (code !== undefined) {
-      return describeError(new ApiError(error.status, code));
-    }
-  }
-  return describeError(error);
-}
 
 export function CommentList({ ticket, comments }: { ticket: TicketDetail; comments: readonly CommentItem[] }) {
   const { t } = useTranslation('tickets');

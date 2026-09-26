@@ -52,7 +52,8 @@
     "invalid_transition": "Bu işlem cihazın mevcut durumunda yapılamaz.",
     "tag_taken": "Bu demirbaş numarası başka bir cihazda kayıtlı.",
     "serial_taken": "Bu seri numarası başka bir cihazda kayıtlı.",
-    "user_inactive": "Cihaz yalnızca aktif bir kullanıcıya teslim edilebilir."
+    "user_inactive": "Cihaz yalnızca aktif bir kullanıcıya teslim edilebilir.",
+    "request_mismatch": "Cihaz yalnızca açık bir talebin sahibine, o talebe karşılık teslim edilebilir."
   },
   "imports": {
     "invalid_header": "Dosyanın başlık satırı şablonla uyuşmuyor. Şablonu indirip kullanın.",
@@ -63,7 +64,8 @@
     "status_not_allowed": "Durum yalnızca stokta, bakımda ya da hurda olabilir. Teslim için zimmet işlemini kullanın.",
     "location_not_found": "Konum bulunamadı. Tam yolu yazın (ör. Kampüs / Bina).",
     "location_ambiguous": "Bu adla birden fazla konum var. Tam yolu yazın (ör. Kampüs / Bina).",
-    "department_not_found": "Departman bulunamadı."
+    "department_not_found": "Departman bulunamadı.",
+    "encoding": "Dosya UTF-8 değil. Excel'de \"CSV UTF-8 (virgülle ayrılmış)\" olarak kaydedin ya da şablonu kullanın."
   },
   "tickets": {
     "invalid_transition": "Bu işlem kaydın mevcut durumunda yapılamaz.",

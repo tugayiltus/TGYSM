@@ -17,6 +17,8 @@ import { useReferenceLocations } from '../assets/api';
 
 import { useAddComment, useCreateTicket, useReferenceCategories, useReferenceRequestTypes, type TicketKind } from './api';
 import { AttachmentInput } from './AttachmentInput';
+import { describeCommentError as describeUploadError } from './commentErrors';
+import type { TicketDetailState } from './TicketDetailPage';
 
 /** Mirror backend Ticket.SubjectMaxLength / DescriptionMaxLength. */
 const SUBJECT_MAX_LENGTH = 200;
@@ -48,7 +50,6 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
   const create = useCreateTicket();
   const upload = useAddComment();
   const [files, setFiles] = useState<File[]>([]);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const isRequest = kind === 'request';
 
   const {
@@ -69,7 +70,6 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
   const typeOptions = useMemo(() => (requestTypes.data ?? []).map((r) => ({ value: r.id, label: r.name })), [requestTypes.data]);
 
   const onSubmit = handleSubmit((values) => {
-    setUploadError(null);
     create.mutate(
       {
         kind,
@@ -82,21 +82,22 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
       {
         onError: (error) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS),
         onSuccess: (ticket) => {
-          const open = () => void navigate(ticketPath(ticket.number));
+          const open = (state?: TicketDetailState) => void navigate(ticketPath(ticket.number), { state });
           if (files.length === 0) {
             open();
             return;
           }
           upload.mutate(
             { number: ticket.number, body: '', visibility: 'public', files },
-            { onSuccess: open, onError: (error) => setUploadError(t('new.filesFailed', { message: describeError(error) })) },
+            // The ticket exists: open it with the error instead of staying here, where "Gönder" would create a duplicate.
+            { onSuccess: () => open(), onError: (error) => open({ uploadError: t('new.filesFailed', { message: describeUploadError(error) }) }) },
           );
         },
       },
     );
   });
 
-  const alert = create.error && !isHandledByFields(create.error, FORM_FIELDS, CODE_FIELDS) ? describeError(create.error) : uploadError;
+  const alert = create.error && !isHandledByFields(create.error, FORM_FIELDS, CODE_FIELDS) ? describeError(create.error) : null;
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-4">

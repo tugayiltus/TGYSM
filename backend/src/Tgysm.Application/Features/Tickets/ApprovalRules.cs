@@ -6,11 +6,19 @@ namespace Tgysm.Application.Features.Tickets;
 
 internal static class ApprovalRules
 {
-    /// <summary>A device can be handed over against a request only once any required approval is granted (spec §3.1).</summary>
-    public static async Task EnsureHandoverAllowedAsync(IAppDbContext db, Guid requestTicketId, CancellationToken cancellationToken)
+    /// <summary>
+    /// A device is handed over against a request only to its requester, while the request is open, and once any
+    /// required approval is granted (spec §3.1), so the audit trail never points at the wrong request.
+    /// </summary>
+    public static async Task EnsureHandoverAllowedAsync(IAppDbContext db, Guid requestTicketId, Guid recipientUserId, CancellationToken cancellationToken)
     {
         var ticket = await db.Tickets.AsNoTracking().SingleOrDefaultAsync(t => t.Id == requestTicketId && t.Kind == Domain.Tickets.TicketKind.Request, cancellationToken)
             ?? throw new Common.NotFoundException(Domain.Audit.AuditEntityTypes.Ticket);
+        if (ticket.RequesterId != recipientUserId || ticket.IsClosed)
+        {
+            throw new Domain.Common.DomainException(Domain.Common.ErrorCodes.AssetRequestMismatch, "The request is closed or belongs to someone else.");
+        }
+
         var latest = await TicketQueries.LatestApprovalAsync(db, ticket.Id, cancellationToken);
         if (ticket.RequiresApproval && latest?.Status != Domain.Tickets.ApprovalStatus.Approved)
         {

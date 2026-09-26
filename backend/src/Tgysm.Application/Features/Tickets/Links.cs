@@ -65,6 +65,13 @@ public sealed class CreateRelatedRequestHandler(
 
 internal static class TicketAssetQueries
 {
+    public static Task SaveWithActivityAsync(IAppDbContext db, Guid ticketId, DateTimeOffset now, CancellationToken cancellationToken) =>
+        db.RunInTransactionAsync(async ct =>
+        {
+            await db.SaveChangesAsync(ct);
+            await TicketActivity.TouchAsync(db, ticketId, now, ct);
+        }, cancellationToken);
+
     public static async Task<IReadOnlyList<TicketAssetItem>> ListAsync(IAppDbContext db, Guid ticketId, CancellationToken cancellationToken) =>
         await (
             from l in db.TicketAssets.AsNoTracking()
@@ -95,10 +102,9 @@ public sealed class LinkTicketAssetHandler(IAppDbContext db, TicketScope scope, 
 
         var now = clock.GetUtcNow();
         db.TicketAssets.Add(TicketAsset.Create(ticket.Id, command.AssetId, now));
-        ticket.Touch(now);
         TicketTimeline.Record(db, ticket, TicketEventKind.AssetLinked, Visibility.Public, viewer.UserId, now, new { command.AssetId });
         audit.Record(AuditActions.TicketAssetLinked, AuditEntityTypes.Ticket, ticket.Id, newValues: new { command.AssetId });
-        await db.SaveChangesAsync(cancellationToken);
+        await TicketAssetQueries.SaveWithActivityAsync(db, ticket.Id, now, cancellationToken);
         return await TicketAssetQueries.ListAsync(db, ticket.Id, cancellationToken);
     }
 }
@@ -112,10 +118,9 @@ public sealed class UnlinkTicketAssetHandler(IAppDbContext db, TicketScope scope
             ?? throw new NotFoundException(AuditEntityTypes.Asset);
         var now = clock.GetUtcNow();
         db.TicketAssets.Remove(link);
-        ticket.Touch(now);
         TicketTimeline.Record(db, ticket, TicketEventKind.AssetUnlinked, Visibility.Public, viewer.UserId, now, new { command.AssetId });
         audit.Record(AuditActions.TicketAssetUnlinked, AuditEntityTypes.Ticket, ticket.Id, new { command.AssetId });
-        await db.SaveChangesAsync(cancellationToken);
+        await TicketAssetQueries.SaveWithActivityAsync(db, ticket.Id, now, cancellationToken);
         return await TicketAssetQueries.ListAsync(db, ticket.Id, cancellationToken);
     }
 }

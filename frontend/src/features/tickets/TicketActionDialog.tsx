@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useId, useMemo } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -85,11 +85,14 @@ export function TicketActionDialog({ ticket, kind, onClose }: { ticket: TicketDe
   const { t } = useTranslation('tickets');
   const { t: tc } = useTranslation();
   const formId = useId();
-  const action = useTicketAction(ticket);
+  // The version the user saw when opening the dialog; a background refetch must not silently skip the conflict check.
+  const [openedVersion] = useState(ticket.version);
+  const action = useTicketAction({ ...ticket, version: openedVersion });
   const teams = useReferenceTeams(kind === 'transfer');
   const {
     register,
     control,
+    setValue,
     handleSubmit,
     formState: { errors },
   } = useForm<Values>({
@@ -157,7 +160,7 @@ export function TicketActionDialog({ ticket, kind, onClose }: { ticket: TicketDe
         )}
         {kind === 'transfer' && (
           <>
-            <SelectField label={t('fields.team')} placeholder={t('fields.select')} options={(teams.data ?? []).map((team) => ({ value: team.id, label: team.name }))} error={fieldError(errors.choice)} {...register('choice')} />
+            <SelectField label={t('fields.team')} placeholder={t('fields.select')} options={(teams.data ?? []).map((team) => ({ value: team.id, label: team.name }))} error={fieldError(errors.choice)} {...register('choice', { onChange: () => setValue('second', '') })} />
             <SelectField label={t('fields.assignee')} placeholder={t('fields.anyone')} options={memberOptions} error={fieldError(errors.second)} {...register('second')} />
             <SelectField label={t('fields.transferReason')} placeholder={t('fields.select')} options={TRANSFER_REASONS.map((value) => ({ value, label: t(`transferReasons.${value}`) }))} error={fieldError(errors.third)} {...register('third')} />
             <TextField label={t('fields.note')} autoComplete="off" error={fieldError(errors.note)} {...register('note')} />

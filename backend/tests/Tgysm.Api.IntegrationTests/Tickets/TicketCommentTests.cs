@@ -141,4 +141,23 @@ public sealed class TicketCommentTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Created, comment.StatusCode);
     }
+
+    [Fact]
+    public async Task Comment_is_not_lost_when_it_the_ticket_changes_at_the_same_time()
+    {
+        const int Rounds = 15;
+        var world = await TicketWorld.CreateAsync(factory);
+        var ticket = await TicketWorld.CreateIncidentAsync(world.Employee);
+        var levels = new[] { "high", "low" };
+
+        for (var round = 0; round < Rounds; round++)
+        {
+            var current = await TicketWorld.ReadAsync(world.Desk, TicketWorld.PathOf(ticket));
+            var comment = CommentAsync(world.Employee, ticket, $"Yorum {round}");
+            var priority = world.Desk.PostAsync(TicketWorld.PathOf(ticket, "priority"), new { version = TicketWorld.VersionOf(current), impact = levels[round % 2], urgency = "medium", reason = "Değişti" });
+            await Task.WhenAll(comment, priority);
+
+            Assert.Equal(HttpStatusCode.Created, (await comment).StatusCode);
+        }
+    }
 }

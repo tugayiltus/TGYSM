@@ -45,8 +45,10 @@ public static class ErrorCodes
     public const string AssetTagTaken = "assets.tag_taken";
     public const string AssetSerialTaken = "assets.serial_taken";
     public const string AssetUserInactive = "assets.user_inactive";
+    public const string AssetRequestMismatch = "assets.request_mismatch";
 
     public const string ImportInvalidHeader = "imports.invalid_header";
+    public const string ImportEncoding = "imports.encoding";
     public const string ImportFileTooLarge = "imports.file_too_large";
     public const string ImportTooManyRows = "imports.too_many_rows";
     public const string ImportHasErrors = "imports.has_errors";

@@ -120,3 +120,26 @@ describe('AssetDetailPage', () => {
     expect(posted).toEqual({ version: 7, retainResponsibility: true });
   });
 });
+
+describe('AssetOperationDialog user search', () => {
+  it('clears the chosen user when the search changes', async () => {
+    const ALI = { id: 'u-2', fullName: 'Ali Veli', email: 'ali@example.com', departmentName: null };
+    mockApi({
+      ...detailRoutes(),
+      'GET /api/v1/reference/users': (request) =>
+        ({ status: 200, body: new URL(request.url).searchParams.get('search') === 'ali' ? [ALI] : [AYSE] }),
+    });
+    const { user } = renderRoute('/assets/a-1');
+
+    await user.click(await screen.findByRole('button', { name: 'Teslim et' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Kullanıcı ara'), 'ayşe');
+    await user.selectOptions(within(dialog).getByLabelText('Kullanıcı'), await within(dialog).findByRole('option', { name: 'Ayşe Kaya (ayse@example.com)' }));
+    await user.clear(within(dialog).getByLabelText('Kullanıcı ara'));
+    await user.type(within(dialog).getByLabelText('Kullanıcı ara'), 'ali');
+    await within(dialog).findByRole('option', { name: 'Ali Veli (ali@example.com)' });
+    await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
+
+    expect(await within(dialog).findByText('Bu alan zorunludur.')).toBeInTheDocument();
+  });
+});

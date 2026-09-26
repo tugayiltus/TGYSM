@@ -146,4 +146,24 @@ public sealed class TicketApprovalTests(ApiFactory factory) : IAsyncLifetime
         Assert.Single(responses, r => r.StatusCode == HttpStatusCode.OK);
         Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Conflict);
     }
+
+    [Fact]
+    public async Task Handover_against_a_request_goes_only_to_its_requester_while_it_is_open()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var request = await world.CreateRequestAsync(world.Employee, approval: false);
+        var cancelled = await world.CreateRequestAsync(world.Employee, approval: false);
+        using var _ = await world.Desk.PostAsync(TicketWorld.PathOf(cancelled, "cancel"), new { version = TicketWorld.VersionOf(cancelled), reason = "Vazgeçildi" });
+        var store = await TestData.LocationAsync(factory, "Depo");
+        var asset = await AssetCatalogueTests.CreateAsync(world.Desk, new { assetTag = "DT-1", type = "laptop", brand = "Lenovo", model = "T14", locationId = store.Id });
+        var other = await TestUsers.CreateAsync(factory, UserRole.Employee, "baska@example.com");
+        var assignPath = $"{AssetCatalogueTests.AssetsPath}/{asset.GetProperty("id").GetGuid()}/assign";
+        var version = asset.GetProperty("version").GetUInt32();
+
+        using var toOther = await world.Desk.PostAsync(assignPath, new { version, userId = other.Id, requestTicketId = request.GetProperty("id").GetGuid() });
+        using var toClosed = await world.Desk.PostAsync(assignPath, new { version, userId = world.EmployeeUser.Id, requestTicketId = cancelled.GetProperty("id").GetGuid() });
+
+        Assert.Equal(ErrorCodes.AssetRequestMismatch, await ApiClient.ReadCodeAsync(toOther));
+        Assert.Equal(ErrorCodes.AssetRequestMismatch, await ApiClient.ReadCodeAsync(toClosed));
+    }
 }

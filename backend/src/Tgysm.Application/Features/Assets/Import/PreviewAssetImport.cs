@@ -22,6 +22,7 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
     public const string FileField = "file";
     private const int HeaderRow = 1;
 
+    private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
     private static readonly string[] DateFormats = ["yyyy-MM-dd", "dd.MM.yyyy"];
     private static readonly AssetStatus[] ImportableStatuses = [AssetStatus.InStock, AssetStatus.Maintenance, AssetStatus.Retired];
     private static readonly Dictionary<string, AssetType> TypeNames = SnakeNames<AssetType>();
@@ -36,9 +37,15 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
         }
 
         string text;
-        using (var reader = new StreamReader(command.Content, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+        try
         {
+            // Strict UTF-8: a Windows-1254 export would otherwise turn Turkish letters into U+FFFD and be stored as such.
+            using var reader = new StreamReader(command.Content, StrictUtf8, detectEncodingFromByteOrderMarks: true);
             text = await reader.ReadToEndAsync(cancellationToken);
+        }
+        catch (DecoderFallbackException)
+        {
+            throw FileError(ErrorCodes.ImportEncoding, "The file is not UTF-8.");
         }
 
         var records = AssetCsvReader.Read(text);

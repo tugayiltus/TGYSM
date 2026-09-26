@@ -63,3 +63,20 @@ describe('AssetImportPage', () => {
     expect(await screen.findByText(/başlık satırı şablonla uyuşmuyor/)).toBeInTheDocument();
   });
 });
+
+describe('AssetImportPage after choosing another file', () => {
+  it('drops the previous preview so the old job cannot be committed', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: IT_ME },
+      'POST /api/v1/assets/import/preview': { status: 200, body: JOB },
+    });
+    const { user } = renderRoute('/assets/import');
+
+    await user.upload(await screen.findByLabelText('CSV dosyası'), csvFile());
+    await user.click(screen.getByRole('button', { name: 'Önizle' }));
+    expect(await screen.findByRole('button', { name: 'İçe aktar' })).toBeInTheDocument();
+    await user.upload(screen.getByLabelText('CSV dosyası'), new File(['x'], 'yeni.csv', { type: 'text/csv' }));
+
+    expect(screen.queryByRole('button', { name: 'İçe aktar' })).not.toBeInTheDocument();
+  });
+});

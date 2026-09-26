@@ -121,4 +121,22 @@ public sealed class TicketPersistenceTests(PostgresDatabase database) : IAsyncLi
         Assert.Equal(Enumerable.Range(1, ParallelCreators).Select(i => (long)i), values.Order());
         Assert.Equal(1, request);
     }
+
+    [Theory]
+    [InlineData("tickets", "updated_at DESC, id DESC")]
+    [InlineData("tickets", "assignee_id, updated_at DESC")]
+    [InlineData("tickets", "team_id, updated_at DESC")]
+    [InlineData("tickets", "gin (search_text gin_trgm_ops)")]
+    [InlineData("assets", "gin (normalized_asset_tag gin_trgm_ops)")]
+    [InlineData("assets", "gin (lower((model)::text) gin_trgm_ops)")]
+    public async Task List_and_search_queries_have_supporting_indexes(string table, string definitionPart)
+    {
+        await using var db = database.CreateDbContext();
+
+        var definitions = await db.Database
+            .SqlQuery<string>($"SELECT indexdef AS \"Value\" FROM pg_indexes WHERE tablename = {table}")
+            .ToListAsync(Ct);
+
+        Assert.Contains(definitions, d => d.Contains(definitionPart, StringComparison.Ordinal));
+    }
 }

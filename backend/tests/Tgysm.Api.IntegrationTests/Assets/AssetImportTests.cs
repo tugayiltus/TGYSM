@@ -295,4 +295,17 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains(ErrorCodes.ImportFileTooLarge, (await ApiClient.ReadFieldCodesAsync(response))["file"]);
     }
+
+    [Fact]
+    public async Task File_not_in_utf8_is_refused_instead_of_corrupting_turkish_letters()
+    {
+        var it = await ItAsync();
+        var windows1254 = new byte[] { 0x44, 0x65, 0x6C, 0x6C, 0x20, 0x59, 0x61, 0x7A, 0xFD, 0x63, 0xFD };
+        var content = Csv("DT-1,laptop,").Concat(windows1254).Concat(Encoding.UTF8.GetBytes(",T14,,Işık Binası,,in_stock,,,")).ToArray();
+
+        using var response = await it.PostFileAsync(PreviewPath, FileName, content, CsvType);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains(ErrorCodes.ImportEncoding, (await ApiClient.ReadFieldCodesAsync(response))["file"]);
+    }
 }

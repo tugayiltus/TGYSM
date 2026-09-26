@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 
 import { formatDateTime } from '../../shared/lib/format';
 import { ROUTES } from '../../shared/routes';
+import { FormAlert } from '../../shared/ui/FormAlert';
 import { ErrorState, LoadingState } from '../../shared/ui/States';
 import { useSession } from '../auth/session';
 
@@ -38,9 +39,21 @@ function ApprovalBox({ ticket }: { ticket: TicketDetail }) {
   );
 }
 
+/** Navigation state from the new-ticket page when the files could not be uploaded. */
+export interface TicketDetailState {
+  uploadError?: string;
+}
+
+/** Keyed by number: switching tickets starts with fresh drafts, dialogs and errors. */
 export function TicketDetailPage() {
-  const { t } = useTranslation('tickets');
   const { number = '' } = useParams();
+  return <TicketDetail key={number} number={number} />;
+}
+
+function TicketDetail({ number }: { number: string }) {
+  const { t } = useTranslation('tickets');
+  const location = useLocation();
+  const uploadError = (location.state as TicketDetailState | null)?.uploadError ?? null;
   const me = useSession();
   const ticket = useTicket(number);
   const comments = useComments(number);
@@ -69,6 +82,7 @@ export function TicketDetailPage() {
         </div>
       </div>
 
+      <FormAlert message={uploadError} />
       <ApprovalBox ticket={item} />
 
       <dl className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-3">
