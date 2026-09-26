@@ -27,4 +27,16 @@ describe('createQueryClient', () => {
 
     expect(csrfCalls).toBe(2);
   });
+
+  it('drops cached admin data when the session ends', async () => {
+    mockApi({ 'GET /api/v1/admin/users': { status: 401, body: { code: 'auth.unauthenticated' } } });
+    const queryClient = createQueryClient({ retry: false });
+    queryClient.setQueryData(['admin', 'departments', 'list'], { items: ['cached'] });
+
+    await queryClient
+      .fetchQuery({ queryKey: ['admin', 'users'], queryFn: () => unwrap(api.GET('/api/v1/admin/users')) })
+      .catch(() => undefined);
+
+    expect(queryClient.getQueryData(['admin', 'departments', 'list'])).toBeUndefined();
+  });
 });

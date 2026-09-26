@@ -12,8 +12,11 @@ public sealed class PostgresDatabase : IAsyncLifetime
     private const string AdminDatabase = "postgres";
     private const string LocalHost = "localhost";
 
+    // replica mode skips the append-only triggers; only the test fixture may wipe audit rows.
     private const string TruncateAllSql =
-        "TRUNCATE team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE";
+        "SET session_replication_role = replica; "
+        + "TRUNCATE team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE; "
+        + "SET session_replication_role = origin;";
 
     private readonly string _databaseName = DatabaseNamePrefix + Guid.NewGuid().ToString("N");
     private string _adminConnectionString = string.Empty;

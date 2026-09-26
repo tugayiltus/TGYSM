@@ -25,6 +25,7 @@ function handleSessionError(queryClient: QueryClient, error: unknown): void {
   }
   if (error.status === HTTP_UNAUTHORIZED) {
     resetCsrfToken();
+    queryClient.removeQueries({ queryKey: ADMIN_QUERY_ROOT });
     queryClient.setQueryData(ME_QUERY_KEY, null);
   } else if (error.code === ERROR_CODES.passwordChangeRequired) {
     void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 
@@ -30,15 +31,15 @@ function LocationTreeList({ nodes, onEdit, onAddChild, onToggle }: TreeListProps
               {!node.item.isActive && <StatusBadge isActive={false} />}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => onEdit(node)}>
+              <Button aria-label={recordActionLabel(tc('actions.edit'), node.item.name)} variant="secondary" onClick={() => onEdit(node)}>
                 {tc('actions.edit')}
               </Button>
               {node.item.isActive && (
-                <Button variant="secondary" onClick={() => onAddChild(node.item.id)}>
+                <Button aria-label={recordActionLabel(t('locations.addChild'), node.item.name)} variant="secondary" onClick={() => onAddChild(node.item.id)}>
                   {t('locations.addChild')}
                 </Button>
               )}
-              <Button variant="ghost" onClick={() => onToggle(node.item)}>
+              <Button aria-label={recordActionLabel(node.item.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), node.item.name)} variant="ghost" onClick={() => onToggle(node.item)}>
                 {node.item.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
               </Button>
             </div>

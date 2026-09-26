@@ -5,6 +5,7 @@ import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Pagination } from '../../../shared/ui/Pagination';
+import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
@@ -30,13 +31,13 @@ function TeamActions({ team, onEdit, onMembers, onToggle }: TeamActionsProps) {
   const { t: tc } = useTranslation();
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={() => onMembers(team)}>
+      <Button aria-label={recordActionLabel(t('teams.manageMembers'), team.name)} variant="secondary" onClick={() => onMembers(team)}>
         {t('teams.manageMembers')}
       </Button>
-      <Button variant="secondary" onClick={() => onEdit(team)}>
+      <Button aria-label={recordActionLabel(tc('actions.edit'), team.name)} variant="secondary" onClick={() => onEdit(team)}>
         {tc('actions.edit')}
       </Button>
-      <Button variant="ghost" onClick={() => onToggle(team)}>
+      <Button aria-label={recordActionLabel(team.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), team.name)} variant="ghost" onClick={() => onToggle(team)}>
         {team.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
       </Button>
     </div>

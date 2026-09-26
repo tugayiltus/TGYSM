@@ -14,7 +14,8 @@ internal sealed class LoginValidator : AbstractValidator<LoginCommand>
 {
     public LoginValidator()
     {
-        RuleFor(c => c.Email).NotEmpty().MaximumLength(User.EmailMaxLength);
+        // Format check keeps mistyped passwords (typed into the email box) out of the audit trail.
+        RuleFor(c => c.Email).NotEmpty().MaximumLength(User.EmailMaxLength).EmailAddress();
         RuleFor(c => c.Password).NotEmpty().MaximumLength(PasswordRules.MaxLength);
     }
 }

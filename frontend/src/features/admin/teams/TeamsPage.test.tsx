@@ -21,7 +21,7 @@ describe('TeamsPage', () => {
     });
     const { user } = renderRoute('/admin/teams');
 
-    await user.click((await screen.findAllByRole('button', { name: 'Üyeleri yönet' }))[0]!);
+    await user.click((await screen.findAllByRole('button', { name: /^Üyeleri yönet/ }))[0]!);
     const dialog = await screen.findByRole('dialog');
     expect(await within(dialog).findByText('Mert Can')).toBeInTheDocument();
     const select = within(dialog).getByLabelText('Eklenecek kişi');
@@ -31,5 +31,23 @@ describe('TeamsPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Üye ekle' }));
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Pasif kullanıcı ekibe eklenemez.');
+  });
+
+  it('locks every remove button while one removal is running', async () => {
+    const SECOND = { ...MEMBER, userId: 'm-3', firstName: 'Ali', lastName: 'Er', email: 'ali@example.com' };
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      'GET /api/v1/admin/teams': { status: 200, body: pageOf([TEAM]) },
+      'GET /api/v1/admin/teams/t-1': { status: 200, body: { id: 't-1', name: 'Saha Destek', isActive: true, version: 3, members: [MEMBER, SECOND] } },
+      'GET /api/v1/admin/users': { status: 200, body: pageOf([]) },
+      'DELETE /api/v1/admin/teams/t-1/members/m-1': () => new Promise(() => undefined),
+    });
+    const { user } = renderRoute('/admin/teams');
+
+    await user.click((await screen.findAllByRole('button', { name: /^Üyeleri yönet/ }))[0]!);
+    const dialog = await screen.findByRole('dialog');
+    await user.click(await within(dialog).findByRole('button', { name: 'Çıkar Mert Can' }));
+
+    expect(within(dialog).getByRole('button', { name: 'Çıkar Ali Er' })).toBeDisabled();
   });
 });

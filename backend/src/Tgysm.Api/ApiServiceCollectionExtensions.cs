@@ -59,8 +59,11 @@ internal static class ApiServiceCollectionExtensions
             .Configure<IOptions<SecurityOptions>>((cookie, security) => cookie.ExpireTimeSpan = TimeSpan.FromHours(security.Value.SessionHours));
 
         var passwordChanged = new PasswordChangedRequirement();
+        var signedInWithChangedPassword = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().AddRequirements(passwordChanged).Build();
         services.AddAuthorizationBuilder()
-            .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().AddRequirements(passwordChanged).Build())
+            .SetFallbackPolicy(signedInWithChangedPassword)
+            // A bare RequireAuthorization() must not skip the pending-password gate.
+            .SetDefaultPolicy(signedInWithChangedPassword)
             .AddPolicy(Policies.PasswordChangePending, policy => policy.RequireAuthenticatedUser())
             .AddPolicy(Policies.Admin, policy => policy.RequireAuthenticatedUser().AddRequirements(passwordChanged).RequireRole(UserRoleNames.Admin));
         services.AddSingleton<IAuthorizationHandler, PasswordChangedHandler>();

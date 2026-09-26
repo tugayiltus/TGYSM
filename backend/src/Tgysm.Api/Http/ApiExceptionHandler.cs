@@ -11,6 +11,10 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) :
     {
         switch (exception)
         {
+            case OperationCanceledException when context.RequestAborted.IsCancellationRequested:
+                // The client went away; there is nobody to answer and nothing went wrong on the server.
+                logger.LogDebug("Request {Method} {Path} was cancelled by the client.", context.Request.Method, context.Request.Path);
+                break;
             case ValidationException validation:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status400BadRequest, ErrorCodes.ValidationFailed, ValidationErrorMapper.ToFieldCodes(validation.Errors));
                 break;

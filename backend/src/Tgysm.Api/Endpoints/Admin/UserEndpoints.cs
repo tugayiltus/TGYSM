@@ -39,9 +39,10 @@ internal static class UserEndpoints
         TypedResults.Ok(await handler.HandleAsync(new GetUserQuery(id), cancellationToken));
 
     private static async Task<Created<TemporaryPasswordResult>> CreateAsync(
-        CreateUserCommand command, CreateUserHandler handler, CancellationToken cancellationToken)
+        CreateUserCommand command, CreateUserHandler handler, HttpResponse response, CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(command, cancellationToken);
+        CacheHeaders.DisableCaching(response);
         return TypedResults.Created($"{ApiRoutes.Admin}{ApiRoutes.Users}/{result.UserId}", result);
     }
 
@@ -62,6 +63,10 @@ internal static class UserEndpoints
         TypedResults.Ok(await handler.HandleAsync(new SetUserActiveCommand(id, request.Version, IsActive: true), cancellationToken));
 
     private static async Task<Ok<TemporaryPasswordResult>> ResetPasswordAsync(
-        Guid id, ResetUserPasswordHandler handler, CancellationToken cancellationToken) =>
-        TypedResults.Ok(await handler.HandleAsync(new ResetUserPasswordCommand(id), cancellationToken));
+        Guid id, ResetUserPasswordHandler handler, HttpResponse response, CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new ResetUserPasswordCommand(id), cancellationToken);
+        CacheHeaders.DisableCaching(response);
+        return TypedResults.Ok(result);
+    }
 }

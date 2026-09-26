@@ -56,13 +56,14 @@ export function applyServerErrors<T extends FieldValues>(
   for (const field of fields) {
     const code = error.fieldErrors[field]?.[0];
     if (code !== undefined) {
-      setError(field, { type: 'server', message: code });
+      // Focus the first failing field so keyboard and screen-reader users land on the error.
+      setError(field, { type: 'server', message: code }, { shouldFocus: !applied });
       applied = true;
     }
   }
   const mappedField = codeFields[error.code];
   if (mappedField !== undefined) {
-    setError(mappedField, { type: 'server', message: error.code });
+    setError(mappedField, { type: 'server', message: error.code }, { shouldFocus: !applied });
     applied = true;
   }
   return applied;

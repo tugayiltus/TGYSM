@@ -77,6 +77,9 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.HasIndex("OccurredAt")
                         .HasDatabaseName("ix_audit_events_occurred_at");
 
+                    b.HasIndex("ActorUserId", "OccurredAt")
+                        .HasDatabaseName("ix_audit_events_actor_user_id_occurred_at");
+
                     b.HasIndex("EntityType", "EntityId")
                         .HasDatabaseName("ix_audit_events_entity_type_entity_id");
 

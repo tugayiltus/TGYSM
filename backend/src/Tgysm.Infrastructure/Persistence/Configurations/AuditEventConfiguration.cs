@@ -24,5 +24,6 @@ internal sealed class AuditEventConfiguration : IEntityTypeConfiguration<AuditEv
         // No FK on actor_user_id: audit rows must survive any change to users.
         builder.HasIndex(a => a.OccurredAt);
         builder.HasIndex(a => new { a.EntityType, a.EntityId });
+        builder.HasIndex(a => new { a.ActorUserId, a.OccurredAt });
     }
 }

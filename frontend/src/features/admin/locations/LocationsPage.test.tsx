@@ -23,7 +23,7 @@ describe('LocationsPage', () => {
     const { user } = renderRoute('/admin/locations');
 
     const blockRow = (await screen.findByText('A Blok')).closest('li')!;
-    await user.click(within(blockRow).getByRole('button', { name: 'Alt lokasyon ekle' }));
+    await user.click(within(blockRow).getByRole('button', { name: /^Alt lokasyon ekle/ }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByLabelText('Üst lokasyon')).toHaveValue('b');
     await user.type(within(dialog).getByLabelText('Lokasyon adı'), 'Kat 1');
@@ -41,7 +41,7 @@ describe('LocationsPage', () => {
     const { user } = renderRoute('/admin/locations');
 
     const campusRow = (await screen.findByText('Merkez Kampüs')).closest('li')!;
-    await user.click(within(campusRow).getAllByRole('button', { name: 'Düzenle' })[0]!);
+    await user.click(within(campusRow).getAllByRole('button', { name: /^Düzenle/ })[0]!);
     const parentSelect = within(await screen.findByRole('dialog')).getByLabelText('Üst lokasyon');
 
     expect(within(parentSelect).queryByRole('option', { name: /A Blok/ })).not.toBeInTheDocument();

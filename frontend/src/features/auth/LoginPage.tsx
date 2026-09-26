@@ -25,7 +25,9 @@ const EMPTY_LOGIN: LoginValues = { email: '', password: '' };
 function redirectTarget(state: unknown): string {
   if (typeof state === 'object' && state !== null && 'from' in state) {
     const from = (state as { from: unknown }).from;
-    if (typeof from === 'string' && from.startsWith('/') && from !== ROUTES.login) {
+    // "//host" and "/\\host" are protocol-relative: never follow them.
+    const isLocalPath = typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/\\');
+    if (isLocalPath && from !== ROUTES.login) {
       return from;
     }
   }

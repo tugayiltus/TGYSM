@@ -28,6 +28,20 @@ describe('LoginPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('E-posta veya şifre hatalı.');
   });
 
+  it('ignores a protocol-relative redirect target', async () => {
+    let signedIn = false;
+    const mock = mockApi({ 'POST /api/v1/auth/login': () => { signedIn = true; return { status: 200, body: { mustChangePassword: false } }; } });
+    mock.set('GET /api/v1/auth/me', () => (signedIn ? { status: 200, body: EMPLOYEE_ME } : { status: 401, body: { code: 'auth.unauthenticated' } }));
+    const { user, router } = renderRoute({ pathname: '/login', state: { from: '//evil.example/steal' } });
+
+    await user.type(await screen.findByLabelText('E-posta'), 'ayse@example.com');
+    await user.type(screen.getByLabelText('Şifre'), 'Correct-pass-1');
+    await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+
+    expect(await screen.findByRole('heading', { name: 'Merhaba, Ayşe' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/');
+  });
+
   it('signs in and goes to the page the user asked for', async () => {
     let signedIn = false;
     const mock = mockApi({ 'POST /api/v1/auth/login': () => { signedIn = true; return { status: 200, body: { mustChangePassword: false } }; } });

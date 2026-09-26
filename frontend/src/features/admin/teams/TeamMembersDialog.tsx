@@ -5,6 +5,7 @@ import { describeError } from '../../../shared/api/errorMessage';
 import { Button } from '../../../shared/ui/Button';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { FormAlert } from '../../../shared/ui/FormAlert';
+import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { SelectField } from '../../../shared/ui/SelectField';
 import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
 import { useTeamCandidateOptions } from '../shared/referenceOptions';
@@ -75,9 +76,10 @@ export function TeamMembersDialog({ teamId, teamName, onClose }: { teamId: strin
                     {member.email} · {tc(`roles.${member.role}`)}
                   </p>
                 </div>
-                <Button
+                <Button aria-label={recordActionLabel(t('teams.removeMember'), `${member.firstName} ${member.lastName}`)}
                   variant="ghost"
                   isLoading={remove.isPending && remove.variables?.userId === member.userId}
+                  disabled={remove.isPending}
                   onClick={() => {
                     add.reset();
                     remove.mutate({ teamId, userId: member.userId });

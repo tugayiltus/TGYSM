@@ -5,6 +5,7 @@ import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Pagination } from '../../../shared/ui/Pagination';
+import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
@@ -29,10 +30,10 @@ function DepartmentActions({ department, onEdit, onToggle }: RowActionsProps) {
   const { t: tc } = useTranslation();
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={() => onEdit(department)}>
+      <Button aria-label={recordActionLabel(tc('actions.edit'), department.name)} variant="secondary" onClick={() => onEdit(department)}>
         {tc('actions.edit')}
       </Button>
-      <Button variant="secondary" onClick={() => onToggle(department)}>
+      <Button aria-label={recordActionLabel(department.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), department.name)} variant="secondary" onClick={() => onToggle(department)}>
         {department.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
       </Button>
     </div>

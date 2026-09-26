@@ -5,6 +5,7 @@ import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Pagination } from '../../../shared/ui/Pagination';
+import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { SelectField } from '../../../shared/ui/SelectField';
 import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
@@ -41,13 +42,13 @@ function UserActions({ user, onEdit, onAction }: UserActionsProps) {
   const { t: tc } = useTranslation();
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={() => onEdit(user)}>
+      <Button aria-label={recordActionLabel(tc('actions.edit'), fullName(user))} variant="secondary" onClick={() => onEdit(user)}>
         {tc('actions.edit')}
       </Button>
-      <Button variant="secondary" onClick={() => onAction({ kind: user.isActive ? 'deactivate' : 'reactivate', user })}>
+      <Button aria-label={recordActionLabel(user.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), fullName(user))} variant="secondary" onClick={() => onAction({ kind: user.isActive ? 'deactivate' : 'reactivate', user })}>
         {user.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
       </Button>
-      <Button variant="ghost" onClick={() => onAction({ kind: 'reset', user })}>
+      <Button aria-label={recordActionLabel(t('users.resetPassword'), fullName(user))} variant="ghost" onClick={() => onAction({ kind: 'reset', user })}>
         {t('users.resetPassword')}
       </Button>
     </div>
@@ -94,9 +95,19 @@ export function UsersPage() {
       });
       return;
     }
+    const leavesFilter = (pending.kind === 'deactivate' && status === 'active') || (pending.kind === 'reactivate' && status === 'inactive');
+    const wasLastOnPage = users.data?.items.length === 1 && page > FIRST_PAGE;
     setActive.mutate(
       { id: pending.user.id, version: pending.user.version, isActive: pending.kind === 'reactivate' },
-      { onSuccess: () => setPending(null) },
+      {
+        onSuccess: () => {
+          setPending(null);
+          // The row leaves the filtered list; do not strand the admin on an empty page.
+          if (leavesFilter && wasLastOnPage) {
+            setPage(page - 1);
+          }
+        },
+      },
     );
   };
 
