@@ -74,7 +74,9 @@
     "outcome_required": "Arıza kaydı için sonuç seçin.",
     "related_request_required": "\"Hizmet talebi gerekli\" sonucu için önce ilgili talebi oluşturun.",
     "approval_required": "Onay gerektiren talep, onaylanmadan tamamlanamaz.",
-    "cancel_reason_required": "İptal nedenini yazın."
+    "cancel_reason_required": "İptal nedenini yazın.",
+    "already_assigned": "Kayıt başka biri tarafından üstlenildi. Sayfayı yenileyin.",
+    "assignee_not_in_team": "Seçilen kişi hedef ekibin aktif bir üyesi değil."
   },
   "approvals": {
     "not_approver": "Bu onayı yalnızca atanmış onaylayıcı verebilir.",

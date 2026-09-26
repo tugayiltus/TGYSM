@@ -65,6 +65,8 @@ public static class ErrorCodes
     public const string TicketRelatedRequestRequired = "tickets.related_request_required";
     public const string TicketApprovalRequired = "tickets.approval_required";
     public const string TicketCancelReasonRequired = "tickets.cancel_reason_required";
+    public const string TicketAlreadyAssigned = "tickets.already_assigned";
+    public const string TicketAssigneeNotInTeam = "tickets.assignee_not_in_team";
 
     public const string ApprovalNotApprover = "approvals.not_approver";
     public const string ApprovalNotPending = "approvals.not_pending";

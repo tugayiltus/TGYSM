@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<LastAdminGuard>();
         services.AddScoped<Features.Tickets.TicketScope>();
         services.AddScoped<Features.Tickets.TicketFactory>();
+        services.AddScoped<Features.Tickets.TicketWork>();
         return services;
     }
 }
