@@ -4,6 +4,7 @@ using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Operations;
 using Tgysm.Domain.Organization;
 using Tgysm.Domain.Users;
 
@@ -31,6 +32,7 @@ public interface IAppDbContext
     DbSet<TicketAsset> TicketAssets { get; }
     DbSet<Category> Categories { get; }
     DbSet<RequestType> RequestTypes { get; }
+    DbSet<WorkerHeartbeat> WorkerHeartbeats { get; }
 
     /// <summary>
     /// Saves all tracked changes in one transaction. Throws <see cref="Common.ConcurrencyException"/> on a stale

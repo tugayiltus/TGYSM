@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\src\Tgysm.Application\Tgysm.Application.csproj" />
     <ProjectReference Include="..\..\src\Tgysm.Infrastructure\Tgysm.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Tgysm.Api\Tgysm.Api.csproj" />
+    <ProjectReference Include="..\..\src\Tgysm.Worker\Tgysm.Worker.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

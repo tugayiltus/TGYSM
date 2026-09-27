@@ -498,6 +498,49 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("request_types", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Operations.WorkerHeartbeat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Instance")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("instance");
+
+                    b.Property<string>("Job")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("job");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset>("LastRunAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_run_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_worker_heartbeats");
+
+                    b.HasIndex("Job", "Instance")
+                        .IsUnique()
+                        .HasDatabaseName("ix_worker_heartbeats_job_instance");
+
+                    b.ToTable("worker_heartbeats", (string)null);
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Organization.Department", b =>
                 {
                     b.Property<Guid>("Id")

@@ -7,9 +7,11 @@
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="coverlet.MTP" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tgysm.Api\Tgysm.Api.csproj" />
+    <ProjectReference Include="..\..\src\Tgysm.Worker\Tgysm.Worker.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

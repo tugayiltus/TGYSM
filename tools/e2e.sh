@@ -13,18 +13,22 @@ readonly READY_PATH="/api/v1/auth/csrf"
 readonly READY_TIMEOUT_SECONDS=60
 readonly ADMIN_EMAIL="e2e-admin@example.com"
 readonly API_BIN_DIR="backend/src/Tgysm.Api/bin/Debug/net10.0"
+readonly WORKER_BIN_DIR="backend/src/Tgysm.Worker/bin/Debug/net10.0"
 readonly LOG_DIR="frontend/e2e-logs"
 readonly TEMP_PASSWORD_PREFIX="Temporary password (shown once): "
 readonly PROJECTS=("mobile-360" "desktop")
 
 api_pid=""
+worker_pid=""
 preview_pid=""
 
 stop_servers() {
   if [[ -n "$api_pid" ]]; then kill "$api_pid" 2>/dev/null || true; fi
+  if [[ -n "$worker_pid" ]]; then kill "$worker_pid" 2>/dev/null || true; fi
   if [[ -n "$preview_pid" ]]; then kill "$preview_pid" 2>/dev/null || true; fi
   wait 2>/dev/null || true
   api_pid=""
+  worker_pid=""
   preview_pid=""
 }
 trap stop_servers EXIT
@@ -49,10 +53,12 @@ done
 
 mkdir -p "$LOG_DIR"
 dotnet build backend/src/Tgysm.Api --nologo -v quiet
+dotnet build backend/src/Tgysm.Worker --nologo -v quiet
 (cd frontend && npm run build >/dev/null)
 
 export ConnectionStrings__Default="Host=$DB_HOST;Database=$DB_NAME;Username=$DB_USER"
 export ASPNETCORE_ENVIRONMENT="Development"
+export DOTNET_ENVIRONMENT="Development"
 
 for project in "${PROJECTS[@]}"; do
   mkdir -p "$LOG_DIR"
@@ -70,6 +76,8 @@ for project in "${PROJECTS[@]}"; do
   # exec keeps $! pointing at the real server process, so kill stops it.
   (cd "$API_BIN_DIR" && exec dotnet Tgysm.Api.dll --urls "$API_URL") >"$LOG_DIR/api-$project.log" 2>&1 &
   api_pid=$!
+  (cd "$WORKER_BIN_DIR" && exec dotnet Tgysm.Worker.dll) >"$LOG_DIR/worker-$project.log" 2>&1 &
+  worker_pid=$!
   (cd frontend && exec node node_modules/vite/bin/vite.js preview) >"$LOG_DIR/preview-$project.log" 2>&1 &
   preview_pid=$!
   # Through the preview proxy: it adds X-Forwarded-Proto, which the Secure antiforgery cookie needs.

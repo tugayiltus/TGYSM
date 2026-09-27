@@ -4,6 +4,7 @@
     <Project Path="src/Tgysm.Application/Tgysm.Application.csproj" />
     <Project Path="src/Tgysm.Domain/Tgysm.Domain.csproj" />
     <Project Path="src/Tgysm.Infrastructure/Tgysm.Infrastructure.csproj" />
+    <Project Path="src/Tgysm.Worker/Tgysm.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tgysm.Api.IntegrationTests/Tgysm.Api.IntegrationTests.csproj" />

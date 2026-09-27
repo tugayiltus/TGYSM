@@ -16,6 +16,7 @@ public sealed class LayerDependencyTests
     private static readonly Assembly Domain = typeof(Tgysm.Domain.AssemblyMarker).Assembly;
     private static readonly Assembly Application = typeof(Tgysm.Application.AssemblyMarker).Assembly;
     private static readonly Assembly Infrastructure = typeof(Tgysm.Infrastructure.AssemblyMarker).Assembly;
+    private static readonly Assembly Worker = typeof(Tgysm.Worker.AssemblyMarker).Assembly;
 
     [Fact]
     public void Domain_depends_on_no_other_layer_or_framework()
@@ -40,6 +41,14 @@ public sealed class LayerDependencyTests
     public void Infrastructure_does_not_depend_on_api()
     {
         var result = Types.InAssembly(Infrastructure).ShouldNot().HaveDependencyOn(ApiNamespace).GetResult();
+
+        Assert.True(result.IsSuccessful, Describe(result));
+    }
+
+    [Fact]
+    public void Worker_does_not_depend_on_api()
+    {
+        var result = Types.InAssembly(Worker).ShouldNot().HaveDependencyOn(ApiNamespace).GetResult();
 
         Assert.True(result.IsSuccessful, Describe(result));
     }
