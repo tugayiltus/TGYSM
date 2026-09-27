@@ -34,3 +34,7 @@ Store both kinds in one `tickets` table with a `kind` column. Kind-specific colu
 
 ### Risks
 - New kind-specific fields must come with CHECK constraints, or rules drift into code only.
+
+## Amendment 2026-09-27
+
+Implemented in e12081f (schema) and 3a9e6ce..32bdbbe (workflows). Added `search_text` (Turkish search key of the subject) and `requires_approval` (copied from the request type at creation). `detection` was left out because no workflow uses it. A `fulfilled` outcome was added for completed requests.

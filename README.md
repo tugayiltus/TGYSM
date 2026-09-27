@@ -1,6 +1,6 @@
 # TGYSM
 
-TGYSM is a web-based ITSM platform for one company with several departments and locations. Employees report faults and request services; IT staff work team queues and manage IT assets; admins manage users, organization, approvals, SLA rules and reports. The UI is Turkish and mobile-first; code and URLs are English. Current state: Phase 1 foundation — local login with forced password change and the `/admin` area for users, departments, locations, teams and audit.
+TGYSM is a web-based ITSM platform for one company with several departments and locations. Employees report faults and request services; IT staff work team queues and manage IT assets; admins manage users, organization, approvals, SLA rules and reports. The UI is Turkish and mobile-first; code and URLs are English. Current state: Phases 1–3 — local login and the `/admin` area (users, organization, teams, categories, request types, audit); IT inventory with asset lifecycle, assignments and CSV import; incidents and requests with queues, assignment, approvals, comments, attachments and timeline. SLA/email, knowledge base and reports come in Phases 4–5.
 
 ## Architecture
 
@@ -8,18 +8,18 @@ TGYSM is a web-based ITSM platform for one company with several departments and 
 |---|---|---|
 | Domain | `backend/src/Tgysm.Domain` | Entities, business rules, state transitions; no framework dependency |
 | Application | `backend/src/Tgysm.Application` | Use-case handlers, validation, ports, audit recording |
-| Infrastructure | `backend/src/Tgysm.Infrastructure` | EF Core + Npgsql, migrations, password hashing |
-| API | `backend/src/Tgysm.Api` | Minimal API endpoints under `/api/v1`, cookie auth, antiforgery, ProblemDetails, `setup-admin` CLI |
-| Web | `frontend/` | React SPA: user area and `/admin` |
+| Infrastructure | `backend/src/Tgysm.Infrastructure` | EF Core + Npgsql, migrations, ticket number counter, password hashing, local attachment store |
+| API | `backend/src/Tgysm.Api` | Minimal API endpoints under `/api/v1`, cookie auth, antiforgery, ProblemDetails, `setup-admin` and `reset-password` CLI |
+| Web | `frontend/` | React SPA: tickets, IT workspace, inventory, approvals and `/admin` |
 
 Solution: `backend/Tgysm.slnx`. Browser and API are same-origin; Vite proxies `/api` in development (ADR-0003).
 
 ## Stack
 
 - Backend: .NET 10, ASP.NET Core Minimal APIs, EF Core 10 + Npgsql 10, FluentValidation 12; `TreatWarningsAsErrors=true`, `Nullable=enable`.
-- Database: PostgreSQL 17 (ADR-0002).
+- Database: PostgreSQL 17 with `pg_trgm` (ADR-0002).
 - Frontend: React 19, TypeScript ~5.9 (strict), Vite 8, Tailwind CSS v4, Radix UI, React Router, TanStack Query 5, react-hook-form + zod 4, i18next (ADR-0008).
-- Tests: xUnit v3 on Microsoft.Testing.Platform (`global.json`; run `dotnet test --solution backend/Tgysm.slnx`), NetArchTest, coverlet.MTP, Vitest + React Testing Library, Playwright.
+- Tests: xUnit v3 on Microsoft.Testing.Platform (`global.json`; run `dotnet test --solution backend/Tgysm.slnx`), NetArchTest, coverlet.MTP, Vitest + React Testing Library (jsdom 29), Playwright.
 
 ## Commands
 
@@ -28,10 +28,12 @@ Solution: `backend/Tgysm.slnx`. Browser and API are same-origin; Vite proxies `/
 | Prepare local database | `tools/db-up.sh` |
 | Apply migrations | `tools/migrate.sh` |
 | Create first admin | `tools/setup-admin.sh --email <email> --first-name <name> --last-name <name>` |
+| Issue a temporary password | `tools/reset-password.sh --email <email>` |
+| Add a migration | `tools/add-migration.sh <Name>` |
 | Run API + web | `tools/run.sh` |
 | Lint | `tools/lint.sh` |
 | Tests (+ coverage gates) | `tools/test.sh` |
-| E2E | `tools/e2e.sh` |
+| E2E (stop `tools/run.sh` first; it uses the same ports) | `tools/e2e.sh` |
 | Regenerate API types | `tools/gen-api-types.sh` |
 | Build | `tools/build.sh` |
 

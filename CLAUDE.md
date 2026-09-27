@@ -1,22 +1,24 @@
 # TGYSM — ITSM web platform
 
-Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phase 1 foundation (auth, `/admin` users/departments/locations/teams/audit). Requirements: `tgysm.md`.
+Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–3 done (auth, `/admin`, assets + CSV import, tickets + approvals + comments/attachments). Next: Phase 4 (SLA/email), Phase 5 (knowledge base/reports). Requirements: `tgysm.md`.
 
 ## Stack & Architecture
 - **Backend:** .NET 10 modular monolith (ADR-0001) — `backend/src/Tgysm.Domain` (rules, no framework deps) → `Tgysm.Application` (handlers + FluentValidation, ports) → `Tgysm.Infrastructure` (EF Core + Npgsql, migrations) → `Tgysm.Api` (Minimal APIs, auth, CLI). Solution: `backend/Tgysm.slnx`.
 - **Database:** PostgreSQL 17, local Homebrew (ADR-0002). snake_case, `uuid` v7, `xmin` concurrency.
 - **Frontend:** React 19 + Vite + TypeScript in `frontend/` (ADR-0008). Server state via TanStack Query; typed client `src/shared/api/client.ts` generated from OpenAPI.
-- Out of scope unless asked: Worker, tickets, assets, SLA, email, reports, mobile app.
+- Out of scope unless asked: mobile app. Worker, SLA, email, knowledge base and reports belong to Phases 4–5.
 
 ## Commands
 Run through `tools/` scripts.
 - `tools/db-up.sh` — ensure local PostgreSQL role/database + API user-secret connection string.
 - `tools/migrate.sh` — apply EF Core migrations.
 - `tools/setup-admin.sh --email … --first-name … --last-name …` — create first admin (once).
+- `tools/reset-password.sh --email …` — temporary password from the console (locked-out operator).
+- `tools/add-migration.sh <Name>` — add an EF Core migration.
 - `tools/run.sh` — API on `http://localhost:5080` + Vite on `http://localhost:5173`.
 - `tools/lint.sh` — `dotnet format --verify-no-changes` + ESLint + TypeScript.
 - `tools/test.sh` — backend tests with coverage gate + frontend tests with coverage gate. Backend uses Microsoft.Testing.Platform (repo-root `global.json`): `dotnet test --solution backend/Tgysm.slnx`, filters `--filter-class` / `--filter-method`.
-- `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database.
+- `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5080/4173. Tests seed their data through the admin API (`frontend/e2e/world.ts`).
 - `tools/gen-api-types.sh` — regenerate OpenAPI JSON and `schema.d.ts` after API contract changes.
 - `tools/build.sh` — lint + tests, then Release build + frontend build with chunk sizes.
 
@@ -30,7 +32,9 @@ Run through `tools/` scripts.
 ## Conventions
 - English code, identifiers, DB names, endpoints, URL paths; Turkish only in `frontend/src/shared/i18n/locales/tr/*.json` (ADR-0006).
 - New API error → add a constant to `ErrorCodes` and a Turkish text to `errors.json`.
-- Cross-row rules (last admin, location cycles) run inside `IAppDbContext.RunSerializedAsync` with a key from `SerializationLocks`.
+- Cross-row rules (last admin, location cycles, asset lifecycle, import commit, intake team) run inside `IAppDbContext.RunSerializedAsync` with a key from `SerializationLocks`.
+- Ticket endpoints load through `TicketScope` (404 outside scope); work actions go through `TicketWork` (scope → version → change → one save). Comments/links touch `updated_at` without the version check.
+- Attachments: `AttachmentTypes` (Domain) decides allowed types; storage through `IFileStore`, scanning through `IFileScanner`.
 - `users` has an application-managed `version` (bump only on admin-editable changes via `BumpVersion`); other tables use `xmin`.
 - Handlers: one class per use case in `Tgysm.Application/Features/<Area>/`, `HandleAsync(command, ct)`; validators `internal sealed`.
 - Git: stage named paths only — never `git add -A`/`.`; no dotfiles/dot-dirs unless told. No commit/push without owner approval.

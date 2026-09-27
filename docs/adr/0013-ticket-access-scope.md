@@ -32,3 +32,7 @@ Employees see their own tickets and only public content; IT staff see tickets of
 
 ### Risks
 - A new query that skips `TicketScope` leaks data; integration tests cover each endpoint.
+
+## Amendment 2026-09-27
+
+Implemented in 3a9e6ce (`TicketScope`). IT staff also see internal content on their own tickets in teams they are not in, because spec §3.6 gives IT staff all content. Work actions still need team membership or admin.

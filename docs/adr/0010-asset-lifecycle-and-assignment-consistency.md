@@ -34,3 +34,7 @@ An asset can have at most one active assignment; handovers, returns, transfers, 
 
 ### Risks
 - A new operation that forgets to write a movement row loses history; handlers share one helper for movements.
+
+## Amendment 2026-09-27
+
+Implemented in e2354ea. Handover against a request is allowed only to that request's requester while it is open, and only after a required approval (5f60b98).

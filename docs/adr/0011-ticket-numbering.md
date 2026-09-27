@@ -32,3 +32,7 @@ A `ticket_counters (kind, year, last_value)` table. The next value comes from on
 
 ### Risks
 - A failed transaction still consumed nothing (the counter update rolls back with it).
+
+## Amendment 2026-09-27
+
+Implemented in e12081f (`TicketNumberGenerator`, `ticket_counters`) and used by ticket creation in 3a9e6ce. The year comes from UTC; switching it to local time is a deferred minor.

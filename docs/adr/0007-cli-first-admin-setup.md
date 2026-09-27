@@ -32,3 +32,7 @@
 
 ### Risks
 - Two parallel runs on an empty database could both pass the check. Setup is an operator action run once; add an advisory lock if this ever runs automatically.
+
+## Amendment 2026-09-27
+
+Commit dcdb41f adds a second console command, `reset-password --email …` (`tools/reset-password.sh`). It issues a temporary password for an existing account, for an operator who cannot sign in. It uses the same audited handler as the admin reset, and the user must change the password at the next sign-in. `setup-admin` is unchanged and still runs only once.

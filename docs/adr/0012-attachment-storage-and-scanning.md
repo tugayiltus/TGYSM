@@ -38,3 +38,7 @@ Tickets take attachments: 10 MB each, up to 5 per request, PDF/PNG/JPEG/TXT/CSV;
 
 ### Risks
 - Backups must include the file folder together with the database (`tgysm.md` §17).
+
+## Amendment 2026-09-27
+
+Implemented in 19592a8. The type rules live in the Domain (`AttachmentTypes`). The storage root is `Files:RootPath` and defaults to the user's local application data folder, outside the repository. Files are sniffed in memory (≤ 5 × 10 MB) before they are stored. Downloads send `Content-Disposition: attachment` and `nosniff`.
