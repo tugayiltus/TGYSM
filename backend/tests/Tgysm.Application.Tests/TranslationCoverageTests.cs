@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Notifications;
 
 namespace Tgysm.Application.Tests;
 
@@ -12,6 +13,7 @@ public sealed class TranslationCoverageTests
     private const string AdminFile = "admin.json";
     private const string AuditActionsPrefix = "auditActions.";
     private const string EntityTypesPrefix = "entityTypes.";
+    private const string EmailEventsPrefix = "emailEvents.";
     private const char KeySeparator = '.';
 
     [Fact]
@@ -31,6 +33,14 @@ public sealed class TranslationCoverageTests
 
         Assert.Empty(ConstantsOf(typeof(AuditActions)).Select(a => AuditActionsPrefix + a).Except(keys));
         Assert.Empty(ConstantsOf(typeof(AuditEntityTypes)).Select(t => EntityTypesPrefix + t).Except(keys));
+    }
+
+    [Fact]
+    public void Every_notification_event_type_has_a_turkish_label()
+    {
+        var keys = LeafKeys(RepositoryPaths.Locale(AdminFile));
+
+        Assert.Empty(ConstantsOf(typeof(NotificationEventTypes)).Select(t => EmailEventsPrefix + t).Except(keys));
     }
 
     private static HashSet<string> ConstantsOf(Type type) =>

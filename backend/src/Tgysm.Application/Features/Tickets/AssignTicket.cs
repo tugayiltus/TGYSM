@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
 
@@ -24,7 +25,7 @@ internal sealed class TransferTicketValidator : AbstractValidator<TransferTicket
 }
 
 /// <summary>IT staff take an unassigned ticket of their team (spec §3.5); a concurrent claim gets 409.</summary>
-public sealed class ClaimTicketHandler(IAppDbContext db, TicketWork work, IAuditLog audit)
+public sealed class ClaimTicketHandler(IAppDbContext db, TicketWork work, IAuditLog audit, INotificationOutbox outbox)
 {
     public Task<TicketDetail> HandleAsync(ClaimTicketCommand command, CancellationToken cancellationToken) =>
         work.RunAsync(command.Number, command.Version, requireWorker: true, (ticket, viewer, now) =>
@@ -37,12 +38,13 @@ public sealed class ClaimTicketHandler(IAppDbContext db, TicketWork work, IAudit
             db.TicketAssignments.Add(ticket.Assign(ticket.TeamId, viewer.UserId, now, viewer.UserId));
             TicketTimeline.Record(db, ticket, TicketEventKind.Assigned, Visibility.Public, viewer.UserId, now, new { assigneeId = viewer.UserId });
             audit.Record(AuditActions.TicketAssigned, AuditEntityTypes.Ticket, ticket.Id, newValues: new { AssigneeId = viewer.UserId });
+            outbox.Add(NotificationEventTypes.TicketAssigned, ticket.Id, viewer.UserId);
             return Task.CompletedTask;
         }, cancellationToken);
 }
 
 /// <summary>Moves team and/or assignee with a reason; the assignee must be an active member of the target team.</summary>
-public sealed class TransferTicketHandler(IAppDbContext db, IValidator<TransferTicketCommand> validator, TicketWork work, IAuditLog audit)
+public sealed class TransferTicketHandler(IAppDbContext db, IValidator<TransferTicketCommand> validator, TicketWork work, IAuditLog audit, INotificationOutbox outbox)
 {
     public async Task<TicketDetail> HandleAsync(TransferTicketCommand command, CancellationToken cancellationToken)
     {
@@ -68,6 +70,7 @@ public sealed class TransferTicketHandler(IAppDbContext db, IValidator<TransferT
             TicketTimeline.Record(db, ticket, TicketEventKind.Transferred, Visibility.Internal, viewer.UserId, now,
                 new { command.TeamId, command.AssigneeId, command.Reason, command.Note });
             audit.Record(AuditActions.TicketTransferred, AuditEntityTypes.Ticket, ticket.Id, before, new { command.TeamId, command.AssigneeId, command.Reason });
+            outbox.Add(NotificationEventTypes.TicketAssigned, ticket.Id, command.AssigneeId);
         }, cancellationToken);
     }
 }

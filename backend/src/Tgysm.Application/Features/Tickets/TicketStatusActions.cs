@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Audit;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
@@ -102,7 +103,7 @@ public sealed class ResumeTicketHandler(IAppDbContext db, TicketWork work, IAudi
 }
 
 /// <summary>Completing closes the ticket directly (no confirmation step, spec §1 criterion 4).</summary>
-public sealed class CompleteTicketHandler(IAppDbContext db, IValidator<CompleteTicketCommand> validator, TicketWork work, IAuditLog audit)
+public sealed class CompleteTicketHandler(IAppDbContext db, IValidator<CompleteTicketCommand> validator, TicketWork work, IAuditLog audit, INotificationOutbox outbox)
 {
     public async Task<TicketDetail> HandleAsync(CompleteTicketCommand command, CancellationToken cancellationToken)
     {
@@ -114,6 +115,7 @@ public sealed class CompleteTicketHandler(IAppDbContext db, IValidator<CompleteT
             ticket.Complete(command.Resolution, command.Outcome, hasRelatedRequest, latest?.Status == ApprovalStatus.Approved, now, command.RootCause);
             TicketTimeline.Record(db, ticket, TicketEventKind.Completed, Visibility.Public, viewer.UserId, now, new { ticket.Resolution, ticket.Outcome });
             audit.Record(AuditActions.TicketCompleted, AuditEntityTypes.Ticket, ticket.Id, newValues: new { ticket.Outcome });
+            outbox.Add(NotificationEventTypes.TicketCompleted, ticket.Id, userId: null);
         }, cancellationToken);
     }
 }

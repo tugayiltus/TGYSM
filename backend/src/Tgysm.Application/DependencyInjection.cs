@@ -5,6 +5,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Audit;
 using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Features.Users;
+using Tgysm.Application.Notifications;
 using Tgysm.Application.Security;
 
 namespace Tgysm.Application;
@@ -28,6 +29,7 @@ public static class DependencyInjection
         }
 
         services.AddScoped<IAuditLog, AuditLog>();
+        services.AddScoped<INotificationOutbox, NotificationOutbox>();
         services.AddSingleton<ITemporaryPasswordGenerator, TemporaryPasswordGenerator>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<OrganizationReferences>();

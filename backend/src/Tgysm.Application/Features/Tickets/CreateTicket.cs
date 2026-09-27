@@ -4,6 +4,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
@@ -32,7 +33,8 @@ internal sealed class CreateRequestValidator : AbstractValidator<CreateRequestCo
 }
 
 /// <summary>Shared creation steps: references, intake team, number, events, audit — one transaction.</summary>
-public sealed class TicketFactory(IAppDbContext db, ITicketNumberGenerator numbers, ICurrentActor actor, IAuditLog audit, TicketScope scope, TimeProvider clock)
+public sealed class TicketFactory(
+    IAppDbContext db, ITicketNumberGenerator numbers, ICurrentActor actor, IAuditLog audit, INotificationOutbox outbox, TicketScope scope, TimeProvider clock)
 {
     private const string InactiveReferenceMessage = "A selected category, location or request type is inactive or does not apply.";
 
@@ -56,6 +58,7 @@ public sealed class TicketFactory(IAppDbContext db, ITicketNumberGenerator numbe
             db.Tickets.Add(ticket);
             TicketTimeline.Record(db, ticket, TicketEventKind.Created, Visibility.Public, actorId, now);
             audit.Record(AuditActions.TicketCreated, AuditEntityTypes.Ticket, ticket.Id, newValues: new { ticket.Number, ticket.Kind, ticket.Status });
+            outbox.Add(NotificationEventTypes.TicketCreated, ticket.Id, userId: null);
             await db.SaveChangesAsync(ct);
         }, cancellationToken);
 
@@ -91,7 +94,7 @@ public sealed class CreateIncidentHandler(IValidator<CreateIncidentCommand> vali
 }
 
 /// <summary>A request whose type requires approval also gets a pending approval for the requester's department approver (spec §3.4).</summary>
-public sealed class CreateRequestHandler(IAppDbContext db, IValidator<CreateRequestCommand> validator, TicketFactory factory)
+public sealed class CreateRequestHandler(IAppDbContext db, IValidator<CreateRequestCommand> validator, TicketFactory factory, INotificationOutbox outbox)
 {
     public async Task<TicketDetail> HandleAsync(CreateRequestCommand command, CancellationToken cancellationToken)
     {
@@ -107,6 +110,7 @@ public sealed class CreateRequestHandler(IAppDbContext db, IValidator<CreateRequ
                 var approver = await ApprovalRules.ApproverForAsync(db, requester, cancellationToken);
                 db.Approvals.Add(Approval.Request(ticket.Id, approver, now));
                 TicketTimeline.Record(db, ticket, TicketEventKind.ApprovalRequested, Visibility.Public, requester, now);
+                outbox.Add(NotificationEventTypes.ApprovalRequested, ticket.Id, approver);
             }
 
             return ticket;

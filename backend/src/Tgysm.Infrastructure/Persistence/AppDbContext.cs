@@ -7,6 +7,7 @@ using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Operations;
 using Tgysm.Domain.Organization;
 using Tgysm.Domain.Users;
@@ -37,6 +38,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<RequestType> RequestTypes => Set<RequestType>();
     public DbSet<TicketCounter> TicketCounters => Set<TicketCounter>();
     public DbSet<WorkerHeartbeat> WorkerHeartbeats => Set<WorkerHeartbeat>();
+    public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

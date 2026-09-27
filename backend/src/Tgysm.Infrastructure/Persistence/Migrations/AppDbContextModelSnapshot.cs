@@ -498,6 +498,60 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("request_types", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Notifications.OutboxEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload");
+
+                    b.Property<string>("ProtectedSecret")
+                        .HasColumnType("text")
+                        .HasColumnName("protected_secret");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notification_outbox");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_notification_outbox_status");
+
+                    b.HasIndex("TicketId")
+                        .HasDatabaseName("ix_notification_outbox_ticket_id");
+
+                    b.ToTable("notification_outbox", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_notification_outbox_status", "status IN ('pending', 'dispatched', 'skipped')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Operations.WorkerHeartbeat", b =>
                 {
                     b.Property<Guid>("Id")

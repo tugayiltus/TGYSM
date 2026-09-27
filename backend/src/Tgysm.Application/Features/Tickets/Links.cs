@@ -4,6 +4,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
@@ -30,7 +31,7 @@ internal sealed class CreateRelatedRequestValidator : AbstractValidator<CreateRe
 /// copied; comments and files are not. Both tickets are linked and the request starts its own approval.
 /// </summary>
 public sealed class CreateRelatedRequestHandler(
-    IAppDbContext db, IValidator<CreateRelatedRequestCommand> validator, TicketScope scope, TicketFactory factory, IAuditLog audit)
+    IAppDbContext db, IValidator<CreateRelatedRequestCommand> validator, TicketScope scope, TicketFactory factory, IAuditLog audit, INotificationOutbox outbox)
 {
     public async Task<TicketDetail> HandleAsync(CreateRelatedRequestCommand command, CancellationToken cancellationToken)
     {
@@ -50,7 +51,9 @@ public sealed class CreateRelatedRequestHandler(
             var request = Ticket.CreateRequest(number, incident.Subject, incident.Description, null, incident.LocationId, requester, team, type.Id, type.RequiresApproval, now);
             if (type.RequiresApproval)
             {
-                db.Approvals.Add(Approval.Request(request.Id, await ApprovalRules.ApproverForAsync(db, requester, cancellationToken), now));
+                var approver = await ApprovalRules.ApproverForAsync(db, requester, cancellationToken);
+                db.Approvals.Add(Approval.Request(request.Id, approver, now));
+                outbox.Add(NotificationEventTypes.ApprovalRequested, request.Id, approver);
             }
 
             db.TicketRelations.Add(TicketRelation.Create(incident.Id, request.Id, now));

@@ -6,6 +6,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
@@ -37,7 +38,7 @@ internal sealed class AddCommentValidator : AbstractValidator<AddCommentCommand>
 /// internal notes need someone who works on the ticket. Files inherit the comment's visibility.
 /// </summary>
 public sealed class AddCommentHandler(
-    IAppDbContext db, IValidator<AddCommentCommand> validator, TicketScope scope, IFileStore files, IFileScanner scanner, TimeProvider clock)
+    IAppDbContext db, IValidator<AddCommentCommand> validator, TicketScope scope, IFileStore files, IFileScanner scanner, INotificationOutbox outbox, TimeProvider clock)
 {
     public const string FilesField = "files";
 
@@ -69,6 +70,11 @@ public sealed class AddCommentHandler(
             db.TicketComments.Add(comment);
             TicketTimeline.Record(db, ticket, visibility == Visibility.Public ? TicketEventKind.PublicComment : TicketEventKind.InternalNote, visibility, viewer.UserId, now,
                 new { commentId = comment.Id, files = contents.Count });
+            if (visibility == Visibility.Public)
+            {
+                outbox.Add(NotificationEventTypes.PublicReply, ticket.Id, viewer.UserId);
+            }
+
             await db.RunInTransactionAsync(async ct =>
             {
                 await db.SaveChangesAsync(ct);

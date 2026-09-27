@@ -214,6 +214,18 @@
       "voided": "Onay geçersiz kılındı"
     }
   },
+  "emailEvents": {
+    "ticket_created": "Kayıt oluşturuldu",
+    "ticket_assigned": "Kayıt üstlenildi",
+    "public_reply": "Kamuya açık yanıt",
+    "approval_requested": "Onay talep edildi",
+    "approval_decided": "Onay karara bağlandı",
+    "ticket_completed": "Kayıt tamamlandı",
+    "sla_warning": "SLA uyarısı",
+    "sla_breached": "SLA ihlali",
+    "account_activation": "Hesap etkinleştirme",
+    "password_reset": "Şifre sıfırlama"
+  },
   "categories": {
     "title": "Kategoriler",
     "new": "Yeni kategori",
