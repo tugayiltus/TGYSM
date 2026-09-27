@@ -27,13 +27,17 @@ public sealed class WorkerHeartbeat : Entity
             Job = job,
             Instance = instance,
             LastRunAt = lastRunAt,
-            LastError = lastError,
+            LastError = Truncate(lastError),
         };
 
     /// <summary>Records another run's outcome; <paramref name="lastError"/> null on success.</summary>
     public void Record(DateTimeOffset lastRunAt, string? lastError)
     {
         LastRunAt = lastRunAt;
-        LastError = lastError;
+        LastError = Truncate(lastError);
     }
+
+    /// <summary>An exception message has no length limit; <see cref="ErrorMaxLength"/> is the column's.</summary>
+    private static string? Truncate(string? lastError) =>
+        lastError is { Length: > ErrorMaxLength } ? lastError[..ErrorMaxLength] : lastError;
 }

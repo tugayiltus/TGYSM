@@ -55,7 +55,10 @@ public abstract class PeriodicJob(
             await RunOnceAsync(scope.ServiceProvider, stoppingToken);
             return null;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        // Only a genuine shutdown escapes uncaught (so the host's default StopHost behavior only ever fires on
+        // real shutdown); a job's own OperationCanceledException/TaskCanceledException (a linked token, an
+        // HttpClient timeout) is exactly the kind of iteration failure this loop must survive.
+        catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
         {
             logger.LogError(exception, "Job {Job} iteration failed.", Name);
             return exception.Message;
@@ -70,7 +73,7 @@ public abstract class PeriodicJob(
             var recorder = scope.ServiceProvider.GetRequiredService<HeartbeatRecorder>();
             await recorder.RecordAsync(Name, InstanceId, error, cancellationToken);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogError(exception, "Job {Job} could not record its heartbeat.", Name);
         }

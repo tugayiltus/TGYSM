@@ -103,7 +103,19 @@ public sealed class PeriodicJobTests(PostgresDatabase database) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Exception_in_one_iteration_is_recorded_and_the_next_iteration_runs()
+    public async Task Exception_in_one_iteration_is_recorded_and_the_next_iteration_runs() =>
+        await AssertRecordedAndRecoversAsync(() => throw new InvalidOperationException("boom"), "boom");
+
+    /// <summary>
+    /// A job's own <see cref="TaskCanceledException"/> (an HttpClient timeout, a linked token it created itself)
+    /// must be recorded and recovered from exactly like any other failure — only a genuine shutdown
+    /// (<c>stoppingToken</c> itself cancelled) may escape uncaught and stop the loop.
+    /// </summary>
+    [Fact]
+    public async Task Cancellation_not_caused_by_shutdown_is_recorded_and_the_next_iteration_runs() =>
+        await AssertRecordedAndRecoversAsync(() => throw new TaskCanceledException("job's own timeout, not a shutdown"), "job's own timeout");
+
+    private async Task AssertRecordedAndRecoversAsync(Func<Task> throwOnFirstAttempt, string expectedErrorSubstring)
     {
         await using var provider = BuildProvider();
         var scopes = provider.GetRequiredService<IServiceScopeFactory>();
@@ -115,9 +127,7 @@ public sealed class PeriodicJobTests(PostgresDatabase database) : IAsyncLifetime
         Task OnRunOnce()
         {
             var current = Interlocked.Increment(ref attempt);
-            return current == 1
-                ? throw new InvalidOperationException("boom")
-                : Task.CompletedTask;
+            return current == 1 ? throwOnFirstAttempt() : Task.CompletedTask;
         }
 
         var job = new RecordingJob(scopes, optionsMonitor, clock, logger, OnRunOnce);
@@ -125,7 +135,7 @@ public sealed class PeriodicJobTests(PostgresDatabase database) : IAsyncLifetime
         try
         {
             var afterFailure = await WaitForHeartbeatAsync(clock, error => error is not null, logger);
-            Assert.Contains("boom", afterFailure.LastError, StringComparison.Ordinal);
+            Assert.Contains(expectedErrorSubstring, afterFailure.LastError, StringComparison.Ordinal);
 
             var afterSuccess = await WaitForHeartbeatAsync(clock, error => error is null, logger);
             Assert.True(afterSuccess.LastRunAt >= afterFailure.LastRunAt);

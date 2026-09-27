@@ -13,6 +13,7 @@ public static class RowLease
 {
     private const string IdColumn = "id";
     private const string LockedUntilColumn = "locked_until";
+    private static readonly TimeSpan MinimumLease = TimeSpan.FromSeconds(1);
 
     public static async Task<List<T>> ClaimAsync<T>(
         DbSet<T> set,
@@ -22,6 +23,11 @@ public static class RowLease
         CancellationToken cancellationToken)
         where T : class
     {
+        if (lease < MinimumLease)
+        {
+            throw new ArgumentOutOfRangeException(nameof(lease), lease, "Lease must be at least one second; a sub-second value truncates to a zero-length lease.");
+        }
+
         var context = set.GetService<ICurrentDbContext>().Context;
         var table = set.EntityType.GetSchemaQualifiedTableName()
             ?? throw new InvalidOperationException($"{typeof(T).Name} is not mapped to a table.");
@@ -37,6 +43,14 @@ public static class RowLease
                 FOR UPDATE SKIP LOCKED
             )
             RETURNING {table}.*";
+
+        // A caller already inside a transaction (e.g. IAppDbContext.RunInTransactionAsync) must not get a nested
+        // BeginTransactionAsync, which Npgsql rejects; the single UPDATE ... RETURNING is already atomic on its
+        // own, so an ambient transaction is simply reused instead of wrapping it in a second one.
+        if (context.Database.CurrentTransaction is not null)
+        {
+            return await set.FromSqlRaw(sql, leaseSeconds, batch).ToListAsync(cancellationToken);
+        }
 
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         var claimed = await set.FromSqlRaw(sql, leaseSeconds, batch).ToListAsync(cancellationToken);

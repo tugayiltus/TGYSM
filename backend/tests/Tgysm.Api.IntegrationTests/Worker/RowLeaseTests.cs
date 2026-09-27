@@ -143,15 +143,45 @@ public sealed class RowLeaseTests(PostgresDatabase database) : IAsyncLifetime
 
         await using (var db = CreateLeaseDbContext())
         {
-            var firstClaim = await RowLease.ClaimAsync(db.Rows, PendingPredicate, RowCount, TimeSpan.FromMilliseconds(1), Ct);
+            var firstClaim = await RowLease.ClaimAsync(db.Rows, PendingPredicate, RowCount, TimeSpan.FromMinutes(5), Ct);
             Assert.Equal(RowCount, firstClaim.Count);
         }
 
-        // The 1ms lease from the first claim is long expired by now.
+        // Simulate the lease having expired a long time ago, rather than waiting out a real one.
+        await using (var db = database.CreateDbContext())
+        {
+            await db.Database.ExecuteSqlRawAsync($"UPDATE {TableName} SET locked_until = now() - interval '1 hour'", Ct);
+        }
+
         await using var second = CreateLeaseDbContext();
         var secondClaim = await RowLease.ClaimAsync(second.Rows, PendingPredicate, RowCount, TimeSpan.FromMinutes(5), Ct);
 
         Assert.Equal(ids.OrderBy(i => i), secondClaim.Select(r => r.Id).OrderBy(i => i));
+    }
+
+    [Fact]
+    public async Task Lease_under_one_second_is_rejected()
+    {
+        await SeedPendingRowsAsync();
+        await using var db = CreateLeaseDbContext();
+
+        var error = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => RowLease.ClaimAsync(db.Rows, PendingPredicate, RowCount, TimeSpan.FromMilliseconds(1), Ct));
+
+        Assert.Equal("lease", error.ParamName);
+    }
+
+    [Fact]
+    public async Task Claim_inside_an_already_open_transaction_reuses_it_instead_of_nesting()
+    {
+        var ids = await SeedPendingRowsAsync();
+        await using var db = CreateLeaseDbContext();
+        await using var transaction = await db.Database.BeginTransactionAsync(Ct);
+
+        var claimed = await RowLease.ClaimAsync(db.Rows, PendingPredicate, RowCount, TimeSpan.FromMinutes(5), Ct);
+        await transaction.CommitAsync(Ct);
+
+        Assert.Equal(ids.OrderBy(i => i), claimed.Select(r => r.Id).OrderBy(i => i));
     }
 
     [Fact]
