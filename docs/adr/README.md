@@ -17,3 +17,8 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0011](0011-ticket-numbering.md) | Ticket numbering with a counter table | accepted | 2026-09-26 |
 | [0012](0012-attachment-storage-and-scanning.md) | Attachment storage and scanning | accepted | 2026-09-26 |
 | [0013](0013-ticket-access-scope.md) | Ticket access scope | accepted | 2026-09-26 |
+| [0014](0014-worker-process-and-row-leases.md) | Worker process and row leases | accepted | 2026-09-27 |
+| [0015](0015-transactional-outbox-and-email-delivery.md) | Transactional outbox and email delivery | accepted | 2026-09-27 |
+| [0016](0016-database-email-templates.md) | Database email templates | accepted | 2026-09-27 |
+| [0017](0017-password-set-links.md) | Password set links | accepted | 2026-09-27 |
+| [0018](0018-sla-calculation-model.md) | SLA calculation model | accepted | 2026-09-27 |
