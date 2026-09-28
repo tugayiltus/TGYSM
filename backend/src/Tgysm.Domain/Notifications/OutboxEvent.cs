@@ -17,6 +17,37 @@ public sealed class OutboxEvent
     /// </summary>
     public const string ActorIdKey = "actorId";
 
+    /// <summary>
+    /// <see cref="Payload"/> key holding which SLA metric an <c>sla_warning</c>/<c>sla_breached</c> event is about
+    /// (e.g. first response, resolution). Written by the SLA monitor (a later task); <c>NotificationContextLoader</c>
+    /// reads it back to fill the <c>slaMetric</c> template variable.
+    /// </summary>
+    public const string SlaMetricKey = "metric";
+
+    /// <summary>
+    /// <see cref="Payload"/> key holding that metric's due time (ISO 8601), read back to fill the <c>dueAt</c>
+    /// template variable.
+    /// </summary>
+    public const string SlaDueAtKey = "dueAt";
+
+    /// <summary>Dispatch attempts stop retrying once <see cref="Attempts"/> reaches this (spec: retry plan, max 5 attempts).</summary>
+    public const int MaxAttempts = 5;
+
+    /// <summary>
+    /// Delay applied after each failed attempt, indexed by <c>Attempts - 1</c> (spec: back-off 1, 5, 15, 60, 360
+    /// minutes). An event's <see cref="MaxAttempts"/>-th failure moves it straight to <see cref="OutboxStatus.Failed"/>
+    /// instead of scheduling a further retry, so the last entry is never actually applied as a delay; it is kept in
+    /// the list because the plan states five values, one per attempt.
+    /// </summary>
+    private static readonly TimeSpan[] BackoffIntervals =
+    [
+        TimeSpan.FromMinutes(1),
+        TimeSpan.FromMinutes(5),
+        TimeSpan.FromMinutes(15),
+        TimeSpan.FromMinutes(60),
+        TimeSpan.FromMinutes(360),
+    ];
+
     private OutboxEvent()
     {
     }
@@ -47,6 +78,12 @@ public sealed class OutboxEvent
     /// <summary>When the dispatcher moved this event to <see cref="OutboxStatus.Dispatched"/> or <see cref="OutboxStatus.Skipped"/>.</summary>
     public DateTimeOffset? DispatchedAt { get; private set; }
 
+    /// <summary>How many dispatch attempts have failed for this event.</summary>
+    public int Attempts { get; private set; }
+
+    /// <summary>The most recent dispatch failure's message, truncated (never a secret: dispatch never touches <see cref="ProtectedSecret"/>).</summary>
+    public string? LastError { get; private set; }
+
     public static OutboxEvent Create(string eventType, Guid? ticketId, Guid? userId, string payload, string? protectedSecret, DateTimeOffset now) =>
         new()
         {
@@ -70,5 +107,27 @@ public sealed class OutboxEvent
     {
         Status = OutboxStatus.Skipped;
         DispatchedAt = now;
+    }
+
+    /// <summary>
+    /// Records one failed dispatch attempt: still-pending rows back off per <see cref="BackoffIntervals"/> so the
+    /// dispatcher's next batch skips them until <see cref="LockedUntil"/> passes; the <see cref="MaxAttempts"/>-th
+    /// failure moves the event to <see cref="OutboxStatus.Failed"/> instead, so one bad event can never blockade a
+    /// batch forever (the claim query orders by id, otherwise re-claiming the same never-clearing row every run).
+    /// </summary>
+    public void RecordFailure(string error, DateTimeOffset now)
+    {
+        Attempts++;
+        LastError = error.Length > EmailDelivery.LastErrorMaxLength ? error[..EmailDelivery.LastErrorMaxLength] : error;
+
+        if (Attempts >= MaxAttempts)
+        {
+            Status = OutboxStatus.Failed;
+            LockedUntil = null;
+        }
+        else
+        {
+            LockedUntil = now + BackoffIntervals[Attempts - 1];
+        }
     }
 }

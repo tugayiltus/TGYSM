@@ -19,7 +19,10 @@ internal static class Program
         // for a request, the Worker has no signed-in user so it supplies its own system actor instead.
         builder.Services.AddScoped<ICurrentActor, WorkerCurrentActor>();
         builder.Services.AddOptions<WorkerOptions>().BindConfiguration(WorkerOptions.SectionName);
-        builder.Services.AddOptions<AppOptions>().BindConfiguration(AppOptions.SectionName);
+        builder.Services.AddOptions<AppOptions>()
+            .BindConfiguration(AppOptions.SectionName)
+            .Validate(o => AppOptionsValidation.IsValidPublicBaseUrl(o.PublicBaseUrl), AppOptionsValidation.PublicBaseUrlErrorMessage)
+            .ValidateOnStart();
         builder.Services.AddScoped<HeartbeatRecorder>();
 
         builder.Services.AddHostedService<OutboxDispatcherJob>();

@@ -38,7 +38,7 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
             var ticket = await db.Tickets.AsNoTracking().SingleAsync(t => t.Id == ticketId, cancellationToken);
             Set(TemplateVariables.TicketNumber, ticket.Number);
             Set(TemplateVariables.Subject, ticket.Subject);
-            Set(TemplateVariables.Status, ticket.Status.ToString());
+            Set(TemplateVariables.Status, TicketStatusLabels.Of(ticket.Status));
             Set(TemplateVariables.TicketUrl, TicketUrl(ticket.Number));
             Set(TemplateVariables.Resolution, ticket.Resolution);
             Set(TemplateVariables.CompletedAt, ticket.CompletedAt is { } completedAt ? clock.Format(completedAt) : null);
@@ -46,8 +46,8 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
 
         // sla_warning/sla_breached: metric and due time come from the event's own payload (ids and reason codes
         // only, per OutboxEvent.Payload) once the SLA monitor (a later task) starts writing them.
-        Set(TemplateVariables.SlaMetric, PayloadString(outboxEvent, "metric"));
-        var dueAt = PayloadDate(outboxEvent, "dueAt");
+        Set(TemplateVariables.SlaMetric, PayloadString(outboxEvent, OutboxEvent.SlaMetricKey));
+        var dueAt = PayloadDate(outboxEvent, OutboxEvent.SlaDueAtKey);
         Set(TemplateVariables.DueAt, dueAt is { } due ? clock.Format(due) : null);
 
         return values;

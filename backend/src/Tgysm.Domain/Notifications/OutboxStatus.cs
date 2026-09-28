@@ -11,4 +11,7 @@ public enum OutboxStatus
 
     /// <summary>The dispatcher found no recipient (e.g. an inactive user); nothing to send.</summary>
     Skipped,
+
+    /// <summary>Every dispatch attempt (up to <see cref="OutboxEvent.MaxAttempts"/>) failed; stops retrying.</summary>
+    Failed,
 }

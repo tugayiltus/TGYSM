@@ -27,7 +27,10 @@ internal static class ApiServiceCollectionExtensions
             .Bind(configuration.GetSection(SecurityOptions.SectionName))
             .Validate(o => o.LoginPermitLimitPerMinute > 0 && o.SessionHours > 0, "Security limits must be positive.")
             .ValidateOnStart();
-        services.AddOptions<AppOptions>().Bind(configuration.GetSection(AppOptions.SectionName));
+        services.AddOptions<AppOptions>()
+            .Bind(configuration.GetSection(AppOptions.SectionName))
+            .Validate(o => AppOptionsValidation.IsValidPublicBaseUrl(o.PublicBaseUrl), AppOptionsValidation.PublicBaseUrlErrorMessage)
+            .ValidateOnStart();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentActor, HttpCurrentActor>();

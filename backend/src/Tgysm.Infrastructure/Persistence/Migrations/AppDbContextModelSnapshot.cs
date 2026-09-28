@@ -638,6 +638,10 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -651,6 +655,11 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("event_type");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
 
                     b.Property<DateTimeOffset?>("LockedUntil")
                         .HasColumnType("timestamp with time zone")
@@ -690,7 +699,7 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.ToTable("notification_outbox", null, t =>
                         {
-                            t.HasCheckConstraint("ck_notification_outbox_status", "status IN ('pending', 'dispatched', 'skipped')");
+                            t.HasCheckConstraint("ck_notification_outbox_status", "status IN ('pending', 'dispatched', 'skipped', 'failed')");
                         });
                 });
 

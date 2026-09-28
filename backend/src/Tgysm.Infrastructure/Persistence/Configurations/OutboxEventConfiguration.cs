@@ -27,5 +27,7 @@ internal sealed class OutboxEventConfiguration : IEntityTypeConfiguration<Outbox
         // RowLease.ClaimAsync (ADR-0014) requires a nullable locked_until timestamptz column on the claimed type.
         builder.Property(e => e.LockedUntil);
         builder.Property(e => e.DispatchedAt);
+        builder.Property(e => e.Attempts).IsRequired();
+        builder.Property(e => e.LastError).HasMaxLength(EmailDelivery.LastErrorMaxLength);
     }
 }

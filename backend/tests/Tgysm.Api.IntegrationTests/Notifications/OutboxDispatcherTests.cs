@@ -56,6 +56,14 @@ public sealed class OutboxDispatcherTests(ApiFactory factory) : IAsyncLifetime
         return await db.EmailDeliveries.Where(d => d.TemplateType == eventType).Select(d => d.RecipientUserId).ToListAsync(Ct);
     }
 
+    private async Task<OutboxEvent> OutboxEventAsync(Guid id)
+    {
+        await using var db = factory.Database.CreateDbContext();
+        return await db.OutboxEvents.SingleAsync(e => e.Id == id, Ct);
+    }
+
+    private static Guid IdOf(System.Text.Json.JsonElement ticket) => ticket.GetProperty("id").GetGuid();
+
     [Fact]
     public async Task Completion_event_renders_resolution_but_not_internal_note_or_root_cause()
     {
@@ -167,5 +175,139 @@ public sealed class OutboxDispatcherTests(ApiFactory factory) : IAsyncLifetime
             .Where(d => d.TemplateType == NotificationEventTypes.TicketCreated)
             .Select(d => d.OutboxId).Distinct().CountAsync(Ct);
         Assert.Equal(ticketCount, distinctOutboxIds);
+    }
+
+    [Fact]
+    public async Task A_bad_event_backs_off_without_blocking_the_rest_of_the_batch()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var badEventId = Guid.Empty;
+
+        // An unknown event type makes RecipientResolver throw — stands in for any dispatch-time failure (a
+        // deleted ticket, a bad App:TimeZone, ...) without needing to corrupt otherwise-valid data.
+        await TestData.SaveAsync(factory, db =>
+        {
+            var bad = OutboxEvent.Create("not_a_real_event_type", null, null, "{}", null, DateTimeOffset.UtcNow);
+            badEventId = bad.Id;
+            db.OutboxEvents.Add(bad);
+        });
+
+        // Created after the bad one, so RowLease claims the bad one first (ORDER BY id, and Guid.CreateVersion7
+        // is time-ordered) — exactly the ordering that let one bad event starve everything behind it before this fix.
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+
+        await DispatchAsync();
+
+        var goodDelivery = await SingleDeliveryForAsync(NotificationEventTypes.TicketCreated, world.EmployeeUser.Id);
+        Assert.NotNull(goodDelivery);
+        // Not just "a delivery row exists": the good event's own status must have actually reached the database.
+        // Recovering from the bad event's failure must not silently drop this event's own not-yet-saved change.
+        var goodOutboxEvent = await OutboxEventAsync(goodDelivery.OutboxId);
+        Assert.Equal(OutboxStatus.Dispatched, goodOutboxEvent.Status);
+
+        var bad = await OutboxEventAsync(badEventId);
+        Assert.Equal(OutboxStatus.Pending, bad.Status);
+        Assert.Equal(1, bad.Attempts);
+        Assert.NotNull(bad.LockedUntil);
+        Assert.True(bad.LockedUntil > DateTimeOffset.UtcNow);
+        Assert.False(string.IsNullOrWhiteSpace(bad.LastError));
+    }
+
+    [Fact]
+    public async Task After_five_failed_attempts_a_bad_event_becomes_failed()
+    {
+        var badEventId = Guid.Empty;
+        await TestData.SaveAsync(factory, db =>
+        {
+            var bad = OutboxEvent.Create("not_a_real_event_type", null, null, "{}", null, DateTimeOffset.UtcNow);
+            badEventId = bad.Id;
+            db.OutboxEvents.Add(bad);
+        });
+
+        for (var attempt = 1; attempt <= OutboxEvent.MaxAttempts; attempt++)
+        {
+            await DispatchAsync();
+            var current = await OutboxEventAsync(badEventId);
+            Assert.Equal(attempt, current.Attempts);
+
+            if (attempt < OutboxEvent.MaxAttempts)
+            {
+                Assert.Equal(OutboxStatus.Pending, current.Status);
+                Assert.NotNull(current.LockedUntil);
+
+                // Simulate the back-off having elapsed instead of waiting on it for real (same trick RowLeaseTests
+                // uses for an expired lease), so the next DispatchAsync() can reclaim it.
+                await using var db = factory.Database.CreateDbContext();
+                await db.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE notification_outbox SET locked_until = now() - interval '1 hour' WHERE id = {current.Id}", Ct);
+            }
+            else
+            {
+                Assert.Equal(OutboxStatus.Failed, current.Status);
+                Assert.Null(current.LockedUntil);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Event_without_an_actor_id_excludes_nobody()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var ticket = await TicketWorld.CreateIncidentAsync(world.Employee);
+
+        // ticket_assigned with no actorId in the payload — a Worker-emitted event has no signed-in HTTP actor, so
+        // there is nobody to exclude and the assignee must still be notified (spec §3.3's exclusion is "the actor",
+        // not "the assignee"; resolved ambiguity: absent actorId excludes nobody).
+        await TestData.SaveAsync(factory, db =>
+            db.OutboxEvents.Add(OutboxEvent.Create(NotificationEventTypes.TicketAssigned, IdOf(ticket), world.DeskUser.Id, "{}", null, DateTimeOffset.UtcNow)));
+
+        await DispatchAsync();
+
+        var recipients = await RecipientIdsForAsync(NotificationEventTypes.TicketAssigned);
+        Assert.Contains(world.DeskUser.Id, recipients);
+    }
+
+    [Fact]
+    public async Task Account_event_delivery_has_no_body_and_no_secret_anywhere()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        const string secret = "super-secret-activation-token";
+
+        await TestData.SaveAsync(factory, db =>
+            db.OutboxEvents.Add(OutboxEvent.Create(NotificationEventTypes.AccountActivation, null, world.EmployeeUser.Id, "{}", secret, DateTimeOffset.UtcNow)));
+
+        await DispatchAsync();
+
+        var delivery = await SingleDeliveryForAsync(NotificationEventTypes.AccountActivation, world.EmployeeUser.Id);
+        Assert.Null(delivery.Body);
+        Assert.DoesNotContain(secret, delivery.Subject, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Sla_event_on_an_unassigned_ticket_goes_to_active_team_members()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var ticket = await TicketWorld.CreateIncidentAsync(world.Employee);
+
+        await TestData.SaveAsync(factory, db =>
+            db.OutboxEvents.Add(OutboxEvent.Create(NotificationEventTypes.SlaWarning, IdOf(ticket), null, "{}", null, DateTimeOffset.UtcNow)));
+
+        await DispatchAsync();
+
+        var recipients = await RecipientIdsForAsync(NotificationEventTypes.SlaWarning);
+        Assert.Contains(world.DeskUser.Id, recipients);
+    }
+
+    [Fact]
+    public async Task Status_variable_renders_the_turkish_label()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+
+        await DispatchAsync();
+
+        var delivery = await SingleDeliveryForAsync(NotificationEventTypes.TicketCreated, world.EmployeeUser.Id);
+        Assert.NotNull(delivery.Body);
+        Assert.Contains("Açık", delivery.Body, StringComparison.Ordinal);
     }
 }
