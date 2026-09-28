@@ -15,4 +15,5 @@ public static class AuditEntityTypes
     public const string Approval = "approval";
     public const string Attachment = "attachment";
     public const string EmailTemplate = "email_template";
+    public const string EmailDelivery = "email_delivery";
 }

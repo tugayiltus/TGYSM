@@ -59,6 +59,9 @@ dotnet build backend/src/Tgysm.Worker --nologo -v quiet
 export ConnectionStrings__Default="Host=$DB_HOST;Database=$DB_NAME;Username=$DB_USER"
 export ASPNETCORE_ENVIRONMENT="Development"
 export DOTNET_ENVIRONMENT="Development"
+# Absolute: the Worker binary runs from its own bin/ output directory (see worker_pid below), not the repo root
+# that appsettings.Development.json's relative Email:PickupFolder default assumes.
+export Email__PickupFolder="$(pwd)/tmp/email-pickup"
 
 for project in "${PROJECTS[@]}"; do
   mkdir -p "$LOG_DIR"

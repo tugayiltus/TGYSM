@@ -25,6 +25,13 @@ public sealed class EmailDelivery : Entity
     public const int TemplateTypeMaxLength = OutboxEvent.EventTypeMaxLength;
     public const int LastErrorMaxLength = 500;
 
+    /// <summary>
+    /// Replaces <see cref="Body"/> once an account-link delivery reaches <see cref="DeliveryStatus.Sent"/> or
+    /// <see cref="DeliveryStatus.Failed"/> (spec §3.2 step 5): the rendered link must not sit in the row any
+    /// longer than sending required, but the row itself is kept (not deleted) for the admin deliveries list.
+    /// </summary>
+    public const string ClearedBodyMarker = "[cleared]";
+
     private EmailDelivery()
     {
     }
@@ -41,13 +48,13 @@ public sealed class EmailDelivery : Entity
     public string Subject { get; private init; } = string.Empty;
 
     /// <summary><c>null</c> for an account-link delivery until it is rendered and sent (see type summary).</summary>
-    public string? Body { get; private init; }
+    public string? Body { get; private set; }
 
     public DeliveryStatus Status { get; private set; } = DeliveryStatus.Pending;
 
     public int Attempts { get; private set; }
 
-    public DateTimeOffset NextAttemptAt { get; private init; }
+    public DateTimeOffset NextAttemptAt { get; private set; }
 
     public DateTimeOffset? LockedUntil { get; private set; }
 
@@ -66,4 +73,65 @@ public sealed class EmailDelivery : Entity
             Body = body,
             NextAttemptAt = now,
         };
+
+    /// <summary>Claimed by <c>EmailSender</c> (leased by <c>IEmailDeliveryClaimer</c>) and about to be handed to <c>IEmailSender</c>.</summary>
+    public void MarkSending(DateTimeOffset now)
+    {
+        Status = DeliveryStatus.Sending;
+        NextAttemptAt = now;
+    }
+
+    /// <summary>Handed to SMTP (or the pickup folder) and confirmed sent.</summary>
+    public void MarkSent(DateTimeOffset now)
+    {
+        Status = DeliveryStatus.Sent;
+        SentAt = now;
+        LockedUntil = null;
+    }
+
+    /// <summary>
+    /// Records one failed send attempt: still-retryable rows go back to <see cref="DeliveryStatus.Pending"/> with
+    /// <see cref="NextAttemptAt"/> pushed out per <see cref="RetryBackoff"/>; the <see cref="RetryBackoff.MaxAttempts"/>-th
+    /// failure moves the row to <see cref="DeliveryStatus.Failed"/> instead, visible and retryable from
+    /// `/admin/email-deliveries`. <paramref name="error"/> must already be safe to store (no credentials) — callers
+    /// are responsible for sanitizing it before this call.
+    /// </summary>
+    public void RecordFailure(string error, DateTimeOffset now)
+    {
+        Attempts++;
+        LastError = error.Length > LastErrorMaxLength ? error[..LastErrorMaxLength] : error;
+        LockedUntil = null;
+
+        var next = RetryBackoff.NextAttemptAt(Attempts, now);
+        if (next is null)
+        {
+            Status = DeliveryStatus.Failed;
+        }
+        else
+        {
+            Status = DeliveryStatus.Pending;
+            NextAttemptAt = next.Value;
+        }
+    }
+
+    /// <summary>
+    /// Admin retry (spec §3.2 step 4): only a <see cref="DeliveryStatus.Failed"/> delivery can be retried, reset
+    /// to <see cref="DeliveryStatus.Pending"/>, due immediately, with a clean attempt count.
+    /// </summary>
+    public void Retry(DateTimeOffset now)
+    {
+        if (Status != DeliveryStatus.Failed)
+        {
+            throw new DomainException(ErrorCodes.EmailDeliveryNotFailed, $"Only a failed delivery can be retried; this one is {Status}.");
+        }
+
+        Status = DeliveryStatus.Pending;
+        Attempts = 0;
+        NextAttemptAt = now;
+        LockedUntil = null;
+        LastError = null;
+    }
+
+    /// <summary>See <see cref="ClearedBodyMarker"/>.</summary>
+    public void ClearBody() => Body = ClearedBodyMarker;
 }

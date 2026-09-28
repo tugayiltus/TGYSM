@@ -18,5 +18,6 @@
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
     <PackageVersion Include="coverlet.MTP" Version="10.0.1" />
     <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageVersion Include="MailKit" Version="4.18.1" />
   </ItemGroup>
 </Project>

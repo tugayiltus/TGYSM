@@ -4,6 +4,7 @@ using Tgysm.Application;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Infrastructure;
+using Tgysm.Infrastructure.Email;
 using Tgysm.Worker.Jobs;
 
 namespace Tgysm.Worker;
@@ -23,9 +24,15 @@ internal static class Program
             .BindConfiguration(AppOptions.SectionName)
             .Validate(o => AppOptionsValidation.IsValidPublicBaseUrl(o.PublicBaseUrl), AppOptionsValidation.PublicBaseUrlErrorMessage)
             .ValidateOnStart();
+        // AddInfrastructure() already binds EmailOptions (so IEmailSender can resolve); this adds the Worker's own
+        // fail-fast requirement (spec §3.5: "Email:Mode missing → worker refuses to start") on top of it.
+        builder.Services.AddOptions<EmailOptions>()
+            .Validate(o => o.Mode is EmailModes.Smtp or EmailModes.Pickup, $"Email:Mode must be '{EmailModes.Smtp}' or '{EmailModes.Pickup}'.")
+            .ValidateOnStart();
         builder.Services.AddScoped<HeartbeatRecorder>();
 
         builder.Services.AddHostedService<OutboxDispatcherJob>();
+        builder.Services.AddHostedService<EmailSenderJob>();
         // Remaining jobs (SLA evaluator, export runner, cleanup) register themselves here in later tasks.
 
         var app = builder.Build();

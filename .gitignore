@@ -21,3 +21,6 @@ e2e-logs/
 .DS_Store
 .memsearch/
 .superpowers/
+
+# Runtime scratch data (e.g. the Worker's Email:Mode=Pickup .eml folder)
+tmp/

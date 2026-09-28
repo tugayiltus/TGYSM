@@ -2014,6 +2014,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/email-deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: string;
+                    eventType?: string;
+                    recipient?: string;
+                    from?: string;
+                    to?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PagedResultOfEmailDeliveryItem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/email-deliveries/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EmailDeliveryItem"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assets": {
         parameters: {
             query?: never;
@@ -4784,6 +4882,8 @@ export interface components {
         CsrfTokenResponse: {
             token: string;
         };
+        /** @enum {unknown} */
+        DeliveryStatus: "pending" | "sending" | "sent" | "failed";
         DepartmentItem: {
             /** Format: uuid */
             id: string;
@@ -4794,6 +4894,28 @@ export interface components {
             approverName: null | string;
             /** Format: uint32 */
             version: number;
+        };
+        EmailDeliveryItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            outboxId: string;
+            eventType: string;
+            /** Format: uuid */
+            recipientUserId: string;
+            recipientEmail: string;
+            subject: string;
+            body: null | string;
+            status: components["schemas"]["DeliveryStatus"];
+            /** Format: int32 */
+            attempts: number;
+            /** Format: date-time */
+            nextAttemptAt: string;
+            lastError: null | string;
+            /** Format: date-time */
+            sentAt: null | string;
+            /** Format: date-time */
+            eventCreatedAt: string;
         };
         EmailTemplateItem: {
             /** Format: uuid */
@@ -4902,6 +5024,15 @@ export interface components {
         };
         PagedResultOfDepartmentItem: {
             items: components["schemas"]["DepartmentItem"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        PagedResultOfEmailDeliveryItem: {
+            items: components["schemas"]["EmailDeliveryItem"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */

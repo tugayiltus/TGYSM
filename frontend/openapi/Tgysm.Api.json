@@ -2030,6 +2030,130 @@
         }
       }
     },
+    "/api/v1/admin/email-deliveries": {
+      "get": {
+        "tags": [
+          "Admin: Email deliveries"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recipient",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfEmailDeliveryItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/email-deliveries/{id}/retry": {
+      "post": {
+        "tags": [
+          "Admin: Email deliveries"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailDeliveryItem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assets": {
       "get": {
         "tags": [
@@ -5579,6 +5703,14 @@
           }
         }
       },
+      "DeliveryStatus": {
+        "enum": [
+          "pending",
+          "sending",
+          "sent",
+          "failed"
+        ]
+      },
       "DepartmentItem": {
         "required": [
           "id",
@@ -5616,6 +5748,81 @@
           "version": {
             "type": "integer",
             "format": "uint32"
+          }
+        }
+      },
+      "EmailDeliveryItem": {
+        "required": [
+          "id",
+          "outboxId",
+          "eventType",
+          "recipientUserId",
+          "recipientEmail",
+          "subject",
+          "body",
+          "status",
+          "attempts",
+          "nextAttemptAt",
+          "lastError",
+          "sentAt",
+          "eventCreatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "outboxId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "recipientUserId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipientEmail": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeliveryStatus"
+          },
+          "attempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nextAttemptAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastError": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sentAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "eventCreatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -6010,6 +6217,35 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DepartmentItem"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PagedResultOfEmailDeliveryItem": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailDeliveryItem"
             }
           },
           "page": {
@@ -7458,6 +7694,9 @@
     },
     {
       "name": "Admin: Email templates"
+    },
+    {
+      "name": "Admin: Email deliveries"
     },
     {
       "name": "Assets"

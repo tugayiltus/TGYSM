@@ -131,7 +131,8 @@
     "ticket": "Kayıt",
     "approval": "Onay",
     "attachment": "Dosya",
-    "email_template": "E-posta şablonu"
+    "email_template": "E-posta şablonu",
+    "email_delivery": "E-posta gönderimi"
   },
   "auditActions": {
     "setup": {
@@ -216,6 +217,9 @@
     },
     "email_templates": {
       "updated": "E-posta şablonu güncellendi"
+    },
+    "email_delivery": {
+      "retried": "E-posta yeniden gönderime alındı"
     }
   },
   "emailEvents": {

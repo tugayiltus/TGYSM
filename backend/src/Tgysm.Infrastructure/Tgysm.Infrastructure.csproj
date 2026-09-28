@@ -3,7 +3,8 @@
     <ProjectReference Include="..\Tgysm.Application\Tgysm.Application.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- PasswordHasher<T> (Microsoft.Extensions.Identity.Core) and configuration abstractions -->
+    <!-- PasswordHasher<T> (Microsoft.Extensions.Identity.Core), Data Protection (account-link tokens, ADR-0017)
+         and configuration abstractions. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
@@ -15,6 +16,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <!-- SMTP transport (ADR-0015); MimeKit arrives as its transitive dependency. -->
+    <PackageReference Include="MailKit" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Tgysm.Api.IntegrationTests" />

@@ -33,6 +33,11 @@ public static class RowLease
             ?? throw new InvalidOperationException($"{typeof(T).Name} is not mapped to a table.");
         var leaseSeconds = (int)lease.TotalSeconds;
 
+        // table.* returns every regular column but never a system column; an entity configured with
+        // ConfigureEntityBase() (Version mapped to the xmin concurrency token, e.g. EmailDelivery) needs xmin
+        // selected explicitly or EF's FromSqlRaw materialization throws "required column 'xmin' was not present".
+        // A harmless extra column for a type that does not map it (e.g. OutboxEvent, which manages Id/Version
+        // itself without ConfigureEntityBase()): FromSqlRaw ignores columns it has no mapped property for.
         var sql = $@"
             UPDATE {table} SET {LockedUntilColumn} = now() + ({{0}} * interval '1 second')
             WHERE {IdColumn} IN (
@@ -42,7 +47,7 @@ public static class RowLease
                 LIMIT {{1}}
                 FOR UPDATE SKIP LOCKED
             )
-            RETURNING {table}.*";
+            RETURNING {table}.*, {table}.xmin";
 
         // A caller already inside a transaction (e.g. IAppDbContext.RunInTransactionAsync) must not get a nested
         // BeginTransactionAsync, which Npgsql rejects; the single UPDATE ... RETURNING is already atomic on its

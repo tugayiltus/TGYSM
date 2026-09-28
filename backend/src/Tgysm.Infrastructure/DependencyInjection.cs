@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Tgysm.Application.Abstractions;
+using Tgysm.Infrastructure.Email;
 using Tgysm.Infrastructure.Files;
 using Tgysm.Infrastructure.Persistence;
 using Tgysm.Infrastructure.Security;
@@ -25,10 +27,32 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
         services.AddScoped<IOutboxClaimer, OutboxClaimer>();
+        services.AddScoped<IEmailDeliveryClaimer, EmailDeliveryClaimer>();
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddOptions<FileStorageOptions>().BindConfiguration(FileStorageOptions.SectionName);
         services.AddSingleton<IFileStore, LocalFileStore>();
         services.AddSingleton<IFileScanner, DevelopmentFileScanner>();
+
+        // Account-link tokens (ADR-0015, ADR-0017); key ring persistence is unconfigured for now (flagged as a
+        // production risk in ADR-0004) and out of this task's scope.
+        services.AddDataProtection();
+        services.AddSingleton<IAccountLinkProtector, AccountLinkProtector>();
+
+        // Email:Mode picks the transport (spec §3.5); resolving IEmailSender with a missing/unrecognized Mode
+        // throws immediately ("fail fast when missing"). Tgysm.Worker additionally marks EmailOptions
+        // ValidateOnStart so a bad Mode fails the host at startup, not at the first send.
+        services.AddOptions<EmailOptions>().BindConfiguration(EmailOptions.SectionName);
+        services.AddScoped<IEmailSender>(provider =>
+        {
+            var mode = provider.GetRequiredService<IOptionsMonitor<EmailOptions>>().CurrentValue.Mode;
+            return mode switch
+            {
+                EmailModes.Smtp => ActivatorUtilities.CreateInstance<SmtpEmailSender>(provider),
+                EmailModes.Pickup => ActivatorUtilities.CreateInstance<PickupFolderEmailSender>(provider),
+                _ => throw new InvalidOperationException(
+                    $"Email:Mode '{mode}' is not supported; expected '{EmailModes.Smtp}' or '{EmailModes.Pickup}'."),
+            };
+        });
         return services;
     }
 }

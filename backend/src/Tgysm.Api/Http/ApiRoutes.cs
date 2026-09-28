@@ -21,4 +21,5 @@ internal static class ApiRoutes
     public const string Tickets = "/tickets";
     public const string Approvals = "/approvals";
     public const string EmailTemplates = "/email-templates";
+    public const string EmailDeliveries = "/email-deliveries";
 }

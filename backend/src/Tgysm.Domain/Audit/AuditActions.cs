@@ -75,4 +75,5 @@ public static class AuditActions
     public const string ApprovalVoided = "approvals.voided";
 
     public const string EmailTemplateUpdated = "email_templates.updated";
+    public const string EmailDeliveryRetried = "email_delivery.retried";
 }

@@ -31,22 +31,14 @@ public sealed class OutboxEvent
     public const string SlaDueAtKey = "dueAt";
 
     /// <summary>Dispatch attempts stop retrying once <see cref="Attempts"/> reaches this (spec: retry plan, max 5 attempts).</summary>
-    public const int MaxAttempts = 5;
+    public const int MaxAttempts = RetryBackoff.MaxAttempts;
 
     /// <summary>
-    /// Delay applied after each failed attempt, indexed by <c>Attempts - 1</c> (spec: back-off 1, 5, 15, 60, 360
-    /// minutes). An event's <see cref="MaxAttempts"/>-th failure moves it straight to <see cref="OutboxStatus.Failed"/>
-    /// instead of scheduling a further retry, so the last entry is never actually applied as a delay; it is kept in
-    /// the list because the plan states five values, one per attempt.
+    /// Data Protection purpose string for <see cref="ProtectedSecret"/> (ADR-0015, ADR-0017): Task 7 protects an
+    /// account-link token with a protector created from this purpose; <c>EmailSender</c> (this task) unprotects it
+    /// at send time with a protector created from the same purpose. One named constant so both sides can never drift.
     /// </summary>
-    private static readonly TimeSpan[] BackoffIntervals =
-    [
-        TimeSpan.FromMinutes(1),
-        TimeSpan.FromMinutes(5),
-        TimeSpan.FromMinutes(15),
-        TimeSpan.FromMinutes(60),
-        TimeSpan.FromMinutes(360),
-    ];
+    public const string ProtectedSecretPurpose = "Tgysm.Notifications.AccountLinkToken";
 
     private OutboxEvent()
     {
@@ -66,7 +58,7 @@ public sealed class OutboxEvent
     public string Payload { get; private init; } = "{}";
 
     /// <summary>Data Protection–encrypted account-link token; account events only.</summary>
-    public string? ProtectedSecret { get; private init; }
+    public string? ProtectedSecret { get; private set; }
 
     public OutboxStatus Status { get; private set; } = OutboxStatus.Pending;
 
@@ -120,14 +112,22 @@ public sealed class OutboxEvent
         Attempts++;
         LastError = error.Length > EmailDelivery.LastErrorMaxLength ? error[..EmailDelivery.LastErrorMaxLength] : error;
 
-        if (Attempts >= MaxAttempts)
+        var next = RetryBackoff.NextAttemptAt(Attempts, now);
+        if (next is null)
         {
             Status = OutboxStatus.Failed;
             LockedUntil = null;
         }
         else
         {
-            LockedUntil = now + BackoffIntervals[Attempts - 1];
+            LockedUntil = next;
         }
     }
+
+    /// <summary>
+    /// Called once the dispatcher's downstream <see cref="EmailDelivery"/> for this account-link event has reached
+    /// <c>Sent</c> or <c>Failed</c> (spec §3.2 step 5): the token is no longer needed and must not sit in the row
+    /// any longer than sending required.
+    /// </summary>
+    public void ClearProtectedSecret() => ProtectedSecret = null;
 }
