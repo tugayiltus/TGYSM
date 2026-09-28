@@ -73,4 +73,6 @@ public static class AuditActions
     public const string ApprovalRejected = "approvals.rejected";
     public const string ApprovalReassigned = "approvals.reassigned";
     public const string ApprovalVoided = "approvals.voided";
+
+    public const string EmailTemplateUpdated = "email_templates.updated";
 }

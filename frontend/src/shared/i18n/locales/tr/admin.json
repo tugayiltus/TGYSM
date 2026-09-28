@@ -130,7 +130,8 @@
     "request_type": "Talep tipi",
     "ticket": "Kayıt",
     "approval": "Onay",
-    "attachment": "Dosya"
+    "attachment": "Dosya",
+    "email_template": "E-posta şablonu"
   },
   "auditActions": {
     "setup": {
@@ -212,6 +213,9 @@
       "rejected": "Talep reddedildi",
       "reassigned": "Onaylayıcı değiştirildi",
       "voided": "Onay geçersiz kılındı"
+    },
+    "email_templates": {
+      "updated": "E-posta şablonu güncellendi"
     }
   },
   "emailEvents": {

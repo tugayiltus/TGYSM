@@ -100,5 +100,9 @@
     "too_large": "Her dosya en fazla 10 MB olabilir.",
     "too_many": "Bir seferde en fazla 5 dosya eklenebilir.",
     "type_not_allowed": "Yalnızca PDF, PNG, JPEG, TXT ve CSV dosyaları eklenebilir."
+  },
+  "email_templates": {
+    "unknown_variable": "Bu değişken tanımlı değil.",
+    "variable_not_allowed": "Bu değişken bu bildirim türü için kullanılamaz."
   }
 }

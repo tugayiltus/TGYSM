@@ -88,4 +88,7 @@ public static class ErrorCodes
     public const string MembershipExists = "teams.membership_exists";
     public const string MemberInactive = "teams.member_inactive";
     public const string MemberRoleInvalid = "teams.member_role_invalid";
+
+    public const string EmailTemplateUnknownVariable = "email_templates.unknown_variable";
+    public const string EmailTemplateVariableNotAllowed = "email_templates.variable_not_allowed";
 }
