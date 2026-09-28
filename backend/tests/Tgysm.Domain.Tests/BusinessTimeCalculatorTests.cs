@@ -178,4 +178,121 @@ public sealed class BusinessTimeCalculatorTests
             Assert.Equal(seconds, measured);
         }
     }
+
+    // Ordinary Mon-Fri 09:00-18:00 Berlin calendar (unlike the Sunday-only gap calendar above): business hours
+    // never overlap the 02:00-03:00 transition window itself, so these prove the brief's exact scenario — a
+    // working range computed correctly on each side of a DST change keeps its wall-clock hours (spec §5.2).
+    private static BusinessCalendarRules BerlinMondayToFriday() => new(
+        TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin"),
+        new Dictionary<DayOfWeek, WorkingRange>
+        {
+            [DayOfWeek.Monday] = OfficeHours,
+            [DayOfWeek.Tuesday] = OfficeHours,
+            [DayOfWeek.Wednesday] = OfficeHours,
+            [DayOfWeek.Thursday] = OfficeHours,
+            [DayOfWeek.Friday] = OfficeHours,
+        },
+        new HashSet<DateOnly>());
+
+    [Fact]
+    public void Spring_forward_weekend_keeps_wall_clock_hours_across_cet_and_cest()
+    {
+        var rules = BerlinMondayToFriday();
+        // 2026-03-29 is the last Sunday of March 2026 (CET -> CEST); Friday is still CET, the next Monday is CEST.
+        var fromUtc = new DateTimeOffset(2026, 3, 27, 17, 0, 0, TimeSpan.FromHours(1));
+        var toUtc = new DateTimeOffset(2026, 3, 30, 10, 0, 0, TimeSpan.FromHours(2));
+
+        var seconds = BusinessTimeCalculator.SecondsBetween(rules, fromUtc, toUtc);
+
+        // Friday 17:00-18:00 CET (1h) + Monday 09:00-10:00 CEST (1h).
+        Assert.Equal(2 * 3600L, seconds);
+    }
+
+    [Fact]
+    public void AddSeconds_across_the_spring_forward_weekend_lands_on_monday_in_cest()
+    {
+        var rules = BerlinMondayToFriday();
+        var fromUtc = new DateTimeOffset(2026, 3, 27, 17, 30, 0, TimeSpan.FromHours(1));
+
+        var result = BusinessTimeCalculator.AddSeconds(rules, fromUtc, 60 * 60);
+
+        Assert.Equal(new DateTimeOffset(2026, 3, 30, 9, 30, 0, TimeSpan.FromHours(2)), result);
+    }
+
+    [Fact]
+    public void Fall_back_weekend_keeps_wall_clock_hours_across_cest_and_cet()
+    {
+        var rules = BerlinMondayToFriday();
+        // 2026-10-25 is the last Sunday of October 2026 (CEST -> CET); Friday is still CEST, the next Monday is CET.
+        var fromUtc = new DateTimeOffset(2026, 10, 23, 17, 0, 0, TimeSpan.FromHours(2));
+        var toUtc = new DateTimeOffset(2026, 10, 26, 10, 0, 0, TimeSpan.FromHours(1));
+
+        var seconds = BusinessTimeCalculator.SecondsBetween(rules, fromUtc, toUtc);
+
+        Assert.Equal(2 * 3600L, seconds);
+    }
+
+    [Fact]
+    public void AddSeconds_across_the_fall_back_weekend_lands_on_monday_in_cet()
+    {
+        var rules = BerlinMondayToFriday();
+        var fromUtc = new DateTimeOffset(2026, 10, 23, 17, 30, 0, TimeSpan.FromHours(2));
+
+        var result = BusinessTimeCalculator.AddSeconds(rules, fromUtc, 60 * 60);
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 26, 9, 30, 0, TimeSpan.FromHours(1)), result);
+    }
+
+    [Fact]
+    public void AddSeconds_and_SecondsBetween_are_inverse_over_two_hundred_random_cases_spanning_both_dst_transitions()
+    {
+        var rules = BerlinMondayToFriday();
+        var random = new Random(20260928);
+        var epoch = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        for (var i = 0; i < 200; i++)
+        {
+            // Up to ~300 days from 2026-01-01 covers both the March and the October transition.
+            var fromUtc = epoch.AddSeconds(random.Next(0, 60 * 60 * 24 * 300));
+            var seconds = random.Next(0, 60 * 60 * 24 * 10);
+
+            var toUtc = BusinessTimeCalculator.AddSeconds(rules, fromUtc, seconds);
+            var measured = BusinessTimeCalculator.SecondsBetween(rules, fromUtc, toUtc);
+
+            Assert.Equal(seconds, measured);
+        }
+    }
+
+    [Fact]
+    public void AddSeconds_always_returns_a_utc_offset_regardless_of_the_input_offset()
+    {
+        var rules = MondayToFriday();
+        var start = LocalIstanbul(Monday, 11); // constructed with a +03:00 offset
+
+        var result = BusinessTimeCalculator.AddSeconds(rules, start, 0);
+
+        Assert.Equal(TimeSpan.Zero, result.Offset);
+    }
+
+    [Fact]
+    public void AddSeconds_returns_a_utc_offset_even_when_it_rolls_into_a_later_working_day()
+    {
+        var rules = MondayToFriday();
+
+        var result = BusinessTimeCalculator.AddSeconds(rules, LocalIstanbul(Friday, 17, 30), 60 * 60);
+
+        Assert.Equal(TimeSpan.Zero, result.Offset);
+    }
+
+    [Fact]
+    public void SecondsBetween_does_not_refuse_a_range_longer_than_ten_years()
+    {
+        var rules = MondayToFriday();
+        var from = LocalIstanbul(Monday, 10);
+        var to = from.AddYears(11);
+
+        var seconds = BusinessTimeCalculator.SecondsBetween(rules, from, to);
+
+        Assert.True(seconds > 0);
+    }
 }

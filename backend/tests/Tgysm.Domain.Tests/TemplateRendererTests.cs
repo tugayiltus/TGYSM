@@ -81,4 +81,16 @@ public sealed class TemplateRendererTests
 
         Assert.Equal(["doesNotExist"], badNames);
     }
+
+    [Theory]
+    [InlineData("{{ticket_number}}", "ticket_number")]
+    [InlineData("{{ticket-number}}", "ticket-number")]
+    [InlineData("{{ticketNumber.x}}", "ticketNumber.x")]
+    [InlineData("{{1abc}}", "1abc")]
+    public void Validate_flags_a_placeholder_that_is_not_a_valid_variable_name(string text, string expectedBadName)
+    {
+        var badNames = TemplateRenderer.Validate(text, NotificationEventTypes.TicketCreated);
+
+        Assert.Equal([expectedBadName], badNames);
+    }
 }

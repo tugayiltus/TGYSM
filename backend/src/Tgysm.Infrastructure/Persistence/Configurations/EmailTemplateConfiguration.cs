@@ -10,7 +10,7 @@ internal sealed class EmailTemplateConfiguration : IEntityTypeConfiguration<Emai
     {
         builder.ToTable("email_templates");
         builder.ConfigureEntityBase();
-        builder.Property(t => t.EventType).HasMaxLength(64).IsRequired();
+        builder.Property(t => t.EventType).HasMaxLength(EmailTemplate.EventTypeMaxLength).IsRequired();
         builder.Property(t => t.Subject).HasMaxLength(EmailTemplate.SubjectMaxLength).IsRequired();
         builder.Property(t => t.Body).HasMaxLength(EmailTemplate.BodyMaxLength).IsRequired();
         builder.Property(t => t.UpdatedBy).IsRequired();

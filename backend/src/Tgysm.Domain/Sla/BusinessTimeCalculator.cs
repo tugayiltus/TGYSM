@@ -26,13 +26,10 @@ public static class BusinessTimeCalculator
         var endDate = LocalDate(rules.Zone, toUtc);
         long total = 0;
 
-        for (var scanned = 0; date <= endDate; date = date.AddDays(1))
+        // No day-count guard here: the loop is already bounded by endDate (the caller's own range), however
+        // long that range is — unlike AddSeconds below, this can never scan forever.
+        for (; date <= endDate; date = date.AddDays(1))
         {
-            if (++scanned > MaxDaysScanned)
-            {
-                throw new DomainException(ErrorCodes.SlaCalendarEmpty, "The business calendar produced no working time in a bounded scan.");
-            }
-
             if (!TryGetWorkingWindowUtc(rules, date, out var windowStart, out var windowEnd))
             {
                 continue;
@@ -80,7 +77,10 @@ public static class BusinessTimeCalculator
             var available = (long)(windowEnd - segmentStart).TotalSeconds;
             if (remaining <= available)
             {
-                return segmentStart.AddSeconds(remaining);
+                // Always return UTC: segmentStart can still carry the caller's original offset (e.g. +03:00)
+                // when it is returned unmodified on the very first working day, and Npgsql's timestamptz column
+                // (Task 11) rejects a non-zero offset.
+                return segmentStart.AddSeconds(remaining).ToUniversalTime();
             }
 
             remaining -= available;

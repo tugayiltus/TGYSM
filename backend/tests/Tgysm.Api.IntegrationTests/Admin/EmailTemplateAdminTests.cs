@@ -54,6 +54,22 @@ public sealed class EmailTemplateAdminTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Every_seeded_template_uses_only_variables_allowed_for_its_event()
+    {
+        var admin = await AdminAsync();
+
+        using var response = await admin.GetAsync(TemplatesPath);
+        var items = (await admin.ReadJsonAsync<JsonElement>(response)).EnumerateArray().ToList();
+
+        Assert.All(items, t =>
+        {
+            var eventType = t.GetProperty("eventType").GetString()!;
+            Assert.Empty(TemplateRenderer.Validate(t.GetProperty("subject").GetString()!, eventType));
+            Assert.Empty(TemplateRenderer.Validate(t.GetProperty("body").GetString()!, eventType));
+        });
+    }
+
+    [Fact]
     public async Task Update_saves_the_new_wording_and_is_audited()
     {
         var admin = await AdminAsync();

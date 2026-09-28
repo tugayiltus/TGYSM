@@ -10,6 +10,7 @@ public sealed class EmailTemplate : Entity
 {
     public const int SubjectMaxLength = 200;
     public const int BodyMaxLength = 10_000;
+    public const int EventTypeMaxLength = 64;
 
     private EmailTemplate()
     {
@@ -32,11 +33,41 @@ public sealed class EmailTemplate : Entity
         return template;
     }
 
+    /// <summary>Sets the wording, enforcing length and `{{name}}` variable validity as a domain invariant (spec §3.4, ADR-0016) — the same <see cref="ErrorCodes"/> the admin API's 400 field errors use.</summary>
     public void Update(string subject, string body, Guid actorId, DateTimeOffset now)
     {
-        Subject = subject.Trim();
-        Body = body.Trim();
+        var trimmedSubject = subject.Trim();
+        var trimmedBody = body.Trim();
+        EnsureWithinLength(trimmedSubject, SubjectMaxLength);
+        EnsureWithinLength(trimmedBody, BodyMaxLength);
+        EnsureNoBadVariables(trimmedSubject);
+        EnsureNoBadVariables(trimmedBody);
+
+        Subject = trimmedSubject;
+        Body = trimmedBody;
         UpdatedBy = actorId;
         UpdatedAt = now;
+    }
+
+    private static void EnsureWithinLength(string text, int maxLength)
+    {
+        if (text.Length > maxLength)
+        {
+            throw new DomainException(ErrorCodes.TooLong, $"Text exceeds the maximum length of {maxLength}.");
+        }
+    }
+
+    private void EnsureNoBadVariables(string text)
+    {
+        var badNames = TemplateRenderer.Validate(text, EventType);
+        if (badNames.Count == 0)
+        {
+            return;
+        }
+
+        var code = TemplateVariables.AllVariables.Contains(badNames[0])
+            ? ErrorCodes.EmailTemplateVariableNotAllowed
+            : ErrorCodes.EmailTemplateUnknownVariable;
+        throw new DomainException(code, $"Variable {{{{{badNames[0]}}}}} is not allowed here.");
     }
 }
