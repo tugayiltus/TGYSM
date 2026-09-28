@@ -91,4 +91,6 @@ public static class ErrorCodes
 
     public const string EmailTemplateUnknownVariable = "email_templates.unknown_variable";
     public const string EmailTemplateVariableNotAllowed = "email_templates.variable_not_allowed";
+
+    public const string SlaCalendarEmpty = "sla.calendar_empty";
 }

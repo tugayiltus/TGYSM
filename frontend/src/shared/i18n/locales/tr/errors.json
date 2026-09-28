@@ -104,5 +104,8 @@
   "email_templates": {
     "unknown_variable": "Bu değişken tanımlı değil.",
     "variable_not_allowed": "Bu değişken bu bildirim türü için kullanılamaz."
+  },
+  "sla": {
+    "calendar_empty": "Çalışma takviminde en az bir çalışma günü tanımlı olmalıdır."
   }
 }
