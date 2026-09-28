@@ -9,6 +9,14 @@ public sealed class OutboxEvent
 {
     public const int EventTypeMaxLength = 50;
 
+    /// <summary>
+    /// <see cref="Payload"/> key holding the acting user's id (the person who caused the event), so a later
+    /// dispatcher can exclude them from a recipient list where spec §3.3 says "not sent to: the actor/author".
+    /// Written by <c>NotificationOutbox</c> on every event; read back with <c>JsonDocument</c>, not deserialized
+    /// into a typed model, since the rest of the payload is event-specific.
+    /// </summary>
+    public const string ActorIdKey = "actorId";
+
     private OutboxEvent()
     {
     }

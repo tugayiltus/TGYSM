@@ -23,6 +23,12 @@ public sealed class OutboxEmissionTests(ApiFactory factory) : IAsyncLifetime
 
     private static Guid IdOf(JsonElement ticket) => ticket.GetProperty("id").GetGuid();
 
+    private static Guid? ActorIdOf(OutboxEvent outboxEvent)
+    {
+        using var payload = JsonDocument.Parse(outboxEvent.Payload);
+        return payload.RootElement.TryGetProperty(OutboxEvent.ActorIdKey, out var value) ? value.GetGuid() : null;
+    }
+
     private static async Task<JsonElement> ActionAsync(ApiClient client, JsonElement ticket, string action, object body)
     {
         using var response = await client.PostAsync(TicketWorld.PathOf(ticket, action), body);
@@ -64,6 +70,7 @@ public sealed class OutboxEmissionTests(ApiFactory factory) : IAsyncLifetime
         var single = Assert.Single(await EventsOfTypeAsync(NotificationEventTypes.TicketAssigned));
         Assert.Equal(IdOf(ticket), single.TicketId);
         Assert.Equal(world.DeskUser.Id, single.UserId);
+        Assert.Equal(world.DeskUser.Id, ActorIdOf(single));
     }
 
     [Fact]
@@ -84,6 +91,7 @@ public sealed class OutboxEmissionTests(ApiFactory factory) : IAsyncLifetime
         var single = Assert.Single(await EventsOfTypeAsync(NotificationEventTypes.TicketAssigned));
         Assert.Equal(IdOf(ticket), single.TicketId);
         Assert.Equal(world.FieldUser.Id, single.UserId);
+        Assert.Equal(world.DeskUser.Id, ActorIdOf(single));
     }
 
     [Fact]
@@ -99,6 +107,7 @@ public sealed class OutboxEmissionTests(ApiFactory factory) : IAsyncLifetime
         var single = Assert.Single(await EventsOfTypeAsync(NotificationEventTypes.PublicReply));
         Assert.Equal(IdOf(ticket), single.TicketId);
         Assert.Equal(world.DeskUser.Id, single.UserId);
+        Assert.Equal(world.DeskUser.Id, ActorIdOf(single));
     }
 
     [Fact]
@@ -112,6 +121,7 @@ public sealed class OutboxEmissionTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Created, reply.StatusCode);
         var single = Assert.Single(await EventsOfTypeAsync(NotificationEventTypes.PublicReply));
         Assert.Equal(world.EmployeeUser.Id, single.UserId);
+        Assert.Equal(world.EmployeeUser.Id, ActorIdOf(single));
     }
 
     [Fact]
