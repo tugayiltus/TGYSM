@@ -37,9 +37,15 @@ public sealed class OutboxEvent
     /// <summary>Data Protection–encrypted account-link token; account events only.</summary>
     public string? ProtectedSecret { get; private init; }
 
-    public OutboxStatus Status { get; private init; } = OutboxStatus.Pending;
+    public OutboxStatus Status { get; private set; } = OutboxStatus.Pending;
 
     public DateTimeOffset CreatedAt { get; private init; }
+
+    /// <summary>Set by <c>RowLease</c> while the dispatcher holds this row; cleared implicitly once it moves out of <see cref="OutboxStatus.Pending"/>.</summary>
+    public DateTimeOffset? LockedUntil { get; private set; }
+
+    /// <summary>When the dispatcher moved this event to <see cref="OutboxStatus.Dispatched"/> or <see cref="OutboxStatus.Skipped"/>.</summary>
+    public DateTimeOffset? DispatchedAt { get; private set; }
 
     public static OutboxEvent Create(string eventType, Guid? ticketId, Guid? userId, string payload, string? protectedSecret, DateTimeOffset now) =>
         new()
@@ -51,4 +57,18 @@ public sealed class OutboxEvent
             ProtectedSecret = protectedSecret,
             CreatedAt = now,
         };
+
+    /// <summary>The dispatcher resolved at least one recipient and inserted deliveries for it (spec §3.2 step 2).</summary>
+    public void MarkDispatched(DateTimeOffset now)
+    {
+        Status = OutboxStatus.Dispatched;
+        DispatchedAt = now;
+    }
+
+    /// <summary>The dispatcher found no recipient (none resolved, or every candidate was inactive); nothing to send.</summary>
+    public void MarkSkipped(DateTimeOffset now)
+    {
+        Status = OutboxStatus.Skipped;
+        DispatchedAt = now;
+    }
 }

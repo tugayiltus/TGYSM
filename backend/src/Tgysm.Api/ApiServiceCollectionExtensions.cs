@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Tgysm.Api.Http;
 using Tgysm.Api.Security;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Common;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Users;
 
@@ -26,6 +27,7 @@ internal static class ApiServiceCollectionExtensions
             .Bind(configuration.GetSection(SecurityOptions.SectionName))
             .Validate(o => o.LoginPermitLimitPerMinute > 0 && o.SessionHours > 0, "Security limits must be positive.")
             .ValidateOnStart();
+        services.AddOptions<AppOptions>().Bind(configuration.GetSection(AppOptions.SectionName));
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentActor, HttpCurrentActor>();

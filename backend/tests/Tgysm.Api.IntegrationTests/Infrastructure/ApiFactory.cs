@@ -8,6 +8,7 @@ namespace Tgysm.Api.IntegrationTests.Infrastructure;
 public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestingEnvironment = "Testing";
+    public const string PublicBaseUrl = "http://localhost:5173";
     private const int GenerousLoginLimit = 10_000;
 
     public PostgresDatabase Database { get; } = new();
@@ -40,5 +41,6 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting($"ConnectionStrings:{DependencyInjection.ConnectionStringName}", Database.ConnectionString);
         builder.UseSetting("Files:RootPath", FilesRoot);
         builder.UseSetting("Security:LoginPermitLimitPerMinute", LoginPermitLimitPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        builder.UseSetting("App:PublicBaseUrl", PublicBaseUrl);
     }
 }

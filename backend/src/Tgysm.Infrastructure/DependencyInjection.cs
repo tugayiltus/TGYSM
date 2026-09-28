@@ -24,6 +24,7 @@ public static class DependencyInjection
         });
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
+        services.AddScoped<IOutboxClaimer, OutboxClaimer>();
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddOptions<FileStorageOptions>().BindConfiguration(FileStorageOptions.SectionName);
         services.AddSingleton<IFileStore, LocalFileStore>();

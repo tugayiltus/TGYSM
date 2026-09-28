@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Audit;
+using Tgysm.Application.Common;
 using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Features.Users;
 using Tgysm.Application.Notifications;
@@ -30,6 +31,9 @@ public static class DependencyInjection
 
         services.AddScoped<IAuditLog, AuditLog>();
         services.AddScoped<INotificationOutbox, NotificationOutbox>();
+        services.AddScoped<RecipientResolver>();
+        services.AddScoped<NotificationContextLoader>();
+        services.AddScoped<ICompanyClock, CompanyClock>();
         services.AddSingleton<ITemporaryPasswordGenerator, TemporaryPasswordGenerator>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<OrganizationReferences>();

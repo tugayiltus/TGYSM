@@ -36,6 +36,7 @@ public interface IAppDbContext
     DbSet<WorkerHeartbeat> WorkerHeartbeats { get; }
     DbSet<OutboxEvent> OutboxEvents { get; }
     DbSet<EmailTemplate> EmailTemplates { get; }
+    DbSet<EmailDelivery> EmailDeliveries { get; }
 
     /// <summary>
     /// Saves all tracked changes in one transaction. Throws <see cref="Common.ConcurrencyException"/> on a stale

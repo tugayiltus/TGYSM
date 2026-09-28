@@ -498,6 +498,92 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("request_types", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Notifications.EmailDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("Body")
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("body");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<Guid>("OutboxId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("outbox_id");
+
+                    b.Property<string>("RecipientEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("recipient_email");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_user_id");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("TemplateType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("template_type");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_email_deliveries");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_email_deliveries_status");
+
+                    b.HasIndex("OutboxId", "RecipientUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_email_deliveries_outbox_id_recipient_user_id");
+
+                    b.ToTable("email_deliveries", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_email_deliveries_status", "status IN ('pending', 'sending', 'sent', 'failed')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Notifications.EmailTemplate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -556,11 +642,19 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTimeOffset?>("DispatchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dispatched_at");
+
                     b.Property<string>("EventType")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("event_type");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until");
 
                     b.Property<string>("Payload")
                         .IsRequired()
@@ -1602,6 +1696,16 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_categories_categories_parent_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Notifications.EmailDelivery", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Notifications.OutboxEvent", null)
+                        .WithMany()
+                        .HasForeignKey("OutboxId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_email_deliveries_outbox_events_outbox_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Organization.Department", b =>
