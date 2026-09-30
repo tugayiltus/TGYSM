@@ -37,6 +37,12 @@ public sealed class OutboxEvent
     /// </summary>
     public const string LinkExpiresAtKey = "expiresAt";
 
+    /// <summary>
+    /// <see cref="Payload"/> key holding the normalized email of an <see cref="InternalEventTypes.PasswordResetRequested"/>
+    /// event, which the dispatcher resolves to an account.
+    /// </summary>
+    public const string RequestedEmailKey = "email";
+
     /// <summary>Dispatch attempts stop retrying once <see cref="Attempts"/> reaches this (spec: retry plan, max 5 attempts).</summary>
     public const int MaxAttempts = RetryBackoff.MaxAttempts;
 

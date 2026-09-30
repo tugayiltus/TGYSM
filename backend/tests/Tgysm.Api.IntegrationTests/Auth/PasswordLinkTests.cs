@@ -26,6 +26,7 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
     private const string NewPassword = "Brand-new-password-2026";
     private const string EmailLink = "email_link";
     private const string TemporaryPassword = "temporary_password";
+    private const int DispatchBatch = 50;
     private static readonly TimeSpan Lease = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan ExpiryTolerance = TimeSpan.FromMinutes(5);
 
@@ -73,6 +74,13 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
         await using var scope = factory.Services.CreateAsyncScope();
         var protector = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>().CreateProtector(OutboxEvent.ProtectedSecretPurpose);
         return protector.Unprotect(latest.ProtectedSecret!);
+    }
+
+    /// <summary>One worker dispatcher run: resolves deferred forgot-password requests and queued emails.</summary>
+    private async Task DispatchAsync()
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<DispatchOutboxHandler>().HandleAsync(DispatchBatch, Lease, Ct);
     }
 
     private static Task<HttpResponseMessage> SetPasswordAsync(ApiClient client, string token, string newPassword = NewPassword) =>
@@ -259,7 +267,7 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Forgot_password_answers_identically_for_unknown_inactive_and_active_emails_and_queues_only_for_active()
+    public async Task Forgot_password_does_equal_request_work_for_unknown_inactive_and_active_emails()
     {
         var active = await TestUsers.CreateAsync(factory, UserRole.Employee, "active@example.com");
         var inactive = await TestUsers.CreateAsync(factory, UserRole.Employee, "inactive@example.com");
@@ -268,8 +276,9 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
             await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE users SET is_active = false WHERE id = {inactive.Id}", Ct);
         }
 
+        var emails = new[] { "nobody@example.com", "inactive@example.com", "ACTIVE@example.com" };
         var answers = new List<(HttpStatusCode Status, string Body, string Headers)>();
-        foreach (var email in new[] { "nobody@example.com", "inactive@example.com", "ACTIVE@example.com" })
+        foreach (var email in emails)
         {
             var client = ApiClient.Create(factory);
             await client.RefreshCsrfAsync();
@@ -281,10 +290,41 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
         Assert.Single(answers.Select(a => a.Body).Distinct());
         Assert.Single(answers.Select(a => a.Headers).Distinct());
 
-        Assert.Single(await AccountEventsAsync(active.Id, NotificationEventTypes.PasswordReset));
-        Assert.Empty(await AccountEventsAsync(inactive.Id, NotificationEventTypes.PasswordReset));
+        // The request path never looks the account up: one identical deferred event per request, nothing else.
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            var requested = await db.OutboxEvents.AsNoTracking().Where(e => e.EventType == InternalEventTypes.PasswordResetRequested).ToListAsync(Ct);
+            Assert.Equal(emails.Length, requested.Count);
+            Assert.All(requested, e => Assert.Null(e.UserId));
+            Assert.All(requested, e => Assert.Null(e.ProtectedSecret));
+            var requestedEmails = requested.Select(e => JsonDocument.Parse(e.Payload).RootElement.GetProperty(OutboxEvent.RequestedEmailKey).GetString()).Order(StringComparer.Ordinal);
+            Assert.Equal(emails.Select(User.NormalizeEmail).Order(StringComparer.Ordinal), requestedEmails);
+            Assert.False(await db.PasswordTokens.AnyAsync(Ct));
+            Assert.False(await db.OutboxEvents.AnyAsync(e => e.EventType == NotificationEventTypes.PasswordReset, Ct));
+            Assert.False(await db.AuditEvents.AnyAsync(Ct));
+        }
+
+        await DispatchAsync();
+
         await using var check = factory.Database.CreateDbContext();
+        Assert.Equal(active.Id, await check.PasswordTokens.Select(t => t.UserId).SingleAsync(Ct));
+        Assert.Single(await AccountEventsAsync(active.Id, NotificationEventTypes.PasswordReset));
         Assert.Equal(1, await check.OutboxEvents.CountAsync(e => e.EventType == NotificationEventTypes.PasswordReset, Ct));
+        var audit = Assert.Single(await check.AuditEvents.AsNoTracking().ToListAsync(Ct));
+        Assert.Equal(AuditActions.UserPasswordResetLinkSent, audit.Action);
+        Assert.Equal(active.Id, audit.EntityId);
+        Assert.Null(audit.ActorUserId);
+        var token = await LatestTokenAsync(active.Id, NotificationEventTypes.PasswordReset);
+        var auditText = string.Join('|', audit.OldValues, audit.NewValues, audit.Reason);
+        Assert.All(emails.Append(token), secret => Assert.DoesNotContain(secret, auditText, StringComparison.OrdinalIgnoreCase));
+
+        var statuses = await check.OutboxEvents.AsNoTracking()
+            .Where(e => e.EventType == InternalEventTypes.PasswordResetRequested)
+            .Select(e => e.Status)
+            .ToListAsync(Ct);
+        Assert.Equal(1, statuses.Count(s => s == OutboxStatus.Dispatched));
+        Assert.Equal(2, statuses.Count(s => s == OutboxStatus.Skipped));
+        Assert.False(await check.EmailDeliveries.AnyAsync(d => d.TemplateType == InternalEventTypes.PasswordResetRequested, Ct));
     }
 
     /// <summary>Every response header except the per-request ones (date, correlation id).</summary>
@@ -308,6 +348,7 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
             Assert.Equal(HttpStatusCode.Accepted, forgot.StatusCode);
         }
 
+        await DispatchAsync();
         var token = await LatestTokenAsync(user.Id, NotificationEventTypes.PasswordReset);
         using (var set = await SetPasswordAsync(ApiClient.Create(factory), token))
         {
@@ -367,6 +408,7 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
             Assert.Equal(HttpStatusCode.Accepted, forgot.StatusCode);
         }
 
+        await DispatchAsync();
         var resetToken = await LatestTokenAsync(userId, NotificationEventTypes.PasswordReset);
 
         await using var db = factory.Database.CreateDbContext();

@@ -67,6 +67,13 @@ public sealed class TemplateVariablesTests
         Assert.Equal(TemplateVariables.AllVariables, union);
     }
 
+    [Fact]
+    public void Internal_event_types_are_not_emailable_events()
+    {
+        Assert.DoesNotContain(InternalEventTypes.PasswordResetRequested, AllEventTypes());
+        Assert.Throws<ArgumentOutOfRangeException>(() => TemplateVariables.AllowedFor(InternalEventTypes.PasswordResetRequested));
+    }
+
     private static IEnumerable<string> AllEventTypes() =>
         typeof(NotificationEventTypes)
             .GetFields(BindingFlags.Public | BindingFlags.Static)

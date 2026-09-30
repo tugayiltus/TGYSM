@@ -43,3 +43,7 @@ ADR-0004 (local accounts, cookie session) and ADR-0007 (CLI-first admin setup) e
 
 ### Risks
 - A user who never opens the activation email stays unprovisioned; nothing pages an admin about it, so this depends on the admin noticing (e.g. via `/admin/email-deliveries`) and choosing the fallback.
+
+## Amendment 2026-10-01
+
+`POST /auth/forgot-password` no longer looks the account up on the request path. The first implementation (commit `8b8f28e`) queued the reset link synchronously for an active account only, so an active email did more work (token, outbox and audit writes) before the 202 than an unknown or inactive one, and response timing revealed which accounts exist. The fix (Task 7 fix round 1, "defer forgot-password account lookup to the worker") makes the request path validate and normalize the email and write one internal outbox event, `password_reset_requested`, carrying the normalized email, for every well-formed address. The worker's outbox dispatcher resolves it: an active account gets the reset token, the `password_reset` event and the `users.password_reset_link_sent` audit row (no actor); an unknown or inactive email is marked skipped. The internal event type has no template, recipients or translation. `POST /auth/set-password` also gets its own per-IP rate limit, because each request hashes a password before the token lookup.

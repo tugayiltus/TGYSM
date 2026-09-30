@@ -25,8 +25,8 @@ internal static class AuthEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized);
         auth.MapPost("/forgot-password", ForgotPasswordAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.ForgotPassword)
             .ProducesProblem(StatusCodes.Status429TooManyRequests);
-        auth.MapPost("/set-password", SetPasswordAsync).AllowAnonymous()
-            .ProducesProblem(StatusCodes.Status400BadRequest);
+        auth.MapPost("/set-password", SetPasswordAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.SetPassword)
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status429TooManyRequests);
         auth.MapPost("/change-password", ChangePasswordAsync).RequireAuthorization(Policies.PasswordChangePending)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 

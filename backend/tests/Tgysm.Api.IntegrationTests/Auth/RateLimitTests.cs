@@ -11,6 +11,8 @@ public sealed class LowRateLimitApiFactory : ApiFactory
     protected override int LoginPermitLimitPerMinute => Limit;
 
     protected override int ForgotPasswordPermitLimitPerMinute => Limit;
+
+    protected override int SetPasswordPermitLimitPerMinute => Limit;
 }
 
 public sealed class RateLimitTests(LowRateLimitApiFactory factory) : IClassFixture<LowRateLimitApiFactory>
@@ -47,6 +49,25 @@ public sealed class RateLimitTests(LowRateLimitApiFactory factory) : IClassFixtu
         }
 
         using var limited = await client.PostAsync(forgotPasswordPath, body);
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, limited.StatusCode);
+        Assert.Equal(ErrorCodes.RateLimited, await ApiClient.ReadCodeAsync(limited));
+    }
+
+    [Fact]
+    public async Task Set_password_requests_over_the_limit_get_429()
+    {
+        const string setPasswordPath = "/api/v1/auth/set-password";
+        var client = ApiClient.Create(factory);
+        var body = new { token = "not-a-real-token", newPassword = "Brand-new-password-2026" };
+
+        for (var attempt = 0; attempt < LowRateLimitApiFactory.Limit; attempt++)
+        {
+            using var allowed = await client.PostAsync(setPasswordPath, body);
+            Assert.Equal(HttpStatusCode.BadRequest, allowed.StatusCode);
+        }
+
+        using var limited = await client.PostAsync(setPasswordPath, body);
 
         Assert.Equal(HttpStatusCode.TooManyRequests, limited.StatusCode);
         Assert.Equal(ErrorCodes.RateLimited, await ApiClient.ReadCodeAsync(limited));

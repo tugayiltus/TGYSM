@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Security;
 using Tgysm.Domain.Notifications;
+using Tgysm.Domain.Users;
 
 namespace Tgysm.Application.Notifications;
 
@@ -67,6 +69,12 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
 
         var outboxEvent = await db.OutboxEvents.SingleAsync(e => e.Id == outboxEventId, cancellationToken);
         var now = clock.GetUtcNow();
+        if (outboxEvent.EventType == InternalEventTypes.PasswordResetRequested)
+        {
+            await ResolvePasswordResetRequestAsync(scoped, db, outboxEvent, now, cancellationToken);
+            return;
+        }
+
         var resolved = await recipients.ResolveAsync(outboxEvent, cancellationToken);
         if (resolved.Count == 0)
         {
@@ -88,6 +96,34 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
         }
 
         outboxEvent.MarkDispatched(now);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The deferred half of forgot-password (ADR-0017 amendment 2026-10-01): an active account gets a reset link
+    /// (its token, <c>password_reset</c> event and audit row are written in this same save, with no actor); an
+    /// unknown or inactive email is skipped. Either way no delivery is created for the request event itself.
+    /// </summary>
+    private static async Task ResolvePasswordResetRequestAsync(
+        IServiceProvider scoped, IAppDbContext db, OutboxEvent outboxEvent, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        using var payload = System.Text.Json.JsonDocument.Parse(outboxEvent.Payload);
+        var email = payload.RootElement.TryGetProperty(OutboxEvent.RequestedEmailKey, out var value) ? value.GetString() : null;
+        var normalizedEmail = email is null ? null : User.NormalizeEmail(email);
+        var userId = normalizedEmail is null
+            ? null
+            : await db.Users.Where(u => u.NormalizedEmail == normalizedEmail && u.IsActive).Select(u => (Guid?)u.Id).SingleOrDefaultAsync(cancellationToken);
+
+        if (userId is { } id)
+        {
+            await scoped.GetRequiredService<PasswordTokenIssuer>().IssueAsync(id, PasswordTokenPurpose.Reset, cancellationToken);
+            outboxEvent.MarkDispatched(now);
+        }
+        else
+        {
+            outboxEvent.MarkSkipped(now);
+        }
+
         await db.SaveChangesAsync(cancellationToken);
     }
 }
