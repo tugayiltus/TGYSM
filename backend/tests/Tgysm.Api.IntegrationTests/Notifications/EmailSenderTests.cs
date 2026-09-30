@@ -297,6 +297,78 @@ public sealed class EmailSenderTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_sending_row_with_an_expired_lease_is_reclaimed_and_sent()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+        await DispatchOutboxAsync();
+        var delivery = await SingleDeliveryAsync();
+        await SetSendingAsync(delivery.Id, -1);
+
+        await SendDueEmailsAsync();
+
+        Assert.Equal(DeliveryStatus.Sent, (await SingleDeliveryAsync()).Status);
+        Assert.Single(factory.EmailSender.Sent);
+    }
+
+    [Fact]
+    public async Task A_sending_row_with_a_live_lease_is_not_reclaimed()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+        await DispatchOutboxAsync();
+        var delivery = await SingleDeliveryAsync();
+        await SetSendingAsync(delivery.Id, 10);
+
+        await SendDueEmailsAsync();
+
+        Assert.Equal(DeliveryStatus.Sending, (await SingleDeliveryAsync()).Status);
+        Assert.Empty(factory.EmailSender.Sent);
+    }
+
+    [Fact]
+    public async Task A_failing_final_save_is_recorded_from_a_fresh_context_and_the_batch_continues()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+        await DispatchOutboxAsync();
+
+        // While the first send is in flight, touch its row so the handler's final save hits a concurrency conflict
+        // (xmin changed) after the transport already succeeded.
+        var interfered = false;
+        factory.EmailSender.BeforeSend = async _ =>
+        {
+            if (interfered)
+            {
+                return;
+            }
+
+            interfered = true;
+            await using var db = factory.Database.CreateDbContext();
+            await db.Database.ExecuteSqlRawAsync(
+                "UPDATE email_deliveries SET last_error = 'touched' WHERE id = (SELECT id FROM email_deliveries WHERE status = 'sending')", Ct);
+        };
+
+        await SendDueEmailsAsync();
+
+        await using var check = factory.Database.CreateDbContext();
+        var deliveries = await check.EmailDeliveries.AsNoTracking().OrderBy(d => d.Id).ToListAsync(Ct);
+        Assert.Equal(2, deliveries.Count);
+        var failed = Assert.Single(deliveries, d => d.Status == DeliveryStatus.Pending);
+        Assert.Equal(1, failed.Attempts);
+        Assert.NotNull(failed.LastError);
+        Assert.Single(deliveries, d => d.Status == DeliveryStatus.Sent);
+    }
+
+    private async Task SetSendingAsync(Guid deliveryId, int lockedUntilMinutesFromNow)
+    {
+        await using var db = factory.Database.CreateDbContext();
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE email_deliveries SET status = 'sending', locked_until = now() + ({lockedUntilMinutesFromNow} * interval '1 minute') WHERE id = {deliveryId}", Ct);
+    }
+
+    [Fact]
     public void Last_error_never_contains_the_smtp_password()
     {
         const string password = "Sup3rSecretPa55w0rd!";

@@ -15,22 +15,30 @@ public sealed class FakeEmailSender : IEmailSender
     /// <summary>Set by a test to make the next (and every following, until <see cref="Reset"/>) send throw.</summary>
     public Func<EmailMessage, Exception>? FailWith { get; set; }
 
+    /// <summary>Runs before each send; lets a test interfere with the database while the transport call is in flight.</summary>
+    public Func<EmailMessage, Task>? BeforeSend { get; set; }
+
     public IReadOnlyCollection<EmailMessage> Sent => _sent;
 
-    public Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
+    public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
+        if (BeforeSend is { } beforeSend)
+        {
+            await beforeSend(message);
+        }
+
         if (FailWith is { } failWith)
         {
             throw failWith(message);
         }
 
         _sent.Enqueue(message);
-        return Task.CompletedTask;
     }
 
     public void Reset()
     {
         FailWith = null;
+        BeforeSend = null;
         _sent.Clear();
     }
 }

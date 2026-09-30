@@ -40,13 +40,32 @@ public sealed class SendDueEmailsHandler(
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 logger.LogError(exception, "Email delivery {DeliveryId} failed to send.", delivery.Id);
-                await RecordFailureAsync(scope.ServiceProvider, delivery.Id, exception.Message, cancellationToken);
+                await TryRecordFailureAsync(delivery.Id, exception.Message, cancellationToken);
             }
 
             processed++;
         }
 
         return processed;
+    }
+
+    /// <summary>
+    /// Records the failure in a fresh scope and <see cref="IAppDbContext"/> that reloads the row: the failed
+    /// attempt's context may still track unsaved Sent/cleared state (e.g. the final save threw after the transport
+    /// succeeded), and saving from it would persist that state. A failure to record is logged, never rethrown, so
+    /// the rest of the claimed batch is still processed; the row then stays leased and is re-claimed on expiry.
+    /// </summary>
+    private async Task TryRecordFailureAsync(Guid deliveryId, string error, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var failureScope = scopes.CreateAsyncScope();
+            await RecordFailureAsync(failureScope.ServiceProvider, deliveryId, error, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Recording the failure of email delivery {DeliveryId} failed.", deliveryId);
+        }
     }
 
     private async Task RecordFailureAsync(IServiceProvider scoped, Guid deliveryId, string error, CancellationToken cancellationToken)
