@@ -23,6 +23,10 @@ internal static class AuthEndpoints
         auth.MapPost("/logout", (Delegate)LogoutAsync).RequireAuthorization(Policies.PasswordChangePending);
         auth.MapGet("/me", GetMeAsync).RequireAuthorization(Policies.PasswordChangePending)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
+        auth.MapPost("/forgot-password", ForgotPasswordAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.ForgotPassword)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
+        auth.MapPost("/set-password", SetPasswordAsync).AllowAnonymous()
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         auth.MapPost("/change-password", ChangePasswordAsync).RequireAuthorization(Policies.PasswordChangePending)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -47,6 +51,20 @@ internal static class AuthEndpoints
 
     private static async Task<Ok<MeDto>> GetMeAsync(GetMeHandler handler, CancellationToken cancellationToken) =>
         TypedResults.Ok(await handler.HandleAsync(cancellationToken));
+
+    /// <summary>Always 202 with no body, whether or not the email names an active account (spec §4: no enumeration).</summary>
+    private static async Task<Accepted> ForgotPasswordAsync(ForgotPasswordRequest request, ForgotPasswordHandler handler, CancellationToken cancellationToken)
+    {
+        await handler.HandleAsync(new ForgotPasswordCommand(request.Email), cancellationToken);
+        return TypedResults.Accepted((string?)null);
+    }
+
+    /// <summary>Does not sign in: the user logs in with the new password afterwards.</summary>
+    private static async Task<NoContent> SetPasswordAsync(SetPasswordRequest request, SetPasswordHandler handler, CancellationToken cancellationToken)
+    {
+        await handler.HandleAsync(new SetPasswordCommand(request.Token, request.NewPassword), cancellationToken);
+        return TypedResults.NoContent();
+    }
 
     /// <summary>Re-issues the cookie with the new security stamp so this session survives the rotation.</summary>
     private static async Task<NoContent> ChangePasswordAsync(

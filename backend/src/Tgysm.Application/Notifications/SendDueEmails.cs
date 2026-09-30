@@ -118,9 +118,8 @@ public sealed class SendDueEmailsHandler(
 
     /// <summary>
     /// Account-link bodies render at send time from the outbox event's <see cref="OutboxEvent.ProtectedSecret"/>
-    /// (ADR-0015): nothing before this point ever sees the token. <c>expiresAt</c> is left unset until Task 7
-    /// wires token expiry into the account-link flow; <see cref="Domain.Notifications.TemplateRenderer.Render"/>
-    /// renders an unset variable as empty text rather than failing.
+    /// (ADR-0015): nothing before this point ever sees the token. The other variables (<c>recipientName</c>,
+    /// <c>expiresAt</c>) come from <see cref="NotificationContextLoader"/>, like every other event's.
     /// </summary>
     private static async Task<string> RenderAccountBodyAsync(
         IServiceProvider scoped, IAppDbContext db, EmailDelivery delivery, OutboxEvent outboxEvent, User recipient, CancellationToken cancellationToken)
@@ -134,9 +133,10 @@ public sealed class SendDueEmailsHandler(
         var actionUrl = AccountLinkUrl.Build(appOptions.CurrentValue.PublicBaseUrl, token);
 
         var template = await db.EmailTemplates.AsNoTracking().SingleAsync(t => t.EventType == delivery.TemplateType, cancellationToken);
-        var values = new Dictionary<string, string>(StringComparer.Ordinal)
+        var context = scoped.GetRequiredService<NotificationContextLoader>();
+        var loaded = await context.LoadAsync(outboxEvent, new Recipient(recipient.Id, delivery.RecipientEmail, FullNameOf(recipient)), cancellationToken);
+        var values = new Dictionary<string, string>(loaded, StringComparer.Ordinal)
         {
-            [TemplateVariables.RecipientName] = FullNameOf(recipient),
             [TemplateVariables.ActionUrl] = actionUrl,
         };
         return TemplateRenderer.Render(template.Body, values);

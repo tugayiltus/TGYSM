@@ -28,8 +28,11 @@ public sealed record UserDetail(
     DateTimeOffset CreatedAt,
     uint Version);
 
-/// <summary>Shown to the admin once; never stored in plain text.</summary>
-public sealed record TemporaryPasswordResult(Guid UserId, string TemporaryPassword);
+/// <summary>
+/// <paramref name="TemporaryPassword"/> is shown to the admin once and never stored in plain text; it is null when
+/// the credentials went out as an email link (<see cref="CredentialDelivery.EmailLink"/>).
+/// </summary>
+public sealed record TemporaryPasswordResult(Guid UserId, string? TemporaryPassword);
 
 /// <summary>Audit snapshot; deliberately excludes password hash and security stamp.</summary>
 internal sealed record UserAuditSnapshot(

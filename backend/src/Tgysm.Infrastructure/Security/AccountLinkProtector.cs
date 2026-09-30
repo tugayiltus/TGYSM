@@ -12,5 +12,7 @@ internal sealed class AccountLinkProtector : IAccountLinkProtector
     public AccountLinkProtector(IDataProtectionProvider provider) =>
         _protector = provider.CreateProtector(OutboxEvent.ProtectedSecretPurpose);
 
+    public string Protect(string token) => _protector.Protect(token);
+
     public string Unprotect(string protectedSecret) => _protector.Unprotect(protectedSecret);
 }

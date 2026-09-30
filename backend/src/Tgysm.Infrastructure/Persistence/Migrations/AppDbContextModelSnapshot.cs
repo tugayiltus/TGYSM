@@ -1509,6 +1509,56 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("ticket_relations", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Users.PasswordToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("purpose");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(43)
+                        .HasColumnType("character varying(43)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_password_tokens");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_password_tokens_token_hash");
+
+                    b.HasIndex("UserId", "Purpose")
+                        .HasDatabaseName("ix_password_tokens_user_id_purpose");
+
+                    b.ToTable("password_tokens", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_password_tokens_purpose", "purpose IN ('activation', 'reset')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1946,6 +1996,16 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_ticket_relations_tickets_request_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Users.PasswordToken", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_password_tokens_users_user_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Users.User", b =>

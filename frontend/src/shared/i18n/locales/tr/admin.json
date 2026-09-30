@@ -150,7 +150,10 @@
       "role_changed": "Rol değiştirildi",
       "deactivated": "Kullanıcı pasifleştirildi",
       "reactivated": "Kullanıcı aktifleştirildi",
-      "password_reset": "Şifre sıfırlandı"
+      "password_reset": "Şifre sıfırlandı",
+      "activation_link_sent": "Etkinleştirme bağlantısı gönderildi",
+      "password_reset_link_sent": "Şifre sıfırlama bağlantısı gönderildi",
+      "password_set_by_link": "Şifre bağlantıyla belirlendi"
     },
     "departments": {
       "created": "Departman oluşturuldu",

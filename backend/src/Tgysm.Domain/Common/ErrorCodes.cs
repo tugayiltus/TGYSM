@@ -28,6 +28,7 @@ public static class ErrorCodes
     public const string PasswordPolicy = "auth.password_policy";
     public const string PasswordSameAsOld = "auth.password_same_as_old";
     public const string RateLimited = "auth.rate_limited";
+    public const string TokenInvalid = "auth.token_invalid";
 
     public const string SetupAlreadyCompleted = "setup.already_completed";
 

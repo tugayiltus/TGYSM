@@ -20,6 +20,7 @@ namespace Tgysm.Api.IntegrationTests.Hardening;
 public sealed class HardeningTests(ApiFactory factory) : IAsyncLifetime
 {
     private const string NoStore = "no-store";
+    private const string TemporaryPasswordDelivery = "temporary_password";
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -62,9 +63,9 @@ public sealed class HardeningTests(ApiFactory factory) : IAsyncLifetime
     {
         var (admin, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "admin@example.com");
 
-        using var created = await admin.PostAsync("/api/v1/admin/users", new { firstName = "Ece", lastName = "Nur", email = "ece@example.com", role = UserRoleNames.Employee });
+        using var created = await admin.PostAsync("/api/v1/admin/users", new { firstName = "Ece", lastName = "Nur", email = "ece@example.com", role = UserRoleNames.Employee, delivery = TemporaryPasswordDelivery });
         var userId = (await admin.ReadJsonAsync<JsonElement>(created)).GetProperty("userId").GetGuid();
-        using var reset = await admin.PostAsync($"/api/v1/admin/users/{userId}/reset-password");
+        using var reset = await admin.PostAsync($"/api/v1/admin/users/{userId}/reset-password", new { delivery = TemporaryPasswordDelivery });
 
         Assert.Contains(NoStore, created.Headers.CacheControl?.ToString() ?? string.Empty, StringComparison.Ordinal);
         Assert.Contains(NoStore, reset.Headers.CacheControl?.ToString() ?? string.Empty, StringComparison.Ordinal);

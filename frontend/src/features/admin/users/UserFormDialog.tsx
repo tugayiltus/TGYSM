@@ -21,7 +21,7 @@ const CODE_FIELDS = { [ERROR_CODES.emailTaken]: 'email' } as const;
 export interface UserFormDialogProps {
   user: UserListItem | null;
   onClose: () => void;
-  onCreated: (temporaryPassword: string) => void;
+  onCreated: (temporaryPassword: string | null) => void;
 }
 
 export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps) {

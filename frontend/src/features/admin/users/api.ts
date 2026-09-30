@@ -6,7 +6,11 @@ import { adminKeys } from '../shared/queryKeys';
 
 export type UserListItem = components['schemas']['UserListItem'];
 export type UserRole = UserListItem['role'];
-export type CreateUserInput = components['schemas']['CreateUserCommand'];
+export type CreateUserInput = Omit<components['schemas']['CreateUserCommand'], 'delivery'>;
+type CredentialDelivery = components['schemas']['CredentialDelivery'];
+
+/** The admin UI keeps the temporary-password flow until it offers the email-link choice (spec §4). */
+const TEMPORARY_PASSWORD_DELIVERY: CredentialDelivery = 'temporary_password';
 export type UpdateUserInput = components['schemas']['UpdateUserRequest'] & { id: string };
 
 export interface UserListParams {
@@ -46,7 +50,8 @@ function useInvalidateUsers() {
 export function useCreateUser() {
   const invalidate = useInvalidateUsers();
   return useMutation({
-    mutationFn: (body: CreateUserInput) => unwrap(api.POST('/api/v1/admin/users', { body })),
+    mutationFn: (body: CreateUserInput) =>
+      unwrap(api.POST('/api/v1/admin/users', { body: { ...body, delivery: TEMPORARY_PASSWORD_DELIVERY } })),
     onSuccess: invalidate,
   });
 }
@@ -75,7 +80,13 @@ export function useSetUserActive() {
 export function useResetUserPassword() {
   const invalidate = useInvalidateUsers();
   return useMutation({
-    mutationFn: (id: string) => unwrap(api.POST('/api/v1/admin/users/{id}/reset-password', { params: { path: { id } } })),
+    mutationFn: (id: string) =>
+      unwrap(
+        api.POST('/api/v1/admin/users/{id}/reset-password', {
+          params: { path: { id } },
+          body: { delivery: TEMPORARY_PASSWORD_DELIVERY },
+        }),
+      ),
     onSuccess: invalidate,
   });
 }

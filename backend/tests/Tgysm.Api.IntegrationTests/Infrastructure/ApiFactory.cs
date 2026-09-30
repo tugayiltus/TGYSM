@@ -32,6 +32,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>High by default so tests that log in many times never hit the rate limit.</summary>
     protected virtual int LoginPermitLimitPerMinute => GenerousLoginLimit;
 
+    /// <summary>High by default for the same reason as <see cref="LoginPermitLimitPerMinute"/>.</summary>
+    protected virtual int ForgotPasswordPermitLimitPerMinute => GenerousLoginLimit;
+
     public async ValueTask InitializeAsync() => await Database.InitializeAsync();
 
     public Task ResetAsync() => Database.ResetAsync();
@@ -59,6 +62,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting($"ConnectionStrings:{DependencyInjection.ConnectionStringName}", Database.ConnectionString);
         builder.UseSetting("Files:RootPath", FilesRoot);
         builder.UseSetting("Security:LoginPermitLimitPerMinute", LoginPermitLimitPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        builder.UseSetting("Security:ForgotPasswordPermitLimitPerMinute", ForgotPasswordPermitLimitPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
         builder.UseSetting("App:PublicBaseUrl", PublicBaseUrl);
         // Mode/PickupFolder are set even though EmailSender below replaces IEmailSender outright: Every_application_
         // handler_resolves still resolves EmailOptions-dependent types, and a real PickupFolderEmailSender is

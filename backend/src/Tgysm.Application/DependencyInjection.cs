@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<NotificationContextLoader>();
         services.AddScoped<ICompanyClock, CompanyClock>();
         services.AddSingleton<ITemporaryPasswordGenerator, TemporaryPasswordGenerator>();
+        services.AddScoped<PasswordTokenIssuer>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<OrganizationReferences>();
         services.AddScoped<LastAdminGuard>();

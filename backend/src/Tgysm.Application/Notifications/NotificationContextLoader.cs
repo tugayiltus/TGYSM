@@ -11,8 +11,9 @@ namespace Tgysm.Application.Notifications;
 /// Builds the `{{name}}` values for one recipient's rendering of one <see cref="OutboxEvent"/> (spec §3.4),
 /// restricted to <see cref="TemplateVariables.AllowedFor"/> that event — a value computed for a variable the event
 /// does not allow is simply never set, so <see cref="TemplateRenderer.Render"/> cannot leak it even if a future
-/// template edit mistakenly referenced it. Account-link variables (<c>actionUrl</c>, <c>expiresAt</c>) are
-/// deliberately never set here: they depend on the event's <c>protected_secret</c>, decrypted only at send time.
+/// template edit mistakenly referenced it. <c>actionUrl</c> is deliberately never set here: it carries the token
+/// from the event's <c>protected_secret</c>, decrypted only at send time (<c>SendDueEmailsHandler</c>). The link's
+/// <c>expiresAt</c> is not secret and comes from the payload.
 /// </summary>
 public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock clock, IOptionsMonitor<AppOptions> options)
 {
@@ -49,6 +50,10 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
         Set(TemplateVariables.SlaMetric, PayloadString(outboxEvent, OutboxEvent.SlaMetricKey));
         var dueAt = PayloadDate(outboxEvent, OutboxEvent.SlaDueAtKey);
         Set(TemplateVariables.DueAt, dueAt is { } due ? clock.Format(due) : null);
+
+        // account_activation/password_reset: the link's expiry, written by PasswordTokenIssuer.
+        var expiresAt = PayloadDate(outboxEvent, OutboxEvent.LinkExpiresAtKey);
+        Set(TemplateVariables.ExpiresAt, expiresAt is { } expiry ? clock.Format(expiry) : null);
 
         return values;
     }

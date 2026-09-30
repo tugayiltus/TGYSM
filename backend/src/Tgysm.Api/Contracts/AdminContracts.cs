@@ -1,8 +1,12 @@
+using Tgysm.Application.Features.Users;
 using Tgysm.Domain.Users;
 
 namespace Tgysm.Api.Contracts;
 
 public sealed record VersionRequest(uint Version);
+
+/// <summary>Body of <c>POST /admin/users/{id}/reset-password</c>; <c>{}</c> means <see cref="CredentialDelivery.EmailLink"/> (spec §4 default).</summary>
+public sealed record ResetUserPasswordRequest(CredentialDelivery Delivery = CredentialDelivery.EmailLink);
 
 public sealed record UpdateUserRequest(
     uint Version,

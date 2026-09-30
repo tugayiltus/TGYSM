@@ -37,6 +37,7 @@ public interface IAppDbContext
     DbSet<OutboxEvent> OutboxEvents { get; }
     DbSet<EmailTemplate> EmailTemplates { get; }
     DbSet<EmailDelivery> EmailDeliveries { get; }
+    DbSet<PasswordToken> PasswordTokens { get; }
 
     /// <summary>
     /// Saves all tracked changes in one transaction. Throws <see cref="Common.ConcurrencyException"/> on a stale

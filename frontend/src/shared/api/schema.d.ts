@@ -173,6 +173,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ForgotPasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/set-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetPasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/change-password": {
         parameters: {
             query?: never;
@@ -518,7 +610,11 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ResetUserPasswordRequest"];
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -527,6 +623,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["TemporaryPasswordResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
                 /** @description Not Found */
@@ -4878,7 +4983,13 @@ export interface components {
             departmentId: null | string;
             /** Format: uuid */
             locationId: null | string;
+            delivery?: components["schemas"]["CredentialDelivery"];
         };
+        /**
+         * @default email_link
+         * @enum {unknown}
+         */
+        CredentialDelivery: "email_link" | "temporary_password";
         CsrfTokenResponse: {
             token: string;
         };
@@ -4929,6 +5040,9 @@ export interface components {
             updatedAt: string;
             /** Format: uint32 */
             version: number;
+        };
+        ForgotPasswordRequest: {
+            email: string;
         };
         /** @enum {unknown} */
         HoldReason: "user" | "manager_approval" | "vendor" | "technical_team" | "third_party" | "scheduled_date" | "other" | null;
@@ -5142,6 +5256,9 @@ export interface components {
             /** Format: uint32 */
             version: number;
         };
+        ResetUserPasswordRequest: {
+            delivery?: components["schemas"]["CredentialDelivery"];
+        };
         ReturnAssetRequest: {
             /** Format: uint32 */
             version: number;
@@ -5150,6 +5267,10 @@ export interface components {
         };
         /** @enum {unknown} */
         ScanStatus: "pending" | "clean" | "rejected";
+        SetPasswordRequest: {
+            token: string;
+            newPassword: string;
+        };
         StartMaintenanceRequest: {
             /** Format: uint32 */
             version: number;
@@ -5188,7 +5309,7 @@ export interface components {
         TemporaryPasswordResult: {
             /** Format: uuid */
             userId: string;
-            temporaryPassword: string;
+            temporaryPassword: null | string;
         };
         TicketAssetItem: {
             /** Format: uuid */

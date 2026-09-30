@@ -19,13 +19,13 @@ internal static class ApiServiceCollectionExtensions
     private const string SessionCookieName = "__Host-tgysm";
     private const string AntiforgeryCookieName = "__Host-tgysm-af";
     private const string UnknownClient = "unknown";
-    private static readonly TimeSpan LoginWindow = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan RateLimitWindow = TimeSpan.FromMinutes(1);
 
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<SecurityOptions>()
             .Bind(configuration.GetSection(SecurityOptions.SectionName))
-            .Validate(o => o.LoginPermitLimitPerMinute > 0 && o.SessionHours > 0, "Security limits must be positive.")
+            .Validate(o => o.LoginPermitLimitPerMinute > 0 && o.ForgotPasswordPermitLimitPerMinute > 0 && o.SessionHours > 0, "Security limits must be positive.")
             .ValidateOnStart();
         services.AddOptions<AppOptions>()
             .Bind(configuration.GetSection(AppOptions.SectionName))
@@ -91,14 +91,16 @@ internal static class ApiServiceCollectionExtensions
             options.OnRejected = (context, _) => new ValueTask(
                 ApiProblem.WriteAsync(context.HttpContext, StatusCodes.Status429TooManyRequests, ErrorCodes.RateLimited));
             options.AddPolicy(RateLimitPolicies.Login, context =>
-            {
-                var limit = context.RequestServices.GetRequiredService<IOptions<SecurityOptions>>().Value.LoginPermitLimitPerMinute;
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    context.Connection.RemoteIpAddress?.ToString() ?? UnknownClient,
-                    _ => new FixedWindowRateLimiterOptions { PermitLimit = limit, Window = LoginWindow, QueueLimit = 0 });
-            });
+                PerClientPerMinute(context, context.RequestServices.GetRequiredService<IOptions<SecurityOptions>>().Value.LoginPermitLimitPerMinute));
+            options.AddPolicy(RateLimitPolicies.ForgotPassword, context =>
+                PerClientPerMinute(context, context.RequestServices.GetRequiredService<IOptions<SecurityOptions>>().Value.ForgotPasswordPermitLimitPerMinute));
         });
 
         return services;
     }
+
+    private static RateLimitPartition<string> PerClientPerMinute(HttpContext context, int limit) =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? UnknownClient,
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = limit, Window = RateLimitWindow, QueueLimit = 0 });
 }

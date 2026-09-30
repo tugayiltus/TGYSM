@@ -36,7 +36,7 @@ internal static class ResetPasswordCommand
             return Failure;
         }
 
-        var result = await scope.ServiceProvider.GetRequiredService<ResetUserPasswordHandler>().HandleAsync(new ResetUserPasswordCommand(id), CancellationToken.None);
+        var result = await scope.ServiceProvider.GetRequiredService<ResetUserPasswordHandler>().HandleAsync(new ResetUserPasswordCommand(id, CredentialDelivery.TemporaryPassword), CancellationToken.None);
         await output.WriteLineAsync($"Password reset: {args[1]}");
         await output.WriteLineAsync($"Temporary password (shown once): {result.TemporaryPassword}");
         return Success;

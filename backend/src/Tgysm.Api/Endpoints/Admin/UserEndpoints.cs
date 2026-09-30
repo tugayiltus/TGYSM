@@ -20,7 +20,7 @@ internal static class UserEndpoints
         users.MapPut("/{id:guid}", UpdateAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status409Conflict);
         users.MapPost("/{id:guid}/deactivate", DeactivateAsync).ProducesProblem(StatusCodes.Status409Conflict);
         users.MapPost("/{id:guid}/reactivate", ReactivateAsync).ProducesProblem(StatusCodes.Status409Conflict);
-        users.MapPost("/{id:guid}/reset-password", ResetPasswordAsync).ProducesProblem(StatusCodes.Status404NotFound);
+        users.MapPost("/{id:guid}/reset-password", ResetPasswordAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound);
 
         return admin;
     }
@@ -63,9 +63,9 @@ internal static class UserEndpoints
         TypedResults.Ok(await handler.HandleAsync(new SetUserActiveCommand(id, request.Version, IsActive: true), cancellationToken));
 
     private static async Task<Ok<TemporaryPasswordResult>> ResetPasswordAsync(
-        Guid id, ResetUserPasswordHandler handler, HttpResponse response, CancellationToken cancellationToken)
+        Guid id, ResetUserPasswordRequest request, ResetUserPasswordHandler handler, HttpResponse response, CancellationToken cancellationToken)
     {
-        var result = await handler.HandleAsync(new ResetUserPasswordCommand(id), cancellationToken);
+        var result = await handler.HandleAsync(new ResetUserPasswordCommand(id, request.Delivery), cancellationToken);
         CacheHeaders.DisableCaching(response);
         return TypedResults.Ok(result);
     }

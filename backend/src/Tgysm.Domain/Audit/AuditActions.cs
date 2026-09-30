@@ -19,6 +19,9 @@ public static class AuditActions
     public const string UserDeactivated = "users.deactivated";
     public const string UserReactivated = "users.reactivated";
     public const string UserPasswordReset = "users.password_reset";
+    public const string UserActivationLinkSent = "users.activation_link_sent";
+    public const string UserPasswordResetLinkSent = "users.password_reset_link_sent";
+    public const string UserPasswordSetByLink = "users.password_set_by_link";
 
     public const string DepartmentCreated = "departments.created";
     public const string DepartmentUpdated = "departments.updated";

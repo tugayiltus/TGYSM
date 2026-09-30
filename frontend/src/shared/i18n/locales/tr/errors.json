@@ -24,7 +24,8 @@
     "current_password_invalid": "Mevcut şifre hatalı.",
     "password_policy": "Şifre en az 12 karakter olmalı, harf ve rakam içermelidir.",
     "password_same_as_old": "Yeni şifre mevcut şifreyle aynı olamaz.",
-    "rate_limited": "Çok fazla deneme yapıldı. Lütfen bir dakika sonra tekrar deneyin."
+    "rate_limited": "Çok fazla deneme yapıldı. Lütfen bir dakika sonra tekrar deneyin.",
+    "token_invalid": "Bağlantı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin."
   },
   "setup": {
     "already_completed": "Kurulum zaten tamamlanmış."

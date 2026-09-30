@@ -24,6 +24,9 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) :
             case AuthenticationFailedException:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status401Unauthorized, ErrorCodes.InvalidCredentials);
                 break;
+            case PasswordTokenInvalidException:
+                await ApiProblem.WriteAsync(context, StatusCodes.Status400BadRequest, ErrorCodes.TokenInvalid);
+                break;
             case NotFoundException notFound:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status404NotFound, notFound.Code);
                 break;

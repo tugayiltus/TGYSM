@@ -224,17 +224,22 @@ public sealed class EmailSenderTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Account_email_renders_the_action_url_then_clears_body_and_secret_after_sending()
+    public async Task Account_email_renders_the_action_url_and_expiry_then_clears_body_and_secret_after_sending()
     {
         var world = await TicketWorld.CreateAsync(factory);
         const string rawToken = "raw-activation-token-value";
+        var expiresAt = new DateTimeOffset(2026, 10, 2, 6, 30, 0, TimeSpan.Zero);
+        var payload = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            [OutboxEvent.LinkExpiresAtKey] = expiresAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+        });
 
         await using (var scope = factory.Services.CreateAsyncScope())
         {
             var protector = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>().CreateProtector(OutboxEvent.ProtectedSecretPurpose);
             var protectedSecret = protector.Protect(rawToken);
             await TestData.SaveAsync(factory, db =>
-                db.OutboxEvents.Add(OutboxEvent.Create(NotificationEventTypes.AccountActivation, null, world.EmployeeUser.Id, "{}", protectedSecret, DateTimeOffset.UtcNow)));
+                db.OutboxEvents.Add(OutboxEvent.Create(NotificationEventTypes.AccountActivation, null, world.EmployeeUser.Id, payload, protectedSecret, DateTimeOffset.UtcNow)));
         }
 
         await DispatchOutboxAsync();
@@ -246,6 +251,9 @@ public sealed class EmailSenderTests(ApiFactory factory) : IAsyncLifetime
         var sentMessage = Assert.Single(factory.EmailSender.Sent);
         var expectedActionUrl = AccountLinkUrl.Build(ApiFactory.PublicBaseUrl, rawToken);
         Assert.Contains(expectedActionUrl, sentMessage.Body, StringComparison.Ordinal);
+        Assert.Contains($"{ApiFactory.PublicBaseUrl}/set-password?token=", sentMessage.Body, StringComparison.Ordinal);
+        // 06:30 UTC is 09:30 in the default company zone (Europe/Istanbul, UTC+3).
+        Assert.Contains("02.10.2026 09:30", sentMessage.Body, StringComparison.Ordinal);
 
         var afterSend = await SingleDeliveryAsync();
         Assert.Equal(DeliveryStatus.Sent, afterSend.Status);

@@ -65,7 +65,15 @@ describe('UsersPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
     expect(await screen.findByTestId('temporary-password')).toHaveTextContent('Temp-pass-1234');
-    expect(posted).toEqual({ firstName: 'Deniz', lastName: 'Aydın', email: 'deniz@example.com', role: 'employee', departmentId: null, locationId: null });
+    expect(posted).toEqual({
+      firstName: 'Deniz',
+      lastName: 'Aydın',
+      email: 'deniz@example.com',
+      role: 'employee',
+      departmentId: null,
+      locationId: null,
+      delivery: 'temporary_password',
+    });
   });
 
   it('shows a taken email under the email field', async () => {

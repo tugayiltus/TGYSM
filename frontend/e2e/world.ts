@@ -6,6 +6,8 @@ export const ADMIN_NEW_PASSWORD = 'Admin-new-pass-2026';
 const USER_PASSWORD = 'User-new-pass-2026';
 const CSRF_PATH = '/api/v1/auth/csrf';
 const CSRF_HEADER = 'X-CSRF-TOKEN';
+/** Seeded users get a temporary password so the tests can sign in without reading email. */
+const TEMPORARY_PASSWORD_DELIVERY = 'temporary_password';
 const HOME_HEADING = /^Merhaba/;
 
 export interface Session {
@@ -69,8 +71,11 @@ export async function seedWorld(admin: Session): Promise<World> {
   const itEmail = `it-${suffix}@example.com`;
   const employee = await send(request, 'POST', '/api/v1/admin/users', {
     firstName: 'Ayşe', lastName: 'Kaya', email: employeeEmail, role: 'employee', departmentId: department.id, locationId: location.id,
+    delivery: TEMPORARY_PASSWORD_DELIVERY,
   });
-  const it = await send(request, 'POST', '/api/v1/admin/users', { firstName: 'Can', lastName: 'Demir', email: itEmail, role: 'it_staff', departmentId: null, locationId: null });
+  const it = await send(request, 'POST', '/api/v1/admin/users', {
+    firstName: 'Can', lastName: 'Demir', email: itEmail, role: 'it_staff', departmentId: null, locationId: null, delivery: TEMPORARY_PASSWORD_DELIVERY,
+  });
   const team = await send(request, 'POST', '/api/v1/admin/teams', { name: `Servis Masası ${suffix}` });
   await send(request, 'POST', `/api/v1/admin/teams/${String(team.id)}/members`, { userId: it.userId });
   await send(request, 'PUT', `/api/v1/admin/teams/${String(team.id)}`, { version: team.version, name: team.name, isDefaultIntake: true });

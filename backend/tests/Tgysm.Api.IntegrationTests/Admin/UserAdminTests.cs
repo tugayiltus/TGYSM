@@ -25,6 +25,8 @@ public sealed class UserAdminTests(ApiFactory factory) : IAsyncLifetime
     private Task<(ApiClient Client, User User)> LoginAsAdminAsync() =>
         ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, AdminEmail);
 
+    private const string TemporaryPasswordDelivery = "temporary_password";
+
     private static object NewUserBody(string email, string role = UserRoleNames.Employee, Guid? departmentId = null) =>
         new { firstName = "Deniz", lastName = "Aydın", email, role, departmentId, locationId = (Guid?)null };
 
@@ -80,7 +82,14 @@ public sealed class UserAdminTests(ApiFactory factory) : IAsyncLifetime
     {
         var (admin, _) = await LoginAsAdminAsync();
 
-        using var response = await admin.PostAsync(UsersPath, NewUserBody("deniz@example.com"));
+        using var response = await admin.PostAsync(UsersPath, new
+        {
+            firstName = "Deniz",
+            lastName = "Aydın",
+            email = "deniz@example.com",
+            role = UserRoleNames.Employee,
+            delivery = TemporaryPasswordDelivery,
+        });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var temporaryPassword = (await admin.ReadJsonAsync<JsonElement>(response)).GetProperty("temporaryPassword").GetString()!;
@@ -239,7 +248,7 @@ public sealed class UserAdminTests(ApiFactory factory) : IAsyncLifetime
         var (admin, _) = await LoginAsAdminAsync();
         var (userClient, user) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Employee, "forgetful@example.com");
 
-        using var reset = await admin.PostAsync($"{UsersPath}/{user.Id}/reset-password");
+        using var reset = await admin.PostAsync($"{UsersPath}/{user.Id}/reset-password", new { delivery = TemporaryPasswordDelivery });
         var temporaryPassword = (await admin.ReadJsonAsync<JsonElement>(reset)).GetProperty("temporaryPassword").GetString()!;
         using var oldSession = await userClient.GetAsync(ApiClient.MePath);
 

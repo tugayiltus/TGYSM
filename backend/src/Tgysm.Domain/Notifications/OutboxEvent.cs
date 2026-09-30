@@ -30,12 +30,19 @@ public sealed class OutboxEvent
     /// </summary>
     public const string SlaDueAtKey = "dueAt";
 
+    /// <summary>
+    /// <see cref="Payload"/> key holding an account-link event's expiry (ISO 8601), read back to fill the
+    /// <c>expiresAt</c> template variable. The expiry is not secret, so it lives in the payload; only the token
+    /// itself goes into <see cref="ProtectedSecret"/> (ADR-0015).
+    /// </summary>
+    public const string LinkExpiresAtKey = "expiresAt";
+
     /// <summary>Dispatch attempts stop retrying once <see cref="Attempts"/> reaches this (spec: retry plan, max 5 attempts).</summary>
     public const int MaxAttempts = RetryBackoff.MaxAttempts;
 
     /// <summary>
-    /// Data Protection purpose string for <see cref="ProtectedSecret"/> (ADR-0015, ADR-0017): Task 7 protects an
-    /// account-link token with a protector created from this purpose; <c>EmailSender</c> (this task) unprotects it
+    /// Data Protection purpose string for <see cref="ProtectedSecret"/> (ADR-0015, ADR-0017): <c>PasswordTokenIssuer</c> protects an
+    /// account-link token with a protector created from this purpose; <c>EmailSender</c> unprotects it
     /// at send time with a protector created from the same purpose. One named constant so both sides can never drift.
     /// </summary>
     public const string ProtectedSecretPurpose = "Tgysm.Notifications.AccountLinkToken";

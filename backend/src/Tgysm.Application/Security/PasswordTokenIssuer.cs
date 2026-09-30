@@ -1,0 +1,71 @@
+using System.Buffers.Text;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Tgysm.Application.Abstractions;
+using Tgysm.Domain.Audit;
+using Tgysm.Domain.Notifications;
+using Tgysm.Domain.Users;
+
+namespace Tgysm.Application.Security;
+
+/// <summary>
+/// Issues a password-set link (ADR-0017): voids the user's unused tokens of the same purpose, stores only the
+/// SHA-256 of a fresh random token, and queues the activation/reset email with the raw token as the outbox event's
+/// protected secret (ADR-0015). Adds to the caller's unit of work; the caller saves once.
+/// </summary>
+public sealed class PasswordTokenIssuer(
+    IAppDbContext db,
+    INotificationOutbox outbox,
+    IAccountLinkProtector protector,
+    IAuditLog audit,
+    TimeProvider clock)
+{
+    /// <summary>Spec §4: the token is 32 random bytes, base64url.</summary>
+    public const int TokenBytes = 32;
+
+    private const string RoundTripDateFormat = "O";
+
+    public async Task<string> IssueAsync(Guid userId, PasswordTokenPurpose purpose, CancellationToken cancellationToken)
+    {
+        var now = clock.GetUtcNow();
+        var unused = await db.PasswordTokens
+            .Where(t => t.UserId == userId && t.Purpose == purpose && t.UsedAt == null)
+            .ToListAsync(cancellationToken);
+        foreach (var previous in unused)
+        {
+            previous.Void(now);
+        }
+
+        var rawToken = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(TokenBytes));
+        var token = PasswordToken.Issue(userId, purpose, Hash(rawToken), now);
+        db.PasswordTokens.Add(token);
+
+        var payload = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [OutboxEvent.LinkExpiresAtKey] = token.ExpiresAt.ToString(RoundTripDateFormat, CultureInfo.InvariantCulture),
+        };
+        outbox.Add(EventTypeOf(purpose), ticketId: null, userId, payload, protector.Protect(rawToken));
+        audit.Record(AuditActionOf(purpose), AuditEntityTypes.User, userId);
+        return rawToken;
+    }
+
+    /// <summary>The stored form of a raw token: SHA-256 over its UTF-8 bytes, base64url.</summary>
+    public static string Hash(string rawToken) =>
+        Base64Url.EncodeToString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
+
+    private static string EventTypeOf(PasswordTokenPurpose purpose) => purpose switch
+    {
+        PasswordTokenPurpose.Activation => NotificationEventTypes.AccountActivation,
+        PasswordTokenPurpose.Reset => NotificationEventTypes.PasswordReset,
+        _ => throw new ArgumentOutOfRangeException(nameof(purpose), purpose, "Unknown password token purpose."),
+    };
+
+    private static string AuditActionOf(PasswordTokenPurpose purpose) => purpose switch
+    {
+        PasswordTokenPurpose.Activation => AuditActions.UserActivationLinkSent,
+        PasswordTokenPurpose.Reset => AuditActions.UserPasswordResetLinkSent,
+        _ => throw new ArgumentOutOfRangeException(nameof(purpose), purpose, "Unknown password token purpose."),
+    };
+}
