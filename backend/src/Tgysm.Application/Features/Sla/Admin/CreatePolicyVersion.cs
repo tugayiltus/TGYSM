@@ -41,11 +41,8 @@ internal sealed class CreatePolicyVersionValidator : AbstractValidator<CreatePol
             Fail(context, ErrorCodes.InvalidValue);
         }
 
-        var drafts = targets.Where(t => t.TargetMinutes > 0).Select(t => (t.Kind, t.Priority, t.RequestTypeId, t.Metric)).ToList();
-        var present = drafts.Where(t => t.RequestTypeId is null).Select(t => (t.Kind, t.Priority, t.Metric)).ToHashSet();
-        var complete = Enum.GetValues<TicketKind>().All(kind => Enum.GetValues<Priority>().All(priority =>
-            Enum.GetValues<SlaMetric>().All(metric => present.Contains((kind, priority, metric)))));
-        if (!complete)
+        var baseCells = targets.Where(t => t.RequestTypeId is null && t.TargetMinutes > 0).Select(t => (t.Kind, t.Priority, t.Metric));
+        if (SlaPolicyVersion.FindMissingCells(baseCells).Count > 0)
         {
             Fail(context, ErrorCodes.SlaTargetMissing);
         }

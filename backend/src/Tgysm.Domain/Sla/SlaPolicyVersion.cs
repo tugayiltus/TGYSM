@@ -53,9 +53,14 @@ public sealed class SlaPolicyVersion : Entity
     }
 
     /// <summary>Base (non request-type) matrix cells that have no target.</summary>
-    public static IReadOnlyList<(TicketKind Kind, Priority Priority, SlaMetric Metric)> FindMissingTargets(IEnumerable<SlaTarget> targets)
+    public static IReadOnlyList<(TicketKind Kind, Priority Priority, SlaMetric Metric)> FindMissingTargets(IEnumerable<SlaTarget> targets) =>
+        FindMissingCells(targets.Where(t => t.RequestTypeId is null).Select(t => (t.Kind, t.Priority, t.Metric)));
+
+    /// <summary>Matrix cells absent from <paramref name="coveredCells"/>; the single definition of "complete", also used by request validation.</summary>
+    public static IReadOnlyList<(TicketKind Kind, Priority Priority, SlaMetric Metric)> FindMissingCells(
+        IEnumerable<(TicketKind Kind, Priority Priority, SlaMetric Metric)> coveredCells)
     {
-        var present = targets.Where(t => t.RequestTypeId is null).Select(t => (t.Kind, t.Priority, t.Metric)).ToHashSet();
+        var present = coveredCells.ToHashSet();
         return
         [
             .. from kind in Enum.GetValues<TicketKind>()
