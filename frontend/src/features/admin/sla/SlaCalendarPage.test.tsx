@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, mockApi, type MockRoutes } from '../../../test/mockApi';
@@ -85,6 +85,46 @@ describe('SlaCalendarPage', () => {
     expect(put).toMatchObject({ version: 2, timeZone: 'Europe/Istanbul' });
     expect((put as { hours: unknown[] }).hours).toHaveLength(5);
     expect((put as { hours: { startsAt: string }[] }).hours[0]?.startsAt).toBe('09:00:00');
+  });
+
+  it('submits the version the draft was based on, even after the calendar was refetched in the background', async () => {
+    let put: unknown;
+    const api = setup({
+      'PUT /api/v1/admin/sla/calendar': async (request) => {
+        put = await request.json();
+        return { status: 409, body: { code: 'concurrency.conflict' } };
+      },
+    });
+    const { user, queryClient } = renderRoute('/admin/sla/calendar');
+    await screen.findByLabelText('Saat dilimi');
+
+    api.set('GET /api/v1/admin/sla/calendar', { status: 200, body: { ...CALENDAR, version: 3, timeZone: 'Europe/London' } });
+    await act(() => queryClient.invalidateQueries());
+    await waitFor(() => expect(api.calls.filter((c) => c.method === 'GET' && c.url.endsWith('/admin/sla/calendar'))).toHaveLength(2));
+    await user.click(screen.getByRole('button', { name: 'Takvimi kaydet' }));
+
+    await waitFor(() => expect(put).toMatchObject({ version: 2, timeZone: 'Europe/Istanbul' }));
+  });
+
+  it('on a conflict, offers to reload the server copy and then saves on top of it', async () => {
+    const api = setup({ 'PUT /api/v1/admin/sla/calendar': { status: 409, body: { code: 'concurrency.conflict' } } });
+    const { user } = renderRoute('/admin/sla/calendar');
+
+    await user.click(await screen.findByRole('button', { name: 'Takvimi kaydet' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('başka biri tarafından değiştirildi');
+
+    api.set('GET /api/v1/admin/sla/calendar', { status: 200, body: { ...CALENDAR, version: 3, timeZone: 'Europe/London' } });
+    let put: unknown;
+    api.set('PUT /api/v1/admin/sla/calendar', async (request) => {
+      put = await request.json();
+      return { status: 200, body: { ...CALENDAR, version: 4, timeZone: 'Europe/London' } };
+    });
+    await user.click(screen.getByRole('button', { name: 'Sunucudaki takvimi yükle' }));
+
+    expect(await screen.findByDisplayValue('Europe/London')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Takvimi kaydet' }));
+    await waitFor(() => expect(put).toMatchObject({ version: 3, timeZone: 'Europe/London' }));
   });
 
   it('adds and removes a holiday', async () => {

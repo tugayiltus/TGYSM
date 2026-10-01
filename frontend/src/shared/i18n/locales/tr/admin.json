@@ -387,6 +387,7 @@
     "closed": "Kapalı",
     "save": "Takvimi kaydet",
     "saved": "Takvim kaydedildi.",
+    "reload": "Sunucudaki takvimi yükle",
     "weekdays": {
       "monday": "Pazartesi",
       "tuesday": "Salı",

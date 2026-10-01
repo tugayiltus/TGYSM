@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { describeError, translateErrorCode } from '../../../shared/api/errorMessage';
+import { ApiError, ERROR_CODES } from '../../../shared/api/errors';
 import { formatDate } from '../../../shared/lib/format';
 import { Button } from '../../../shared/ui/Button';
 import { FormAlert } from '../../../shared/ui/FormAlert';
@@ -24,18 +25,46 @@ import {
 } from './api';
 import { SECONDS_SUFFIX, toWeekDraft, validateCalendar, type DayDraft, type WeekDraft } from './calendarDraft';
 
-function CalendarForm({ calendar }: { calendar: CalendarDetail }) {
+/**
+ * The form's working copy. `baseVersion` is the server version the draft was loaded from: a save always sends it,
+ * never a version refetched in the background, so a stale draft cannot silently overwrite a newer calendar.
+ */
+interface CalendarDraft {
+  baseVersion: number;
+  timeZone: string;
+  week: WeekDraft;
+}
+
+function toDraft(calendar: CalendarDetail): CalendarDraft {
+  return { baseVersion: calendar.version, timeZone: calendar.timeZone, week: toWeekDraft(calendar.hours) };
+}
+
+function isConflict(error: unknown): boolean {
+  return error instanceof ApiError && error.code === ERROR_CODES.concurrencyConflict;
+}
+
+function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onReload: () => Promise<CalendarDetail | undefined> }) {
   const { t } = useTranslation('admin');
   const formId = useId();
   const update = useUpdateSlaCalendar();
-  const [timeZone, setTimeZone] = useState(calendar.timeZone);
-  const [week, setWeek] = useState<WeekDraft>(() => toWeekDraft(calendar.hours));
+  const [draft, setDraft] = useState<CalendarDraft>(() => toDraft(calendar));
   const [problem, setProblem] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const { timeZone, week } = draft;
 
   const setDay = (day: DayOfWeek, change: Partial<DayDraft>) => {
-    setWeek((current) => ({ ...current, [day]: { ...current[day], ...change } }));
+    setDraft((current) => ({ ...current, week: { ...current.week, [day]: { ...current.week[day], ...change } } }));
     setSaved(false);
+  };
+
+  const reload = async () => {
+    const fresh = await onReload();
+    if (fresh) {
+      setDraft(toDraft(fresh));
+      setProblem(null);
+      setSaved(false);
+      update.reset();
+    }
   };
 
   const onSubmit = (event: FormEvent) => {
@@ -50,7 +79,15 @@ function CalendarForm({ calendar }: { calendar: CalendarDetail }) {
       startsAt: `${week[day].starts}${SECONDS_SUFFIX}`,
       endsAt: `${week[day].ends}${SECONDS_SUFFIX}`,
     }));
-    update.mutate({ version: calendar.version, timeZone: timeZone.trim(), hours }, { onSuccess: () => setSaved(true) });
+    update.mutate(
+      { version: draft.baseVersion, timeZone: timeZone.trim(), hours },
+      {
+        onSuccess: (result) => {
+          setDraft((current) => ({ ...current, baseVersion: result.version }));
+          setSaved(true);
+        },
+      },
+    );
   };
 
   const alert = problem !== null ? translateErrorCode(problem) : update.error ? describeError(update.error) : null;
@@ -58,13 +95,21 @@ function CalendarForm({ calendar }: { calendar: CalendarDetail }) {
   return (
     <form id={formId} noValidate className="flex max-w-2xl flex-col gap-4" onSubmit={onSubmit}>
       <FormAlert message={alert} />
+      {problem === null && isConflict(update.error) && (
+        <div>
+          <Button variant="secondary" onClick={() => void reload()}>
+            {t('slaCalendar.reload')}
+          </Button>
+        </div>
+      )}
       <TextField
         label={t('slaCalendar.timeZone')}
         hint={t('slaCalendar.timeZoneHint')}
         autoComplete="off"
         value={timeZone}
         onChange={(event) => {
-          setTimeZone(event.target.value);
+          const value = event.target.value;
+          setDraft((current) => ({ ...current, timeZone: value }));
           setSaved(false);
         }}
       />
@@ -180,7 +225,7 @@ export function SlaCalendarPage() {
       <h1 className="text-2xl font-semibold">{t('slaCalendar.title')}</h1>
       {calendar.isPending && <LoadingState />}
       {calendar.isError && <ErrorState error={calendar.error} onRetry={() => void calendar.refetch()} />}
-      {calendar.data && <CalendarForm calendar={calendar.data} />}
+      {calendar.data && <CalendarForm calendar={calendar.data} onReload={async () => (await calendar.refetch()).data} />}
       <HolidaysSection />
     </section>
   );
