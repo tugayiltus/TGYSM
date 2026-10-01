@@ -76,6 +76,8 @@ export const routes: RouteObject[] = [
           { path: ROUTES.adminRequestTypes, lazy: async () => ({ Component: (await import('../features/admin/catalog/RequestTypesPage')).RequestTypesPage }) },
           { path: ROUTES.adminEmailTemplates, lazy: async () => ({ Component: (await import('../features/admin/email/EmailTemplatesPage')).EmailTemplatesPage }) },
           { path: ROUTES.adminEmailDeliveries, lazy: async () => ({ Component: (await import('../features/admin/email/EmailDeliveriesPage')).EmailDeliveriesPage }) },
+          { path: ROUTES.adminSlaCalendar, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaCalendarPage')).SlaCalendarPage }) },
+          { path: ROUTES.adminSlaPolicy, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaPolicyPage')).SlaPolicyPage }) },
           { path: ROUTES.adminSystem, lazy: async () => ({ Component: (await import('../features/admin/system/SystemPage')).SystemPage }) },
           { path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
         ],

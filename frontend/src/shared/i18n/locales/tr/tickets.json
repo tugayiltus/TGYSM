@@ -186,7 +186,8 @@
     "on_hold": "Beklemede",
     "mine": "Açtıklarım",
     "count": "{{count}} kayıt",
-    "back": "İş listesine dön"
+    "back": "İş listesine dön",
+    "sla_risk": "SLA riski"
   },
   "approvals": {
     "title": "Onay bekleyenler",
@@ -215,5 +216,28 @@
     "workspaceCardDescription": "Size ve ekiplerinize düşen kayıtlar.",
     "approvalsCard": "Onaylar",
     "approvalsCardDescription": "Onayınızı bekleyen talepler."
+  },
+  "sla": {
+    "title": "SLA",
+    "listColumn": "SLA",
+    "metrics": {
+      "first_response": "İlk yanıt",
+      "resolution": "Çözüm"
+    },
+    "states": {
+      "running": "Kalan {{duration}}",
+      "paused": "Duraklatıldı · kalan {{duration}}",
+      "warned": "Risk · kalan {{duration}}",
+      "breached": "İhlal · {{duration}} gecikme",
+      "met": "Karşılandı",
+      "metBreached": "İhlal edildi",
+      "cancelled": "İptal edildi"
+    },
+    "duration": {
+      "hoursMinutes": "{{hours}} sa {{minutes}} dk",
+      "minutes": "{{minutes}} dk"
+    },
+    "due": "Hedef: {{date}}",
+    "none": "SLA bilgisi yok"
   }
 }

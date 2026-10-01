@@ -315,4 +315,27 @@ public sealed class SlaInstanceTests
         Assert.Null(instance.WarnedAt);
         Assert.True(instance.WarnAt > At(Monday, 15));
     }
+
+    [Fact]
+    public void RemainingSeconds_counts_down_business_time_while_running_and_goes_negative_when_overdue()
+    {
+        var instance = Start(At(Monday, 10));
+
+        Assert.Equal(4 * SecondsPerHour, instance.RemainingSeconds(At(Monday, 10), Rules));
+        Assert.Equal(3 * SecondsPerHour, instance.RemainingSeconds(At(Monday, 11), Rules));
+        Assert.Equal(-SecondsPerHour, instance.RemainingSeconds(At(Monday, 15), Rules));
+    }
+
+    [Fact]
+    public void RemainingSeconds_is_frozen_while_paused_and_null_once_stopped()
+    {
+        var instance = Start(At(Monday, 10));
+        instance.Pause(HoldReason.User, At(Monday, 11), Rules);
+
+        Assert.Equal(3 * SecondsPerHour, instance.RemainingSeconds(At(Monday, 17), Rules));
+
+        instance.Stop(null, At(Monday, 17), Rules);
+
+        Assert.Null(instance.RemainingSeconds(At(Monday, 17), Rules));
+    }
 }

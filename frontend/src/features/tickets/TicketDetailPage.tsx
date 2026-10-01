@@ -9,6 +9,7 @@ import { useSession } from '../auth/session';
 
 import { useComments, useTicket, useTimeline, type TicketDetail } from './api';
 import { CommentBox, CommentList } from './Comments';
+import { SlaSummary } from './SlaBadge';
 import { TicketActions } from './TicketActions';
 import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
 import { TicketLinks } from './TicketLinks';
@@ -81,6 +82,13 @@ function TicketDetail({ number }: { number: string }) {
           {item.holdReason && <span className="text-sm text-slate-700">{t(`holdReasons.${item.holdReason}`)}</span>}
         </div>
       </div>
+
+      <section aria-labelledby="ticket-sla" className="flex flex-col gap-2">
+        <h2 id="ticket-sla" className="text-lg font-semibold">
+          {t('sla.title')}
+        </h2>
+        <SlaSummary sla={item.sla} showDue />
+      </section>
 
       <FormAlert message={uploadError} />
       <ApprovalBox ticket={item} />

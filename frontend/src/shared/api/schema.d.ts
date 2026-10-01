@@ -5711,6 +5711,8 @@ export interface components {
         };
         /** @enum {unknown} */
         SlaMetric: "first_response" | "resolution";
+        /** @enum {unknown} */
+        SlaResult: "met" | "breached" | "cancelled" | null;
         StartMaintenanceRequest: {
             /** Format: uint32 */
             version: number;
@@ -5808,12 +5810,15 @@ export interface components {
             canWork: boolean;
             /** Format: uint32 */
             version: number;
+            sla: components["schemas"]["TicketSla"][];
         };
         /** @enum {unknown} */
         TicketEventKind: "created" | "assigned" | "transferred" | "status_changed" | "public_comment" | "internal_note" | "priority_changed" | "approval_requested" | "approval_decided" | "approval_voided" | "approval_reassigned" | "related_request_created" | "asset_linked" | "asset_unlinked" | "completed" | "cancelled";
         /** @enum {unknown} */
         TicketKind: "incident" | "request";
         TicketListItem: {
+            /** Format: uuid */
+            id: string;
             number: string;
             kind: components["schemas"]["TicketKind"];
             subject: string;
@@ -5827,6 +5832,7 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            sla: components["schemas"]["TicketSla"][];
         };
         /** @enum {unknown} */
         TicketOutcome: "resolved" | "service_request_required" | "fulfilled" | "approval_rejected" | null;
@@ -5834,6 +5840,17 @@ export interface components {
             /** Format: uint32 */
             version: number;
             reason: string;
+        };
+        TicketSla: {
+            metric: components["schemas"]["SlaMetric"];
+            /** Format: date-time */
+            dueAt: null | string;
+            /** Format: int64 */
+            remainingSeconds: null | number;
+            isPaused: boolean;
+            isWarned: boolean;
+            isBreached: boolean;
+            result: null | components["schemas"]["SlaResult"];
         };
         /** @enum {unknown} */
         TicketStatus: "open" | "in_progress" | "on_hold" | "completed" | "cancelled";

@@ -61,6 +61,26 @@ public sealed class SlaInstance : Entity
 
     public bool IsPaused => !IsStopped && RunningSince is null;
 
+    /// <summary>
+    /// Business seconds left to the target at <paramref name="now"/>: negative once overdue, frozen while paused, null once stopped.
+    /// <paramref name="rules"/> is only read while the timer is running.
+    /// </summary>
+    public long? RemainingSeconds(DateTimeOffset now, BusinessCalendarRules? rules)
+    {
+        if (IsStopped)
+        {
+            return null;
+        }
+
+        var used = ElapsedSeconds;
+        if (RunningSince is { } since)
+        {
+            used += BusinessTimeCalculator.SecondsBetween(rules ?? throw new ArgumentNullException(nameof(rules)), since, now);
+        }
+
+        return (long)TargetMinutes * SecondsPerMinute - used;
+    }
+
     public static SlaInstance Start(
         Guid ticketId, SlaMetric metric, SlaTarget target, Guid policyVersionId, DateTimeOffset now, BusinessCalendarRules rules, bool paused, HoldReason? pauseReason)
     {

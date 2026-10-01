@@ -63,7 +63,7 @@ public sealed class ListMyApprovalsHandler(IAppDbContext db, ICurrentActor actor
 
 /// <summary>Approve opens the request; reject cancels it (spec §3.4). Concurrent decisions: one wins, the other gets 409.</summary>
 public sealed class DecideApprovalHandler(
-    IAppDbContext db, IValidator<DecideApprovalCommand> validator, ICurrentActor actor, IAuditLog audit, INotificationOutbox outbox, TicketScope scope, SlaTracker sla, TimeProvider clock)
+    IAppDbContext db, IValidator<DecideApprovalCommand> validator, ICurrentActor actor, IAuditLog audit, INotificationOutbox outbox, TicketScope scope, SlaTracker sla, TicketSlaReader slaReader, TimeProvider clock)
 {
     public async Task<TicketDetail> HandleAsync(DecideApprovalCommand command, CancellationToken cancellationToken)
     {
@@ -93,12 +93,12 @@ public sealed class DecideApprovalHandler(
             newValues: new { ticket.Number, approval.Status }, reason: approval.Reason);
         outbox.Add(NotificationEventTypes.ApprovalDecided, ticket.Id, userId: null);
         await db.SaveChangesAsync(cancellationToken);
-        return await TicketQueries.LoadDetailAsync(db, ticket.Id, await scope.ViewerAsync(cancellationToken), cancellationToken);
+        return await TicketQueries.LoadDetailAsync(db, slaReader, ticket.Id, await scope.ViewerAsync(cancellationToken), cancellationToken);
     }
 }
 
 /// <summary>Admins give a pending approval to another admin (never the requester), with a reason.</summary>
-public sealed class ReassignApproverHandler(IAppDbContext db, IValidator<ReassignApproverCommand> validator, IAuditLog audit, TicketScope scope, TimeProvider clock)
+public sealed class ReassignApproverHandler(IAppDbContext db, IValidator<ReassignApproverCommand> validator, IAuditLog audit, TicketScope scope, TicketSlaReader slaReader, TimeProvider clock)
 {
     public async Task<TicketDetail> HandleAsync(ReassignApproverCommand command, CancellationToken cancellationToken)
     {
@@ -116,7 +116,7 @@ public sealed class ReassignApproverHandler(IAppDbContext db, IValidator<Reassig
         TicketTimeline.Record(db, ticket, TicketEventKind.ApprovalReassigned, Visibility.Internal, viewer.UserId, clock.GetUtcNow(), new { command.ApproverId });
         audit.Record(AuditActions.ApprovalReassigned, AuditEntityTypes.Approval, approval.Id, before, new { approval.ApproverId }, command.Reason.Trim());
         await db.SaveChangesAsync(cancellationToken);
-        return await TicketQueries.LoadDetailAsync(db, ticket.Id, viewer, cancellationToken);
+        return await TicketQueries.LoadDetailAsync(db, slaReader, ticket.Id, viewer, cancellationToken);
     }
 }
 

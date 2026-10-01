@@ -12,7 +12,9 @@
     "backToApp": "Uygulamaya dön",
     "emailTemplates": "E-posta şablonları",
     "emailDeliveries": "E-posta gönderimleri",
-    "system": "Sistem"
+    "system": "Sistem",
+    "slaCalendar": "SLA takvimi",
+    "slaPolicy": "SLA politikası"
   },
   "users": {
     "title": "Kullanıcılar",
@@ -373,5 +375,49 @@
     "intervalValue": "{{count}} sn",
     "stale": "Gecikmiş",
     "fresh": "Zamanında"
+  },
+  "slaCalendar": {
+    "title": "SLA takvimi",
+    "timeZone": "Saat dilimi",
+    "timeZoneHint": "IANA adı, ör. Europe/Istanbul",
+    "hoursTitle": "Çalışma saatleri",
+    "open": "Çalışılıyor",
+    "starts": "Başlangıç",
+    "ends": "Bitiş",
+    "closed": "Kapalı",
+    "save": "Takvimi kaydet",
+    "saved": "Takvim kaydedildi.",
+    "weekdays": {
+      "monday": "Pazartesi",
+      "tuesday": "Salı",
+      "wednesday": "Çarşamba",
+      "thursday": "Perşembe",
+      "friday": "Cuma",
+      "saturday": "Cumartesi",
+      "sunday": "Pazar"
+    },
+    "holidays": {
+      "title": "Tatil günleri",
+      "date": "Tarih",
+      "name": "Ad",
+      "add": "Tatil ekle",
+      "remove": "Kaldır",
+      "empty": "Tatil günü tanımlı değil.",
+      "caption": "Tatil günleri listesi"
+    }
+  },
+  "slaPolicy": {
+    "title": "SLA politikası",
+    "version": "Geçerli sürüm: {{number}}",
+    "targetsTitle": "Hedefler (iş dakikası)",
+    "targetMinutes": "Hedef (dk)",
+    "warningPercent": "Uyarı (%)",
+    "pauseTitle": "Duraklatma kuralları",
+    "pauseHint": "Seçilen bekleme nedenlerinde ilgili süre ölçüsü durur.",
+    "pausesFirstResponse": "İlk yanıt durur",
+    "pausesResolution": "Çözüm durur",
+    "save": "Yeni sürüm olarak kaydet",
+    "saved": "Yeni sürüm oluşturuldu.",
+    "invalid": "Hedefler 1 veya daha büyük, uyarı yüzdesi 1 ile 99 arasında olmalıdır."
   }
 }

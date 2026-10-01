@@ -6,5 +6,8 @@ export const adminKeys = {
   audit: ['admin', 'audit'],
   emailTemplates: ['admin', 'email-templates'],
   emailDeliveries: ['admin', 'email-deliveries'],
+  slaCalendar: ['admin', 'sla', 'calendar'],
+  slaHolidays: ['admin', 'sla', 'holidays'],
+  slaPolicy: ['admin', 'sla', 'policy'],
   system: ['admin', 'system'],
 } as const;

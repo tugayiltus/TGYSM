@@ -36,9 +36,11 @@ export const INCIDENT: TicketDetail = {
   relatedTickets: [],
   canWork: false,
   version: 11,
+  sla: [],
 };
 
 export const LIST_ITEM: TicketListItem = {
+  id: INCIDENT.id,
   number: INCIDENT.number,
   kind: 'incident',
   subject: INCIDENT.subject,
@@ -50,6 +52,7 @@ export const LIST_ITEM: TicketListItem = {
   requesterName: 'Ayşe Kaya',
   createdAt: INCIDENT.createdAt,
   updatedAt: INCIDENT.updatedAt,
+  sla: [],
 };
 
 export const TIMELINE: TimelineItem[] = [

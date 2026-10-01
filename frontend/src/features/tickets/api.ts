@@ -18,7 +18,8 @@ export type CommentItem = Schemas['CommentItem'];
 export type TimelineItem = Schemas['TimelineItem'];
 export type TicketAssetItem = Schemas['TicketAssetItem'];
 export type MyApprovalItem = Schemas['MyApprovalItem'];
-export type TicketQueue = 'mine' | 'team' | 'assigned_to_me' | 'unassigned' | 'on_hold';
+export type TicketSla = Schemas['TicketSla'];
+export type TicketQueue = 'mine' | 'team' | 'assigned_to_me' | 'unassigned' | 'on_hold' | 'sla_risk';
 
 export const TICKET_STATUSES: readonly TicketStatus[] = ['open', 'in_progress', 'on_hold', 'completed', 'cancelled'];
 export const PRIORITIES: readonly Priority[] = ['p1', 'p2', 'p3', 'p4'];
@@ -36,7 +37,7 @@ export const TRANSFER_REASONS: readonly TransferReason[] = [
   'location',
   'other',
 ];
-export const WORKSPACE_QUEUES: readonly TicketQueue[] = ['assigned_to_me', 'team', 'unassigned', 'on_hold'];
+export const WORKSPACE_QUEUES: readonly TicketQueue[] = ['assigned_to_me', 'team', 'unassigned', 'on_hold', 'sla_risk'];
 
 export const ticketKeys = {
   all: ['tickets'],

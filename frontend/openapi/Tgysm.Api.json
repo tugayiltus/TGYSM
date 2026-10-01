@@ -7301,6 +7301,14 @@
           "resolution"
         ]
       },
+      "SlaResult": {
+        "enum": [
+          "met",
+          "breached",
+          "cancelled",
+          null
+        ]
+      },
       "StartMaintenanceRequest": {
         "required": [
           "version",
@@ -7507,7 +7515,8 @@
           "approval",
           "relatedTickets",
           "canWork",
-          "version"
+          "version",
+          "sla"
         ],
         "type": "object",
         "properties": {
@@ -7689,6 +7698,12 @@
           "version": {
             "type": "integer",
             "format": "uint32"
+          },
+          "sla": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketSla"
+            }
           }
         }
       },
@@ -7720,6 +7735,7 @@
       },
       "TicketListItem": {
         "required": [
+          "id",
           "number",
           "kind",
           "subject",
@@ -7730,10 +7746,15 @@
           "assigneeName",
           "requesterName",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "sla"
         ],
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "number": {
             "type": "string"
           },
@@ -7778,6 +7799,12 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "sla": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketSla"
+            }
           }
         }
       },
@@ -7803,6 +7830,56 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "TicketSla": {
+        "required": [
+          "metric",
+          "dueAt",
+          "remainingSeconds",
+          "isPaused",
+          "isWarned",
+          "isBreached",
+          "result"
+        ],
+        "type": "object",
+        "properties": {
+          "metric": {
+            "$ref": "#/components/schemas/SlaMetric"
+          },
+          "dueAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "remainingSeconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int64"
+          },
+          "isPaused": {
+            "type": "boolean"
+          },
+          "isWarned": {
+            "type": "boolean"
+          },
+          "isBreached": {
+            "type": "boolean"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SlaResult"
+              }
+            ]
           }
         }
       },

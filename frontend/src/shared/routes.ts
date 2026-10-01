@@ -24,6 +24,8 @@ export const ROUTES = {
   adminEmailTemplates: '/admin/email-templates',
   adminEmailDeliveries: '/admin/email-deliveries',
   adminSystem: '/admin/system',
+  adminSlaCalendar: '/admin/sla/calendar',
+  adminSlaPolicy: '/admin/sla/policy',
   adminCategories: '/admin/categories',
   adminRequestTypes: '/admin/request-types',
 } as const;

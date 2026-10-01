@@ -30,6 +30,9 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) :
             case NotFoundException notFound:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status404NotFound, notFound.Code);
                 break;
+            case ForbiddenException forbidden:
+                await ApiProblem.WriteAsync(context, StatusCodes.Status403Forbidden, forbidden.Code);
+                break;
             case ConcurrencyException:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status409Conflict, ErrorCodes.ConcurrencyConflict);
                 break;

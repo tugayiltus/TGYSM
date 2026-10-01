@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
 import { TextField } from '../../shared/ui/TextField';
 
 import { PRIORITIES, TICKET_STATUSES, useTickets, type Priority, type TicketListItem, type TicketQueue, type TicketStatus } from './api';
+import { SlaSummary } from './SlaBadge';
 import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
 
 const PAGE_SIZE = 20;
@@ -59,6 +60,7 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
       ? [
           { key: 'priority', header: t('list.columns.priority'), renderCell: (x: TicketListItem) => <PriorityBadge priority={x.priority} /> },
           { key: 'assignee', header: t('list.columns.assignee'), renderCell: (x: TicketListItem) => x.assigneeName ?? tc('none') },
+          { key: 'sla', header: t('sla.listColumn'), renderCell: (x: TicketListItem) => <SlaSummary sla={x.sla} /> },
         ]
       : []),
     { key: 'updated', header: t('list.columns.updated'), renderCell: (x) => formatDateTime(x.updatedAt) },
@@ -78,6 +80,7 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           <PriorityBadge priority={x.priority} />
           <span>{x.assigneeName ?? x.teamName}</span>
+          <SlaSummary sla={x.sla} />
         </div>
       )}
       <OpenLink ticket={x} />

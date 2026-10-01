@@ -1,8 +1,10 @@
+using Tgysm.Application.Sla;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
 
 public sealed record TicketListItem(
+    Guid Id,
     string Number,
     TicketKind Kind,
     string Subject,
@@ -13,7 +15,8 @@ public sealed record TicketListItem(
     string? AssigneeName,
     string RequesterName,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    IReadOnlyList<TicketSla> Sla);
 
 public sealed record RelatedTicketItem(string Number, TicketKind Kind, string Subject, TicketStatus Status);
 
@@ -54,4 +57,5 @@ public sealed record TicketDetail(
     ApprovalSummary? Approval,
     IReadOnlyList<RelatedTicketItem> RelatedTickets,
     bool CanWork,
-    uint Version);
+    uint Version,
+    IReadOnlyList<TicketSla> Sla);

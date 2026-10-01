@@ -1,0 +1,187 @@
+import { useId, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { describeError, translateErrorCode } from '../../../shared/api/errorMessage';
+import { formatDate } from '../../../shared/lib/format';
+import { Button } from '../../../shared/ui/Button';
+import { FormAlert } from '../../../shared/ui/FormAlert';
+import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
+import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
+import { ErrorState, LoadingState } from '../../../shared/ui/States';
+import { TextField } from '../../../shared/ui/TextField';
+
+import {
+  WEEKDAYS,
+  useAddHoliday,
+  useRemoveHoliday,
+  useSlaCalendar,
+  useSlaHolidays,
+  useUpdateSlaCalendar,
+  type CalendarDetail,
+  type DayOfWeek,
+  type HolidayItem,
+  type WorkingHoursItem,
+} from './api';
+import { SECONDS_SUFFIX, toWeekDraft, validateCalendar, type DayDraft, type WeekDraft } from './calendarDraft';
+
+function CalendarForm({ calendar }: { calendar: CalendarDetail }) {
+  const { t } = useTranslation('admin');
+  const formId = useId();
+  const update = useUpdateSlaCalendar();
+  const [timeZone, setTimeZone] = useState(calendar.timeZone);
+  const [week, setWeek] = useState<WeekDraft>(() => toWeekDraft(calendar.hours));
+  const [problem, setProblem] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const setDay = (day: DayOfWeek, change: Partial<DayDraft>) => {
+    setWeek((current) => ({ ...current, [day]: { ...current[day], ...change } }));
+    setSaved(false);
+  };
+
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const code = validateCalendar(timeZone, week);
+    setProblem(code);
+    if (code !== null) {
+      return;
+    }
+    const hours: WorkingHoursItem[] = WEEKDAYS.filter((day) => week[day].open).map((day) => ({
+      weekday: day,
+      startsAt: `${week[day].starts}${SECONDS_SUFFIX}`,
+      endsAt: `${week[day].ends}${SECONDS_SUFFIX}`,
+    }));
+    update.mutate({ version: calendar.version, timeZone: timeZone.trim(), hours }, { onSuccess: () => setSaved(true) });
+  };
+
+  const alert = problem !== null ? translateErrorCode(problem) : update.error ? describeError(update.error) : null;
+
+  return (
+    <form id={formId} noValidate className="flex max-w-2xl flex-col gap-4" onSubmit={onSubmit}>
+      <FormAlert message={alert} />
+      <TextField
+        label={t('slaCalendar.timeZone')}
+        hint={t('slaCalendar.timeZoneHint')}
+        autoComplete="off"
+        value={timeZone}
+        onChange={(event) => {
+          setTimeZone(event.target.value);
+          setSaved(false);
+        }}
+      />
+      <fieldset className="flex flex-col gap-3">
+        <legend className="text-sm font-medium text-slate-800">{t('slaCalendar.hoursTitle')}</legend>
+        {WEEKDAYS.map((day) => {
+          const name = t(`slaCalendar.weekdays.${day}`);
+          return (
+            <div key={day} className="grid grid-cols-[minmax(0,1fr)] items-end gap-2 sm:grid-cols-[10rem_1fr_1fr]">
+              <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
+                <input type="checkbox" checked={week[day].open} onChange={(event) => setDay(day, { open: event.target.checked })} />
+                {`${name} · ${t('slaCalendar.open')}`}
+              </label>
+              <TextField
+                type="time"
+                label={`${name} ${t('slaCalendar.starts')}`}
+                disabled={!week[day].open}
+                value={week[day].starts}
+                onChange={(event) => setDay(day, { starts: event.target.value })}
+              />
+              <TextField
+                type="time"
+                label={`${name} ${t('slaCalendar.ends')}`}
+                disabled={!week[day].open}
+                value={week[day].ends}
+                onChange={(event) => setDay(day, { ends: event.target.value })}
+              />
+            </div>
+          );
+        })}
+      </fieldset>
+      <div className="flex items-center gap-3">
+        <Button type="submit" isLoading={update.isPending}>
+          {t('slaCalendar.save')}
+        </Button>
+        {saved && <p role="status">{t('slaCalendar.saved')}</p>}
+      </div>
+    </form>
+  );
+}
+
+function HolidaysSection() {
+  const { t } = useTranslation('admin');
+  const holidays = useSlaHolidays();
+  const add = useAddHoliday();
+  const remove = useRemoveHoliday();
+  const [date, setDate] = useState('');
+  const [name, setName] = useState('');
+
+  const onAdd = (event: FormEvent) => {
+    event.preventDefault();
+    if (date === '' || name.trim() === '') {
+      return;
+    }
+    add.mutate(
+      { date, name: name.trim() },
+      {
+        onSuccess: () => {
+          setDate('');
+          setName('');
+        },
+      },
+    );
+  };
+
+  const removeButton = (holiday: HolidayItem) => (
+    <Button variant="secondary" aria-label={recordActionLabel(t('slaCalendar.holidays.remove'), holiday.name)} isLoading={remove.isPending} onClick={() => remove.mutate(holiday.id)}>
+      {t('slaCalendar.holidays.remove')}
+    </Button>
+  );
+
+  const columns: Column<HolidayItem>[] = [
+    { key: 'date', header: t('slaCalendar.holidays.date'), renderCell: (h) => formatDate(h.date) },
+    { key: 'name', header: t('slaCalendar.holidays.name'), renderCell: (h) => h.name },
+    { key: 'actions', header: '', renderCell: removeButton },
+  ];
+  const renderCard = (h: HolidayItem) => (
+    <div className="flex flex-col gap-2">
+      <p className="font-medium">{h.name}</p>
+      <p className="text-sm text-slate-600">{formatDate(h.date)}</p>
+      {removeButton(h)}
+    </div>
+  );
+
+  return (
+    <section aria-labelledby="sla-holidays" className="flex flex-col gap-4">
+      <h2 id="sla-holidays" className="text-lg font-semibold">
+        {t('slaCalendar.holidays.title')}
+      </h2>
+      <form noValidate className="grid max-w-2xl items-end gap-3 sm:grid-cols-[1fr_2fr_auto]" onSubmit={onAdd}>
+        <TextField type="date" label={t('slaCalendar.holidays.date')} value={date} onChange={(event) => setDate(event.target.value)} />
+        <TextField label={t('slaCalendar.holidays.name')} autoComplete="off" value={name} onChange={(event) => setName(event.target.value)} />
+        <Button type="submit" isLoading={add.isPending}>
+          {t('slaCalendar.holidays.add')}
+        </Button>
+      </form>
+      <FormAlert message={add.error ? describeError(add.error) : remove.error ? describeError(remove.error) : null} />
+      {holidays.isPending && <LoadingState />}
+      {holidays.isError && <ErrorState error={holidays.error} onRetry={() => void holidays.refetch()} />}
+      {holidays.data && holidays.data.length === 0 && <p className="text-sm text-slate-600">{t('slaCalendar.holidays.empty')}</p>}
+      {holidays.data && holidays.data.length > 0 && (
+        <ResponsiveList items={holidays.data} columns={columns} getKey={(h) => h.id} renderCard={renderCard} caption={t('slaCalendar.holidays.caption')} />
+      )}
+    </section>
+  );
+}
+
+export function SlaCalendarPage() {
+  const { t } = useTranslation('admin');
+  const calendar = useSlaCalendar();
+  return (
+    <section className="flex flex-col gap-6">
+      <h1 className="text-2xl font-semibold">{t('slaCalendar.title')}</h1>
+      {calendar.isPending && <LoadingState />}
+      {calendar.isError && <ErrorState error={calendar.error} onRetry={() => void calendar.refetch()} />}
+      {calendar.data && <CalendarForm calendar={calendar.data} />}
+      <HolidaysSection />
+    </section>
+  );
+}

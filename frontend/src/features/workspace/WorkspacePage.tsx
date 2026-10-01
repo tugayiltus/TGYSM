@@ -30,7 +30,7 @@ export function WorkspacePage() {
   return (
     <section className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">{t('workspace.title')}</h1>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {WORKSPACE_QUEUES.map((queue) => (
           <li key={queue}>
             <QueueCard queue={queue} />
