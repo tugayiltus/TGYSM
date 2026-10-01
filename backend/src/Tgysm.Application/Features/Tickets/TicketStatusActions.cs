@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Sla;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
@@ -75,35 +76,35 @@ public sealed class StartTicketHandler(IAppDbContext db, TicketWork work, IAudit
         }, cancellationToken);
 }
 
-public sealed class HoldTicketHandler(IAppDbContext db, IValidator<HoldTicketCommand> validator, TicketWork work, IAuditLog audit)
+public sealed class HoldTicketHandler(IAppDbContext db, IValidator<HoldTicketCommand> validator, TicketWork work, IAuditLog audit, SlaTracker sla)
 {
     public async Task<TicketDetail> HandleAsync(HoldTicketCommand command, CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        return await work.RunAsync(command.Number, command.Version, requireWorker: true, (ticket, viewer, now) =>
+        return await work.RunAsync(command.Number, command.Version, requireWorker: true, async (ticket, viewer, now) =>
         {
             var from = ticket.Status;
             ticket.Hold(command.Reason!.Value, command.Note, now);
             StatusChange.Record(db, audit, ticket, from, viewer.UserId, now, ticket.HoldNote);
-            return Task.CompletedTask;
+            await sla.OnHoldAsync(ticket, command.Reason.Value, cancellationToken);
         }, cancellationToken);
     }
 }
 
-public sealed class ResumeTicketHandler(IAppDbContext db, TicketWork work, IAuditLog audit)
+public sealed class ResumeTicketHandler(IAppDbContext db, TicketWork work, IAuditLog audit, SlaTracker sla)
 {
     public Task<TicketDetail> HandleAsync(ResumeTicketCommand command, CancellationToken cancellationToken) =>
-        work.RunAsync(command.Number, command.Version, requireWorker: true, (ticket, viewer, now) =>
+        work.RunAsync(command.Number, command.Version, requireWorker: true, async (ticket, viewer, now) =>
         {
             var from = ticket.Status;
             ticket.Resume(now);
             StatusChange.Record(db, audit, ticket, from, viewer.UserId, now);
-            return Task.CompletedTask;
+            await sla.OnResumeAsync(ticket, cancellationToken);
         }, cancellationToken);
 }
 
 /// <summary>Completing closes the ticket directly (no confirmation step, spec §1 criterion 4).</summary>
-public sealed class CompleteTicketHandler(IAppDbContext db, IValidator<CompleteTicketCommand> validator, TicketWork work, IAuditLog audit, INotificationOutbox outbox)
+public sealed class CompleteTicketHandler(IAppDbContext db, IValidator<CompleteTicketCommand> validator, TicketWork work, IAuditLog audit, INotificationOutbox outbox, SlaTracker sla)
 {
     public async Task<TicketDetail> HandleAsync(CompleteTicketCommand command, CancellationToken cancellationToken)
     {
@@ -116,11 +117,12 @@ public sealed class CompleteTicketHandler(IAppDbContext db, IValidator<CompleteT
             TicketTimeline.Record(db, ticket, TicketEventKind.Completed, Visibility.Public, viewer.UserId, now, new { ticket.Resolution, ticket.Outcome });
             audit.Record(AuditActions.TicketCompleted, AuditEntityTypes.Ticket, ticket.Id, newValues: new { ticket.Outcome });
             outbox.Add(NotificationEventTypes.TicketCompleted, ticket.Id, userId: null);
+            await sla.OnCompletedAsync(ticket, cancellationToken);
         }, cancellationToken);
     }
 }
 
-public sealed class CancelTicketHandler(IAppDbContext db, IValidator<CancelTicketCommand> validator, TicketWork work, IAuditLog audit)
+public sealed class CancelTicketHandler(IAppDbContext db, IValidator<CancelTicketCommand> validator, TicketWork work, IAuditLog audit, SlaTracker sla)
 {
     public async Task<TicketDetail> HandleAsync(CancelTicketCommand command, CancellationToken cancellationToken)
     {
@@ -133,22 +135,23 @@ public sealed class CancelTicketHandler(IAppDbContext db, IValidator<CancelTicke
             pending?.Withdraw(now);
             TicketTimeline.Record(db, ticket, TicketEventKind.Cancelled, Visibility.Public, viewer.UserId, now, new { ticket.CancelReason });
             audit.Record(AuditActions.TicketCancelled, AuditEntityTypes.Ticket, ticket.Id, reason: ticket.CancelReason);
+            await sla.OnCancelledAsync(ticket, cancellationToken);
         }, cancellationToken);
     }
 }
 
-public sealed class ChangePriorityHandler(IAppDbContext db, IValidator<ChangePriorityCommand> validator, TicketWork work, IAuditLog audit)
+public sealed class ChangePriorityHandler(IAppDbContext db, IValidator<ChangePriorityCommand> validator, TicketWork work, IAuditLog audit, SlaTracker sla)
 {
     public async Task<TicketDetail> HandleAsync(ChangePriorityCommand command, CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        return await work.RunAsync(command.Number, command.Version, requireWorker: true, (ticket, viewer, now) =>
+        return await work.RunAsync(command.Number, command.Version, requireWorker: true, async (ticket, viewer, now) =>
         {
             var before = new { ticket.Impact, ticket.Urgency, ticket.Priority };
             var (from, to) = ticket.ChangePriority(command.Impact!.Value, command.Urgency!.Value, now);
             TicketTimeline.Record(db, ticket, TicketEventKind.PriorityChanged, Visibility.Internal, viewer.UserId, now, new { from, to, reason = command.Reason.Trim() });
             audit.Record(AuditActions.TicketPriorityChanged, AuditEntityTypes.Ticket, ticket.Id, before, new { ticket.Impact, ticket.Urgency, ticket.Priority }, command.Reason.Trim());
-            return Task.CompletedTask;
+            await sla.OnPriorityChangedAsync(ticket, cancellationToken);
         }, cancellationToken);
     }
 }

@@ -49,6 +49,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<SlaPolicyVersion> SlaPolicyVersions => Set<SlaPolicyVersion>();
     public DbSet<SlaTarget> SlaTargets => Set<SlaTarget>();
     public DbSet<SlaPauseRule> SlaPauseRules => Set<SlaPauseRule>();
+    public DbSet<SlaInstance> SlaInstances => Set<SlaInstance>();
+    public DbSet<SlaPause> SlaPauses => Set<SlaPause>();
+    public DbSet<SlaEvent> SlaEvents => Set<SlaEvent>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

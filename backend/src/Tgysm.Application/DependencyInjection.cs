@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<LastAdminGuard>();
         services.AddScoped<CalendarProvider>();
         services.AddScoped<PolicyProvider>();
+        services.AddScoped<SlaTracker>();
         services.AddScoped<Features.Tickets.TicketScope>();
         services.AddScoped<Features.Tickets.TicketFactory>();
         services.AddScoped<Features.Tickets.TicketWork>();

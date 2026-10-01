@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Application.Features.Tickets;
+using Tgysm.Application.Sla;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
@@ -62,7 +63,7 @@ public sealed class ListMyApprovalsHandler(IAppDbContext db, ICurrentActor actor
 
 /// <summary>Approve opens the request; reject cancels it (spec §3.4). Concurrent decisions: one wins, the other gets 409.</summary>
 public sealed class DecideApprovalHandler(
-    IAppDbContext db, IValidator<DecideApprovalCommand> validator, ICurrentActor actor, IAuditLog audit, INotificationOutbox outbox, TicketScope scope, TimeProvider clock)
+    IAppDbContext db, IValidator<DecideApprovalCommand> validator, ICurrentActor actor, IAuditLog audit, INotificationOutbox outbox, TicketScope scope, SlaTracker sla, TimeProvider clock)
 {
     public async Task<TicketDetail> HandleAsync(DecideApprovalCommand command, CancellationToken cancellationToken)
     {
@@ -78,11 +79,13 @@ public sealed class DecideApprovalHandler(
         {
             approval.Approve(me, now);
             ticket.ApprovalGranted(now);
+            await sla.OnResumeAsync(ticket, cancellationToken);
         }
         else
         {
             approval.Reject(me, command.Reason!, now);
             ticket.ApprovalRejected(approval.Reason!, now);
+            await sla.OnCancelledAsync(ticket, cancellationToken);
         }
 
         TicketTimeline.Record(db, ticket, TicketEventKind.ApprovalDecided, Visibility.Public, me, now, new { approval.Status, approval.Reason });
@@ -118,7 +121,7 @@ public sealed class ReassignApproverHandler(IAppDbContext db, IValidator<Reassig
 }
 
 /// <summary>After a scope change IT voids the granted approval; a new one is requested and the request waits again.</summary>
-public sealed class InvalidateApprovalHandler(IAppDbContext db, IValidator<InvalidateApprovalCommand> validator, TicketWork work, IAuditLog audit, INotificationOutbox outbox)
+public sealed class InvalidateApprovalHandler(IAppDbContext db, IValidator<InvalidateApprovalCommand> validator, TicketWork work, IAuditLog audit, INotificationOutbox outbox, SlaTracker sla)
 {
     public async Task<TicketDetail> HandleAsync(InvalidateApprovalCommand command, CancellationToken cancellationToken)
     {
@@ -130,6 +133,7 @@ public sealed class InvalidateApprovalHandler(IAppDbContext db, IValidator<Inval
                 ?? throw new DomainException(ErrorCodes.ApprovalNotPending, "The ticket has no granted approval.");
             approved.Void(command.Reason, now);
             ticket.ReturnToApproval(now);
+            await sla.OnHoldAsync(ticket, HoldReason.ManagerApproval, cancellationToken);
             var approver = await ApprovalRules.ApproverForAsync(db, ticket.RequesterId, cancellationToken);
             db.Approvals.Add(Approval.Request(ticket.Id, approver, now.AddTicks(1)));
             TicketTimeline.Record(db, ticket, TicketEventKind.ApprovalVoided, Visibility.Public, viewer.UserId, now, new { reason = approved.Reason });

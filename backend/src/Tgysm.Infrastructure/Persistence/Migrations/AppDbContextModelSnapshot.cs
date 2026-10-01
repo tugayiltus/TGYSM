@@ -1022,6 +1022,176 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("holidays", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("SlaInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sla_instance_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sla_events");
+
+                    b.HasIndex("SlaInstanceId", "OccurredAt")
+                        .HasDatabaseName("ix_sla_events_sla_instance_id_occurred_at");
+
+                    b.ToTable("sla_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_sla_events_kind", "kind IN ('started', 'paused', 'resumed', 'target_changed', 'warning', 'breached', 'stopped')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("BreachedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("breached_at");
+
+                    b.Property<DateTimeOffset?>("DueAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_at");
+
+                    b.Property<long>("ElapsedSeconds")
+                        .HasColumnType("bigint")
+                        .HasColumnName("elapsed_seconds");
+
+                    b.Property<string>("Metric")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("metric");
+
+                    b.Property<Guid>("PolicyVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("policy_version_id");
+
+                    b.Property<string>("Result")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("result");
+
+                    b.Property<DateTimeOffset?>("RunningSince")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("running_since");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<DateTimeOffset?>("StoppedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("stopped_at");
+
+                    b.Property<int>("TargetMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_minutes");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("WarnAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("warn_at");
+
+                    b.Property<DateTimeOffset?>("WarnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("warned_at");
+
+                    b.Property<int>("WarningPercent")
+                        .HasColumnType("integer")
+                        .HasColumnName("warning_percent");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sla_instances");
+
+                    b.HasIndex("DueAt")
+                        .HasDatabaseName("ix_sla_instances_due_open")
+                        .HasFilter("stopped_at IS NULL AND due_at IS NOT NULL");
+
+                    b.HasIndex("PolicyVersionId")
+                        .HasDatabaseName("ix_sla_instances_policy_version_id");
+
+                    b.HasIndex("WarnAt")
+                        .HasDatabaseName("ix_sla_instances_warn_open")
+                        .HasFilter("stopped_at IS NULL AND warn_at IS NOT NULL");
+
+                    b.HasIndex("TicketId", "Metric")
+                        .IsUnique()
+                        .HasDatabaseName("ix_sla_instances_ticket_id_metric");
+
+                    b.ToTable("sla_instances", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_sla_instances_metric", "metric IN ('first_response', 'resolution')");
+
+                            t.HasCheckConstraint("ck_sla_instances_result", "result IN ('met', 'breached', 'cancelled')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaPause", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<string>("HoldReason")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<Guid>("SlaInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sla_instance_id");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sla_pauses");
+
+                    b.HasIndex("SlaInstanceId")
+                        .HasDatabaseName("ix_sla_pauses_sla_instance_id");
+
+                    b.ToTable("sla_pauses", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_sla_pauses_hold_reason", "hold_reason IN ('user', 'manager_approval', 'vendor', 'technical_team', 'third_party', 'scheduled_date', 'other')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Sla.SlaPauseRule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2063,6 +2233,43 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_team_memberships_users_user_id");
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaEvent", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Sla.SlaInstance", null)
+                        .WithMany("Events")
+                        .HasForeignKey("SlaInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sla_events_sla_instances_sla_instance_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaInstance", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Sla.SlaPolicyVersion", null)
+                        .WithMany()
+                        .HasForeignKey("PolicyVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_sla_instances_sla_policy_versions_policy_version_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_sla_instances_tickets_ticket_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaPause", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Sla.SlaInstance", null)
+                        .WithMany("Pauses")
+                        .HasForeignKey("SlaInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sla_pauses_sla_instances_sla_instance_id");
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Sla.SlaPauseRule", b =>
                 {
                     b.HasOne("Tgysm.Domain.Sla.SlaPolicyVersion", null)
@@ -2308,6 +2515,13 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_users_locations_location_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaInstance", b =>
+                {
+                    b.Navigation("Events");
+
+                    b.Navigation("Pauses");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Sla.SlaPolicyVersion", b =>

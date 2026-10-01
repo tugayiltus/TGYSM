@@ -45,6 +45,9 @@ public interface IAppDbContext
     DbSet<SlaPolicyVersion> SlaPolicyVersions { get; }
     DbSet<SlaTarget> SlaTargets { get; }
     DbSet<SlaPauseRule> SlaPauseRules { get; }
+    DbSet<SlaInstance> SlaInstances { get; }
+    DbSet<SlaPause> SlaPauses { get; }
+    DbSet<SlaEvent> SlaEvents { get; }
 
     /// <summary>
     /// Saves all tracked changes in one transaction. Throws <see cref="Common.ConcurrencyException"/> on a stale

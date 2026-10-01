@@ -4,6 +4,7 @@ using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Sla;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
@@ -38,7 +39,7 @@ internal sealed class AddCommentValidator : AbstractValidator<AddCommentCommand>
 /// internal notes need someone who works on the ticket. Files inherit the comment's visibility.
 /// </summary>
 public sealed class AddCommentHandler(
-    IAppDbContext db, IValidator<AddCommentCommand> validator, TicketScope scope, IFileStore files, IFileScanner scanner, INotificationOutbox outbox, TimeProvider clock)
+    IAppDbContext db, IValidator<AddCommentCommand> validator, TicketScope scope, IFileStore files, IFileScanner scanner, INotificationOutbox outbox, SlaTracker sla, TimeProvider clock)
 {
     public const string FilesField = "files";
 
@@ -73,6 +74,7 @@ public sealed class AddCommentHandler(
             if (visibility == Visibility.Public)
             {
                 outbox.Add(NotificationEventTypes.PublicReply, ticket.Id, viewer.UserId);
+                await sla.OnPublicReplyAsync(ticket, viewer.UserId, viewer.Role, cancellationToken);
             }
 
             await db.RunInTransactionAsync(async ct =>

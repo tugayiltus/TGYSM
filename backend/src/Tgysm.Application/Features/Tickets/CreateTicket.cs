@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Sla;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
@@ -34,7 +35,7 @@ internal sealed class CreateRequestValidator : AbstractValidator<CreateRequestCo
 
 /// <summary>Shared creation steps: references, intake team, number, events, audit — one transaction.</summary>
 public sealed class TicketFactory(
-    IAppDbContext db, ITicketNumberGenerator numbers, ICurrentActor actor, IAuditLog audit, INotificationOutbox outbox, TicketScope scope, TimeProvider clock)
+    IAppDbContext db, ITicketNumberGenerator numbers, ICurrentActor actor, IAuditLog audit, INotificationOutbox outbox, TicketScope scope, SlaTracker sla, TimeProvider clock)
 {
     private const string InactiveReferenceMessage = "A selected category, location or request type is inactive or does not apply.";
 
@@ -56,6 +57,7 @@ public sealed class TicketFactory(
             var number = TicketNumber.Format(kind, now.Year, await numbers.NextAsync(kind, now.Year, ct));
             ticket = await build(number, requester, teamId, now);
             db.Tickets.Add(ticket);
+            await sla.OnCreatedAsync(ticket, ct);
             TicketTimeline.Record(db, ticket, TicketEventKind.Created, Visibility.Public, actorId, now);
             audit.Record(AuditActions.TicketCreated, AuditEntityTypes.Ticket, ticket.Id, newValues: new { ticket.Number, ticket.Kind, ticket.Status });
             outbox.Add(NotificationEventTypes.TicketCreated, ticket.Id, userId: null);
