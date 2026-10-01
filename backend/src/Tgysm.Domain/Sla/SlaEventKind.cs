@@ -10,4 +10,5 @@ public enum SlaEventKind
     Warning,
     Breached,
     Stopped,
+    CalendarChanged,
 }

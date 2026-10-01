@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Sla;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Sla;
@@ -25,13 +26,17 @@ internal sealed class UpdateCalendarValidator : AbstractValidator<UpdateCalendar
     }
 }
 
-/// <summary>Changes the calendar's zone and weekly hours. Applies to future accumulation only; stored elapsed time is not recomputed (ADR-0018).</summary>
+/// <summary>
+/// Changes the calendar's zone and weekly hours (ADR-0018). Running SLA timers are re-planned in the same save:
+/// time already run counts under the old calendar, the rest under the new one.
+/// </summary>
 public sealed class UpdateCalendarHandler(
     IAppDbContext db,
     IValidator<UpdateCalendarCommand> validator,
     ICurrentActor actor,
     IAuditLog audit,
-    TimeProvider clock)
+    TimeProvider clock,
+    SlaCalendarReplanner replanner)
 {
     public async Task<CalendarDetail> HandleAsync(UpdateCalendarCommand command, CancellationToken cancellationToken)
     {
@@ -39,13 +44,24 @@ public sealed class UpdateCalendarHandler(
         var calendar = await db.BusinessCalendars.SingleOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(AuditEntityTypes.SlaCalendar);
         db.SetExpectedVersion(calendar, command.Version);
-        var existing = await db.BusinessHours.ToListAsync(cancellationToken);
+        var actorId = actor.UserId ?? throw new AuthenticationFailedException();
 
-        var before = Snapshot(calendar.TimeZoneId, existing.Select(h => new WorkingHoursItem(h.Weekday, h.StartsAt, h.EndsAt)));
-        calendar.Update(command.TimeZone, actor.UserId ?? throw new AuthenticationFailedException(), clock.GetUtcNow());
-        ApplyHours(existing, command.Hours);
-        audit.Record(AuditActions.SlaCalendarUpdated, AuditEntityTypes.SlaCalendar, calendar.Id, before, Snapshot(command.TimeZone, command.Hours));
-        await db.SaveChangesAsync(cancellationToken);
+        await replanner.RunAsync(
+            async (rules, ct) =>
+            {
+                var existing = await db.BusinessHours.ToListAsync(ct);
+                var before = Snapshot(calendar.TimeZoneId, existing.Select(h => new WorkingHoursItem(h.Weekday, h.StartsAt, h.EndsAt)));
+                calendar.Update(command.TimeZone, actorId, clock.GetUtcNow());
+                ApplyHours(existing, command.Hours);
+                audit.Record(AuditActions.SlaCalendarUpdated, AuditEntityTypes.SlaCalendar, calendar.Id, before, Snapshot(command.TimeZone, command.Hours));
+                return rules with
+                {
+                    Zone = TimeZoneInfo.FindSystemTimeZoneById(command.TimeZone),
+                    Hours = command.Hours.ToDictionary(h => h.Weekday, h => new WorkingRange(h.StartsAt, h.EndsAt)),
+                };
+            },
+            db.SaveChangesAsync,
+            cancellationToken);
         return await CalendarQueries.LoadAsync(db, cancellationToken);
     }
 

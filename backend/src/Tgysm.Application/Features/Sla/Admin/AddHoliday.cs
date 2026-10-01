@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Sla;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Sla;
@@ -15,8 +16,8 @@ internal sealed class AddHolidayValidator : AbstractValidator<AddHolidayCommand>
     public AddHolidayValidator() => RuleFor(c => c.Name).NotEmpty().MaximumLength(Holiday.NameMaxLength);
 }
 
-/// <summary>Marks a date as closed for future accumulation (ADR-0018); one holiday per date.</summary>
-public sealed class AddHolidayHandler(IAppDbContext db, IValidator<AddHolidayCommand> validator, IAuditLog audit)
+/// <summary>Marks a date as closed (ADR-0018); one holiday per date. Running SLA timers are re-planned in the same save.</summary>
+public sealed class AddHolidayHandler(IAppDbContext db, IValidator<AddHolidayCommand> validator, IAuditLog audit, SlaCalendarReplanner replanner)
 {
     private const string DuplicateMessage = "A holiday is already defined for this date.";
 
@@ -29,9 +30,15 @@ public sealed class AddHolidayHandler(IAppDbContext db, IValidator<AddHolidayCom
         }
 
         var holiday = Holiday.Create(command.Date, command.Name);
-        db.Holidays.Add(holiday);
-        audit.Record(AuditActions.SlaHolidayAdded, AuditEntityTypes.Holiday, holiday.Id, newValues: new { holiday.Date, holiday.Name });
-        await db.SaveTranslatingDuplicateAsync(ErrorCodes.SlaHolidayExists, DuplicateMessage, cancellationToken);
+        await replanner.RunAsync(
+            (rules, _) =>
+            {
+                db.Holidays.Add(holiday);
+                audit.Record(AuditActions.SlaHolidayAdded, AuditEntityTypes.Holiday, holiday.Id, newValues: new { holiday.Date, holiday.Name });
+                return Task.FromResult(rules with { Holidays = new HashSet<DateOnly>(rules.Holidays) { command.Date } });
+            },
+            ct => db.SaveTranslatingDuplicateAsync(ErrorCodes.SlaHolidayExists, DuplicateMessage, ct),
+            cancellationToken);
         return HolidayItem.From(holiday);
     }
 }

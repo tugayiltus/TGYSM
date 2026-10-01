@@ -93,6 +93,32 @@ public sealed class SlaMonitorTests(FakeClockApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task A_holiday_added_on_the_due_day_moves_due_forward_and_the_monitor_does_not_breach_at_the_old_due_time()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var ticket = await TicketWorld.CreateIncidentAsync(world.Employee);
+        var oldDueAt = (await InstanceAsync(ticket, SlaMetric.FirstResponse)).DueAt!.Value;
+        factory.Clock.Advance(TimeSpan.FromHours(1));
+
+        // Monday 11:00 Istanbul: today becomes a holiday. 1 h already ran; the remaining 3 h start Tuesday 09:00.
+        var istanbul = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(factory.Clock.GetUtcNow(), istanbul).DateTime);
+        using var add = await world.Admin.PostAsync("/api/v1/admin/sla/holidays",
+            new { date = today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture), name = "Olağanüstü tatil" });
+        Assert.Equal(System.Net.HttpStatusCode.Created, add.StatusCode);
+
+        var instance = await InstanceAsync(ticket, SlaMetric.FirstResponse);
+        var tuesdayNoon = new DateTimeOffset(today.AddDays(1).ToDateTime(new TimeOnly(12, 0)), TimeSpan.FromHours(3));
+        Assert.Equal(tuesdayNoon, instance.DueAt);
+        // Both running timers of the ticket (first response and resolution) are re-planned.
+        Assert.Equal(2, await EventCountAsync(SlaEventKind.CalendarChanged));
+
+        factory.Clock.SetUtcNow(oldDueAt + TimeSpan.FromMinutes(1));
+        Assert.Equal((0, 0), await MonitorAsync());
+        Assert.Empty(await OutboxAsync(NotificationEventTypes.SlaBreached));
+    }
+
+    [Fact]
     public async Task Nothing_is_emitted_before_the_warning_threshold()
     {
         var world = await TicketWorld.CreateAsync(factory);

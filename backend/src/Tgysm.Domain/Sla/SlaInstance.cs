@@ -150,14 +150,28 @@ public sealed class SlaInstance : Entity
             RunFrom(now, rules);
         }
 
-        if (ElapsedSeconds < (long)TargetMinutes * SecondsPerMinute * WarningPercent / PercentBase)
+        ResetWarningWhileBelowThreshold();
+        AddEvent(SlaEventKind.TargetChanged, now, new { oldMinutes = old, newMinutes = targetMinutes });
+    }
+
+    /// <summary>
+    /// Re-plans a running timer after a calendar or holiday change (owner decision, final review F3): business time
+    /// up to <paramref name="now"/> is accumulated under <paramref name="oldRules"/>, the rest of the target is
+    /// projected under <paramref name="newRules"/>. A paused or stopped timer is left alone (a paused one gets its due
+    /// time from the new rules on resume). The warning mark resets as in <see cref="ChangeTarget"/>.
+    /// </summary>
+    public void ApplyCalendarChange(DateTimeOffset now, BusinessCalendarRules oldRules, BusinessCalendarRules newRules)
+    {
+        if (IsStopped || RunningSince is not { } since)
         {
-            // The new warning threshold is not yet used up (running or paused): a raised target can warn again.
-            // An earlier breach stays recorded.
-            WarnedAt = null;
+            return;
         }
 
-        AddEvent(SlaEventKind.TargetChanged, now, new { oldMinutes = old, newMinutes = targetMinutes });
+        var oldDueAt = DueAt;
+        ElapsedSeconds += BusinessTimeCalculator.SecondsBetween(oldRules, since, now);
+        RunFrom(now, newRules);
+        ResetWarningWhileBelowThreshold();
+        AddEvent(SlaEventKind.CalendarChanged, now, new { oldDueAt, newDueAt = DueAt });
     }
 
     /// <summary>Ends the timer; a null <paramref name="result"/> becomes met or breached from the elapsed time.</summary>
@@ -198,6 +212,16 @@ public sealed class SlaInstance : Entity
 
         BreachedAt = now;
         AddEvent(SlaEventKind.Breached, now);
+    }
+
+    private void ResetWarningWhileBelowThreshold()
+    {
+        if (ElapsedSeconds < (long)TargetMinutes * SecondsPerMinute * WarningPercent / PercentBase)
+        {
+            // The warning threshold is not yet used up (running or paused): the timer can warn again on the new
+            // plan. An earlier breach stays recorded.
+            WarnedAt = null;
+        }
     }
 
     private void RunFrom(DateTimeOffset now, BusinessCalendarRules rules)

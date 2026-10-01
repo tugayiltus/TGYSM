@@ -338,4 +338,65 @@ public sealed class SlaInstanceTests
 
         Assert.Null(instance.RemainingSeconds(At(Monday, 17), Rules));
     }
+
+    private static BusinessCalendarRules WithHoliday(DateOnly date) => Rules with { Holidays = new HashSet<DateOnly> { date } };
+
+    [Fact]
+    public void Calendar_change_keeps_old_elapsed_and_projects_the_rest_under_the_new_rules()
+    {
+        var instance = Start(At(Monday, 10));
+
+        // A holiday is declared for today at 11:00: the 1 h already run counts under the old rules, the remaining
+        // 3 h start on Tuesday 09:00 under the new ones.
+        instance.ApplyCalendarChange(At(Monday, 11), Rules, WithHoliday(Monday));
+
+        var tuesday = Monday.AddDays(1);
+        Assert.Equal(SecondsPerHour, instance.ElapsedSeconds);
+        Assert.Equal(At(Monday, 11), instance.RunningSince);
+        Assert.Equal(At(tuesday, 12), instance.DueAt);
+        Assert.Equal(At(tuesday, 11), instance.WarnAt);
+        Assert.Single(instance.Events, e => e.Kind == SlaEventKind.CalendarChanged);
+    }
+
+    [Fact]
+    public void Calendar_change_leaves_a_paused_instance_untouched()
+    {
+        var instance = Start(At(Monday, 10));
+        instance.Pause(HoldReason.User, At(Monday, 11), Rules);
+        var eventsBefore = instance.Events.Count;
+
+        instance.ApplyCalendarChange(At(Monday, 12), Rules, WithHoliday(Monday));
+
+        Assert.Equal(SecondsPerHour, instance.ElapsedSeconds);
+        Assert.Null(instance.DueAt);
+        Assert.Null(instance.RunningSince);
+        Assert.Equal(eventsBefore, instance.Events.Count);
+    }
+
+    [Fact]
+    public void Calendar_change_leaves_a_stopped_instance_untouched()
+    {
+        var instance = Start(At(Monday, 10));
+        instance.Stop(null, At(Monday, 11), Rules);
+        var eventsBefore = instance.Events.Count;
+
+        instance.ApplyCalendarChange(At(Monday, 12), Rules, WithHoliday(Monday));
+
+        Assert.Equal(eventsBefore, instance.Events.Count);
+        Assert.Equal(SecondsPerHour, instance.ElapsedSeconds);
+    }
+
+    [Fact]
+    public void Calendar_change_resets_the_warning_mark_only_while_the_threshold_is_not_used_up()
+    {
+        var below = Start(At(Monday, 10));
+        below.RecordWarning(At(Monday, 11));
+        below.ApplyCalendarChange(At(Monday, 11), Rules, WithHoliday(Monday));
+        Assert.Null(below.WarnedAt);
+
+        var past = Start(At(Monday, 10));
+        past.RecordWarning(At(Monday, 13));
+        past.ApplyCalendarChange(At(Monday, 13, 30), Rules, WithHoliday(Monday));
+        Assert.Equal(At(Monday, 13), past.WarnedAt);
+    }
 }

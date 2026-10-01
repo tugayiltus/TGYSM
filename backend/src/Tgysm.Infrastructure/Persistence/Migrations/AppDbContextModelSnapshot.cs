@@ -1055,7 +1055,7 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.ToTable("sla_events", null, t =>
                         {
-                            t.HasCheckConstraint("ck_sla_events_kind", "kind IN ('started', 'paused', 'resumed', 'target_changed', 'warning', 'breached', 'stopped')");
+                            t.HasCheckConstraint("ck_sla_events_kind", "kind IN ('started', 'paused', 'resumed', 'target_changed', 'warning', 'breached', 'stopped', 'calendar_changed')");
                         });
                 });
 
