@@ -222,4 +222,59 @@ public sealed class SlaInstanceTests
         Assert.Equal(At(Monday, 13), instance.WarnedAt);
         Assert.Single(instance.Events, e => e.Kind == SlaEventKind.Warning);
     }
+
+    [Fact]
+    public void Pause_friday_afternoon_and_resume_monday_counts_only_business_time()
+    {
+        var friday = Monday.AddDays(4);
+        var nextMonday = Monday.AddDays(7);
+        var instance = Start(At(friday, 10), minutes: OneHourMinutes * 8);
+        instance.Pause(HoldReason.User, At(friday, 15), Rules);
+
+        Assert.Equal(5 * SecondsPerHour, instance.ElapsedSeconds);
+
+        instance.Resume(At(nextMonday, 10), Rules);
+
+        // 5 h used on Friday, 3 h left: Monday 10:00 -> 13:00. The weekend adds nothing.
+        Assert.Equal(5 * SecondsPerHour, instance.ElapsedSeconds);
+        Assert.Equal(At(nextMonday, 13), instance.DueAt);
+    }
+
+    [Fact]
+    public void Hold_across_a_holiday_adds_no_business_time()
+    {
+        var holiday = Monday.AddDays(1);
+        var rules = Rules with { Holidays = new HashSet<DateOnly> { holiday } };
+        var instance = SlaInstance.Start(TicketId, SlaMetric.Resolution, Target(OneHourMinutes * 8), VersionId, At(Monday, 10), rules, paused: false, pauseReason: null);
+        instance.Pause(HoldReason.User, At(Monday, 16), rules);
+
+        instance.Resume(At(Monday.AddDays(2), 9), rules);
+
+        // 6 h used on Monday, 2 h left from Wednesday 09:00; Tuesday is a holiday.
+        Assert.Equal(6 * SecondsPerHour, instance.ElapsedSeconds);
+        Assert.Equal(At(Monday.AddDays(2), 11), instance.DueAt);
+    }
+
+    [Fact]
+    public void Change_target_to_a_later_warning_resets_the_warned_mark()
+    {
+        var instance = Start(At(Monday, 10));
+        instance.RecordWarning(At(Monday, 13));
+
+        instance.ChangeTarget(OneHourMinutes * 8, WarningPercent, At(Monday, 13, 30), Rules);
+
+        Assert.Null(instance.WarnedAt);
+        Assert.True(instance.WarnAt > At(Monday, 13, 30));
+    }
+
+    [Fact]
+    public void Change_target_whose_warning_is_already_passed_keeps_the_warned_mark()
+    {
+        var instance = Start(At(Monday, 10));
+        instance.RecordWarning(At(Monday, 13));
+
+        instance.ChangeTarget(OneHourMinutes, WarningPercent, At(Monday, 13, 30), Rules);
+
+        Assert.NotNull(instance.WarnedAt);
+    }
 }

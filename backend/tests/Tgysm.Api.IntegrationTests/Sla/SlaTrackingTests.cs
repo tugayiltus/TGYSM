@@ -286,4 +286,30 @@ public sealed class SlaTrackingTests(FakeClockApiFactory factory) : IClassFixtur
         Assert.Equal(OtherTargetMinutes, (await InstanceAsync(newTicket, SlaMetric.Resolution)).TargetMinutes);
         Assert.NotEqual(resolution.PolicyVersionId, (await InstanceAsync(newTicket, SlaMetric.Resolution)).PolicyVersionId);
     }
+
+    [Fact]
+    public async Task Priority_change_while_paused_leaves_due_empty_and_gives_the_new_due_after_resume()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var ticket = await TicketWorld.CreateIncidentAsync(world.Employee);
+        factory.Clock.Advance(TimeSpan.FromHours(1));
+        var held = await OkAsync(world.Desk, ticket, "hold", new { reason = "user" });
+        factory.Clock.Advance(TimeSpan.FromHours(1));
+
+        var changed = await OkAsync(world.Desk, held, "priority", new { impact = "high", urgency = "high", reason = "Acil" });
+
+        var paused = await InstanceAsync(ticket, SlaMetric.Resolution);
+        Assert.True(paused.IsPaused);
+        Assert.Null(paused.DueAt);
+        Assert.Equal(P1ResolutionMinutes, paused.TargetMinutes);
+        Assert.Equal(3600, paused.ElapsedSeconds);
+
+        factory.Clock.Advance(TimeSpan.FromHours(1));
+        await OkAsync(world.Desk, changed, "resume");
+
+        // P1 resolution is 4 h, 1 h already used: 3 h remain from the resume at 13:00.
+        var resumed = await InstanceAsync(ticket, SlaMetric.Resolution);
+        Assert.Equal(_start.AddHours(3), resumed.RunningSince);
+        Assert.Equal(_start.AddHours(6), resumed.DueAt);
+    }
 }

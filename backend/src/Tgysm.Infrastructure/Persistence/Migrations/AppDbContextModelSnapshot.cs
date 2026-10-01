@@ -1112,12 +1112,6 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ticket_id");
 
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.Property<DateTimeOffset?>("WarnAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("warn_at");

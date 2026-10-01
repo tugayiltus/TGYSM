@@ -15,7 +15,12 @@ internal sealed class SlaInstanceConfiguration : IEntityTypeConfiguration<SlaIns
             table.HasCheckConstraint("ck_sla_instances_metric", SnakeCaseEnumConversion<SlaMetric>.CheckSql("metric"));
             table.HasCheckConstraint("ck_sla_instances_result", SnakeCaseEnumConversion<SlaResult>.CheckSql("result"));
         });
-        builder.ConfigureEntityBase();
+        builder.HasKey(i => i.Id);
+        builder.Property(i => i.Id).ValueGeneratedNever();
+
+        // No concurrency token: ticket actions serialize through the ticket's version, and the monitor writes only the
+        // warning/breach columns through a conditional update, so neither may fail the other with a 409.
+        builder.Ignore(i => i.Version);
         builder.Property(i => i.Metric).HasEnumName().IsRequired();
         builder.Property(i => i.Result).HasEnumName();
         builder.Property(i => i.TargetMinutes).IsRequired();
