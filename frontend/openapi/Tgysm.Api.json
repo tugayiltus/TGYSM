@@ -220,6 +220,47 @@
         }
       }
     },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/assets": {
+      "get": {
+        "tags": [
+          "Assets"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyAssetItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "tags": [
@@ -2248,6 +2289,25 @@
         }
       }
     },
+    "/api/v1/admin/system/workers": {
+      "get": {
+        "tags": [
+          "Admin: System"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerHeartbeatsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assets": {
       "get": {
         "tags": [
@@ -2945,28 +3005,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/me/assets": {
-      "get": {
-        "tags": [
-          "Assets"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MyAssetItem"
-                  }
                 }
               }
             }
@@ -5938,7 +5976,8 @@
           "body",
           "updatedBy",
           "updatedAt",
-          "version"
+          "version",
+          "allowedVariables"
         ],
         "type": "object",
         "properties": {
@@ -5966,6 +6005,12 @@
           "version": {
             "type": "integer",
             "format": "uint32"
+          },
+          "allowedVariables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -5976,6 +6021,17 @@
         "type": "object",
         "properties": {
           "email": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthResponse": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
             "type": "string"
           }
         }
@@ -7805,12 +7861,72 @@
           "public",
           "internal"
         ]
+      },
+      "WorkerHeartbeatItem": {
+        "required": [
+          "job",
+          "instance",
+          "lastRunAt",
+          "lastError",
+          "intervalSeconds",
+          "stale"
+        ],
+        "type": "object",
+        "properties": {
+          "job": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastError": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "intervalSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stale": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorkerHeartbeatsResult": {
+        "required": [
+          "status",
+          "jobs"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkerHeartbeatItem"
+            }
+          }
+        }
       }
     }
   },
   "tags": [
     {
       "name": "Auth"
+    },
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Assets"
     },
     {
       "name": "Admin: Users"
@@ -7840,7 +7956,7 @@
       "name": "Admin: Email deliveries"
     },
     {
-      "name": "Assets"
+      "name": "Admin: System"
     },
     {
       "name": "Asset import"

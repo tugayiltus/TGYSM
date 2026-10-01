@@ -9,6 +9,7 @@ using Tgysm.Api.Http;
 using Tgysm.Api.Security;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Features.Operations;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Users;
 
@@ -31,6 +32,8 @@ internal static class ApiServiceCollectionExtensions
             .Bind(configuration.GetSection(AppOptions.SectionName))
             .Validate(o => AppOptionsValidation.IsValidPublicBaseUrl(o.PublicBaseUrl), AppOptionsValidation.PublicBaseUrlErrorMessage)
             .ValidateOnStart();
+
+        services.AddOptions<WorkerJobsOptions>().Bind(configuration.GetSection(WorkerJobsOptions.SectionName));
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentActor, HttpCurrentActor>();

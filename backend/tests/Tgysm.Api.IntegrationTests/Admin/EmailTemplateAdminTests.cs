@@ -31,6 +31,17 @@ public sealed class EmailTemplateAdminTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Listed_template_carries_its_events_allowed_variables()
+    {
+        var admin = await AdminAsync();
+
+        var template = await TicketCreatedTemplateAsync(admin);
+
+        var allowed = template.GetProperty("allowedVariables").EnumerateArray().Select(v => v.GetString()).ToList();
+        Assert.Equal(TemplateVariables.AllowedFor(NotificationEventTypes.TicketCreated).Order(StringComparer.Ordinal), allowed);
+    }
+
+    [Fact]
     public async Task Admin_lists_the_ten_seeded_templates()
     {
         var admin = await AdminAsync();

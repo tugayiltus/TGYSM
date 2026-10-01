@@ -50,6 +50,7 @@ internal static class ApiApplicationExtensions
 
         var api = app.MapGroup(ApiRoutes.V1);
         api.MapAuthEndpoints();
+        api.MapHealthEndpoints();
         api.MapAdminEndpoints();
         api.MapAssetEndpoints();
         api.MapMyAssetEndpoints();
