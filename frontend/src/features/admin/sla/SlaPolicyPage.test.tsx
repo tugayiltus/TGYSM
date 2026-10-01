@@ -64,6 +64,17 @@ describe('SlaPolicyPage', () => {
     expect(posted?.pauseRules).toHaveLength(2);
   });
 
+  it('keeps target cells as table cells and lays the two inputs out in a wrapper', async () => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/sla/policy': { status: 200, body: policy(1) } });
+    renderRoute('/admin/sla/policy');
+
+    const field = await screen.findByLabelText('Arıza P1 · Kritik İlk yanıt Hedef (dk)');
+    const cell = field.closest('td');
+    expect(cell).not.toBeNull();
+    expect(cell!.className).not.toMatch(/\bflex\b/);
+    expect(field.parentElement?.tagName).toBe('DIV');
+  });
+
   it('refuses an empty target without calling the API', async () => {
     const api = mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/sla/policy': { status: 200, body: policy(1) } });
     const { user } = renderRoute('/admin/sla/policy');

@@ -128,23 +128,25 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
                       const key = cellKey(kind, priority, metric);
                       const label = `${tt(`kinds.${kind}`)} ${tt(`priorities.${priority}`)} ${tt(`sla.metrics.${metric}`)}`;
                       return (
-                        <td key={metric} className="flex gap-2 p-2">
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            className={INPUT_CLASS}
-                            aria-label={`${label} ${t('slaPolicy.targetMinutes')}`}
-                            value={cells[key]?.minutes ?? ''}
-                            onChange={(event) => setCell(key, { minutes: event.target.value })}
-                          />
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            className={INPUT_CLASS}
-                            aria-label={`${label} ${t('slaPolicy.warningPercent')}`}
-                            value={cells[key]?.percent ?? ''}
-                            onChange={(event) => setCell(key, { percent: event.target.value })}
-                          />
+                        <td key={metric} className="p-2">
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              className={INPUT_CLASS}
+                              aria-label={`${label} ${t('slaPolicy.targetMinutes')}`}
+                              value={cells[key]?.minutes ?? ''}
+                              onChange={(event) => setCell(key, { minutes: event.target.value })}
+                            />
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              className={INPUT_CLASS}
+                              aria-label={`${label} ${t('slaPolicy.warningPercent')}`}
+                              value={cells[key]?.percent ?? ''}
+                              onChange={(event) => setCell(key, { percent: event.target.value })}
+                            />
+                          </div>
                         </td>
                       );
                     })}
