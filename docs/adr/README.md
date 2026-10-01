@@ -22,3 +22,5 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0016](0016-database-email-templates.md) | Database Email Templates | accepted | 2026-09-27 |
 | [0017](0017-password-set-links.md) | Password Set Links | accepted | 2026-09-27 |
 | [0018](0018-sla-calculation-model.md) | SLA Calculation Model | accepted | 2026-09-27 |
+| [0019](0019-knowledge-base.md) | Knowledge Base | accepted | 2026-10-02 |
+| [0020](0020-reporting-and-excel-export.md) | Reporting and Excel Export | accepted | 2026-10-02 |
