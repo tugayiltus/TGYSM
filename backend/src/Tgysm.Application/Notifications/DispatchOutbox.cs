@@ -26,6 +26,13 @@ namespace Tgysm.Application.Notifications;
 /// </summary>
 public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeFactory scopes, TimeProvider clock, ILogger<DispatchOutboxHandler> logger)
 {
+    /// <summary>
+    /// Forgot-password flood guard (final review F6): while a reset link issued less than this long ago is still
+    /// unused, a further request for the same account is skipped — no new token, no email. The request path itself
+    /// stays identical for every address, so this never reveals whether an account exists.
+    /// </summary>
+    public static readonly TimeSpan PasswordResetCooldown = TimeSpan.FromMinutes(15);
+
     public async Task<int> HandleAsync(int batch, TimeSpan lease, CancellationToken cancellationToken)
     {
         // Two worker instances calling HandleAsync at once claim disjoint rows (ADR-0014), so the same event is
@@ -146,7 +153,8 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
     /// <summary>
     /// The deferred half of forgot-password (ADR-0017 amendment 2026-10-01): an active account gets a reset link
     /// (its token, <c>password_reset</c> event and audit row are written in this same save, with no actor); an
-    /// unknown or inactive email is skipped. Either way no delivery is created for the request event itself.
+    /// unknown or inactive email is skipped, and so is an account whose last reset link is still unused and younger
+    /// than <see cref="PasswordResetCooldown"/>. Either way no delivery is created for the request event itself.
     /// </summary>
     private static async Task ResolvePasswordResetRequestAsync(
         IServiceProvider scoped, IAppDbContext db, OutboxEvent outboxEvent, DateTimeOffset now, CancellationToken cancellationToken)
@@ -158,7 +166,12 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
             ? null
             : await db.Users.Where(u => u.NormalizedEmail == normalizedEmail && u.IsActive).Select(u => (Guid?)u.Id).SingleOrDefaultAsync(cancellationToken);
 
-        if (userId is { } id)
+        var cooldownStart = now - PasswordResetCooldown;
+        var recentlyLinked = userId is { } candidate && await db.PasswordTokens.AnyAsync(
+            t => t.UserId == candidate && t.Purpose == PasswordTokenPurpose.Reset && t.UsedAt == null && t.CreatedAt > cooldownStart,
+            cancellationToken);
+
+        if (userId is { } id && !recentlyLinked)
         {
             await scoped.GetRequiredService<PasswordTokenIssuer>().IssueAsync(id, PasswordTokenPurpose.Reset, cancellationToken);
             outboxEvent.MarkDispatched(now);

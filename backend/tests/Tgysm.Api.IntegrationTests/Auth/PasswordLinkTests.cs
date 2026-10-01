@@ -261,6 +261,40 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Repeated_forgot_password_requests_within_the_cooldown_send_one_link_and_later_ones_send_again()
+    {
+        var user = await TestUsers.CreateAsync(factory, UserRole.Employee, "forgetful@example.com");
+        async Task RequestAsync()
+        {
+            var client = ApiClient.Create(factory);
+            await client.RefreshCsrfAsync();
+            using var response = await client.PostAsync(ForgotPasswordPath, new { email = "forgetful@example.com" });
+            Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        }
+
+        await RequestAsync();
+        await RequestAsync();
+        await DispatchAsync();
+
+        Assert.Single(await AccountEventsAsync(user.Id, NotificationEventTypes.PasswordReset));
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            var requests = await db.OutboxEvents.AsNoTracking().Where(e => e.EventType == InternalEventTypes.PasswordResetRequested).ToListAsync(Ct);
+            Assert.Equal(1, requests.Count(e => e.Status == OutboxStatus.Skipped));
+
+            // The window passes: the outstanding link is now older than the cooldown.
+            var aged = DispatchOutboxHandler.PasswordResetCooldown + TimeSpan.FromMinutes(1);
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE password_tokens SET created_at = created_at - {aged} WHERE user_id = {user.Id}", Ct);
+        }
+
+        await RequestAsync();
+        await DispatchAsync();
+
+        Assert.Equal(2, (await AccountEventsAsync(user.Id, NotificationEventTypes.PasswordReset)).Count);
+    }
+
+    [Fact]
     public async Task Create_with_default_email_link_returns_no_password_and_queues_activation_with_expiry()
     {
         var (admin, _) = await LoginAsAdminAsync();
@@ -568,6 +602,14 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
         using (var reset = await admin.PostAsync($"{UsersPath}/{userId}/reset-password", new { delivery = EmailLink }))
         {
             Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+        }
+
+        // Age the admin-issued link past the forgot-password cooldown, so the request below issues a link of its own.
+        await using (var aging = factory.Database.CreateDbContext())
+        {
+            var aged = DispatchOutboxHandler.PasswordResetCooldown + TimeSpan.FromMinutes(1);
+            await aging.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE password_tokens SET created_at = created_at - {aged} WHERE user_id = {userId}", Ct);
         }
 
         using (var forgot = await ApiClient.Create(factory).PostAsync(ForgotPasswordPath, new { email = "deniz@example.com" }))
