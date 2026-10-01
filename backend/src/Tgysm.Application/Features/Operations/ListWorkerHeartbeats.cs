@@ -29,7 +29,7 @@ public static class WorkerHealth
 
 /// <summary>
 /// `GET /admin/system/workers` and the health endpoint (ADR-0014): every (job, instance) heartbeat with its
-/// configured interval and whether it is stale; any stale job makes the overall status <c>degraded</c>.
+/// configured interval and whether its job is stale (judged by the job's newest heartbeat across instances); any stale job makes the overall status <c>degraded</c>.
 /// </summary>
 public sealed class ListWorkerHeartbeatsHandler(IAppDbContext db, IOptionsMonitor<WorkerJobsOptions> options, TimeProvider clock)
 {
@@ -40,11 +40,13 @@ public sealed class ListWorkerHeartbeatsHandler(IAppDbContext db, IOptionsMonito
             .OrderBy(h => h.Job).ThenBy(h => h.Instance)
             .ToListAsync(cancellationToken);
 
+        // A restarted worker leaves its old (job, instance) row behind; only the newest run of a job decides.
+        var newestRunByJob = heartbeats.GroupBy(h => h.Job).ToDictionary(g => g.Key, g => g.Max(h => h.LastRunAt));
         var jobs = heartbeats.Select(h =>
         {
             var interval = IntervalSecondsOf(h.Job);
             var limit = TimeSpan.FromSeconds((long)interval * WorkerHealth.StaleIntervalMultiplier);
-            return new WorkerHeartbeatItem(h.Job, h.Instance, h.LastRunAt, h.LastError, interval, now - h.LastRunAt > limit);
+            return new WorkerHeartbeatItem(h.Job, h.Instance, h.LastRunAt, h.LastError, interval, now - newestRunByJob[h.Job] > limit);
         }).ToList();
 
         return new WorkerHeartbeatsResult(jobs.Any(j => j.Stale) ? WorkerHealth.Degraded : WorkerHealth.Ok, jobs);

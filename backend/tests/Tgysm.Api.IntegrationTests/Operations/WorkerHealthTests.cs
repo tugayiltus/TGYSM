@@ -25,10 +25,10 @@ public sealed class WorkerHealthTests(ApiFactory factory) : IAsyncLifetime
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    private async Task SeedAsync(string job, TimeSpan age, string? error = null)
+    private async Task SeedAsync(string job, TimeSpan age, string? error = null, string instance = Instance)
     {
         await using var db = factory.Database.CreateDbContext();
-        db.WorkerHeartbeats.Add(WorkerHeartbeat.Create(job, Instance, DateTimeOffset.UtcNow - age, error));
+        db.WorkerHeartbeats.Add(WorkerHeartbeat.Create(job, instance, DateTimeOffset.UtcNow - age, error));
         await db.SaveChangesAsync(Ct);
     }
 
@@ -69,6 +69,23 @@ public sealed class WorkerHealthTests(ApiFactory factory) : IAsyncLifetime
         var job = Assert.Single(result.GetProperty("jobs").EnumerateArray());
         Assert.True(job.GetProperty("stale").GetBoolean());
         Assert.Equal("boom", job.GetProperty("lastError").GetString());
+    }
+
+    [Fact]
+    public async Task Only_the_newest_heartbeat_of_a_job_decides_after_a_worker_restart()
+    {
+        await SeedAsync(ConfiguredJob, BeyondLimit, instance: "host:old");
+        await SeedAsync(ConfiguredJob, WithinLimit, instance: "host:new");
+        var admin = await AdminAsync();
+        var anonymous = ApiClient.Create(factory);
+
+        var workers = await GetAsync(admin, WorkersPath);
+        var health = await GetAsync(anonymous, HealthPath);
+
+        Assert.Equal("ok", workers.GetProperty("status").GetString());
+        Assert.Equal("ok", health.GetProperty("status").GetString());
+        Assert.All(workers.GetProperty("jobs").EnumerateArray(), j => Assert.False(j.GetProperty("stale").GetBoolean()));
+        Assert.Equal(2, workers.GetProperty("jobs").GetArrayLength());
     }
 
     [Fact]
