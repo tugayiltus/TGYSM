@@ -40,3 +40,7 @@ Email wording must be editable in `/admin` without a deploy, seeded with Turkish
 
 ### Risks
 - An admin can introduce a variable-name typo when editing; caught at save time by `email_templates.unknown_variable` rather than silently failing at send time.
+
+## Amendment 2026-10-02
+
+Template validation returns two error codes: `email_templates.unknown_variable` for a `{{name}}` that exists for no event, and `email_templates.variable_not_allowed` for a known name that is not allowed for that event type. Rendered subject and body are cut to the column limits at delivery creation (commit 04214a1).

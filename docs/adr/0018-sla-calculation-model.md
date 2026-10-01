@@ -40,3 +40,7 @@ SLA results must stay correct across holidays, working-hour boundaries, the time
 
 ### Risks
 - DST edge cases in `BusinessSecondsBetween` / `AddBusinessSeconds` are easy to get subtly wrong (e.g. a working range spanning the "fall back" hour); these need dedicated tests at each DST boundary, not just ordinary calendar-date tests.
+
+## Amendment 2026-10-02
+
+Owner decision 2026-10-01: a calendar or holiday change re-plans running (not paused, not stopped) SLA instances. Elapsed business time under the old rules is kept and the remainder runs under the new rules, with a `calendar_changed` event; this replaces the statement that a calendar correction affects only future accumulation (commit 3e36324). `sla_instances` has no `xmin` concurrency token: ticket actions are already serialized by the ticket version and the monitor writes only `warned_at` / `breached_at` by conditional update, so it cannot fail a user action; the cost is that a re-plan racing a ticket action that read the old calendar can leave one due time computed under the old rules until the next pause, resume or priority change. Calculator methods are named `SecondsBetween` and `AddSeconds` (not `BusinessSecondsBetween` / `AddBusinessSeconds`) and return UTC.

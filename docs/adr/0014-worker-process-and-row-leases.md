@@ -42,3 +42,7 @@ Phase 4 needs recurring background work — outbox dispatch, email sending, SLA 
 
 ### Risks
 - Clock skew between worker instances affects when a lease is judged expired; a lease window that is too short relative to job duration lets a slow-but-alive worker's row be reclaimed by another instance before it finishes. The completion update stays conditional on the lease owner so a late finisher cannot overwrite a reclaim, but the row can still be processed twice under specific skew; this is accepted as the same at-least-once posture as email delivery (ADR-0015).
+
+## Amendment 2026-10-02
+
+Batch claiming alone was not enough when a lease expired in the middle of a batch. Email deliveries and outbox events are now also claimed one row at a time by a conditional update that matches the lease value read at batch claim (`locked_until = @token`) and sets a fresh lease from the database clock; a run that lost the row skips it. Failure and completion writes are guarded by that ownership, so a late finisher cannot send a row again or move a `sent` row back to `pending` (commit f25f815). The `EmailSender` lease must be longer than `Email:Smtp:TimeoutSeconds` (default 30), which bounds one whole SMTP send; the Worker validates this at startup and refuses to start otherwise. The job set is now `OutboxDispatcher`, `EmailSender`, `SlaMonitor` (60 s) and `Cleanup` (hourly, 30-day retention); `ExportRunner` is still planned. Residual risk: a run that overruns even its per-row lease can still send once more.

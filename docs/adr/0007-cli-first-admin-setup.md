@@ -36,3 +36,7 @@
 ## Amendment 2026-09-27
 
 Commit dcdb41f adds a second console command, `reset-password --email …` (`tools/reset-password.sh`). It issues a temporary password for an existing account, for an operator who cannot sign in. It uses the same audited handler as the admin reset, and the user must change the password at the next sign-in. `setup-admin` is unchanged and still runs only once.
+
+## Amendment 2026-10-02
+
+Account creation and admin password reset can now deliver an emailed set-password link instead of a shown temporary password; see ADR-0017. `setup-admin` and `reset-password` (CLI) are unchanged and still issue a temporary password.

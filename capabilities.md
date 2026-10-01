@@ -11,7 +11,11 @@ Status legend: **Available** = implemented and tested; **Planned** = later phase
 | Local login, forced password change, `/admin` users, departments, locations, teams, audit | Available (Phase 1) |
 | IT inventory: assets, lifecycle, assignments, CSV import, "my assets" | Available (Phase 2) |
 | Incidents and requests: intake, queues, assignment, approvals, comments/files, timeline, related requests, ticket–asset links | Available (Phase 3) |
-| SLA and email (Phase 4), knowledge base and reports (Phase 5), release (Phase 6) | Planned |
+| Email (Phase 4): worker host, transactional outbox, ticket notification events, admin-managed templates, sending with retry (SMTP or pickup folder), deliveries list and retry, password set links with forgot-password, `/admin/email-templates` and `/admin/email-deliveries` pages | Available (Phase 4, on branch `phase-4-sla-email`) |
+| SLA (Phase 4): business calendar and holidays, versioned policy, SLA instances per ticket, monitor job with warning and breach events, `sla_risk` queue, SLA block on tickets, `/admin/sla/*` pages | Available (Phase 4, on branch `phase-4-sla-email`) |
+| `/admin/system` worker status page, cleanup job | Available (Phase 4, on branch `phase-4-sla-email`) |
+| Export runner | Planned |
+| Knowledge base and reports (Phase 5), release (Phase 6) | Planned |
 
 ## Tech stack
 
@@ -29,7 +33,30 @@ Status legend: **Available** = implemented and tested; **Planned** = later phase
 | Attachments | Local disk store outside the web root with random keys, magic-byte checks, scanner port (development scanner marks type-checked files clean) | ADR-0012 |
 | Ticket access | Employees own tickets, IT staff own + their teams', admins all; everything else 404 | ADR-0013 |
 | Tests | xUnit v3 on Microsoft.Testing.Platform, NetArchTest, coverlet.MTP; Vitest + React Testing Library (jsdom 29); Playwright (360×800, 1280×800) | ADR-0008 |
-| Background worker, email | Planned (Phase 4) | — |
+| Background worker | `Tgysm.Worker` (.NET Generic Host, references `Application` and `Infrastructure`, never `Api`); one `BackgroundService` per job on a `PeriodicTimer`; batches claimed with `SELECT … FOR UPDATE SKIP LOCKED` row leases (`locked_until`), so several instances can run side by side; one DI scope per unit of work | ADR-0014 |
+| Data Protection | `AddDataProtection()` with the shared application name `Tgysm`, so the Worker can read secrets the API protected. Key persistence is not configured yet (open item, see `SECURITY.md`) | ADR-0004, ADR-0015 |
+| Outbox and email | Transactional outbox (`notification_outbox`), dispatcher job, sender job with retry; `IEmailSender` implemented by MailKit 4.18 SMTP (production) and a pickup folder of `.eml` files (development, tests); at-least-once delivery | ADR-0015 |
+| Email templates | Database rows per event type, plain text, fixed `{{variable}}` allow-list per event, Turkish defaults seeded by migration | ADR-0016 |
+| SLA calculation | Domain `BusinessTimeCalculator` over `BusinessCalendarRules` (time zone, weekly working ranges, holidays); DST handled by converting local boundaries back to UTC. `SlaInstance` state machine per ticket and metric (`first_response`, `resolution`), versioned policy, `SlaMonitor` job, calendar changes re-plan running timers | ADR-0018 |
+| Password set links | Random 32-byte tokens, only a hash is stored (`password_tokens`, purposes `activation` 72 h and `reset` 1 h, single use). Sent by email, redeemed at `POST /auth/set-password`; the rest of the account flow is under "Auth & permissions" | ADR-0017 |
+
+## Configuration
+
+Hosts: `Tgysm.Api` and `Tgysm.Worker`. Both fail at startup on an invalid `App` section; the Worker also fails at startup when `Email:Mode` is missing or unknown, or when the `EmailSender` lease is not longer than `Email:Smtp:TimeoutSeconds`.
+
+| Key | Host | Meaning |
+|---|---|---|
+| `App:PublicBaseUrl` | API, Worker | Absolute `http`/`https` URL used to build links in email (`ticketUrl`). Empty or relative fails startup. Development: `http://localhost:5173`. |
+| `App:TimeZone` | API, Worker | IANA zone for dates in email; default `Europe/Istanbul`. |
+| `Email:Mode` | Worker | `Smtp` or `Pickup`. No default in `appsettings.json`; Development sets `Pickup`. |
+| `Email:From` | Worker | Sender address, e.g. `TGYSM <no-reply@tgysm.local>`. |
+| `Email:Smtp:Host`, `Port` (587), `UseStartTls` (true), `UserName` | Worker | SMTP transport settings. |
+| `Email:Smtp:TimeoutSeconds` | Worker | Deadline for one whole SMTP send (default 30). The `EmailSender` lease (`Worker:Jobs:EmailSender:LeaseSeconds`) must be greater, else startup fails. |
+| `Email:Smtp:Password` | Worker | Secret: user-secrets or environment only; never in `appsettings`, logs, audit or `last_error`. |
+| `Email:PickupFolder` | Worker | Folder for `.eml` files in `Pickup` mode. `tools/run.sh` and `tools/e2e.sh` pass an absolute `tmp/email-pickup` path. |
+| `Worker:Jobs:<Job>:IntervalSeconds`, `BatchSize`, `LeaseSeconds` | Worker | Per job. `OutboxDispatcher` and `EmailSender`: 30 s / 50 / 60 s. `SlaMonitor`: 60 s, batch 200. `Cleanup`: hourly (3600 s). A non-positive interval falls back to the job default and logs a warning. |
+| `Worker:Jobs:<Job>:IntervalSeconds` | API | The API reads the same section (duplicated in its `appsettings.json`, default 60 s) to judge a job stale for `/health` and `/admin/system/workers`. |
+| `Security:LoginPermitLimitPerMinute`, `ForgotPasswordPermitLimitPerMinute`, `SetPasswordPermitLimitPerMinute` | API | Per-client-IP limits per minute; defaults 10, 5, 5. `tools/e2e.sh` raises the login limit and shortens the two job intervals, and sets `App:PublicBaseUrl`, `Email:Mode=Pickup`, `Email:PickupFolder` for the run (E2E only). |
 
 ## API
 
@@ -43,6 +70,8 @@ All routes are under `/api/v1`. Errors are RFC 7807 ProblemDetails with a stable
 | POST | `/auth/login` | Anonymous, rate limited per IP (`Security:LoginPermitLimitPerMinute`, default 10). `{ email, password }` → `{ mustChangePassword }` and session cookie. Every failure: 401 `auth.invalid_credentials`. |
 | POST | `/auth/logout` | Ends the session (204). |
 | GET | `/auth/me` | Current user (`MeDto`). Allowed while a password change is pending. |
+| POST | `/auth/forgot-password` | Anonymous, rate limited per IP. `{ email }` → always 202, same work for every address; the Worker resolves the account later. A reset link is sent only for an active account without an unused reset link younger than 15 minutes. |
+| POST | `/auth/set-password` | Anonymous, rate limited per IP, one call per link. `{ token, newPassword }` → 204. Every invalid, used or expired token: 400 `auth.token_invalid`. Sets the password, clears the forced change, ends other sessions and voids the user's other unused links. |
 | POST | `/auth/change-password` | `{ currentPassword, newPassword }` → 204; re-issues the cookie; other sessions end. |
 
 ### Admin (`admin` policy)
@@ -56,6 +85,38 @@ All routes are under `/api/v1`. Errors are RFC 7807 ProblemDetails with a stable
 | Categories | `GET/POST /admin/categories`, `PUT /{id}` (`name`, `parentId`, `scope` = `incident`/`request`/`both`), `POST …/{id}/deactivate`, `…/reactivate`; at most two levels (`categories.too_deep`) |
 | Request types | `GET/POST /admin/request-types`, `PUT /{id}` (`name`, `requiresApproval`), `POST …/{id}/deactivate`, `…/reactivate` |
 | Audit | `GET /admin/audit-events` (`action`, `entityType`, `entityId`, `actorUserId`, `from`, `to`, `page`, `pageSize`), newest first |
+
+Users: `POST /admin/users` and `POST /admin/users/{id}/reset-password` take `delivery` = `EmailLink` (default: an activation or reset link is emailed, no password is shown; `temporaryPassword` is null) or `TemporaryPassword` (shown once, forced change at next sign-in).
+
+### Admin: email templates and deliveries (`admin` policy)
+
+| Method | Path | Behavior |
+|---|---|---|
+| GET | `/admin/email-templates` | One template per event type (`id`, `eventType`, `subject`, `body`, `updatedBy`, `updatedAt`, `version`). |
+| PUT | `/admin/email-templates/{eventType}` | `{ version, subject, body }`. 400 `email_templates.unknown_variable` for a `{{name}}` outside the known list, 400 `email_templates.variable_not_allowed` for a known name not allowed for that event; 404 unknown event type; 409 on a stale `version`. Audited (`email_templates.updated`). |
+| GET | `/admin/email-deliveries` | Filters `status` (`pending`, `sending`, `sent`, `failed`), `eventType`, `recipient` (exact email), `from`, `to`; paging. |
+| POST | `/admin/email-deliveries/{id}/retry` | Only a `failed` delivery: resets attempts and makes it due now; any other status is 409 `email_deliveries.not_failed`. For a failed `account_activation` / `password_reset` email a new link (new token, older unused ones revoked) is issued onto the same event; for an inactive user or one whose address changed since it was queued: 409 `email_deliveries.recipient_unavailable`. Audited (`email_delivery.retried`). |
+
+### Admin: SLA (`admin` policy)
+
+| Method | Path | Behavior |
+|---|---|---|
+| GET, PUT | `/admin/sla/calendar` | Company business calendar: `{ id, version, timeZone, hours[{ weekday, startsAt, endsAt }], updatedAt }`. PUT takes `{ version, timeZone, hours }`; 400 `sla.invalid_time_zone` / `sla.invalid_hours` / `sla.calendar_empty`, 409 on a stale `version`. A weekday not listed is closed. Running timers are re-planned. |
+| GET, POST | `/admin/sla/holidays` | List, or add `{ date, name }` (409 `sla.holiday_exists`). Running timers are re-planned. |
+| DELETE | `/admin/sla/holidays/{id}` | 204; 404 if unknown. Running timers are re-planned. |
+| GET, POST | `/admin/sla/policy` | GET the current version (`versionId`, `number`, `targets`, `pauseRules`). POST creates the next version from `{ targets[{ kind, priority, requestTypeId?, metric, targetMinutes, warningPercent }], pauseRules[{ holdReason, pausesFirstResponse, pausesResolution }] }`; the kind × priority × metric matrix must be covered by base targets (400 `sla.target_missing`). Existing versions never change. |
+
+### Admin: system (`admin` policy)
+
+| Method | Path | Behavior |
+|---|---|---|
+| GET | `/admin/system/workers` | `{ status, jobs[{ job, instance, lastRunAt, lastError, intervalSeconds, stale }] }`. `status` is `degraded` when any job's newest heartbeat is older than 3 × its interval, else `ok`. |
+
+### Health
+
+| Method | Path | Behavior |
+|---|---|---|
+| GET | `/health` | Anonymous. `{ status }` only (`ok` or `degraded`, same rule as above); job names and timestamps stay behind the admin endpoint. |
 
 ### Reference lists
 
@@ -99,6 +160,8 @@ All routes are under `/api/v1`. Errors are RFC 7807 ProblemDetails with a stable
 | GET | `/approvals/mine` (admin) | Pending approvals assigned to me plus unassigned ones |
 | POST | `/approvals/{id}/approve`, `/reject` (admin) | With the approval's `version`; reject needs a reason |
 
+Ticket list and detail carry an `sla` block (one entry per metric: `metric`, `dueAt`, `remainingSeconds`, `isPaused`, `isWarned`, `isBreached`, `result`). `GET /tickets?queue=sla_risk` (IT staff and admins only, else 403) lists tickets with a running or paused instance that is warned or breached; the workspace shows it as "SLA Riski".
+
 Status codes: 400 `validation.*` and field codes (`imports.*`, `attachments.*` on `file`/`files`), 401 `auth.unauthenticated`, 403 `common.forbidden` / `auth.password_change_required` / `auth.csrf_invalid`, 404 `common.not_found`, 409 business rules and `concurrency.conflict`, 429 `auth.rate_limited`. Responses carrying a temporary password send `Cache-Control: no-store`.
 
 ## Data models
@@ -122,6 +185,16 @@ Status codes: 400 `validation.*` and field codes (`imports.*`, `attachments.*` o
 | `ticket_comments`, `ticket_attachments` | body + visibility; file name, type, size, random `storage_key`, visibility, `scan_status` |
 | `ticket_relations`, `ticket_assets` | incident ↔ request, ticket ↔ asset; unique pairs |
 
+| `notification_outbox` | `event_type`, `ticket_id`, `user_id`, `payload` (jsonb: ids and reason codes only, always `actorId`), `protected_secret` (Data Protection–encrypted, account events only), `status` (`pending`, `dispatched`, `skipped`, `failed`), `attempts`, `last_error`, `locked_until`, `created_at`, `dispatched_at` |
+| `email_templates` | `event_type` (unique), `subject`, `body`, `updated_by`, `updated_at`, `xmin`; ten rows seeded with Turkish defaults |
+| `email_deliveries` | `outbox_id`, `recipient_user_id`, `recipient_email`, `template_type`, `subject`, `body` (null until rendered for account events), `status`, `attempts`, `next_attempt_at`, `locked_until`, `last_error` (max 500 characters, credentials redacted), `sent_at`; unique `(outbox_id, recipient_user_id)` |
+| `password_tokens` | `user_id`, `purpose` (`activation`, `reset`), `token_hash` (unique; the token itself is never stored), `expires_at`, `used_at`, `created_at` |
+| `business_calendar`, `business_hours`, `holidays` | one company calendar (`time_zone_id`, `version`), one working range per open weekday, holiday dates with names |
+| `sla_policy_versions`, `sla_targets`, `sla_pause_rules` | immutable policy versions (one `is_current`); targets per kind, priority, optional request type and metric (`target_minutes`, `warning_percent`); which hold reasons pause which timer |
+| `sla_instances` | per ticket and metric: `policy_version_id`, `target_minutes`, `warning_percent`, `elapsed_seconds`, `running_since`, `due_at`, `warn_at`, `warned_at`, `breached_at`, `stopped_at`, `result` (`met`, `breached`, `cancelled`); no `xmin` token (ADR-0018) |
+| `sla_pauses`, `sla_events` | pause periods with the hold reason; append-only log (`started`, `paused`, `resumed`, `target_changed`, `warning`, `breached`, `stopped`, `calendar_changed`) |
+| `worker_heartbeats` | `job`, `instance`, `last_run_at`, `last_error`; unique `(job, instance)` |
+
 Relationships: all foreign keys are `RESTRICT`; records are deactivated or closed, never deleted.
 
 ## Auth & permissions
@@ -132,15 +205,20 @@ Relationships: all foreign keys are `RESTRICT`; records are deactivated or close
 - Password: 12–128 characters with a letter and a digit. Temporary passwords: 16 random characters, shown once.
 - Fallback and default authorization policies require a signed-in user whose password change is not pending; `/admin/*` and `/approvals/*` need `admin`; `/assets/*` (except `/me/assets`), `/reference/users` and `/reference/teams` need IT staff or admin.
 - Ticket scope (ADR-0013): employees see their own tickets and public content only; IT staff see their own tickets and their teams' tickets with internal content; admins see all. Work actions need admin or membership in the ticket's team. Out-of-scope numbers and ids return 404 everywhere, including attachments.
+- `/admin/email-templates`, `/admin/email-deliveries`, `/admin/sla/*` and `/admin/system/*` sit under the `admin` policy like the rest of `/admin/*`. `GET /health` and the account-link endpoints (`/auth/forgot-password`, `/auth/set-password`) are anonymous.
+- Password set links (ADR-0017): activation links last 72 hours, reset links 1 hour, each works once. A user's unused links are revoked when the user sets a password, when an admin changes the email address, and when an admin issues a temporary password. An account email queued before an email change is never sent to the new address. A forgot-password request is skipped (no link, no email) while the account has an unused reset link younger than 15 minutes; this also counts a link an admin issued. Every forgot-password request answers 202 and does the same work on the request path for any address, so the response does not reveal whether an account exists.
 - Development only: the API trusts `X-Forwarded-Proto` from the loopback Vite proxy so Secure cookies work on `http://localhost`.
 
 ## UI / pages
+
+- Account links: `/forgot-password` (always shows the same confirmation) and `/set-password?token=…` (link target for activation and reset emails). The user create and reset dialogs offer "email link" (default) or "temporary password".
 
 - `/login`, `/change-password`, `/` home with role-based cards ("Bir şey çalışmıyor", "Bir şey istiyorum", "Kayıtlarım", "Zimmetlerim", IT: "İş listem", "Envanter", admin: "Onaylar", "Yönetim paneli"), `/profile`.
 - Tickets: `/tickets` (my tickets), `/tickets/new/incident`, `/tickets/new/request` (approval hint, files uploaded right after creation), `/tickets/:number` (details, approval box, actions, linked assets and related tickets, replies/internal notes with files, timeline).
 - IT: `/workspace` (queue cards with counts) → `/workspace/queue?queue=…`; `/assets`, `/assets/:id` (card, allowed operations only, history), `/assets/import` (template, preview with row errors, commit).
 - `/assets/mine` for everyone; `/approvals` for admins (approve, reject with reason, reassign unassigned).
-- Admin: `/admin/users`, `/admin/departments`, `/admin/locations` (tree), `/admin/teams` (members, intake flag), `/admin/categories` (tree), `/admin/request-types`, `/admin/audit`.
+- Admin: `/admin/users`, `/admin/departments`, `/admin/locations` (tree), `/admin/teams` (members, intake flag), `/admin/categories` (tree), `/admin/request-types`, `/admin/email-templates` (edit subject and body, allowed variables listed), `/admin/email-deliveries` (filters, retry), `/admin/sla/calendar` (time zone, weekly hours, holidays; on a 409 offers to reload the server copy), `/admin/sla/policy` (target matrix, pause rules, saves as a new version), `/admin/system` (worker job status), `/admin/audit`.
+- SLA on tickets: the ticket detail and list show an SLA badge per timer (remaining time, paused, warned, breached, met); `/workspace` has the "SLA Riski" queue.
 - Mobile-first: cards under 768 px, tables above; main menu is a drawer under 1024 px; bottom-sheet dialogs on phones; no horizontal scroll at 360 px (checked by E2E).
 - Accessibility: labelled fields, errors linked with `aria-describedby`, focus moves to the first server field error, row buttons announce their record, visible focus, keyboard-only login verified by E2E.
 
@@ -161,7 +239,20 @@ Relationships: all foreign keys are `RESTRICT`; records are deactivated or close
 - **Numbers:** `INC-YYYY-NNNNNN` / `REQ-YYYY-NNNNNN` from a counter row locked in the creating transaction, so concurrent creation never repeats a number.
 - **Comments and files:** employees write public replies on their own tickets; internal notes need someone working on the ticket. Files inherit the comment's visibility; extension must match content; a failed save deletes stored files. Comments and links do not conflict with a status change made at the same moment.
 - **Concurrency:** stale edits return 409 `concurrency.conflict`; the UI shows a Turkish message; dialogs send the version the user saw when opening them.
+- **Worker:** `Tgysm.Worker` runs four jobs: `OutboxDispatcher`, `EmailSender`, `SlaMonitor` (every 60 s) and `Cleanup` (hourly); `ExportRunner` is planned (ADR-0014). Each iteration runs in its own DI scope, a failure is logged and recorded and never stops the loop, and every run upserts a `worker_heartbeats` row (error text in `last_error`). Claims use `RowLease` (`FOR UPDATE SKIP LOCKED`); a crashed instance's rows become claimable again after `locked_until`. Email deliveries and outbox events are also re-claimed one row at a time by a conditional update on the lease value before processing, and completion writes are guarded by that ownership, so a run whose lease expired mid-batch cannot send or dispatch a row again or move a `sent` row back to `pending` (ADR-0014). The Worker has no signed-in user: audit rows it writes carry no user id and a generated correlation id.
+- **Notification events:** ticket, approval and SLA code add an event through `INotificationOutbox` before the single save, so the event commits with the change and a rollback leaves none. Events and recipients (resolved at dispatch time from current data, inactive users never receive email): `ticket_created` (requester), `ticket_assigned` (new assignee, or team members when unassigned; not the actor), `public_reply` (requester, or assignee/team when the requester wrote it; not the author), `approval_requested` (approver), `approval_decided` (requester), `ticket_completed` (requester), `sla_warning` and `sla_breached` (assignee, or the team's active members when unassigned), `account_activation` and `password_reset` (the account). `password_reset_requested` is internal (the normalized address in its payload, resolved by the dispatcher; no delivery of its own). Every event carries the acting user's id in its payload; payloads hold ids and reason codes only.
+- **Dispatch:** `OutboxDispatcher` claims pending events, resolves recipients, renders subject and body from the event's template and inserts `email_deliveries` rows, one event per DI scope. No recipient marks the event `skipped`. A failing event records an attempt on itself only (same back-off and limit as deliveries), so one bad event cannot block the rest; after 5 failed attempts it becomes `failed`. The failure is recorded from a fresh DI scope so the failed save is not retried. Rendered subject and body are cut to the column limits (200 and 10,000 characters, never inside a surrogate pair) so a long ticket subject cannot make the insert fail.
+- **Sending:** `EmailSender` claims due deliveries in id order (`sending`, leased), sends through `IEmailSender`, marks `sent`. A failure adds an attempt and schedules the next one after 1, 5, 15 and 60 minutes; the 5th failed attempt sets `failed`. A failure is recorded in a fresh scope, only while the row is still `sending` under this run's lease. Each send is bounded by `Email:Smtp:TimeoutSeconds`. A delivery left `sending` by a crashed worker is reclaimed once its lease expires. Delivery is at-least-once: a crash after the transport accepted the message but before `sent` was saved can repeat one email (ADR-0015).
+- **Transports:** `Smtp` uses MailKit (STARTTLS when `UseStartTls`, credentials only when configured); `Pickup` writes `.eml` files, so local runs and tests need no mail server. Send errors are sanitized (type name and message, `password`/`secret`/`token`/`authorization` pairs redacted, cut to 500 characters) before they reach `last_error`.
+- **Email templates:** plain text only. Variables are `{{name}}` substitutions from a fixed per-event list: ticket events `ticketNumber`, `subject`, `status`, `ticketUrl`, `recipientName`; `ticket_completed` adds `resolution`, `completedAt`; SLA events add `slaMetric`, `dueAt`; account events allow only `recipientName`, `actionUrl`, `expiresAt`. An unset variable renders as empty text. Dates use the company time zone (`App:TimeZone`) as `dd.MM.yyyy HH:mm`. Subject (max 200 characters) and body (max 10,000) are required; variables are checked in both.
+- **Account-link emails:** the link token is stored only as `protected_secret` (ASP.NET Core Data Protection, purpose `Tgysm.Notifications.AccountLinkToken`). The body renders at send time; after `sent` or a terminal `failed` the secret is cleared and the delivery body becomes `[cleared]`. A retryable failure keeps the secret so the next attempt can render the link. Link: `App:PublicBaseUrl` + `/set-password?token=…`. Admin retry of a failed account email issues a new token onto the same event and revokes older unused ones; the old secret is not reused.
+- **Business time (ADR-0018):** `BusinessTimeCalculator.SecondsBetween` and `AddSeconds` work over `BusinessCalendarRules` (zone, one optional working range per weekday, holidays). Each UTC boundary is converted to local time per day and clipped to the working range; holidays and closed days count zero; DST gaps lose the skipped hour. Results are UTC. `sla.calendar_empty` is the error for a calendar with no working time.
+- **SLA instances (ADR-0018):** creating a ticket starts a `first_response` and a `resolution` instance on the current policy version (a request-type target overrides the priority target; a request starting `on_hold` for approval starts with resolution paused). A running instance keeps the targets and pause rules of the version it started on. A hold pauses the timers its reason's rule names; resume and approval grant restart them. A priority change gives each instance the new priority's target of its own version and resets the warning while still below the threshold. First response stops at the first public reply by IT staff or an admin other than the requester; both stop on completion (result `met` or `breached`) and cancellation (`cancelled`). Transfers never reset a timer.
+- **Calendar change re-plans running timers (ADR-0018):** changing the calendar or adding or removing a holiday recomputes `due_at` and `warn_at` of running (not paused, not stopped) instances: elapsed business time under the old rules is kept, the remainder runs under the new rules, and a `calendar_changed` event is logged. The re-planner locks the instances it changes. Known limit: a ticket action that read the old calendar just before the change and saves just after it computes its own due time under the old rules until the next pause, resume or priority change.
+- **SLA monitor:** `SlaMonitor` marks running instances past `warn_at` or `due_at`. Each mark is a conditional update (`warned_at` / `breached_at` still empty, not stopped), one transaction per instance, so of several monitors one wins and only it writes the `sla_events` row and the `sla_warning` / `sla_breached` outbox event. A breach of an instance never warned also warns first. It writes only those columns, so it never fails a user's ticket action. Paused instances do not warn or breach.
+- **Worker status and health:** each job's newest heartbeat is judged stale after 3 × its interval; `GET /admin/system/workers` lists jobs, `GET /health` returns only `ok` or `degraded`.
+- **Cleanup:** hourly, with a 30-day retention cutoff. Deletes password tokens that expired before the cutoff; `dispatched` or `skipped` outbox events older than the cutoff whose deliveries are all `sent` or `failed` (deliveries go with the event); `password_reset_requested` events (they hold an email address) that are no longer `pending` and are older than the cutoff; and `worker_heartbeats` rows not updated since the cutoff.
 - **Audit:** security, admin, asset and ticket events are written in the same transaction as the change; passwords, hashes and tokens are never recorded.
 
-<!-- DOC-BASELINE: dcdb41f -->
-_Documentation baseline: current as of commit dcdb41f (2026-09-27). Refresh with `git log --oneline dcdb41f..HEAD`._
+<!-- DOC-BASELINE: 550302d -->
+_Documentation baseline: current as of commit 550302d (2026-10-02). Refresh with `git log --oneline 550302d..HEAD`._

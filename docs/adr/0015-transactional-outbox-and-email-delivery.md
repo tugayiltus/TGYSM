@@ -44,3 +44,11 @@ Ticket and account changes must trigger email without ever blocking or failing t
 ### Risks
 - The accepted at-least-once guarantee means a rare crash window can duplicate one email to one recipient; this is a known, documented trade-off rather than a defect to chase.
 - `protected_secret` depends on ASP.NET Core Data Protection key persistence (already flagged as a production risk in ADR-0004); losing the keys before an account-link email sends makes that link unrenderable.
+
+## Amendment 2026-10-01
+
+"After 5 attempts, `failed`" counts attempts in total: the 5th failure is terminal, so the waits between attempts are 1, 5, 15 and 60 minutes and the 360-minute step is never reached. The back-off table and the attempt limit live in one Domain type shared by the outbox dispatcher and the email sender (commits ff01de6, 0f322de). A `sending` row whose lease has expired is claimable again, so a worker that crashes mid-send does not strand the row (commit 0d5a20f).
+
+## Amendment 2026-10-02
+
+Poison events: rendered subject and body are cut to the `email_deliveries` column limits, and a dispatch failure is recorded from a fresh DI scope so the failed save is not retried and one bad event cannot block the outbox (commit 04214a1). Account emails: an admin retry of a failed `account_activation` or `password_reset` delivery issues a new link (new token, older unused ones revoked) onto the same event instead of hiding the retry; it is refused with `email_deliveries.recipient_unavailable` when the user is inactive or the address changed since the email was queued, and a queued account email is never sent to a changed address. This is an owner decision of 2026-10-01 (commits b2ad9f5, 2a9e93c). The `password_reset_requested` internal event and its 15-minute cooldown are in ADR-0017.

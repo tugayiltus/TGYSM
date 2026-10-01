@@ -49,3 +49,7 @@ Accounts are local (no SSO, no LDAP in the first release; `tgysm.md` §2). Only 
 - Inactive and locked accounts run one password hash check, like unknown emails, so response time does not reveal account state (commit 8b3357d).
 - Development and Testing trust `X-Forwarded-Proto` from loopback proxies only; the Vite proxy sends `https` so Secure cookies and antiforgery work on `http://localhost`. Production forwarded-header trust is decided with hosting (Phase 6).
 - Known limit: the login rate limit is per client IP; many users behind one NAT share it. Per-account limiting waits for the hosting/proxy decision.
+
+## Amendment 2026-10-02
+
+Password set links, forgot-password and the revocation rules for unused links are specified in ADR-0017. The Data Protection application name is now shared as `Tgysm` between the API and the Worker; key persistence is still open and is tracked in `SECURITY.md` (commit 42947ba).
