@@ -214,6 +214,59 @@ public sealed class OutboxDispatcherTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Completion_email_for_a_maximum_length_subject_is_dispatched_with_a_truncated_subject()
+    {
+        // "[{{ticketNumber}}] {{subject}} tamamlandı" around a 200-character ticket subject renders past the
+        // email_deliveries.subject column (varchar 200); before the fix the save threw 22001 on every run.
+        var longSubject = new string('a', Domain.Tickets.Ticket.SubjectMaxLength);
+        var world = await TicketWorld.CreateAsync(factory);
+        var ticket = await TicketWorld.CreateIncidentAsync(world.Employee, subject: longSubject);
+        ticket = await ActionAsync(world.Desk, ticket, "claim", new { version = TicketWorld.VersionOf(ticket) });
+        ticket = await ActionAsync(world.Desk, ticket, "start", new { version = TicketWorld.VersionOf(ticket) });
+        await ActionAsync(world.Desk, ticket, "complete",
+            new { version = TicketWorld.VersionOf(ticket), resolution = "Toner değişti", outcome = "resolved", rootCause = (string?)null });
+
+        await DispatchAsync();
+
+        var delivery = await SingleDeliveryForAsync(NotificationEventTypes.TicketCompleted, world.EmployeeUser.Id);
+        Assert.Equal(EmailDelivery.SubjectMaxLength, delivery.Subject.Length);
+        Assert.StartsWith($"[{TicketWorld.NumberOf(ticket)}] ", delivery.Subject, StringComparison.Ordinal);
+        var outboxEvent = await OutboxEventAsync(delivery.OutboxId);
+        Assert.Equal(OutboxStatus.Dispatched, outboxEvent.Status);
+    }
+
+    [Fact]
+    public async Task An_event_whose_save_throws_is_recorded_as_failed_from_a_fresh_scope_and_the_batch_continues()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee, subject: "Birinci");
+
+        // A delivery that already exists for (event, recipient) makes the dispatch save hit the unique index —
+        // a save-time failure, unlike an unknown event type, so the failed scope still tracks the added delivery.
+        Guid poisonId;
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            poisonId = await db.OutboxEvents.Where(e => e.EventType == NotificationEventTypes.TicketCreated).Select(e => e.Id).SingleAsync(Ct);
+        }
+
+        await TestData.SaveAsync(factory, db => db.EmailDeliveries.Add(EmailDelivery.Create(
+            poisonId, new Recipient(world.EmployeeUser.Id, world.EmployeeUser.Email, "Çalışan"), NotificationEventTypes.TicketCreated, "konu", "gövde", DateTimeOffset.UtcNow)));
+
+        var second = await TicketWorld.CreateIncidentAsync(world.Employee, subject: "İkinci");
+
+        await DispatchAsync();
+
+        var poison = await OutboxEventAsync(poisonId);
+        Assert.Equal(OutboxStatus.Pending, poison.Status);
+        Assert.Equal(1, poison.Attempts);
+        Assert.False(string.IsNullOrWhiteSpace(poison.LastError));
+
+        await using var check = factory.Database.CreateDbContext();
+        var secondEvent = await check.OutboxEvents.SingleAsync(e => e.EventType == NotificationEventTypes.TicketCreated && e.TicketId == IdOf(second), Ct);
+        Assert.Equal(OutboxStatus.Dispatched, secondEvent.Status);
+    }
+
+    [Fact]
     public async Task After_five_failed_attempts_a_bad_event_becomes_failed()
     {
         var badEventId = Guid.Empty;

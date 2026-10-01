@@ -15,6 +15,29 @@ public sealed class EmailDeliveryTests
     private static EmailDelivery CreateDelivery(string? body = "Merhaba") =>
         EmailDelivery.Create(Guid.NewGuid(), Recipient, NotificationEventTypes.TicketCreated, "Konu", body, Now);
 
+    [Fact]
+    public void Create_cuts_subject_and_body_to_their_column_limits()
+    {
+        var delivery = EmailDelivery.Create(Guid.NewGuid(), Recipient, NotificationEventTypes.TicketCreated,
+            new string('k', EmailDelivery.SubjectMaxLength + 10), new string('g', EmailDelivery.BodyMaxLength + 10), Now);
+
+        Assert.Equal(EmailDelivery.SubjectMaxLength, delivery.Subject.Length);
+        Assert.Equal(EmailDelivery.BodyMaxLength, delivery.Body!.Length);
+    }
+
+    [Fact]
+    public void Create_never_splits_a_surrogate_pair_at_the_cut()
+    {
+        const string emoji = "\U0001F600";
+        var subject = new string('k', EmailDelivery.SubjectMaxLength - 1) + emoji;
+
+        var delivery = EmailDelivery.Create(Guid.NewGuid(), Recipient, NotificationEventTypes.TicketCreated, subject, null, Now);
+
+        Assert.Equal(EmailDelivery.SubjectMaxLength - 1, delivery.Subject.Length);
+        Assert.False(char.IsHighSurrogate(delivery.Subject[^1]));
+        Assert.Null(delivery.Body);
+    }
+
     [Theory]
     [InlineData(1, 1)]
     [InlineData(2, 5)]

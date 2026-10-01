@@ -17,8 +17,8 @@ internal sealed class EmailDeliveryConfiguration : IEntityTypeConfiguration<Emai
         builder.Property(d => d.RecipientUserId).IsRequired();
         builder.Property(d => d.RecipientEmail).HasMaxLength(EmailDelivery.RecipientEmailMaxLength).IsRequired();
         builder.Property(d => d.TemplateType).HasMaxLength(EmailDelivery.TemplateTypeMaxLength).IsRequired();
-        builder.Property(d => d.Subject).HasMaxLength(EmailTemplate.SubjectMaxLength).IsRequired();
-        builder.Property(d => d.Body).HasMaxLength(EmailTemplate.BodyMaxLength);
+        builder.Property(d => d.Subject).HasMaxLength(EmailDelivery.SubjectMaxLength).IsRequired();
+        builder.Property(d => d.Body).HasMaxLength(EmailDelivery.BodyMaxLength);
         builder.Property(d => d.Status).HasEnumName();
         builder.Property(d => d.Attempts).IsRequired();
         builder.Property(d => d.NextAttemptAt).IsRequired();

@@ -25,6 +25,12 @@ public sealed class EmailDelivery : Entity
     public const int TemplateTypeMaxLength = OutboxEvent.EventTypeMaxLength;
     public const int LastErrorMaxLength = 500;
 
+    /// <summary>Column limit of <see cref="Subject"/>; the rendered subject is cut to it (a template plus a long ticket subject can exceed it).</summary>
+    public const int SubjectMaxLength = EmailTemplate.SubjectMaxLength;
+
+    /// <summary>Column limit of <see cref="Body"/>; the rendered body is cut to it.</summary>
+    public const int BodyMaxLength = EmailTemplate.BodyMaxLength;
+
     /// <summary>
     /// Replaces <see cref="Body"/> once an account-link delivery reaches <see cref="DeliveryStatus.Sent"/> or
     /// <see cref="DeliveryStatus.Failed"/> (spec §3.2 step 5): the rendered link must not sit in the row any
@@ -69,10 +75,25 @@ public sealed class EmailDelivery : Entity
             RecipientUserId = recipient.UserId,
             RecipientEmail = recipient.Email,
             TemplateType = templateType,
-            Subject = subject,
-            Body = body,
+            Subject = Truncate(subject, SubjectMaxLength),
+            Body = body is null ? null : Truncate(body, BodyMaxLength),
             NextAttemptAt = now,
         };
+
+    /// <summary>
+    /// Cuts a rendered value to its column limit so one long ticket subject can never make the save throw (and
+    /// poison the outbox). Never splits a surrogate pair: a dangling high surrogate is dropped with the cut.
+    /// </summary>
+    private static string Truncate(string value, int maxLength)
+    {
+        if (value.Length <= maxLength)
+        {
+            return value;
+        }
+
+        var cut = char.IsHighSurrogate(value[maxLength - 1]) ? maxLength - 1 : maxLength;
+        return value[..cut];
+    }
 
     /// <summary>Claimed by <c>EmailSender</c> (leased by <c>IEmailDeliveryClaimer</c>) and about to be handed to <c>IEmailSender</c>.</summary>
     public void MarkSending(DateTimeOffset now)

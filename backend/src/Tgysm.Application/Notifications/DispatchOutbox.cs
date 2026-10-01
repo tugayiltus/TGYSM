@@ -44,13 +44,32 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 logger.LogError(exception, "Outbox event {OutboxEventId} ({EventType}) failed to dispatch.", outboxEvent.Id, outboxEvent.EventType);
-                await RecordFailureAsync(scope.ServiceProvider, outboxEvent.Id, exception.Message, cancellationToken);
+                await TryRecordFailureAsync(outboxEvent.Id, exception.Message, cancellationToken);
             }
 
             processed++;
         }
 
         return processed;
+    }
+
+    /// <summary>
+    /// Records the failure in a fresh scope and <see cref="IAppDbContext"/> that reloads the event: the failed
+    /// scope may still track the half-built deliveries (or tokens) whose save just threw, and saving from it would
+    /// throw the same way again. A failure to record is logged, never rethrown, so the rest of the claimed batch is
+    /// still processed; the event then stays leased and is re-claimed on expiry. Same pattern as <c>SendDueEmailsHandler</c>.
+    /// </summary>
+    private async Task TryRecordFailureAsync(Guid outboxEventId, string error, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var failureScope = scopes.CreateAsyncScope();
+            await RecordFailureAsync(failureScope.ServiceProvider, outboxEventId, error, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Recording the failure of outbox event {OutboxEventId} failed.", outboxEventId);
+        }
     }
 
     private async Task RecordFailureAsync(IServiceProvider scoped, Guid outboxEventId, string error, CancellationToken cancellationToken)
