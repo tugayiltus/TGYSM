@@ -147,7 +147,10 @@
     "approval": "Onay",
     "attachment": "Dosya",
     "email_template": "E-posta şablonu",
-    "email_delivery": "E-posta gönderimi"
+    "email_delivery": "E-posta gönderimi",
+    "sla_calendar": "SLA takvimi",
+    "holiday": "Tatil günü",
+    "sla_policy": "SLA politikası"
   },
   "auditActions": {
     "setup": {
@@ -238,6 +241,12 @@
     },
     "email_delivery": {
       "retried": "E-posta yeniden gönderime alındı"
+    },
+    "sla": {
+      "calendar_updated": "SLA takvimi güncellendi",
+      "holiday_added": "Tatil günü eklendi",
+      "holiday_removed": "Tatil günü kaldırıldı",
+      "policy_versioned": "SLA politikasının yeni sürümü oluşturuldu"
     }
   },
   "emailEvents": {

@@ -2289,6 +2289,270 @@
         }
       }
     },
+    "/api/v1/admin/sla/calendar": {
+      "get": {
+        "tags": [
+          "Admin: SLA"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin: SLA"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCalendarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sla/holidays": {
+      "get": {
+        "tags": [
+          "Admin: SLA"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HolidayItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin: SLA"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddHolidayCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sla/holidays/{id}": {
+      "delete": {
+        "tags": [
+          "Admin: SLA"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sla/policy": {
+      "get": {
+        "tags": [
+          "Admin: SLA"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin: SLA"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePolicyVersionCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/workers": {
       "get": {
         "tags": [
@@ -4729,6 +4993,22 @@
   },
   "components": {
     "schemas": {
+      "AddHolidayCommand": {
+        "required": [
+          "date",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "AddTeamMemberRequest": {
         "required": [
           "userId"
@@ -5393,6 +5673,39 @@
           }
         }
       },
+      "CalendarDetail": {
+        "required": [
+          "id",
+          "version",
+          "timeZone",
+          "hours",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkingHoursItem"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "CategoryItem": {
         "required": [
           "id",
@@ -5723,6 +6036,27 @@
           }
         }
       },
+      "CreatePolicyVersionCommand": {
+        "required": [
+          "targets",
+          "pauseRules"
+        ],
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PolicyTargetItem"
+            }
+          },
+          "pauseRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PauseRuleItem"
+            }
+          }
+        }
+      },
       "CreateRequestCommand": {
         "required": [
           "subject",
@@ -5844,6 +6178,17 @@
             "type": "string"
           }
         }
+      },
+      "DayOfWeek": {
+        "enum": [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday"
+        ]
       },
       "DeliveryStatus": {
         "enum": [
@@ -6044,8 +6389,7 @@
           "technical_team",
           "third_party",
           "scheduled_date",
-          "other",
-          null
+          "other"
         ]
       },
       "HoldTicketRequest": {
@@ -6075,6 +6419,27 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "HolidayItem": {
+        "required": [
+          "id",
+          "date",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "name": {
+            "type": "string"
           }
         }
       },
@@ -6520,6 +6885,103 @@
           }
         }
       },
+      "PauseRuleItem": {
+        "required": [
+          "holdReason",
+          "pausesFirstResponse",
+          "pausesResolution"
+        ],
+        "type": "object",
+        "properties": {
+          "holdReason": {
+            "$ref": "#/components/schemas/HoldReason"
+          },
+          "pausesFirstResponse": {
+            "type": "boolean"
+          },
+          "pausesResolution": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PolicyDetail": {
+        "required": [
+          "versionId",
+          "number",
+          "createdAt",
+          "createdBy",
+          "targets",
+          "pauseRules"
+        ],
+        "type": "object",
+        "properties": {
+          "versionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PolicyTargetItem"
+            }
+          },
+          "pauseRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PauseRuleItem"
+            }
+          }
+        }
+      },
+      "PolicyTargetItem": {
+        "required": [
+          "kind",
+          "priority",
+          "requestTypeId",
+          "metric",
+          "targetMinutes",
+          "warningPercent"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/TicketKind"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "requestTypeId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "metric": {
+            "$ref": "#/components/schemas/SlaMetric"
+          },
+          "targetMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warningPercent": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "Priority": {
         "enum": [
           "p1",
@@ -6832,6 +7294,12 @@
             "type": "string"
           }
         }
+      },
+      "SlaMetric": {
+        "enum": [
+          "first_response",
+          "resolution"
+        ]
       },
       "StartMaintenanceRequest": {
         "required": [
@@ -7526,6 +7994,29 @@
           }
         }
       },
+      "UpdateCalendarRequest": {
+        "required": [
+          "version",
+          "timeZone",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkingHoursItem"
+            }
+          }
+        }
+      },
       "UpdateCategoryRequest": {
         "required": [
           "version",
@@ -7915,6 +8406,27 @@
             }
           }
         }
+      },
+      "WorkingHoursItem": {
+        "required": [
+          "weekday",
+          "startsAt",
+          "endsAt"
+        ],
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "$ref": "#/components/schemas/DayOfWeek"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "time"
+          }
+        }
       }
     }
   },
@@ -7954,6 +8466,9 @@
     },
     {
       "name": "Admin: Email deliveries"
+    },
+    {
+      "name": "Admin: SLA"
     },
     {
       "name": "Admin: System"

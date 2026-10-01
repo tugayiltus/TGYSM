@@ -16,6 +16,7 @@ internal static class AdminEndpoints
         admin.MapAuditEndpoints();
         admin.MapEmailTemplateEndpoints();
         admin.MapEmailDeliveryEndpoints();
+        admin.MapSlaEndpoints();
         admin.MapSystemEndpoints();
         return admin;
     }

@@ -95,4 +95,8 @@ public static class ErrorCodes
     public const string EmailDeliveryNotFailed = "email_deliveries.not_failed";
 
     public const string SlaCalendarEmpty = "sla.calendar_empty";
+    public const string SlaInvalidTimeZone = "sla.invalid_time_zone";
+    public const string SlaInvalidHours = "sla.invalid_hours";
+    public const string SlaHolidayExists = "sla.holiday_exists";
+    public const string SlaTargetMissing = "sla.target_missing";
 }

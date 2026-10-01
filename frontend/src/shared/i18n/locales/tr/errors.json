@@ -110,6 +110,10 @@
     "not_failed": "Yalnızca başarısız olan e-postalar yeniden gönderilebilir."
   },
   "sla": {
-    "calendar_empty": "Çalışma takviminde en az bir çalışma günü tanımlı olmalıdır."
+    "calendar_empty": "Çalışma takviminde en az bir çalışma günü tanımlı olmalıdır.",
+    "invalid_time_zone": "Geçerli bir saat dilimi seçin (ör. Europe/Istanbul).",
+    "invalid_hours": "Çalışma saatleri geçersiz: başlangıç bitişten önce olmalı ve her gün için en fazla bir aralık girilmelidir.",
+    "holiday_exists": "Bu tarih için zaten bir tatil tanımlı.",
+    "target_missing": "Her kayıt türü, öncelik ve süre ölçüsü için bir hedef tanımlanmalıdır."
   }
 }

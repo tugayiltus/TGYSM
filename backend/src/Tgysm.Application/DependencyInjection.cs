@@ -8,6 +8,7 @@ using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Features.Users;
 using Tgysm.Application.Notifications;
 using Tgysm.Application.Security;
+using Tgysm.Application.Sla;
 
 namespace Tgysm.Application;
 
@@ -39,6 +40,8 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<OrganizationReferences>();
         services.AddScoped<LastAdminGuard>();
+        services.AddScoped<CalendarProvider>();
+        services.AddScoped<PolicyProvider>();
         services.AddScoped<Features.Tickets.TicketScope>();
         services.AddScoped<Features.Tickets.TicketFactory>();
         services.AddScoped<Features.Tickets.TicketWork>();

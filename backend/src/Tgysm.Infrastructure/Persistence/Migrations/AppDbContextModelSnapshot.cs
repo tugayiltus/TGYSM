@@ -919,6 +919,267 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("team_memberships", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Sla.BusinessCalendar", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_business_calendar");
+
+                    b.ToTable("business_calendar", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.BusinessHours", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<TimeOnly>("EndsAt")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<TimeOnly>("StartsAt")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<int>("Weekday")
+                        .HasColumnType("integer")
+                        .HasColumnName("weekday");
+
+                    b.HasKey("Id")
+                        .HasName("pk_business_hours");
+
+                    b.HasIndex("Weekday")
+                        .IsUnique()
+                        .HasDatabaseName("ix_business_hours_weekday");
+
+                    b.ToTable("business_hours", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_business_hours_range", "starts_at < ends_at");
+
+                            t.HasCheckConstraint("ck_business_hours_weekday", "weekday BETWEEN 0 AND 6");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.Holiday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_holidays");
+
+                    b.HasIndex("Date")
+                        .IsUnique()
+                        .HasDatabaseName("ix_holidays_date");
+
+                    b.ToTable("holidays", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaPauseRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("HoldReason")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<bool>("PausesFirstResponse")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pauses_first_response");
+
+                    b.Property<bool>("PausesResolution")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pauses_resolution");
+
+                    b.Property<Guid>("PolicyVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("policy_version_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sla_pause_rules");
+
+                    b.HasIndex("PolicyVersionId", "HoldReason")
+                        .IsUnique()
+                        .HasDatabaseName("ix_sla_pause_rules_policy_version_id_hold_reason");
+
+                    b.ToTable("sla_pause_rules", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_sla_pause_rules_hold_reason", "hold_reason IN ('user', 'manager_approval', 'vendor', 'technical_team', 'third_party', 'scheduled_date', 'other')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaPolicyVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_current");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sla_policy_versions");
+
+                    b.HasIndex("IsCurrent")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sla_policy_versions_current")
+                        .HasFilter("is_current");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_sla_policy_versions_number");
+
+                    b.ToTable("sla_policy_versions", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaTarget", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ticket_kind");
+
+                    b.Property<string>("Metric")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("metric");
+
+                    b.Property<Guid>("PolicyVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("policy_version_id");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("priority");
+
+                    b.Property<Guid?>("RequestTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("request_type_id");
+
+                    b.Property<int>("TargetMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_minutes");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<int>("WarningPercent")
+                        .HasColumnType("integer")
+                        .HasColumnName("warning_percent");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sla_targets");
+
+                    b.HasIndex("RequestTypeId")
+                        .HasDatabaseName("ix_sla_targets_request_type_id");
+
+                    b.HasIndex("PolicyVersionId", "Kind", "Priority", "RequestTypeId", "Metric")
+                        .IsUnique()
+                        .HasDatabaseName("ix_sla_targets_policy_version_id_ticket_kind_priority_request_");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("PolicyVersionId", "Kind", "Priority", "RequestTypeId", "Metric"), false);
+
+                    b.ToTable("sla_targets", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_sla_targets_kind", "ticket_kind IN ('incident', 'request')");
+
+                            t.HasCheckConstraint("ck_sla_targets_metric", "metric IN ('first_response', 'resolution')");
+
+                            t.HasCheckConstraint("ck_sla_targets_minutes", "target_minutes > 0");
+
+                            t.HasCheckConstraint("ck_sla_targets_priority", "priority IN ('p1', 'p2', 'p3', 'p4')");
+
+                            t.HasCheckConstraint("ck_sla_targets_warning", "warning_percent BETWEEN 1 AND 99");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Tickets.Approval", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1802,6 +2063,32 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_team_memberships_users_user_id");
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaPauseRule", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Sla.SlaPolicyVersion", null)
+                        .WithMany("PauseRules")
+                        .HasForeignKey("PolicyVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sla_pause_rules_sla_policy_versions_policy_version_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaTarget", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Sla.SlaPolicyVersion", null)
+                        .WithMany("Targets")
+                        .HasForeignKey("PolicyVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sla_targets_sla_policy_versions_policy_version_id");
+
+                    b.HasOne("Tgysm.Domain.Catalog.RequestType", null)
+                        .WithMany()
+                        .HasForeignKey("RequestTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sla_targets_request_types_request_type_id");
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Tickets.Approval", b =>
                 {
                     b.HasOne("Tgysm.Domain.Users.User", null)
@@ -2021,6 +2308,13 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_users_locations_location_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Sla.SlaPolicyVersion", b =>
+                {
+                    b.Navigation("PauseRules");
+
+                    b.Navigation("Targets");
                 });
 #pragma warning restore 612, 618
         }

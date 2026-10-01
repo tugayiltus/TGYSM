@@ -10,6 +10,7 @@ using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Operations;
 using Tgysm.Domain.Organization;
+using Tgysm.Domain.Sla;
 using Tgysm.Domain.Users;
 
 namespace Tgysm.Infrastructure.Persistence;
@@ -42,6 +43,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<EmailDelivery> EmailDeliveries => Set<EmailDelivery>();
     public DbSet<PasswordToken> PasswordTokens => Set<PasswordToken>();
+    public DbSet<BusinessCalendar> BusinessCalendars => Set<BusinessCalendar>();
+    public DbSet<BusinessHours> BusinessHours => Set<BusinessHours>();
+    public DbSet<Holiday> Holidays => Set<Holiday>();
+    public DbSet<SlaPolicyVersion> SlaPolicyVersions => Set<SlaPolicyVersion>();
+    public DbSet<SlaTarget> SlaTargets => Set<SlaTarget>();
+    public DbSet<SlaPauseRule> SlaPauseRules => Set<SlaPauseRule>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

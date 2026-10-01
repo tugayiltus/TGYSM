@@ -79,4 +79,9 @@ public static class AuditActions
 
     public const string EmailTemplateUpdated = "email_templates.updated";
     public const string EmailDeliveryRetried = "email_delivery.retried";
+
+    public const string SlaCalendarUpdated = "sla.calendar_updated";
+    public const string SlaHolidayAdded = "sla.holiday_added";
+    public const string SlaHolidayRemoved = "sla.holiday_removed";
+    public const string SlaPolicyVersioned = "sla.policy_versioned";
 }

@@ -17,4 +17,7 @@ public static class SerializationLocks
 
     /// <summary>Moving the default intake flag between teams.</summary>
     public const long DefaultIntake = 7_005;
+
+    /// <summary>Creating an SLA policy version: retires the current one and numbers the next, so exactly one stays current.</summary>
+    public const long SlaPolicy = 7_006;
 }

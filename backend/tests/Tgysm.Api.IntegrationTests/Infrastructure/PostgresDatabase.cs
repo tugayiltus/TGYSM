@@ -15,7 +15,7 @@ public sealed class PostgresDatabase : IAsyncLifetime
     // replica mode skips the append-only triggers; only the test fixture may wipe audit rows.
     private const string TruncateAllSql =
         "SET session_replication_role = replica; "
-        + "TRUNCATE worker_heartbeats, password_tokens, email_deliveries, notification_outbox, ticket_assets, ticket_relations, ticket_events, ticket_attachments, ticket_comments, ticket_assignments, approvals, tickets, ticket_counters, request_types, categories, import_jobs, asset_movements, asset_assignments, assets, team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE; "
+        + "TRUNCATE sla_pause_rules, sla_targets, sla_policy_versions, holidays, business_hours, business_calendar, worker_heartbeats, password_tokens, email_deliveries, notification_outbox, ticket_assets, ticket_relations, ticket_events, ticket_attachments, ticket_comments, ticket_assignments, approvals, tickets, ticket_counters, request_types, categories, import_jobs, asset_movements, asset_assignments, assets, team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE; "
         + "SET session_replication_role = origin;";
 
     private readonly string _databaseName = DatabaseNamePrefix + Guid.NewGuid().ToString("N");
@@ -45,6 +45,10 @@ public sealed class PostgresDatabase : IAsyncLifetime
     {
         await using var db = CreateDbContext();
         await db.Database.ExecuteSqlRawAsync(TruncateAllSql);
+
+        // The SLA calendar and policy are migration-seeded rows that tests mutate (and request_types' CASCADE wipes
+        // sla_targets), so every reset puts the seed back.
+        await db.Database.ExecuteSqlRawAsync(SlaSeed.Sql);
     }
 
     public async ValueTask DisposeAsync()
