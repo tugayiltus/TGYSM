@@ -16,11 +16,15 @@ readonly API_BIN_DIR="backend/src/Tgysm.Api/bin/Debug/net10.0"
 readonly WORKER_BIN_DIR="backend/src/Tgysm.Worker/bin/Debug/net10.0"
 readonly LOG_DIR="frontend/e2e-logs"
 readonly TEMP_PASSWORD_PREFIX="Temporary password (shown once): "
+readonly E2E_JOB_INTERVAL_SECONDS=2
+# The suite signs in several users per spec from one address; the production limit (10 per minute) would answer 429.
+readonly E2E_LOGIN_PERMIT_LIMIT_PER_MINUTE=1000
 readonly PROJECTS=("mobile-360" "desktop")
 
 api_pid=""
 worker_pid=""
 preview_pid=""
+pickup_folder=""
 
 stop_servers() {
   if [[ -n "$api_pid" ]]; then kill "$api_pid" 2>/dev/null || true; fi
@@ -31,7 +35,11 @@ stop_servers() {
   worker_pid=""
   preview_pid=""
 }
-trap stop_servers EXIT
+cleanup() {
+  stop_servers
+  if [[ -n "$pickup_folder" ]]; then rm -rf "$pickup_folder"; fi
+}
+trap cleanup EXIT
 
 wait_for() {
   local url="$1"
@@ -59,9 +67,17 @@ dotnet build backend/src/Tgysm.Worker --nologo -v quiet
 export ConnectionStrings__Default="Host=$DB_HOST;Database=$DB_NAME;Username=$DB_USER"
 export ASPNETCORE_ENVIRONMENT="Development"
 export DOTNET_ENVIRONMENT="Development"
-# Absolute: the Worker binary runs from its own bin/ output directory (see worker_pid below), not the repo root
-# that appsettings.Development.json's relative Email:PickupFolder default assumes.
-export Email__PickupFolder="$(pwd)/tmp/email-pickup"
+# Per run and absolute: the Worker runs from its own bin/ directory, and tests must see only this run's mail.
+pickup_folder="$(mktemp -d "${TMPDIR:-/tmp}/tgysm-e2e-pickup.XXXXXX")"
+export Email__Mode="Pickup"
+export Email__PickupFolder="$pickup_folder"
+export E2E_EMAIL_PICKUP_FOLDER="$pickup_folder"
+# The set-password link in the activation email points at the preview server the tests drive.
+export App__PublicBaseUrl="$PREVIEW_URL"
+# Short job intervals so a test waits seconds, not the 30 s production default, for an email.
+export Security__LoginPermitLimitPerMinute="$E2E_LOGIN_PERMIT_LIMIT_PER_MINUTE"
+export Worker__Jobs__OutboxDispatcher__IntervalSeconds="$E2E_JOB_INTERVAL_SECONDS"
+export Worker__Jobs__EmailSender__IntervalSeconds="$E2E_JOB_INTERVAL_SECONDS"
 
 for project in "${PROJECTS[@]}"; do
   mkdir -p "$LOG_DIR"

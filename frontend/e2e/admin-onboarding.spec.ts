@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-import { changePassword, expectNoHorizontalScroll, login, requiredEnv, visibleEntry } from './helpers';
+import { changePassword, expectNoHorizontalScroll, login, visibleEntry } from './helpers';
+import { adminSession } from './world';
 
-const ADMIN_NEW_PASSWORD = 'Admin-new-pass-2026';
 const USER_NEW_PASSWORD = 'User-new-pass-2026';
 
 test('login form works with the keyboard only', async ({ page }) => {
@@ -16,17 +16,11 @@ test('login form works with the keyboard only', async ({ page }) => {
   await expect(page.getByRole('alert')).toHaveText('E-posta veya şifre hatalı.');
 });
 
-test('admin onboards a user; deactivation ends that user session', async ({ page, browser }) => {
-  const adminEmail = requiredEnv('E2E_ADMIN_EMAIL');
-  const adminTemporaryPassword = requiredEnv('E2E_ADMIN_TEMP_PASSWORD');
+test('admin onboards a user; deactivation ends that user session', async ({ browser }) => {
+  // adminSession performs the first-login password change when no earlier spec has done it (specs run alphabetically).
+  const { context: adminContext, page } = await adminSession(browser);
   const userEmail = `e2e-${Date.now()}@example.com`;
 
-  await page.goto('/');
-  await expect(page).toHaveURL(/\/login$/);
-  await login(page, adminEmail, adminTemporaryPassword);
-  await expect(page).toHaveURL(/\/change-password$/);
-  await changePassword(page, adminTemporaryPassword, ADMIN_NEW_PASSWORD);
-  await expect(page.getByRole('heading', { name: /^Merhaba/ })).toBeVisible();
   await expectNoHorizontalScroll(page);
 
   await page.goto('/admin/users');
@@ -34,7 +28,8 @@ test('admin onboards a user; deactivation ends that user session', async ({ page
   const form = page.getByRole('dialog');
   await form.getByLabel('Ad', { exact: true }).fill('Deniz');
   await form.getByLabel('Soyad').fill('Aydın');
-  await form.getByLabel('E-posta').fill(userEmail);
+  await form.getByLabel('E-posta', { exact: true }).fill(userEmail);
+  await form.getByRole('radio', { name: 'Geçici şifre göster' }).check();
   await form.getByRole('button', { name: 'Oluştur' }).click();
   const userTemporaryPassword = ((await page.getByTestId('temporary-password').textContent()) ?? '').trim();
   expect(userTemporaryPassword).not.toBe('');
@@ -57,5 +52,5 @@ test('admin onboards a user; deactivation ends that user session', async ({ page
 
   await userPage.reload();
   await expect(userPage).toHaveURL(/\/login$/);
-  await userContext.close();
+  await Promise.all([userContext.close(), adminContext.close()]);
 });
