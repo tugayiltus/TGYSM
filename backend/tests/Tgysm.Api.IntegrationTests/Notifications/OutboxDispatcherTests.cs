@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Api.IntegrationTests.Tickets;
+using Tgysm.Application.Abstractions;
 using Tgysm.Application.Notifications;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Organization;
@@ -264,6 +265,55 @@ public sealed class OutboxDispatcherTests(ApiFactory factory) : IAsyncLifetime
         await using var check = factory.Database.CreateDbContext();
         var secondEvent = await check.OutboxEvents.SingleAsync(e => e.EventType == NotificationEventTypes.TicketCreated && e.TicketId == IdOf(second), Ct);
         Assert.Equal(OutboxStatus.Dispatched, secondEvent.Status);
+    }
+
+    /// <summary>
+    /// Claims like the real claimer, then — before handing the batch back — lets the leases expire and a second,
+    /// complete dispatcher run take the same events over: the returned batch is exactly what a slow run holds
+    /// after its batch lease ran out.
+    /// </summary>
+    private sealed class OvertakenClaimer(IOutboxClaimer inner, Func<Task> overtake) : IOutboxClaimer
+    {
+        public async Task<IReadOnlyList<OutboxEvent>> ClaimAsync(int batch, TimeSpan lease, CancellationToken cancellationToken)
+        {
+            var claimed = await inner.ClaimAsync(batch, lease, cancellationToken);
+            await overtake();
+            return claimed;
+        }
+    }
+
+    [Fact]
+    public async Task A_run_whose_batch_lease_was_overtaken_does_not_dispatch_the_events_again()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+        var resetPayload = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string> { [OutboxEvent.RequestedEmailKey] = world.EmployeeUser.Email });
+        await TestData.SaveAsync(factory, db =>
+            db.OutboxEvents.Add(OutboxEvent.Create(InternalEventTypes.PasswordResetRequested, null, null, resetPayload, null, DateTimeOffset.UtcNow)));
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var services = scope.ServiceProvider;
+        var claimer = new OvertakenClaimer(services.GetRequiredService<IOutboxClaimer>(), async () =>
+        {
+            await using (var db = factory.Database.CreateDbContext())
+            {
+                await db.Database.ExecuteSqlRawAsync("UPDATE notification_outbox SET locked_until = now() - interval '1 hour'", Ct);
+            }
+
+            await DispatchAsync();
+        });
+        var slowRun = new DispatchOutboxHandler(claimer, services.GetRequiredService<IServiceScopeFactory>(), TimeProvider.System,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<DispatchOutboxHandler>.Instance);
+
+        await slowRun.HandleAsync(50, Lease, Ct);
+
+        await using var check = factory.Database.CreateDbContext();
+        var ticketEvent = await check.OutboxEvents.SingleAsync(e => e.EventType == NotificationEventTypes.TicketCreated, Ct);
+        Assert.Equal(OutboxStatus.Dispatched, ticketEvent.Status);
+        Assert.Equal(0, ticketEvent.Attempts);
+        Assert.Null(ticketEvent.LastError);
+        Assert.Equal(1, await check.EmailDeliveries.CountAsync(d => d.OutboxId == ticketEvent.Id, Ct));
+        Assert.Equal(1, await check.PasswordTokens.CountAsync(t => t.UserId == world.EmployeeUser.Id, Ct));
     }
 
     [Fact]

@@ -32,6 +32,18 @@ public sealed class SendDueEmailsHandler(
         var processed = 0;
         foreach (var delivery in claimed)
         {
+            // The batch lease covers the whole batch and can run out before this row is reached (a slow SMTP
+            // server); another run may then have re-claimed and even sent it. Re-claim this one row first, with the
+            // lease value the batch claim wrote as the ownership token, and skip it when someone else now holds it.
+            var token = delivery.LockedUntil is { } batchToken
+                ? await claimer.ClaimOneAsync(delivery.Id, batchToken, lease, cancellationToken)
+                : null;
+            if (token is null)
+            {
+                logger.LogInformation("Email delivery {DeliveryId} was taken over by another run; skipping it.", delivery.Id);
+                continue;
+            }
+
             await using var scope = scopes.CreateAsyncScope();
             try
             {
@@ -40,7 +52,7 @@ public sealed class SendDueEmailsHandler(
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 logger.LogError(exception, "Email delivery {DeliveryId} failed to send.", delivery.Id);
-                await TryRecordFailureAsync(delivery.Id, exception.Message, cancellationToken);
+                await TryRecordFailureAsync(delivery.Id, token.Value, exception.Message, cancellationToken);
             }
 
             processed++;
@@ -55,12 +67,12 @@ public sealed class SendDueEmailsHandler(
     /// succeeded), and saving from it would persist that state. A failure to record is logged, never rethrown, so
     /// the rest of the claimed batch is still processed; the row then stays leased and is re-claimed on expiry.
     /// </summary>
-    private async Task TryRecordFailureAsync(Guid deliveryId, string error, CancellationToken cancellationToken)
+    private async Task TryRecordFailureAsync(Guid deliveryId, DateTimeOffset token, string error, CancellationToken cancellationToken)
     {
         try
         {
             await using var failureScope = scopes.CreateAsyncScope();
-            await RecordFailureAsync(failureScope.ServiceProvider, deliveryId, error, cancellationToken);
+            await RecordFailureAsync(failureScope.ServiceProvider, deliveryId, token, error, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -68,10 +80,21 @@ public sealed class SendDueEmailsHandler(
         }
     }
 
-    private async Task RecordFailureAsync(IServiceProvider scoped, Guid deliveryId, string error, CancellationToken cancellationToken)
+    private async Task RecordFailureAsync(IServiceProvider scoped, Guid deliveryId, DateTimeOffset token, string error, CancellationToken cancellationToken)
     {
         var db = scoped.GetRequiredService<IAppDbContext>();
         var delivery = await db.EmailDeliveries.SingleAsync(d => d.Id == deliveryId, cancellationToken);
+
+        // Only the run still holding the row may record a failure on it. Once another run has re-claimed it (its
+        // lease expired mid-send) or already marked it sent, recording here would turn a sent row back into a
+        // pending retry. The save below is xmin-guarded, so a takeover between this check and the save throws
+        // instead (and is logged by the caller) — the check and the write together form one conditional update.
+        if (delivery.Status != DeliveryStatus.Sending || delivery.LockedUntil != token)
+        {
+            logger.LogWarning("Email delivery {DeliveryId} is no longer held by this run; its failure is not recorded.", deliveryId);
+            return;
+        }
+
         delivery.RecordFailure(error, clock.GetUtcNow());
 
         // Only a *terminal* failure clears the account-link secret/body (spec §3.2 step 5): a still-retryable

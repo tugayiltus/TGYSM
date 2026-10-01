@@ -369,6 +369,74 @@ public sealed class EmailSenderTests(ApiFactory factory) : IAsyncLifetime
         Assert.Single(deliveries, d => d.Status == DeliveryStatus.Sent);
     }
 
+    [Fact]
+    public async Task A_row_whose_batch_lease_expired_mid_batch_is_sent_exactly_once_by_two_sender_runs()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee, subject: "Birinci");
+        await TicketWorld.CreateIncidentAsync(world.Employee, subject: "İkinci");
+        await DispatchOutboxAsync();
+
+        // Run A is slow on its first message: by then the batch lease on the rows it has not reached yet has
+        // expired, and run B claims and sends them. A must not send them a second time when it gets there.
+        var interfered = 0;
+        factory.EmailSender.BeforeSend = async _ =>
+        {
+            if (Interlocked.Exchange(ref interfered, 1) == 1)
+            {
+                return;
+            }
+
+            await using (var db = factory.Database.CreateDbContext())
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "UPDATE email_deliveries SET locked_until = now() - interval '1 hour' WHERE status = 'pending'", Ct);
+            }
+
+            await SendDueEmailsAsync();
+        };
+
+        await SendDueEmailsAsync();
+
+        Assert.Equal(2, factory.EmailSender.Sent.Count);
+        Assert.Equal(2, factory.EmailSender.Sent.Select(m => m.Subject).Distinct(StringComparer.Ordinal).Count());
+        await using var check = factory.Database.CreateDbContext();
+        Assert.Equal(2, await check.EmailDeliveries.CountAsync(d => d.Status == DeliveryStatus.Sent && d.Attempts == 0, Ct));
+    }
+
+    [Fact]
+    public async Task A_row_sent_by_another_run_after_this_runs_lease_expired_never_goes_back_to_pending()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TicketWorld.CreateIncidentAsync(world.Employee);
+        await DispatchOutboxAsync();
+
+        // Run A overruns even its own lease on the row it is sending; run B re-claims that row and sends it.
+        // A's late save then conflicts — that must not turn B's sent row back into a pending retry.
+        var interfered = 0;
+        factory.EmailSender.BeforeSend = async _ =>
+        {
+            if (Interlocked.Exchange(ref interfered, 1) == 1)
+            {
+                return;
+            }
+
+            await using (var db = factory.Database.CreateDbContext())
+            {
+                await db.Database.ExecuteSqlRawAsync("UPDATE email_deliveries SET locked_until = now() - interval '1 hour'", Ct);
+            }
+
+            await SendDueEmailsAsync();
+        };
+
+        await SendDueEmailsAsync();
+
+        var delivery = await SingleDeliveryAsync();
+        Assert.Equal(DeliveryStatus.Sent, delivery.Status);
+        Assert.Equal(0, delivery.Attempts);
+        Assert.Null(delivery.LastError);
+    }
+
     private async Task SetSendingAsync(Guid deliveryId, int lockedUntilMinutesFromNow)
     {
         await using var db = factory.Database.CreateDbContext();

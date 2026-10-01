@@ -32,6 +32,9 @@ public sealed class EmailOptions
 
 public sealed class SmtpOptions
 {
+    /// <summary>Used when <see cref="TimeoutSeconds"/> is unset (zero or negative).</summary>
+    public const int DefaultTimeoutSeconds = 30;
+
     public string Host { get; set; } = string.Empty;
 
     public int Port { get; set; }
@@ -42,4 +45,12 @@ public sealed class SmtpOptions
 
     /// <summary>Secret: user-secrets / environment only (CLAUDE.md). Never appears in appsettings, logs, audit, or a delivery's <c>last_error</c>.</summary>
     public string? Password { get; set; }
+
+    /// <summary>
+    /// Hard deadline for one whole send (connect, authenticate, send, disconnect). The email sender's row lease
+    /// must outlast it (validated at Worker startup), or another run could re-claim a row still being sent.
+    /// </summary>
+    public int TimeoutSeconds { get; set; }
+
+    public TimeSpan EffectiveTimeout => TimeSpan.FromSeconds(TimeoutSeconds > 0 ? TimeoutSeconds : DefaultTimeoutSeconds);
 }

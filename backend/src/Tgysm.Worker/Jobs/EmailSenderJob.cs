@@ -17,7 +17,14 @@ public sealed class EmailSenderJob(
 
     /// <summary>Used when <c>Worker:Jobs:EmailSender</c> leaves a knob unset (zero or missing).</summary>
     private const int DefaultBatchSize = 50;
-    private const int DefaultLeaseSeconds = 60;
+    public const int DefaultLeaseSeconds = 60;
+
+    /// <summary>The row lease this job claims with: <c>Worker:Jobs:EmailSender:LeaseSeconds</c>, or the default when unset.</summary>
+    public static TimeSpan ResolveLease(WorkerOptions options)
+    {
+        var leaseSeconds = options.Jobs.GetValueOrDefault(JobName)?.LeaseSeconds ?? 0;
+        return TimeSpan.FromSeconds(leaseSeconds > 0 ? leaseSeconds : DefaultLeaseSeconds);
+    }
 
     protected override string Name => JobName;
 
@@ -28,7 +35,7 @@ public sealed class EmailSenderJob(
         var currentOptions = scoped.GetRequiredService<IOptionsMonitor<WorkerOptions>>();
         var jobOptions = currentOptions.CurrentValue.Jobs.GetValueOrDefault(Name) ?? new JobOptions();
         var batch = jobOptions.BatchSize > 0 ? jobOptions.BatchSize : DefaultBatchSize;
-        var lease = TimeSpan.FromSeconds(jobOptions.LeaseSeconds > 0 ? jobOptions.LeaseSeconds : DefaultLeaseSeconds);
+        var lease = ResolveLease(currentOptions.CurrentValue);
 
         var handler = scoped.GetRequiredService<SendDueEmailsHandler>();
         await handler.HandleAsync(batch, lease, cancellationToken);

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Tgysm.Application;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
@@ -19,7 +20,12 @@ internal static class Program
         // AddApplication() registers audit/handler types that need ICurrentActor; Tgysm.Api supplies HttpCurrentActor
         // for a request, the Worker has no signed-in user so it supplies its own system actor instead.
         builder.Services.AddScoped<ICurrentActor, WorkerCurrentActor>();
-        builder.Services.AddOptions<WorkerOptions>().BindConfiguration(WorkerOptions.SectionName);
+        builder.Services.AddOptions<WorkerOptions>()
+            .BindConfiguration(WorkerOptions.SectionName)
+            .Validate<IOptions<EmailOptions>>(
+                (worker, email) => WorkerOptionsValidation.EmailSenderLeaseOutlastsSmtpTimeout(worker, email.Value),
+                WorkerOptionsValidation.EmailSenderLeaseErrorMessage)
+            .ValidateOnStart();
         builder.Services.AddOptions<AppOptions>()
             .BindConfiguration(AppOptions.SectionName)
             .Validate(o => AppOptionsValidation.IsValidPublicBaseUrl(o.PublicBaseUrl), AppOptionsValidation.PublicBaseUrlErrorMessage)

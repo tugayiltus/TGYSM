@@ -11,23 +11,34 @@ internal sealed class SmtpEmailSender(IOptionsMonitor<EmailOptions> options) : I
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
         var settings = options.CurrentValue;
+        var timeout = settings.Smtp.EffectiveTimeout;
+
+        // One deadline for the whole exchange, not MailKit's per-operation default (2 minutes each): the email
+        // sender's row lease is validated against this value, so a send must never outlive it.
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(timeout);
         try
         {
             var mime = EmailMimeMessageFactory.Build(settings.From, message);
-            using var client = new SmtpClient();
+            using var client = new SmtpClient { Timeout = (int)timeout.TotalMilliseconds };
             await client.ConnectAsync(
                 settings.Smtp.Host,
                 settings.Smtp.Port,
                 settings.Smtp.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto,
-                cancellationToken);
+                deadline.Token);
 
             if (!string.IsNullOrEmpty(settings.Smtp.UserName))
             {
-                await client.AuthenticateAsync(settings.Smtp.UserName, settings.Smtp.Password ?? string.Empty, cancellationToken);
+                await client.AuthenticateAsync(settings.Smtp.UserName, settings.Smtp.Password ?? string.Empty, deadline.Token);
             }
 
-            await client.SendAsync(mime, cancellationToken);
-            await client.DisconnectAsync(true, cancellationToken);
+            await client.SendAsync(mime, deadline.Token);
+            await client.DisconnectAsync(true, deadline.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Our own deadline, not a host shutdown: an ordinary, retryable send failure.
+            throw new InvalidOperationException($"SMTP send timed out after {timeout.TotalSeconds:0} seconds.");
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

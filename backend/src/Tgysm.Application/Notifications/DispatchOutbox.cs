@@ -39,7 +39,7 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
             await using var scope = scopes.CreateAsyncScope();
             try
             {
-                await DispatchOneAsync(scope.ServiceProvider, outboxEvent.Id, cancellationToken);
+                await DispatchOwnedAsync(scope.ServiceProvider, outboxEvent, cancellationToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -80,9 +80,34 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task DispatchOneAsync(IServiceProvider scoped, Guid outboxEventId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Dispatches one claimed event only while this run still owns it. The batch lease can run out before the
+    /// event is reached, and another run may then have re-claimed and dispatched it; a second dispatch would add
+    /// duplicate deliveries (and, for a reset request, a second token and email). One conditional update — still
+    /// pending and still carrying the lease value this run's claim wrote — both proves ownership and row-locks the
+    /// event until the dispatch commits, so no other run can take it over in between.
+    /// </summary>
+    private async Task DispatchOwnedAsync(IServiceProvider scoped, OutboxEvent claimed, CancellationToken cancellationToken)
     {
         var db = scoped.GetRequiredService<IAppDbContext>();
+        await db.RunInTransactionAsync(async ct =>
+        {
+            var token = claimed.LockedUntil;
+            var owned = await db.OutboxEvents
+                .Where(e => e.Id == claimed.Id && e.Status == OutboxStatus.Pending && e.LockedUntil == token)
+                .ExecuteUpdateAsync(set => set.SetProperty(e => e.LockedUntil, e => e.LockedUntil), ct);
+            if (owned == 0)
+            {
+                logger.LogInformation("Outbox event {OutboxEventId} was taken over by another run; skipping it.", claimed.Id);
+                return;
+            }
+
+            await DispatchOneAsync(scoped, db, claimed.Id, ct);
+        }, cancellationToken);
+    }
+
+    private async Task DispatchOneAsync(IServiceProvider scoped, IAppDbContext db, Guid outboxEventId, CancellationToken cancellationToken)
+    {
         var recipients = scoped.GetRequiredService<RecipientResolver>();
         var context = scoped.GetRequiredService<NotificationContextLoader>();
 
