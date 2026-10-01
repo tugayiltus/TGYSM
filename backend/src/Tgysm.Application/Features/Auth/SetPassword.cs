@@ -22,12 +22,13 @@ internal sealed class SetPasswordValidator : AbstractValidator<SetPasswordComman
 /// Redeems a password-set link (spec §4, ADR-0017). A single conditional update
 /// (<c>used_at IS NULL AND expires_at &gt; now</c>) claims the token, so of two parallel redemptions only one can
 /// win; in the same transaction the password is set, <c>must_change_password</c> cleared and the security stamp
-/// rotated (ending every other session). Every failure is <see cref="PasswordTokenInvalidException"/>.
+/// rotated (ending every other session), and every other unused link of the user is voided. Every failure is <see cref="PasswordTokenInvalidException"/>.
 /// </summary>
 public sealed class SetPasswordHandler(
     IAppDbContext db,
     IValidator<SetPasswordCommand> validator,
     IPasswordService passwords,
+    PasswordTokenIssuer tokens,
     IAuditLog audit,
     TimeProvider clock)
 {
@@ -59,6 +60,8 @@ public sealed class SetPasswordHandler(
                 var user = await db.Users.SingleOrDefaultAsync(u => u.Id == token.UserId && u.IsActive, ct)
                     ?? throw new PasswordTokenInvalidException();
                 user.ChangePassword(passwordHash, now);
+                // Any other link still out there (an activation next to a reset, say) dies with this one.
+                await tokens.RevokeUnusedAsync(user.Id, ct);
                 audit.Record(AuditActions.UserPasswordSetByLink, AuditEntityTypes.User, user.Id, actorUserId: user.Id);
                 await db.SaveChangesAsync(ct);
             },

@@ -16,6 +16,20 @@ public sealed class EmailDeliveryTests
         EmailDelivery.Create(Guid.NewGuid(), Recipient, NotificationEventTypes.TicketCreated, "Konu", body, Now);
 
     [Fact]
+    public void Abandon_moves_the_delivery_straight_to_failed_with_the_reason()
+    {
+        var delivery = CreateDelivery();
+        delivery.MarkSending(Now);
+
+        delivery.Abandon("address changed", Now);
+
+        Assert.Equal(DeliveryStatus.Failed, delivery.Status);
+        Assert.Equal("address changed", delivery.LastError);
+        Assert.Null(delivery.LockedUntil);
+        Assert.Equal(0, delivery.Attempts);
+    }
+
+    [Fact]
     public void Create_cuts_subject_and_body_to_their_column_limits()
     {
         var delivery = EmailDelivery.Create(Guid.NewGuid(), Recipient, NotificationEventTypes.TicketCreated,

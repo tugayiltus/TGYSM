@@ -93,6 +93,91 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(ErrorCodes.TokenInvalid, await ApiClient.ReadCodeAsync(response));
     }
 
+    private async Task SendDueEmailsAsync()
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<SendDueEmailsHandler>().HandleAsync(DispatchBatch, Lease, Ct);
+    }
+
+    private static async Task ChangeEmailAsync(ApiClient admin, Guid userId, string newEmail)
+    {
+        uint version;
+        using (var detail = await admin.GetAsync($"{UsersPath}/{userId}"))
+        {
+            Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+            version = (await admin.ReadJsonAsync<JsonElement>(detail)).GetProperty("version").GetUInt32();
+        }
+
+        using var update = await admin.PutAsync($"{UsersPath}/{userId}",
+            new { version, firstName = "Deniz", lastName = "Kaya", email = newEmail, role = "employee", departmentId = (Guid?)null, locationId = (Guid?)null });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+    }
+
+    [Fact]
+    public async Task Setting_the_password_by_one_link_revokes_every_other_unused_link_of_the_user()
+    {
+        var (admin, _) = await LoginAsAdminAsync();
+        var userId = await CreateUserAsync(admin, "deniz@example.com");
+        var activation = await LatestTokenAsync(userId, NotificationEventTypes.AccountActivation);
+        using (var reset = await admin.PostAsync($"{UsersPath}/{userId}/reset-password", new { delivery = EmailLink }))
+        {
+            Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+        }
+
+        var resetToken = await LatestTokenAsync(userId, NotificationEventTypes.PasswordReset);
+
+        using var set = await SetPasswordAsync(ApiClient.Create(factory), activation);
+        Assert.Equal(HttpStatusCode.NoContent, set.StatusCode);
+
+        await AssertTokenInvalidAsync(resetToken);
+    }
+
+    [Fact]
+    public async Task Changing_the_users_email_revokes_their_unused_links()
+    {
+        var (admin, _) = await LoginAsAdminAsync();
+        var userId = await CreateUserAsync(admin, "deniz@example.com");
+        var activation = await LatestTokenAsync(userId, NotificationEventTypes.AccountActivation);
+
+        await ChangeEmailAsync(admin, userId, "deniz.kaya@example.com");
+
+        await AssertTokenInvalidAsync(activation);
+    }
+
+    [Fact]
+    public async Task A_temporary_password_reset_revokes_the_users_unused_links()
+    {
+        var (admin, _) = await LoginAsAdminAsync();
+        var userId = await CreateUserAsync(admin, "deniz@example.com");
+        var activation = await LatestTokenAsync(userId, NotificationEventTypes.AccountActivation);
+
+        using (var reset = await admin.PostAsync($"{UsersPath}/{userId}/reset-password", new { delivery = TemporaryPassword }))
+        {
+            Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+        }
+
+        await AssertTokenInvalidAsync(activation);
+    }
+
+    [Fact]
+    public async Task An_account_email_queued_before_an_email_change_fails_instead_of_going_to_the_old_address()
+    {
+        var (admin, _) = await LoginAsAdminAsync();
+        var userId = await CreateUserAsync(admin, "deniz@example.com");
+        await DispatchAsync();
+
+        await ChangeEmailAsync(admin, userId, "deniz.kaya@example.com");
+        await SendDueEmailsAsync();
+
+        Assert.Empty(factory.EmailSender.Sent);
+        await using var db = factory.Database.CreateDbContext();
+        var delivery = await db.EmailDeliveries.AsNoTracking().SingleAsync(d => d.RecipientUserId == userId, Ct);
+        Assert.Equal(DeliveryStatus.Failed, delivery.Status);
+        Assert.Equal(EmailDelivery.ClearedBodyMarker, delivery.Body);
+        var activation = Assert.Single(await AccountEventsAsync(userId, NotificationEventTypes.AccountActivation));
+        Assert.Null(activation.ProtectedSecret);
+    }
+
     [Fact]
     public async Task Create_with_default_email_link_returns_no_password_and_queues_activation_with_expiry()
     {

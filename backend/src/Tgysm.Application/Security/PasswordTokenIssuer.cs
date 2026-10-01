@@ -51,6 +51,21 @@ public sealed class PasswordTokenIssuer(
         return rawToken;
     }
 
+    /// <summary>
+    /// Voids every unused token of the user, of any purpose (final review F5): after a password is set, the email
+    /// address changes or a temporary password replaces the old one, no link issued before may still work. Adds to
+    /// the caller's unit of work; the caller saves once.
+    /// </summary>
+    public async Task RevokeUnusedAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var now = clock.GetUtcNow();
+        var unused = await db.PasswordTokens.Where(t => t.UserId == userId && t.UsedAt == null).ToListAsync(cancellationToken);
+        foreach (var token in unused)
+        {
+            token.Void(now);
+        }
+    }
+
     /// <summary>The stored form of a raw token: SHA-256 over its UTF-8 bytes, base64url.</summary>
     public static string Hash(string rawToken) =>
         Base64Url.EncodeToString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));

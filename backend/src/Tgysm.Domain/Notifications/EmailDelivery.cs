@@ -136,6 +136,18 @@ public sealed class EmailDelivery : Entity
     }
 
     /// <summary>
+    /// Gives up on the delivery without a send attempt (e.g. the recipient's address changed after an account email
+    /// was queued): straight to <see cref="DeliveryStatus.Failed"/>, no further retries.
+    /// </summary>
+    public void Abandon(string reason, DateTimeOffset now)
+    {
+        Status = DeliveryStatus.Failed;
+        LastError = reason.Length > LastErrorMaxLength ? reason[..LastErrorMaxLength] : reason;
+        LockedUntil = null;
+        NextAttemptAt = now;
+    }
+
+    /// <summary>
     /// Admin retry (spec §3.2 step 4): only a <see cref="DeliveryStatus.Failed"/> delivery can be retried, reset
     /// to <see cref="DeliveryStatus.Pending"/>, due immediately, with a clean attempt count.
     /// </summary>

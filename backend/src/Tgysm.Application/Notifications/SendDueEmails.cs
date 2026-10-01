@@ -24,6 +24,8 @@ public sealed class SendDueEmailsHandler(
     TimeProvider clock,
     ILogger<SendDueEmailsHandler> logger)
 {
+    public const string RecipientEmailChangedError = "Recipient email address changed after this account email was queued.";
+
     public async Task<int> HandleAsync(int batch, TimeSpan lease, CancellationToken cancellationToken)
     {
         // Two worker instances calling HandleAsync at once claim disjoint rows (ADR-0014); the claimed entities
@@ -123,6 +125,17 @@ public sealed class SendDueEmailsHandler(
             ? await db.OutboxEvents.SingleAsync(e => e.Id == delivery.OutboxId, cancellationToken)
             : null;
         var recipient = await db.Users.AsNoTracking().SingleAsync(u => u.Id == delivery.RecipientUserId, cancellationToken);
+        if (isAccountEvent && recipient.NormalizedEmail != User.NormalizeEmail(delivery.RecipientEmail))
+        {
+            // The address changed after the account email was queued (its link was revoked with the change): never
+            // send a password link to the old address.
+            delivery.Abandon(RecipientEmailChangedError, clock.GetUtcNow());
+            delivery.ClearBody();
+            outboxEvent!.ClearProtectedSecret();
+            await db.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
         var body = isAccountEvent
             ? await RenderAccountBodyAsync(scoped, db, delivery, outboxEvent!, recipient, cancellationToken)
             : delivery.Body ?? string.Empty;

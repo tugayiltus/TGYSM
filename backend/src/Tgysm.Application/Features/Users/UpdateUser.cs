@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Security;
 using Tgysm.Application.Features.Organization;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
@@ -35,6 +36,7 @@ public sealed class UpdateUserHandler(
     IValidator<UpdateUserCommand> validator,
     OrganizationReferences references,
     LastAdminGuard lastAdmin,
+    PasswordTokenIssuer tokens,
     IAuditLog audit,
     TimeProvider clock)
 {
@@ -66,7 +68,14 @@ public sealed class UpdateUserHandler(
 
             var before = UserAuditSnapshot.From(user);
             var now = clock.GetUtcNow();
+            var emailChanged = normalizedEmail != user.NormalizedEmail;
             user.UpdateProfile(command.FirstName, command.LastName, command.Email, command.DepartmentId, command.LocationId, now);
+            if (emailChanged)
+            {
+                // A link mailed to the old address must not keep working once the account moves to a new one.
+                await tokens.RevokeUnusedAsync(user.Id, ct);
+            }
+
             user.ChangeRole(command.Role, now);
             var after = UserAuditSnapshot.From(user);
 

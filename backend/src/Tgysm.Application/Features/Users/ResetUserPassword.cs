@@ -44,6 +44,7 @@ public sealed class ResetUserPasswordHandler(
 
         var temporaryPassword = temporaryPasswords.Generate();
         user.SetTemporaryPassword(passwords.Hash(temporaryPassword), clock.GetUtcNow());
+        await tokens.RevokeUnusedAsync(user.Id, cancellationToken);
         audit.Record(AuditActions.UserPasswordReset, AuditEntityTypes.User, user.Id);
         await db.SaveChangesAsync(cancellationToken);
         return new TemporaryPasswordResult(user.Id, temporaryPassword);
