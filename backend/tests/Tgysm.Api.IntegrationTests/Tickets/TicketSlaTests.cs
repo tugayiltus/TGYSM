@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Application.Sla;
@@ -104,6 +105,38 @@ public sealed class TicketSlaTests(FakeClockApiFactory factory) : IClassFixture<
         Assert.Empty(await RiskAsync(world.Field));
         var detail = await TicketWorld.ReadAsync(world.Desk, TicketWorld.PathOf(ticket));
         Assert.True(Metric(detail, FirstResponse).GetProperty("isWarned").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Risk_queue_keeps_paused_and_breached_only_instances_but_not_stopped_ones()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var paused = await TicketWorld.CreateIncidentAsync(world.Employee, "Duraklatılmış");
+        var breachedOnly = await TicketWorld.CreateIncidentAsync(world.Employee, "Yalnız ihlal");
+        var stopped = await TicketWorld.CreateIncidentAsync(world.Employee, "Durmuş");
+        var healthy = await TicketWorld.CreateIncidentAsync(world.Employee, "Sağlıklı");
+        var now = factory.Clock.GetUtcNow();
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            var first = db.SlaInstances.Where(i => i.Metric == Tgysm.Domain.Sla.SlaMetric.FirstResponse);
+            Task Update(JsonElement t, Action<Microsoft.EntityFrameworkCore.Query.UpdateSettersBuilder<Tgysm.Domain.Sla.SlaInstance>> set)
+            {
+                var number = TicketWorld.NumberOf(t);
+                return first.Where(i => db.Tickets.Any(x => x.Id == i.TicketId && x.Number == number)).ExecuteUpdateAsync(set, Ct);
+            }
+
+            await Update(paused, s => s.SetProperty(i => i.WarnedAt, now).SetProperty(i => i.RunningSince, (DateTimeOffset?)null));
+            await Update(breachedOnly, s => s.SetProperty(i => i.BreachedAt, now));
+            await Update(stopped, s => s.SetProperty(i => i.WarnedAt, now).SetProperty(i => i.StoppedAt, now));
+        }
+
+        var risk = await RiskAsync(world.Desk);
+
+        Assert.Equal(2, risk.Count);
+        Assert.Contains(TicketWorld.NumberOf(paused), risk);
+        Assert.Contains(TicketWorld.NumberOf(breachedOnly), risk);
+        Assert.DoesNotContain(TicketWorld.NumberOf(stopped), risk);
+        Assert.DoesNotContain(TicketWorld.NumberOf(healthy), risk);
     }
 
     [Fact]

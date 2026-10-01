@@ -37,9 +37,9 @@ describe('WorkspacePage', () => {
     const { user, router } = renderRoute('/workspace');
 
     expect(await screen.findByText('4 kayıt')).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: /SLA riski/ }));
+    await user.click(screen.getByRole('link', { name: /SLA Riski/ }));
 
     await waitFor(() => expect(router.state.location.pathname + router.state.location.search).toBe('/workspace/queue?queue=sla_risk'));
-    expect(await screen.findByRole('heading', { name: 'SLA riski' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'SLA Riski' })).toBeInTheDocument();
   });
 });

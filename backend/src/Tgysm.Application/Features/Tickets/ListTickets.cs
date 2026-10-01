@@ -42,7 +42,7 @@ public sealed class ListTicketsHandler(IAppDbContext db, TicketScope scope, Tick
             TicketQueue.AssignedToMe => tickets.Where(t => t.AssigneeId == viewer.UserId),
             TicketQueue.Unassigned => tickets.Where(t => t.AssigneeId == null && t.Status != TicketStatus.Completed && t.Status != TicketStatus.Cancelled),
             TicketQueue.OnHold => tickets.Where(t => t.Status == TicketStatus.OnHold),
-            TicketQueue.SlaRisk => tickets.Where(t => db.SlaInstances.Any(i => i.TicketId == t.Id && i.StoppedAt == null && i.RunningSince != null && (i.WarnedAt != null || i.BreachedAt != null))),
+            TicketQueue.SlaRisk => tickets.Where(t => db.SlaInstances.Any(i => i.TicketId == t.Id && i.StoppedAt == null && (i.WarnedAt != null || i.BreachedAt != null))),
             _ => tickets,
         };
 
