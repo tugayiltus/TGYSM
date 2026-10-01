@@ -33,7 +33,8 @@ internal static class Program
 
         builder.Services.AddHostedService<OutboxDispatcherJob>();
         builder.Services.AddHostedService<EmailSenderJob>();
-        // Remaining jobs (SLA evaluator, export runner, cleanup) register themselves here in later tasks.
+        builder.Services.AddHostedService<SlaMonitorJob>();
+        // Remaining jobs (export runner, cleanup) register themselves here in later tasks.
 
         var app = builder.Build();
         await app.RunAsync();
