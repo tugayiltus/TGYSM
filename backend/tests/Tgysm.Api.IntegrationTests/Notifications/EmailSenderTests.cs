@@ -265,6 +265,40 @@ public sealed class EmailSenderTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_terminally_failed_account_email_clears_its_body_and_secret()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var protector = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>().CreateProtector(OutboxEvent.ProtectedSecretPurpose);
+            var protectedSecret = protector.Protect("raw-activation-token-value");
+            await TestData.SaveAsync(factory, db =>
+                db.OutboxEvents.Add(OutboxEvent.Create(NotificationEventTypes.AccountActivation, null, world.EmployeeUser.Id, "{}", protectedSecret, DateTimeOffset.UtcNow)));
+        }
+
+        await DispatchOutboxAsync();
+        factory.EmailSender.FailWith = _ => new InvalidOperationException("smtp down");
+        for (var attempt = 1; attempt <= RetryBackoff.MaxAttempts; attempt++)
+        {
+            await SendDueEmailsAsync();
+            var current = await SingleDeliveryAsync();
+            if (attempt < RetryBackoff.MaxAttempts)
+            {
+                // Still retryable: the secret must survive, or the next attempt could not render the link.
+                await using var db = factory.Database.CreateDbContext();
+                Assert.NotNull((await db.OutboxEvents.AsNoTracking().SingleAsync(e => e.Id == current.OutboxId, Ct)).ProtectedSecret);
+                await ForceDueNowAsync(factory, current.Id);
+            }
+        }
+
+        var failed = await SingleDeliveryAsync();
+        Assert.Equal(DeliveryStatus.Failed, failed.Status);
+        Assert.Equal(EmailDelivery.ClearedBodyMarker, failed.Body);
+        await using var check = factory.Database.CreateDbContext();
+        Assert.Null((await check.OutboxEvents.AsNoTracking().SingleAsync(e => e.Id == failed.OutboxId, Ct)).ProtectedSecret);
+    }
+
+    [Fact]
     public async Task Two_parallel_sender_runs_send_each_delivery_once()
     {
         const int ticketCount = 10;
