@@ -117,7 +117,7 @@ public sealed class SlaInstance : Entity
         AddEvent(SlaEventKind.Resumed, now);
     }
 
-    /// <summary>Applies a new target (priority change): start and elapsed time are kept, an earlier breach stays recorded, and the warning mark resets when the new warning moment is still ahead.</summary>
+    /// <summary>Applies a new target (priority change): start and elapsed time are kept, an earlier breach stays recorded, and the warning mark resets while the new warning threshold is not yet used up.</summary>
     public void ChangeTarget(int targetMinutes, int warningPercent, DateTimeOffset now, BusinessCalendarRules rules)
     {
         EnsureNotStopped();
@@ -128,11 +128,13 @@ public sealed class SlaInstance : Entity
         {
             ElapsedSeconds += BusinessTimeCalculator.SecondsBetween(rules, since, now);
             RunFrom(now, rules);
-            if (WarnAt > now)
-            {
-                // A raised target can warn again at its new threshold; an earlier breach stays recorded.
-                WarnedAt = null;
-            }
+        }
+
+        if (ElapsedSeconds < (long)TargetMinutes * SecondsPerMinute * WarningPercent / PercentBase)
+        {
+            // The new warning threshold is not yet used up (running or paused): a raised target can warn again.
+            // An earlier breach stays recorded.
+            WarnedAt = null;
         }
 
         AddEvent(SlaEventKind.TargetChanged, now, new { oldMinutes = old, newMinutes = targetMinutes });

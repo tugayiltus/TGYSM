@@ -84,7 +84,7 @@ public sealed class SlaMonitorTests(FakeClockApiFactory factory) : IClassFixture
         var warning = Assert.Single(await OutboxAsync(NotificationEventTypes.SlaWarning));
         Assert.Equal(ticket.GetProperty("id").GetGuid(), warning.TicketId);
         using var payload = JsonDocument.Parse(warning.Payload);
-        Assert.Equal(SlaMetricLabels.Of(SlaMetric.FirstResponse), payload.RootElement.GetProperty(OutboxEvent.SlaMetricKey).GetString());
+        Assert.Equal(SlaMetricLabels.FirstResponseKey, payload.RootElement.GetProperty(OutboxEvent.SlaMetricKey).GetString());
         var dueAt = (await InstanceAsync(ticket, SlaMetric.FirstResponse)).DueAt;
         Assert.Equal(dueAt, payload.RootElement.GetProperty(OutboxEvent.SlaDueAtKey).GetDateTimeOffset());
         Assert.Equal(1, await EventCountAsync(SlaEventKind.Warning));
@@ -228,6 +228,8 @@ public sealed class SlaMonitorTests(FakeClockApiFactory factory) : IClassFixture
                 .ToListAsync(Ct))
             .GroupBy(x => x.TicketId)
             .ToDictionary(g => g.Key!.Value, g => g.Select(x => x.RecipientUserId).ToList());
+        var bodies = await db.EmailDeliveries.AsNoTracking().Where(d => d.TemplateType == NotificationEventTypes.SlaWarning).Select(d => d.Body).ToListAsync(Ct);
+        Assert.All(bodies, body => Assert.Contains("ilk yanıt süresi dolmak üzere", body));
         Assert.Equal([world.DeskUser.Id], recipientsByTicket[assigned.GetProperty("id").GetGuid()]);
         Assert.Contains(world.DeskUser.Id, recipientsByTicket[unassigned.GetProperty("id").GetGuid()]);
         Assert.DoesNotContain(world.EmployeeUser.Id, recipientsByTicket[unassigned.GetProperty("id").GetGuid()]);

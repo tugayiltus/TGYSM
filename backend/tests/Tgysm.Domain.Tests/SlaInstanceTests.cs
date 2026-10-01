@@ -224,35 +224,57 @@ public sealed class SlaInstanceTests
     }
 
     [Fact]
-    public void Pause_friday_afternoon_and_resume_monday_counts_only_business_time()
+    public void Resume_on_a_closed_weekend_day_pushes_the_remaining_time_into_the_next_week()
     {
         var friday = Monday.AddDays(4);
-        var nextMonday = Monday.AddDays(7);
         var instance = Start(At(friday, 10), minutes: OneHourMinutes * 8);
-        instance.Pause(HoldReason.User, At(friday, 15), Rules);
+        instance.Pause(HoldReason.User, At(friday, 12), Rules);
 
-        Assert.Equal(5 * SecondsPerHour, instance.ElapsedSeconds);
+        instance.Resume(At(friday.AddDays(1), 10), Rules);
 
-        instance.Resume(At(nextMonday, 10), Rules);
-
-        // 5 h used on Friday, 3 h left: Monday 10:00 -> 13:00. The weekend adds nothing.
-        Assert.Equal(5 * SecondsPerHour, instance.ElapsedSeconds);
-        Assert.Equal(At(nextMonday, 13), instance.DueAt);
+        // 2 h used on Friday, 6 h left: the closed Saturday and Sunday count nothing, so they run Monday 09:00-15:00.
+        Assert.Equal(2 * SecondsPerHour, instance.ElapsedSeconds);
+        Assert.Equal(At(friday.AddDays(3), 15), instance.DueAt);
     }
 
     [Fact]
-    public void Hold_across_a_holiday_adds_no_business_time()
+    public void Running_across_a_weekend_counts_only_business_time()
+    {
+        var friday = Monday.AddDays(4);
+        var instance = Start(At(friday, 16), minutes: OneHourMinutes * 8);
+
+        instance.Pause(HoldReason.User, At(friday.AddDays(3), 10), Rules);
+
+        // Friday 16:00-18:00 (2 h) plus Monday 09:00-10:00 (1 h).
+        Assert.Equal(3 * SecondsPerHour, instance.ElapsedSeconds);
+    }
+
+    [Fact]
+    public void Resume_before_a_holiday_pushes_the_remaining_time_past_it()
     {
         var holiday = Monday.AddDays(1);
         var rules = Rules with { Holidays = new HashSet<DateOnly> { holiday } };
         var instance = SlaInstance.Start(TicketId, SlaMetric.Resolution, Target(OneHourMinutes * 8), VersionId, At(Monday, 10), rules, paused: false, pauseReason: null);
         instance.Pause(HoldReason.User, At(Monday, 16), rules);
 
-        instance.Resume(At(Monday.AddDays(2), 9), rules);
+        instance.Resume(At(Monday, 17), rules);
 
-        // 6 h used on Monday, 2 h left from Wednesday 09:00; Tuesday is a holiday.
+        // 6 h used, 2 h left: Monday 17:00-18:00 (1 h), the holiday Tuesday counts nothing, Wednesday 09:00-10:00 (1 h).
         Assert.Equal(6 * SecondsPerHour, instance.ElapsedSeconds);
-        Assert.Equal(At(Monday.AddDays(2), 11), instance.DueAt);
+        Assert.Equal(At(Monday.AddDays(2), 10), instance.DueAt);
+    }
+
+    [Fact]
+    public void Running_across_a_holiday_counts_only_business_time()
+    {
+        var holiday = Monday.AddDays(1);
+        var rules = Rules with { Holidays = new HashSet<DateOnly> { holiday } };
+        var instance = SlaInstance.Start(TicketId, SlaMetric.Resolution, Target(OneHourMinutes * 8), VersionId, At(Monday, 17), rules, paused: false, pauseReason: null);
+
+        instance.Pause(HoldReason.User, At(Monday.AddDays(2), 10), rules);
+
+        // Monday 17:00-18:00 (1 h) plus Wednesday 09:00-10:00 (1 h).
+        Assert.Equal(2 * SecondsPerHour, instance.ElapsedSeconds);
     }
 
     [Fact]
@@ -276,5 +298,21 @@ public sealed class SlaInstanceTests
         instance.ChangeTarget(OneHourMinutes, WarningPercent, At(Monday, 13, 30), Rules);
 
         Assert.NotNull(instance.WarnedAt);
+    }
+
+    [Fact]
+    public void Raising_the_target_while_paused_lets_the_instance_warn_again_after_resume()
+    {
+        var instance = Start(At(Monday, 10));
+        instance.RecordWarning(At(Monday, 13));
+        instance.Pause(HoldReason.User, At(Monday, 13, 30), Rules);
+
+        instance.ChangeTarget(OneHourMinutes * 8, WarningPercent, At(Monday, 14), Rules);
+        Assert.Null(instance.WarnedAt);
+
+        instance.Resume(At(Monday, 15), Rules);
+
+        Assert.Null(instance.WarnedAt);
+        Assert.True(instance.WarnAt > At(Monday, 15));
     }
 }

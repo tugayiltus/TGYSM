@@ -47,7 +47,7 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
 
         // sla_warning/sla_breached: metric and due time come from the event's own payload (ids and reason codes
         // only, per OutboxEvent.Payload) once the SLA monitor (a later task) starts writing them.
-        Set(TemplateVariables.SlaMetric, PayloadString(outboxEvent, OutboxEvent.SlaMetricKey));
+        Set(TemplateVariables.SlaMetric, PayloadString(outboxEvent, OutboxEvent.SlaMetricKey) is { } metricKey ? SlaMetricLabels.LabelOfKey(metricKey) : null);
         var dueAt = PayloadDate(outboxEvent, OutboxEvent.SlaDueAtKey);
         Set(TemplateVariables.DueAt, dueAt is { } due ? clock.Format(due) : null);
 

@@ -10,7 +10,7 @@ namespace Tgysm.Application.Sla;
 /// One SLA monitor sweep (ADR-0014, ADR-0018, spec §5.4): marks running instances whose warning or due moment has
 /// passed and records the matching event and notification. Each mark is a conditional <c>ExecuteUpdateAsync</c>
 /// (still unmarked, running, not stopped), so of several concurrent runs exactly one wins a row and only the winner
-/// writes the <see cref="SlaEvent"/> and outbox rows, in the same transaction as the update. It writes only the
+/// writes the <see cref="SlaEvent"/> and outbox rows, in the same (per-instance) transaction as the update. It writes only the
 /// warning/breach columns, never the rest of the instance, so it cannot fail a user's ticket action.
 /// A breach on an instance never warned also warns first (the warning moment is never later than the due moment).
 /// </summary>
@@ -18,20 +18,22 @@ public sealed class MonitorSlaHandler(IAppDbContext db, INotificationOutbox outb
 {
     public async Task<(int Warned, int Breached)> HandleAsync(int batch, CancellationToken cancellationToken)
     {
+        var now = clock.GetUtcNow();
+        var due = await db.SlaInstances.AsNoTracking()
+            .Where(i => i.StoppedAt == null && i.RunningSince != null
+                && ((i.WarnedAt == null && i.WarnAt <= now) || (i.BreachedAt == null && i.DueAt <= now)))
+            .OrderBy(i => i.Id)
+            .Take(batch)
+            .Select(i => new { i.Id, i.TicketId, i.Metric })
+            .ToListAsync(cancellationToken);
+
         var warned = 0;
         var breached = 0;
-        await db.RunInTransactionAsync(async ct =>
+        foreach (var candidate in due)
         {
-            var now = clock.GetUtcNow();
-            var due = await db.SlaInstances.AsNoTracking()
-                .Where(i => i.StoppedAt == null && i.RunningSince != null
-                    && ((i.WarnedAt == null && i.WarnAt <= now) || (i.BreachedAt == null && i.DueAt <= now)))
-                .OrderBy(i => i.Id)
-                .Take(batch)
-                .Select(i => new { i.Id, i.TicketId, i.Metric })
-                .ToListAsync(ct);
-
-            foreach (var candidate in due)
+            // One short transaction per instance: row locks are held for one claim only, never across the sweep, so a
+            // ticket action touching the same ticket cannot deadlock with the monitor.
+            await db.RunInTransactionAsync(async ct =>
             {
                 if (await TryWarnAsync(candidate.Id, now, ct) is { } warnedDueAt)
                 {
@@ -44,10 +46,11 @@ public sealed class MonitorSlaHandler(IAppDbContext db, INotificationOutbox outb
                     breached++;
                     Record(candidate.Id, candidate.TicketId, candidate.Metric, SlaEventKind.Breached, NotificationEventTypes.SlaBreached, now, breachedDueAt);
                 }
-            }
 
-            await db.SaveChangesAsync(ct);
-        }, cancellationToken);
+                await db.SaveChangesAsync(ct);
+            }, cancellationToken);
+        }
+
         return (warned, breached);
     }
 
@@ -76,7 +79,7 @@ public sealed class MonitorSlaHandler(IAppDbContext db, INotificationOutbox outb
         db.SlaEvents.Add(SlaEvent.Record(instanceId, kind, now));
         outbox.Add(eventType, ticketId, userId: null, new Dictionary<string, string>
         {
-            [OutboxEvent.SlaMetricKey] = SlaMetricLabels.Of(metric),
+            [OutboxEvent.SlaMetricKey] = SlaMetricLabels.KeyOf(metric),
             [OutboxEvent.SlaDueAtKey] = dueAt.ToString("O", CultureInfo.InvariantCulture),
         });
     }
