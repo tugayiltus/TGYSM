@@ -53,6 +53,8 @@ public sealed class OutboxEvent
     /// </summary>
     public const string ProtectedSecretPurpose = "Tgysm.Notifications.AccountLinkToken";
 
+    private const string RoundTripDateFormat = "O";
+
     private OutboxEvent()
     {
     }
@@ -68,7 +70,7 @@ public sealed class OutboxEvent
     public Guid? UserId { get; private init; }
 
     /// <summary>Ids and reason codes only (jsonb); never subject or resolution text.</summary>
-    public string Payload { get; private init; } = "{}";
+    public string Payload { get; private set; } = "{}";
 
     /// <summary>Data Protection–encrypted account-link token; account events only.</summary>
     public string? ProtectedSecret { get; private set; }
@@ -143,4 +145,17 @@ public sealed class OutboxEvent
     /// any longer than sending required.
     /// </summary>
     public void ClearProtectedSecret() => ProtectedSecret = null;
+
+    /// <summary>
+    /// Puts a freshly issued account-link token on this event for an admin retry of its failed delivery (final
+    /// review F4): the new protected secret replaces the cleared one and the payload's <see cref="LinkExpiresAtKey"/>
+    /// moves to the new token's expiry; every other payload key is kept.
+    /// </summary>
+    public void RenewAccountLink(string protectedSecret, DateTimeOffset expiresAt)
+    {
+        var payload = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(Payload) ?? [];
+        payload[LinkExpiresAtKey] = expiresAt.ToString(RoundTripDateFormat, System.Globalization.CultureInfo.InvariantCulture);
+        Payload = System.Text.Json.JsonSerializer.Serialize(payload);
+        ProtectedSecret = protectedSecret;
+    }
 }

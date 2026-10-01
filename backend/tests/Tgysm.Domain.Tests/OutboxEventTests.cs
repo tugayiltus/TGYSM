@@ -13,6 +13,21 @@ public sealed class OutboxEventTests
     private static OutboxEvent CreateEvent() =>
         OutboxEvent.Create(NotificationEventTypes.TicketCreated, Guid.NewGuid(), null, "{}", null, Now);
 
+    [Fact]
+    public void RenewAccountLink_replaces_secret_and_expiry_and_keeps_other_payload_keys()
+    {
+        var outboxEvent = OutboxEvent.Create(NotificationEventTypes.AccountActivation, null, Guid.NewGuid(),
+            "{\"actorId\":\"a1\",\"expiresAt\":\"old\"}", null, Now);
+        var expiresAt = Now.AddHours(72);
+
+        outboxEvent.RenewAccountLink("protected", expiresAt);
+
+        Assert.Equal("protected", outboxEvent.ProtectedSecret);
+        using var payload = System.Text.Json.JsonDocument.Parse(outboxEvent.Payload);
+        Assert.Equal("a1", payload.RootElement.GetProperty(OutboxEvent.ActorIdKey).GetString());
+        Assert.Equal(expiresAt, payload.RootElement.GetProperty(OutboxEvent.LinkExpiresAtKey).GetDateTimeOffset());
+    }
+
     [Theory]
     [InlineData(1, 1)]
     [InlineData(2, 5)]

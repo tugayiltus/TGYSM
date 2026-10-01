@@ -52,6 +52,29 @@ public sealed class PasswordTokenIssuer(
     }
 
     /// <summary>
+    /// Admin retry of a failed account email (final review F4): the original token's secret was cleared when the
+    /// delivery failed, so a new token (same purpose, fresh expiry) is issued onto the same outbox event; every other
+    /// unused token of the user is voided. Adds to the caller's unit of work; the caller saves once.
+    /// </summary>
+    public async Task ReissueAsync(OutboxEvent outboxEvent, Guid userId, PasswordTokenPurpose purpose, CancellationToken cancellationToken)
+    {
+        await RevokeUnusedAsync(userId, cancellationToken);
+        var rawToken = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(TokenBytes));
+        var token = PasswordToken.Issue(userId, purpose, Hash(rawToken), clock.GetUtcNow());
+        db.PasswordTokens.Add(token);
+        outboxEvent.RenewAccountLink(protector.Protect(rawToken), token.ExpiresAt);
+        audit.Record(AuditActionOf(purpose), AuditEntityTypes.User, userId);
+    }
+
+    /// <summary>The token purpose behind an account-link event type (<c>account_activation</c> or <c>password_reset</c>).</summary>
+    public static PasswordTokenPurpose PurposeOf(string eventType) => eventType switch
+    {
+        NotificationEventTypes.AccountActivation => PasswordTokenPurpose.Activation,
+        NotificationEventTypes.PasswordReset => PasswordTokenPurpose.Reset,
+        _ => throw new ArgumentOutOfRangeException(nameof(eventType), eventType, "Not an account-link event type."),
+    };
+
+    /// <summary>
     /// Voids every unused token of the user, of any purpose (final review F5): after a password is set, the email
     /// address changes or a temporary password replaces the old one, no link issued before may still work. Adds to
     /// the caller's unit of work; the caller saves once.

@@ -107,7 +107,8 @@
     "variable_not_allowed": "Bu değişken bu bildirim türü için kullanılamaz."
   },
   "email_deliveries": {
-    "not_failed": "Yalnızca başarısız olan e-postalar yeniden gönderilebilir."
+    "not_failed": "Yalnızca başarısız olan e-postalar yeniden gönderilebilir.",
+    "recipient_unavailable": "Kullanıcı artık etkin değil veya e-posta adresi değişti; bu e-posta yeniden gönderilemez. Gerekirse kullanıcıya yeni bir bağlantı gönderin."
   },
   "sla": {
     "calendar_empty": "Çalışma takviminde en az bir çalışma günü tanımlı olmalıdır.",

@@ -178,6 +178,88 @@ public sealed class PasswordLinkTests(ApiFactory factory) : IAsyncLifetime
         Assert.Null(activation.ProtectedSecret);
     }
 
+    /// <summary>Fails every send until the activation delivery reaches its terminal <c>failed</c> status.</summary>
+    private async Task<EmailDelivery> FailUntilTerminalAsync(Guid userId)
+    {
+        factory.EmailSender.FailWith = _ => new InvalidOperationException("smtp down");
+        for (var attempt = 0; attempt < RetryBackoff.MaxAttempts; attempt++)
+        {
+            await SendDueEmailsAsync();
+            await using var db = factory.Database.CreateDbContext();
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE email_deliveries SET next_attempt_at = now() - interval '1 hour' WHERE recipient_user_id = {userId}", Ct);
+        }
+
+        factory.EmailSender.FailWith = null;
+        await using var check = factory.Database.CreateDbContext();
+        var delivery = await check.EmailDeliveries.AsNoTracking().SingleAsync(d => d.RecipientUserId == userId, Ct);
+        Assert.Equal(DeliveryStatus.Failed, delivery.Status);
+        return delivery;
+    }
+
+    private static string TokenFromLink(string body)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(body, "set-password\\?token=([^\\s\"'<&]+)");
+        Assert.True(match.Success, "The email carries no set-password link.");
+        return Uri.UnescapeDataString(match.Groups[1].Value);
+    }
+
+    [Fact]
+    public async Task Retrying_a_failed_activation_email_sends_a_new_working_link_and_voids_the_old_one()
+    {
+        var (admin, _) = await LoginAsAdminAsync();
+        var userId = await CreateUserAsync(admin, "deniz@example.com");
+        var oldToken = await LatestTokenAsync(userId, NotificationEventTypes.AccountActivation);
+        await DispatchAsync();
+        var failed = await FailUntilTerminalAsync(userId);
+
+        using (var retry = await admin.PostAsync($"/api/v1/admin/email-deliveries/{failed.Id}/retry"))
+        {
+            Assert.Equal(HttpStatusCode.OK, retry.StatusCode);
+        }
+
+        await SendDueEmailsAsync();
+
+        var message = Assert.Single(factory.EmailSender.Sent);
+        var newToken = TokenFromLink(message.Body);
+        Assert.NotEqual(oldToken, newToken);
+        await AssertTokenInvalidAsync(oldToken);
+        using var set = await SetPasswordAsync(ApiClient.Create(factory), newToken);
+        Assert.Equal(HttpStatusCode.NoContent, set.StatusCode);
+    }
+
+    [Fact]
+    public async Task Retrying_an_account_email_whose_recipient_changed_address_is_rejected()
+    {
+        var (admin, _) = await LoginAsAdminAsync();
+        var userId = await CreateUserAsync(admin, "deniz@example.com");
+        await DispatchAsync();
+        await ChangeEmailAsync(admin, userId, "deniz.kaya@example.com");
+        await SendDueEmailsAsync();
+        await using var db = factory.Database.CreateDbContext();
+        var failed = await db.EmailDeliveries.AsNoTracking().SingleAsync(d => d.RecipientUserId == userId, Ct);
+
+        using var retry = await admin.PostAsync($"/api/v1/admin/email-deliveries/{failed.Id}/retry");
+
+        Assert.Equal(HttpStatusCode.Conflict, retry.StatusCode);
+        Assert.Equal(ErrorCodes.EmailDeliveryRecipientUnavailable, await ApiClient.ReadCodeAsync(retry));
+    }
+
+    [Fact]
+    public async Task Retrying_an_account_email_of_a_deactivated_user_is_rejected()
+    {
+        var (admin, _) = await LoginAsAdminAsync();
+        var userId = await CreateUserAsync(admin, "deniz@example.com");
+        await DispatchAsync();
+        var failed = await FailUntilTerminalAsync(userId);
+        await TestData.SaveAsync(factory, db => db.Users.Single(u => u.Id == userId).Deactivate(DateTimeOffset.UtcNow));
+
+        using var retry = await admin.PostAsync($"/api/v1/admin/email-deliveries/{failed.Id}/retry");
+
+        Assert.Equal(HttpStatusCode.Conflict, retry.StatusCode);
+        Assert.Equal(ErrorCodes.EmailDeliveryRecipientUnavailable, await ApiClient.ReadCodeAsync(retry));
+    }
+
     [Fact]
     public async Task Create_with_default_email_link_returns_no_password_and_queues_activation_with_expiry()
     {
