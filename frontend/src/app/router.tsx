@@ -2,9 +2,11 @@ import { Navigate, Outlet, type RouteObject } from 'react-router';
 
 import { AdminLayout } from '../features/admin/AdminLayout';
 import { ChangePasswordPage } from '../features/auth/ChangePasswordPage';
+import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { RequireRole, RequireSession } from '../features/auth/guards';
 import { LoginPage } from '../features/auth/LoginPage';
 import { ADMIN_ONLY, IT_STAFF_OR_ADMIN } from '../features/auth/session';
+import { SetPasswordPage } from '../features/auth/SetPasswordPage';
 import { HomePage } from '../features/home/HomePage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { ROUTES } from '../shared/routes';
@@ -13,6 +15,8 @@ import { NotFoundPage } from '../shared/ui/NotFoundPage';
 
 export const routes: RouteObject[] = [
   { path: ROUTES.login, element: <LoginPage /> },
+  { path: ROUTES.setPassword, element: <SetPasswordPage /> },
+  { path: ROUTES.forgotPassword, element: <ForgotPasswordPage /> },
   {
     element: (
       <RequireSession>
@@ -70,6 +74,9 @@ export const routes: RouteObject[] = [
           { path: ROUTES.adminTeams, lazy: async () => ({ Component: (await import('../features/admin/teams/TeamsPage')).TeamsPage }) },
           { path: ROUTES.adminCategories, lazy: async () => ({ Component: (await import('../features/admin/catalog/CategoriesPage')).CategoriesPage }) },
           { path: ROUTES.adminRequestTypes, lazy: async () => ({ Component: (await import('../features/admin/catalog/RequestTypesPage')).RequestTypesPage }) },
+          { path: ROUTES.adminEmailTemplates, lazy: async () => ({ Component: (await import('../features/admin/email/EmailTemplatesPage')).EmailTemplatesPage }) },
+          { path: ROUTES.adminEmailDeliveries, lazy: async () => ({ Component: (await import('../features/admin/email/EmailDeliveriesPage')).EmailDeliveriesPage }) },
+          { path: ROUTES.adminSystem, lazy: async () => ({ Component: (await import('../features/admin/system/SystemPage')).SystemPage }) },
           { path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
         ],
       },

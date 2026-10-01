@@ -28,3 +28,12 @@ export const changePasswordSchema = z
   });
 
 export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
+
+export const setPasswordSchema = z
+  .object({ newPassword: newPasswordRule, confirmPassword: z.string() })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    message: MISMATCH_MESSAGE_KEY,
+    path: ['confirmPassword'],
+  });
+
+export type SetPasswordValues = z.infer<typeof setPasswordSchema>;

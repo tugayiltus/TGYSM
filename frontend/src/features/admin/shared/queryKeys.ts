@@ -4,4 +4,7 @@ export const adminKeys = {
   locations: ['admin', 'locations'],
   teams: ['admin', 'teams'],
   audit: ['admin', 'audit'],
+  emailTemplates: ['admin', 'email-templates'],
+  emailDeliveries: ['admin', 'email-deliveries'],
+  system: ['admin', 'system'],
 } as const;

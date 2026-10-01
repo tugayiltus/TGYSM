@@ -13,7 +13,8 @@ import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TemporaryPasswordDialog } from '../../../shared/ui/TemporaryPasswordDialog';
 import { TextField } from '../../../shared/ui/TextField';
 
-import { useResetUserPassword, useSetUserActive, useUsers, type UserListItem, type UserRole } from './api';
+import { useResetUserPassword, useSetUserActive, useUsers, type CredentialDelivery, type UserListItem, type UserRole } from './api';
+import { LinkSentDialog, ResetPasswordDialog } from './CredentialNoticeDialogs';
 import { UserFormDialog } from './UserFormDialog';
 import { USER_ROLES } from './userSchema';
 
@@ -27,6 +28,7 @@ const STATUS_FILTERS: readonly StatusFilter[] = ['all', 'active', 'inactive'];
 const STATUS_TO_IS_ACTIVE: Record<StatusFilter, boolean | undefined> = { all: undefined, active: true, inactive: false };
 
 type PendingAction = { kind: 'deactivate' | 'reactivate' | 'reset'; user: UserListItem };
+type CredentialNotice = { kind: 'password'; password: string } | { kind: 'link'; email: string };
 type FormState = { mode: 'create' } | { mode: 'edit'; user: UserListItem } | null;
 
 const fullName = (user: UserListItem) => `${user.firstName} ${user.lastName}`;
@@ -64,7 +66,7 @@ export function UsersPage() {
   const [page, setPage] = useState(FIRST_PAGE);
   const [form, setForm] = useState<FormState>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
-  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [notice, setNotice] = useState<CredentialNotice | null>(null);
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const users = useUsers({
     search: debouncedSearch,
@@ -82,17 +84,20 @@ export function UsersPage() {
     resetPassword.reset();
     setPending(action);
   };
-  const confirmAction = () => {
-    if (pending === null) {
-      return;
-    }
-    if (pending.kind === 'reset') {
-      resetPassword.mutate(pending.user.id, {
+  const showCredential = (email: string, temporaryPassword: string | null) =>
+    setNotice(temporaryPassword === null ? { kind: 'link', email } : { kind: 'password', password: temporaryPassword });
+  const confirmReset = (user: UserListItem, delivery: CredentialDelivery) =>
+    resetPassword.mutate(
+      { id: user.id, delivery },
+      {
         onSuccess: (result) => {
           setPending(null);
-          setTemporaryPassword(result.temporaryPassword);
+          showCredential(user.email, result.temporaryPassword);
         },
-      });
+      },
+    );
+  const confirmAction = () => {
+    if (pending === null || pending.kind === 'reset') {
       return;
     }
     const leavesFilter = (pending.kind === 'deactivate' && status === 'active') || (pending.kind === 'reactivate' && status === 'inactive');
@@ -111,10 +116,9 @@ export function UsersPage() {
     );
   };
 
-  const confirmText = pending === null ? null : {
+  const confirmText = pending === null || pending.kind === 'reset' ? null : {
     deactivate: { message: t('users.confirmDeactivate', { name: fullName(pending.user) }), label: tc('actions.deactivate') },
     reactivate: { message: t('users.confirmReactivate', { name: fullName(pending.user) }), label: tc('actions.reactivate') },
-    reset: { message: t('users.confirmReset', { name: fullName(pending.user) }), label: t('users.resetPassword') },
   }[pending.kind];
 
   const columns: Column<UserListItem>[] = [
@@ -195,9 +199,9 @@ export function UsersPage() {
           key={form.mode === 'edit' ? form.user.id : 'new'}
           user={form.mode === 'edit' ? form.user : null}
           onClose={() => setForm(null)}
-          onCreated={(password) => {
+          onCreated={({ email, temporaryPassword }) => {
             setForm(null);
-            setTemporaryPassword(password);
+            showCredential(email, temporaryPassword);
           }}
         />
       )}
@@ -207,13 +211,17 @@ export function UsersPage() {
           message={confirmText.message}
           confirmLabel={tc('actions.confirm')}
           variant={pending.kind === 'deactivate' ? 'danger' : 'primary'}
-          isPending={setActive.isPending || resetPassword.isPending}
-          error={setActive.error ?? resetPassword.error}
+          isPending={setActive.isPending}
+          error={setActive.error}
           onConfirm={confirmAction}
           onCancel={() => setPending(null)}
         />
       )}
-      {temporaryPassword !== null && <TemporaryPasswordDialog password={temporaryPassword} onClose={() => setTemporaryPassword(null)} />}
+      {pending?.kind === 'reset' && (
+        <ResetPasswordDialog name={fullName(pending.user)} isPending={resetPassword.isPending} error={resetPassword.error} onConfirm={(delivery) => confirmReset(pending.user, delivery)} onCancel={() => setPending(null)} />
+      )}
+      {notice?.kind === 'password' && <TemporaryPasswordDialog password={notice.password} onClose={() => setNotice(null)} />}
+      {notice?.kind === 'link' && <LinkSentDialog email={notice.email} onClose={() => setNotice(null)} />}
     </section>
   );
 }

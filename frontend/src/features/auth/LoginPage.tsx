@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useLocation } from 'react-router';
+import { Link, Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 
 import { describeError, fieldError } from '../../shared/api/errorMessage';
@@ -71,6 +71,9 @@ export function LoginPage() {
           <Button type="submit" isLoading={login.isPending}>
             {t('login.submit')}
           </Button>
+          <Link to={ROUTES.forgotPassword} className="text-center text-sm font-medium text-brand-900 underline">
+            {t('login.forgotLink')}
+          </Link>
         </form>
       </div>
     </main>

@@ -5,6 +5,7 @@ export const ERROR_CODES = {
   invalidEmail: 'validation.invalid_email',
   passwordPolicy: 'auth.password_policy',
   unauthenticated: 'auth.unauthenticated',
+  tokenInvalid: 'auth.token_invalid',
   passwordChangeRequired: 'auth.password_change_required',
   csrfInvalid: 'auth.csrf_invalid',
   concurrencyConflict: 'concurrency.conflict',

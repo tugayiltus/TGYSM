@@ -9,7 +9,10 @@
     "requestTypes": "Talep tipleri",
     "teams": "Ekipler",
     "audit": "Denetim kayıtları",
-    "backToApp": "Uygulamaya dön"
+    "backToApp": "Uygulamaya dön",
+    "emailTemplates": "E-posta şablonları",
+    "emailDeliveries": "E-posta gönderimleri",
+    "system": "Sistem"
   },
   "users": {
     "title": "Kullanıcılar",
@@ -39,7 +42,19 @@
     },
     "confirmDeactivate": "{{name}} pasifleştirilsin mi? Kullanıcının açık oturumu hemen kapanır.",
     "confirmReactivate": "{{name}} tekrar aktifleştirilsin mi?",
-    "confirmReset": "{{name}} için yeni geçici şifre oluşturulsun mu? Kullanıcının açık oturumu kapanır."
+    "delivery": {
+      "label": "Şifre iletimi",
+      "emailLink": "E-posta ile bağlantı gönder",
+      "temporaryPassword": "Geçici şifre göster"
+    },
+    "linkSent": {
+      "title": "Bağlantı gönderildi",
+      "message": "{{email}} adresine şifre belirleme bağlantısı gönderildi. Bağlantı sınırlı bir süre geçerlidir."
+    },
+    "resetDialog": {
+      "title": "Şifre sıfırla",
+      "message": "{{name}} için şifre sıfırlansın mı? Kullanıcının açık oturumu kapanır."
+    }
   },
   "departments": {
     "title": "Departmanlar",
@@ -281,5 +296,73 @@
     },
     "confirmDeactivate": "{{name}} pasifleştirilsin mi?",
     "confirmReactivate": "{{name}} aktifleştirilsin mi?"
+  },
+  "emailTemplates": {
+    "title": "E-posta şablonları",
+    "listCaption": "E-posta şablonları listesi",
+    "edit": "Şablonu düzenle",
+    "columns": {
+      "event": "Bildirim",
+      "subject": "Konu",
+      "updated": "Güncelleme",
+      "actions": "İşlemler"
+    },
+    "fields": {
+      "subject": "Konu",
+      "body": "İçerik"
+    },
+    "variables": {
+      "title": "Kullanılabilir değişkenler",
+      "hint": "Değişkenleri çift süslü parantez içinde yazın; listede olmayanlar kaydedilmez."
+    }
+  },
+  "emailDeliveries": {
+    "title": "E-posta gönderimleri",
+    "listCaption": "E-posta gönderimleri listesi",
+    "retry": "Yeniden dene",
+    "filters": {
+      "status": "Durum",
+      "event": "Bildirim",
+      "recipient": "Alıcı"
+    },
+    "allEvents": "Tüm bildirimler",
+    "statuses": {
+      "pending": "Bekliyor",
+      "sending": "Gönderiliyor",
+      "sent": "Gönderildi",
+      "failed": "Başarısız",
+      "all": "Tüm durumlar"
+    },
+    "columns": {
+      "recipient": "Alıcı",
+      "event": "Bildirim",
+      "subject": "Konu",
+      "status": "Durum",
+      "attempts": "Deneme",
+      "error": "Son hata",
+      "date": "Tarih",
+      "actions": "İşlemler"
+    }
+  },
+  "system": {
+    "title": "Sistem",
+    "workersTitle": "Arka plan işleri",
+    "listCaption": "Arka plan işleri listesi",
+    "overall": {
+      "ok": "Tüm işler zamanında çalışıyor.",
+      "degraded": "Bazı işler zamanında çalışmadı."
+    },
+    "empty": "Henüz çalışan iş kaydı yok.",
+    "columns": {
+      "job": "İş",
+      "instance": "Örnek",
+      "lastRun": "Son çalışma",
+      "interval": "Aralık",
+      "status": "Durum",
+      "error": "Son hata"
+    },
+    "intervalValue": "{{count}} sn",
+    "stale": "Gecikmiş",
+    "fresh": "Zamanında"
   }
 }

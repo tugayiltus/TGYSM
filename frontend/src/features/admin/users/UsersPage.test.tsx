@@ -62,6 +62,7 @@ describe('UsersPage', () => {
     await user.type(within(dialog).getByLabelText('Ad'), 'Deniz');
     await user.type(within(dialog).getByLabelText('Soyad'), 'Aydın');
     await user.type(within(dialog).getByLabelText('E-posta'), 'deniz@example.com');
+    await user.click(within(dialog).getByRole('radio', { name: 'Geçici şifre göster' }));
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
     expect(await screen.findByTestId('temporary-password')).toHaveTextContent('Temp-pass-1234');
@@ -74,6 +75,57 @@ describe('UsersPage', () => {
       locationId: null,
       delivery: 'temporary_password',
     });
+  });
+
+  it('defaults to the email link: says the link was sent and shows no password box', async () => {
+    let posted: { delivery?: string } = {};
+    setup({
+      'POST /api/v1/admin/users': async (request) => {
+        posted = (await request.json()) as { delivery?: string };
+        return { status: 201, body: { userId: 'u-2', temporaryPassword: null } };
+      },
+    });
+    const { user } = renderRoute('/admin/users');
+
+    await user.click(await screen.findByRole('button', { name: 'Yeni kullanıcı' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('radio', { name: 'E-posta ile bağlantı gönder' })).toBeChecked();
+    await user.type(within(dialog).getByLabelText('Ad'), 'Deniz');
+    await user.type(within(dialog).getByLabelText('Soyad'), 'Aydın');
+    await user.type(within(dialog).getByLabelText('E-posta'), 'deniz@example.com');
+    await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
+
+    expect(await screen.findByRole('heading', { name: 'Bağlantı gönderildi' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveTextContent('deniz@example.com adresine şifre belirleme bağlantısı gönderildi');
+    expect(screen.queryByTestId('temporary-password')).not.toBeInTheDocument();
+    expect(posted.delivery).toBe('email_link');
+  });
+
+  it('resets a password with the chosen delivery', async () => {
+    const bodies: unknown[] = [];
+    setup({
+      'POST /api/v1/admin/users/u-1/reset-password': async (request) => {
+        const body = (await request.json()) as { delivery: string };
+        bodies.push(body);
+        return { status: 200, body: { userId: 'u-1', temporaryPassword: body.delivery === 'temporary_password' ? 'Temp-pass-9999' : null } };
+      },
+    });
+    const { user } = renderRoute('/admin/users');
+
+    await user.click((await screen.findAllByRole('button', { name: /^Şifre sıfırla/ }))[0]!);
+    let dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('radio', { name: 'E-posta ile bağlantı gönder' })).toBeChecked();
+    await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
+    expect(await screen.findByRole('heading', { name: 'Bağlantı gönderildi' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+
+    await user.click((await screen.findAllByRole('button', { name: /^Şifre sıfırla/ }))[0]!);
+    dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('radio', { name: 'Geçici şifre göster' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
+
+    expect(await screen.findByTestId('temporary-password')).toHaveTextContent('Temp-pass-9999');
+    expect(bodies).toEqual([{ delivery: 'email_link' }, { delivery: 'temporary_password' }]);
   });
 
   it('shows a taken email under the email field', async () => {
@@ -124,6 +176,7 @@ describe('UsersPage', () => {
     await user.type(within(dialog).getByLabelText('Ad'), 'Ece');
     await user.type(within(dialog).getByLabelText('Soyad'), 'Nur');
     await user.type(within(dialog).getByLabelText('E-posta'), 'ece@example.com');
+    await user.click(within(dialog).getByRole('radio', { name: 'Geçici şifre göster' }));
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
     await user.keyboard('{Escape}');
     release();

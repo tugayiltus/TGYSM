@@ -64,3 +64,15 @@ export function useChangePassword() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY }),
   });
 }
+
+export type SetPasswordInput = components['schemas']['SetPasswordRequest'];
+
+/** Anonymous: the emailed link's token plus the new password; one error code (`auth.token_invalid`) for every bad token. */
+export function useSetPassword() {
+  return useMutation({ mutationFn: (input: SetPasswordInput) => unwrap(api.POST('/api/v1/auth/set-password', { body: input })) });
+}
+
+/** Anonymous: the server always answers 202, so success reveals nothing about the account. */
+export function useForgotPassword() {
+  return useMutation({ mutationFn: (email: string) => unwrap(api.POST('/api/v1/auth/forgot-password', { body: { email } })) });
+}

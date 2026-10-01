@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +12,8 @@ import { SelectField } from '../../../shared/ui/SelectField';
 import { TextField } from '../../../shared/ui/TextField';
 import { useDepartmentOptions, useLocationOptions, withCurrentOption } from '../shared/referenceOptions';
 
-import { useCreateUser, useUpdateUser, type UserListItem } from './api';
+import { DEFAULT_DELIVERY, useCreateUser, useUpdateUser, type CredentialDelivery, type UserListItem } from './api';
+import { DeliveryChoice } from './DeliveryChoice';
 import { toFormValues, toRequestFields, USER_ROLES, userFormSchema, type UserFormValues } from './userSchema';
 
 const FORM_FIELDS = ['firstName', 'lastName', 'email', 'role', 'departmentId', 'locationId'] as const;
@@ -21,7 +22,8 @@ const CODE_FIELDS = { [ERROR_CODES.emailTaken]: 'email' } as const;
 export interface UserFormDialogProps {
   user: UserListItem | null;
   onClose: () => void;
-  onCreated: (temporaryPassword: string | null) => void;
+  /** `temporaryPassword` is null when a set-password link was emailed instead. */
+  onCreated: (result: { email: string; temporaryPassword: string | null }) => void;
 }
 
 export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps) {
@@ -30,6 +32,7 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
   const formId = useId();
   const departmentOptions = withCurrentOption(useDepartmentOptions(), user?.departmentId, user?.departmentName);
   const locationOptions = withCurrentOption(useLocationOptions(), user?.locationId, user?.locationName);
+  const [delivery, setDelivery] = useState<CredentialDelivery>(DEFAULT_DELIVERY);
   const create = useCreateUser();
   const update = useUpdateUser();
   const mutation = user === null ? create : update;
@@ -51,7 +54,7 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
     const fields = toRequestFields(values);
     const onError = (error: unknown) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS);
     if (user === null) {
-      create.mutate(fields, { onSuccess: (result) => onCreated(result.temporaryPassword), onError });
+      create.mutate({ ...fields, delivery }, { onSuccess: (result) => onCreated({ email: fields.email, temporaryPassword: result.temporaryPassword }), onError });
     } else {
       update.mutate({ id: user.id, version: user.version, ...fields }, { onSuccess: onClose, onError });
     }
@@ -96,6 +99,7 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
           {...register('departmentId')}
         />
         <SelectField label={t('users.fields.location')} options={locationOptions} placeholder={tc('none')} error={fieldError(errors.locationId)} {...register('locationId')} />
+        {user === null && <DeliveryChoice value={delivery} onChange={setDelivery} />}
       </form>
     </Dialog>
   );

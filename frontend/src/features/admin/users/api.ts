@@ -6,11 +6,11 @@ import { adminKeys } from '../shared/queryKeys';
 
 export type UserListItem = components['schemas']['UserListItem'];
 export type UserRole = UserListItem['role'];
-export type CreateUserInput = Omit<components['schemas']['CreateUserCommand'], 'delivery'>;
-type CredentialDelivery = components['schemas']['CredentialDelivery'];
+export type CredentialDelivery = components['schemas']['CredentialDelivery'];
+export type CreateUserInput = Omit<components['schemas']['CreateUserCommand'], 'delivery'> & { delivery: CredentialDelivery };
 
-/** The admin UI keeps the temporary-password flow until it offers the email-link choice (spec §4). */
-const TEMPORARY_PASSWORD_DELIVERY: CredentialDelivery = 'temporary_password';
+/** Spec §4 default: the user gets a set-password link by email, no password is shown to the admin. */
+export const DEFAULT_DELIVERY: CredentialDelivery = 'email_link';
 export type UpdateUserInput = components['schemas']['UpdateUserRequest'] & { id: string };
 
 export interface UserListParams {
@@ -50,8 +50,7 @@ function useInvalidateUsers() {
 export function useCreateUser() {
   const invalidate = useInvalidateUsers();
   return useMutation({
-    mutationFn: (body: CreateUserInput) =>
-      unwrap(api.POST('/api/v1/admin/users', { body: { ...body, delivery: TEMPORARY_PASSWORD_DELIVERY } })),
+    mutationFn: (body: CreateUserInput) => unwrap(api.POST('/api/v1/admin/users', { body })),
     onSuccess: invalidate,
   });
 }
@@ -80,13 +79,8 @@ export function useSetUserActive() {
 export function useResetUserPassword() {
   const invalidate = useInvalidateUsers();
   return useMutation({
-    mutationFn: (id: string) =>
-      unwrap(
-        api.POST('/api/v1/admin/users/{id}/reset-password', {
-          params: { path: { id } },
-          body: { delivery: TEMPORARY_PASSWORD_DELIVERY },
-        }),
-      ),
+    mutationFn: ({ id, delivery }: { id: string; delivery: CredentialDelivery }) =>
+      unwrap(api.POST('/api/v1/admin/users/{id}/reset-password', { params: { path: { id } }, body: { delivery } })),
     onSuccess: invalidate,
   });
 }
