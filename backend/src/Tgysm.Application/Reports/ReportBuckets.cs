@@ -14,6 +14,9 @@ public static class ReportBuckets
         new("8+", 8, null),
     ];
 
+    /// <summary>Default length of the expiring-warranty window, counted from today (spec §7.2).</summary>
+    public const int DefaultWarrantyWindowDays = 90;
+
     /// <summary>The band of an age in whole days; a negative age (clock skew) counts as 0.</summary>
     public static AgeBand AgeingBand(int ageDays)
     {

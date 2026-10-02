@@ -108,7 +108,7 @@ internal sealed class ReportFixture(ReportWorld world)
     public GetReportHandler HandlerFor(Tgysm.Infrastructure.Persistence.AppDbContext db, Guid userId, DateTimeOffset now)
     {
         var clock = new FakeTimeProvider(now);
-        return new GetReportHandler(new ReportScope(db, new FixedActor(userId)), new TicketReportSource(db, new TestClock()), db, clock);
+        return new GetReportHandler(new ReportScope(db, new FixedActor(userId)), new TicketReportSource(db, new TestClock()), db, clock, new TestClock());
     }
 
     /// <summary>Checks every metric of <paramref name="report"/>: its figure counts exactly the rows (and denominator rows) it exposes.</summary>

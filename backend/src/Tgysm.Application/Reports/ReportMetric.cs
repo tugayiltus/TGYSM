@@ -45,6 +45,25 @@ public abstract class ReportMetric : IReportMetric
     public abstract Task<ReportFigure> ComputeAsync(IQueryable<Ticket> filtered, ReportContext context, CancellationToken cancellationToken);
 }
 
+/// <summary>
+/// What an asset metric needs besides the filtered assets: the database (assignments), today in the company zone and the warranty
+/// window (<see cref="WarrantyFrom"/>..<see cref="WarrantyTo"/>, inclusive).
+/// </summary>
+public sealed record AssetReportContext(IAppDbContext Db, DateOnly Today, DateOnly WarrantyFrom, DateOnly WarrantyTo)
+{
+    /// <summary>
+    /// The context of a run at <paramref name="now"/>. The warranty window defaults to today..today + <see cref="ReportBuckets.DefaultWarrantyWindowDays"/>;
+    /// its start never lies before today, so "expiring" and "expired" never share an asset.
+    /// </summary>
+    public static AssetReportContext Create(IAppDbContext db, ReportFilter filter, DateTimeOffset now, TimeZoneInfo zone)
+    {
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
+        var from = filter.From is { } start && start > today ? start : today;
+        var to = filter.To ?? today.AddDays(ReportBuckets.DefaultWarrantyWindowDays);
+        return new AssetReportContext(db, today, from, to);
+    }
+}
+
 /// <summary>A metric over assets (asset and warranty reports).</summary>
 public abstract class AssetReportMetric : IReportMetric
 {
@@ -56,9 +75,11 @@ public abstract class AssetReportMetric : IReportMetric
 
     public abstract MetricShape Shape { get; }
 
-    public abstract IQueryable<Asset> Rows(IQueryable<Asset> filtered);
+    public abstract IQueryable<Asset> Rows(IQueryable<Asset> filtered, AssetReportContext context);
 
-    public virtual IQueryable<Asset>? DenominatorRows(IQueryable<Asset> filtered) => null;
+    /// <summary>The <see cref="Rows"/> of one bucket of a distribution; its count equals the bucket's count. Only distributions have buckets.</summary>
+    public virtual IQueryable<Asset> BucketRows(IQueryable<Asset> filtered, AssetReportContext context, string bucket) =>
+        throw new NotSupportedException($"Metric '{Key}' has no buckets.");
 
-    public abstract Task<ReportFigure> ComputeAsync(IQueryable<Asset> filtered, CancellationToken cancellationToken);
+    public abstract Task<ReportFigure> ComputeAsync(IQueryable<Asset> filtered, AssetReportContext context, CancellationToken cancellationToken);
 }

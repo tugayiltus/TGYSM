@@ -16,6 +16,7 @@ public static class MetricKeys
     public const string Cancelled = "cancelled";
 
     public const string UnitTickets = "tickets";
+    public const string UnitAssets = "assets";
     public const string UnitSeconds = "seconds";
 }
 
