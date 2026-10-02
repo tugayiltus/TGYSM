@@ -104,4 +104,8 @@ public static class ErrorCodes
     public const string KnowledgeInvalidTransition = "knowledge.invalid_transition";
     public const string KnowledgeInternalArticleInPublicReply = "knowledge.internal_article_in_public_reply";
     public const string KnowledgeArticleAlreadyLinked = "knowledge.article_already_linked";
+
+    public const string ReportsUnknownReport = "reports.unknown_report";
+    public const string ReportsUnknownMetric = "reports.unknown_metric";
+    public const string ReportsInvalidFilter = "reports.invalid_filter";
 }

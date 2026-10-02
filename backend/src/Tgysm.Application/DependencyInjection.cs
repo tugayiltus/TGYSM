@@ -46,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<SlaCalendarReplanner>();
         services.AddScoped<TicketSlaReader>();
         services.AddScoped<Features.Tickets.TicketScope>();
+        services.AddScoped<Reports.ReportScope>();
+        services.AddScoped<Reports.TicketReportSource>();
         services.AddScoped<Features.Tickets.TicketFactory>();
         services.AddScoped<Features.Tickets.TicketWork>();
         return services;

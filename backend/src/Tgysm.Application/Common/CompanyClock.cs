@@ -10,6 +10,9 @@ namespace Tgysm.Application.Common;
 /// </summary>
 public interface ICompanyClock
 {
+    /// <summary>The company calendar's time zone; report day ranges are whole days in it.</summary>
+    TimeZoneInfo Zone { get; }
+
     /// <summary>Converts <paramref name="instant"/> to the company zone and renders it as <c>dd.MM.yyyy HH:mm</c>, Turkish-formatted.</summary>
     string Format(DateTimeOffset instant);
 }
@@ -20,11 +23,12 @@ internal sealed class CompanyClock(IOptionsMonitor<AppOptions> options) : ICompa
     private const string DisplayFormat = "dd.MM.yyyy HH:mm";
     private static readonly CultureInfo TurkishCulture = CultureInfo.GetCultureInfo("tr-TR");
 
+    public TimeZoneInfo Zone =>
+        TimeZoneInfo.FindSystemTimeZoneById(string.IsNullOrWhiteSpace(options.CurrentValue.TimeZone) ? AppOptions.DefaultTimeZone : options.CurrentValue.TimeZone);
+
     public string Format(DateTimeOffset instant)
     {
-        var zoneId = string.IsNullOrWhiteSpace(options.CurrentValue.TimeZone) ? AppOptions.DefaultTimeZone : options.CurrentValue.TimeZone;
-        var zone = TimeZoneInfo.FindSystemTimeZoneById(zoneId);
-        var local = TimeZoneInfo.ConvertTime(instant, zone);
+        var local = TimeZoneInfo.ConvertTime(instant, Zone);
         return local.ToString(DisplayFormat, TurkishCulture);
     }
 }

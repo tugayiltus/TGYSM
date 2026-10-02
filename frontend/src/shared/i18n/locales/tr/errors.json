@@ -121,5 +121,10 @@
     "invalid_transition": "Makalenin mevcut durumunda bu işlem yapılamaz.",
     "internal_article_in_public_reply": "Yalnızca BT personeline açık bir makale, çalışanın göreceği yanıta eklenemez.",
     "article_already_linked": "Bu makale kayda zaten bağlı."
+  },
+  "reports": {
+    "unknown_report": "Bilinmeyen rapor.",
+    "unknown_metric": "Bilinmeyen rapor ölçüsü.",
+    "invalid_filter": "Rapor filtresi geçersiz: tarih aralığını ve seçilen değerleri kontrol edin."
   }
 }
