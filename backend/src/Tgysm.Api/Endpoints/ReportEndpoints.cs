@@ -10,6 +10,7 @@ internal static class ReportEndpoints
     private const string Tag = "Reports";
     private const string ReportRoute = "/{report}";
     private const string DrilldownRoute = "/{report}/drilldown";
+    private const string ExportRoute = "/{report}/export";
     private const string PartParameter = "part";
 
     public static RouteGroupBuilder MapReportEndpoints(this RouteGroupBuilder api)
@@ -34,6 +35,23 @@ internal static class ReportEndpoints
                     ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        reports.MapGet(ExportRoute, async (
+                string report, string metric, string? bucket, string? part, HttpContext http, ExportReportHandler h, CancellationToken ct) =>
+            {
+                var file = await h.HandleAsync(
+                    new ExportReportQuery(
+                        ReportNames.Parse(report),
+                        metric,
+                        bucket,
+                        QueryParsing.ParseEnum<ReportDrillPart>(part, PartParameter) ?? ReportDrillPart.Numerator,
+                        ReportFilterBinder.Bind(http.Request.Query)),
+                    ct);
+                return TypedResults.Stream(output => file.WriteAsync(output, ct), file.ContentType, file.FileName);
+            })
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         return api;
     }

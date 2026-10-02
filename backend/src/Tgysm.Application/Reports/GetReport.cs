@@ -22,29 +22,31 @@ public sealed class GetReportHandler(ReportScope scope, TicketReportSource sourc
             return await AssetReport(query, viewer, cancellationToken);
         }
 
-        var tickets = scope.TicketsFor(viewer);
-        var filter = ReportCatalog.EffectiveFilter(query.Report, query.Filter);
-        var context = new ReportContext(db, clock.GetUtcNow(), source.Window(filter));
-
+        var now = clock.GetUtcNow();
+        var effective = ReportCatalog.EffectiveFilter(query.Report, query.Filter);
         var figures = new List<ReportFigure>();
         foreach (var metric in ReportCatalog.Get(query.Report).OfType<ReportMetric>())
         {
-            figures.Add(await metric.ComputeAsync(source.Apply(tickets, filter, metric.DateBasis), context, cancellationToken));
+            var pipeline = ReportPipeline.Tickets(scope, source, db, viewer, query.Report, query.Filter, metric.DateBasis, now);
+            figures.Add(await metric.ComputeAsync(pipeline.Filtered, pipeline.Context, cancellationToken));
         }
 
-        return new ReportResult(query.Report, filter, viewer.Role == UserRole.Admin ? AllScope : TeamsScope, figures);
+        return new ReportResult(query.Report, effective, ScopeLabelOf(viewer, query.Report), figures);
     }
+
+    /// <summary><see cref="AllScope"/> for admins, <see cref="TeamsScope"/> for IT staff; asset reports always see everything.</summary>
+    public static string ScopeLabelOf(ReportViewer viewer, ReportName report) =>
+        viewer.Role == UserRole.Admin || report is ReportName.Assets or ReportName.Warranty ? AllScope : TeamsScope;
 
     /// <summary>Asset and warranty reports are snapshots of all assets, for IT staff and admins alike.</summary>
     private async Task<ReportResult> AssetReport(GetReportQuery query, ReportViewer viewer, CancellationToken cancellationToken)
     {
-        var assets = AssetReportSource.Apply(scope.AssetsFor(viewer), query.Filter);
-        var context = AssetReportContext.Create(db, query.Filter, clock.GetUtcNow(), companyClock.Zone);
+        var pipeline = ReportPipeline.Assets(scope, db, companyClock, viewer, query.Filter, clock.GetUtcNow());
 
         var figures = new List<ReportFigure>();
         foreach (var metric in ReportCatalog.Get(query.Report).OfType<AssetReportMetric>())
         {
-            figures.Add(await metric.ComputeAsync(assets, context, cancellationToken));
+            figures.Add(await metric.ComputeAsync(pipeline.Filtered, pipeline.Context, cancellationToken));
         }
 
         return new ReportResult(query.Report, query.Filter, AllScope, figures);

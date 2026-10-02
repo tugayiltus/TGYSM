@@ -125,6 +125,7 @@
   "reports": {
     "unknown_report": "Bilinmeyen rapor.",
     "unknown_metric": "Bilinmeyen rapor ölçüsü.",
-    "invalid_filter": "Rapor filtresi geçersiz: tarih aralığını ve seçilen değerleri kontrol edin."
+    "invalid_filter": "Rapor filtresi geçersiz: tarih aralığını ve seçilen değerleri kontrol edin.",
+    "export_too_large": "Bu rapor eşzamanlı dışa aktarım için çok büyük (en fazla 5.000 satır). Filtreyi daraltın veya arka planda dışa aktarın."
   }
 }

@@ -18,6 +18,12 @@
     </PackageReference>
     <!-- SMTP transport (ADR-0015); MimeKit arrives as its transitive dependency. -->
     <PackageReference Include="MailKit" />
+    <!-- Excel report export (spec §7.3). -->
+    <PackageReference Include="ClosedXML" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The only server-side Turkish text (spec §7.3): Excel column headers and enum values. WithCulture=false: ".tr." in the name would otherwise build a satellite assembly. -->
+    <EmbeddedResource Include="Reports\ExportHeaders.tr.json" WithCulture="false" LogicalName="Tgysm.Infrastructure.Reports.ExportHeaders.tr.json" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Tgysm.Api.IntegrationTests" />

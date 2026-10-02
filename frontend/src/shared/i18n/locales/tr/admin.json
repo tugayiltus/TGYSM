@@ -153,7 +153,8 @@
     "sla_calendar": "SLA takvimi",
     "holiday": "Tatil günü",
     "sla_policy": "SLA politikası",
-    "knowledge_article": "Bilgi bankası makalesi"
+    "knowledge_article": "Bilgi bankası makalesi",
+    "report": "Rapor"
   },
   "auditActions": {
     "setup": {
@@ -260,6 +261,9 @@
       "archived": "Makale arşivlendi",
       "restored": "Makale taslağa geri alındı",
       "visibility_changed": "Makale görünürlüğü değişti"
+    },
+    "reports": {
+      "exported": "Rapor Excel olarak dışa aktarıldı"
     }
   },
   "emailEvents": {

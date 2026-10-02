@@ -20,4 +20,5 @@ public static class AuditEntityTypes
     public const string Holiday = "holiday";
     public const string SlaPolicy = "sla_policy";
     public const string KnowledgeArticle = "knowledge_article";
+    public const string Report = "report";
 }

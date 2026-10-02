@@ -57,11 +57,9 @@ public sealed class ReportRowSource(ReportScope scope, TicketReportSource source
             return OpenAssets(viewer, assetMetric, bucket, part, filter, now);
         }
 
-        var effective = ReportCatalog.EffectiveFilter(report, filter);
         var ticketMetric = (ReportMetric)metric;
-        var filtered = source.Apply(scope.TicketsFor(viewer), effective, ticketMetric.DateBasis);
-        var context = new ReportContext(db, now, source.Window(effective));
-        var rows = TicketRows(ticketMetric, filtered, context, bucket, part);
+        var pipeline = ReportPipeline.Tickets(scope, source, db, viewer, report, filter, ticketMetric.DateBasis, now);
+        var rows = TicketRows(ticketMetric, pipeline.Filtered, pipeline.Context, bucket, part);
         return new DrilldownRows(DrilldownKind.Tickets, ProjectTickets(rows), null);
     }
 
@@ -108,12 +106,11 @@ public sealed class ReportRowSource(ReportScope scope, TicketReportSource source
             throw Invalid(PartField);
         }
 
-        var assets = AssetReportSource.Apply(scope.AssetsFor(viewer), filter);
-        var context = AssetReportContext.Create(db, filter, now, companyClock.Zone);
+        var pipeline = ReportPipeline.Assets(scope, db, companyClock, viewer, filter, now);
         IQueryable<Asset> rows;
         try
         {
-            rows = bucket is null ? metric.Rows(assets, context) : metric.BucketRows(assets, context, bucket);
+            rows = bucket is null ? metric.Rows(pipeline.Filtered, pipeline.Context) : metric.BucketRows(pipeline.Filtered, pipeline.Context, bucket);
         }
         catch (NotSupportedException)
         {

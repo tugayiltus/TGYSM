@@ -110,7 +110,10 @@ public sealed record ReportFilter
         new(From is { } from ? StartOfDay(from, zone) : null, To is { } to ? StartOfDay(to.AddDays(1), zone) : null);
 
     /// <summary>Query string (no leading '?') that <c>ReportFilterBinder.Bind</c> reads back to an equal filter.</summary>
-    public string ToQueryString()
+    public string ToQueryString() => string.Join('&', Entries().Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
+
+    /// <summary>The set filters as <see cref="ReportFilterKeys"/> name and query value (ISO day, snake_case enum, guid), in a fixed order.</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> Entries()
     {
         var parts = new List<KeyValuePair<string, string?>>
         {
@@ -128,7 +131,7 @@ public sealed record ReportFilter
             new(ReportFilterKeys.AssetType, EnumName(AssetType)),
             new(ReportFilterKeys.AssetStatus, EnumName(AssetStatus)),
         };
-        return string.Join('&', parts.Where(p => p.Value is not null).Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value!)}"));
+        return [.. parts.Where(p => p.Value is not null).Select(p => new KeyValuePair<string, string>(p.Key, p.Value!))];
     }
 
     /// <summary>The snake_case query name of an enum value ("on_hold"), the form URLs use everywhere.</summary>

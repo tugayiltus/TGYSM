@@ -7,6 +7,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Infrastructure.Email;
 using Tgysm.Infrastructure.Files;
 using Tgysm.Infrastructure.Persistence;
+using Tgysm.Infrastructure.Reports;
 using Tgysm.Infrastructure.Security;
 
 namespace Tgysm.Infrastructure;
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddOptions<FileStorageOptions>().BindConfiguration(FileStorageOptions.SectionName);
         services.AddSingleton<IFileStore, LocalFileStore>();
         services.AddSingleton<IFileScanner, DevelopmentFileScanner>();
+        services.AddScoped<IReportFileWriter, ExcelReportWriter>();
 
         // Account-link tokens (ADR-0015, ADR-0017); key ring persistence is unconfigured for now (flagged as a
         // production risk in ADR-0004) and out of this task's scope.

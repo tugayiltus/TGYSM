@@ -93,4 +93,6 @@ public static class AuditActions
     public const string KnowledgeVisibilityChanged = "knowledge.visibility_changed";
     public const string TicketArticleLinked = "tickets.article_linked";
     public const string TicketArticleUnlinked = "tickets.article_unlinked";
+
+    public const string ReportExported = "reports.exported";
 }

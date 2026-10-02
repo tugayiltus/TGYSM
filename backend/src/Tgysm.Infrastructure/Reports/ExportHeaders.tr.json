@@ -1,0 +1,101 @@
+{
+  "labels": {
+    "sheet_records": "Kayıtlar",
+    "sheet_filters": "Filtreler",
+    "field": "Alan",
+    "value": "Değer",
+    "report": "Rapor",
+    "metric": "Ölçü",
+    "bucket": "Dilim",
+    "part": "Bölüm",
+    "scope": "Kapsam",
+    "generated_at": "Oluşturulma zamanı",
+    "row_count": "Satır sayısı"
+  },
+  "scope": {
+    "all": "Tüm kayıtlar",
+    "teams": "Ekiplerimin kayıtları"
+  },
+  "columns": {
+    "number": "Numara",
+    "kind": "Tür",
+    "subject": "Konu",
+    "status": "Durum",
+    "priority": "Öncelik",
+    "team": "Ekip",
+    "assignee": "Atanan",
+    "created_at": "Oluşturulma",
+    "completed_at": "Tamamlanma",
+    "asset_tag": "Demirbaş etiketi",
+    "type": "Tür",
+    "brand": "Marka",
+    "model": "Model",
+    "location": "Konum",
+    "warranty_ends_on": "Garanti bitişi"
+  },
+  "filters": {
+    "from": "Başlangıç tarihi",
+    "to": "Bitiş tarihi",
+    "kind": "Tür",
+    "priority": "Öncelik",
+    "categoryId": "Kategori kimliği",
+    "teamId": "Ekip kimliği",
+    "assigneeId": "Atanan kimliği",
+    "departmentId": "Departman kimliği",
+    "locationId": "Konum kimliği",
+    "status": "Durum",
+    "slaState": "SLA durumu",
+    "assetType": "Varlık türü",
+    "assetStatus": "Varlık durumu"
+  },
+  "values": {
+    "ticket_kind": {
+      "incident": "Arıza",
+      "request": "Talep"
+    },
+    "ticket_status": {
+      "open": "Açık",
+      "in_progress": "Üzerinde çalışılıyor",
+      "on_hold": "Beklemede",
+      "completed": "Tamamlandı",
+      "cancelled": "İptal edildi"
+    },
+    "priority": {
+      "p1": "P1",
+      "p2": "P2",
+      "p3": "P3",
+      "p4": "P4"
+    },
+    "asset_type": {
+      "desktop": "Masaüstü",
+      "laptop": "Dizüstü",
+      "phone": "Telefon",
+      "tablet": "Tablet"
+    },
+    "asset_status": {
+      "in_stock": "Depoda",
+      "assigned": "Zimmetli",
+      "maintenance": "Bakımda",
+      "lost": "Kayıp",
+      "retired": "Hizmet dışı"
+    },
+    "sla_state_filter": {
+      "met": "Karşılandı",
+      "breached": "İhlal edildi",
+      "open_breached": "Açık ve ihlal edilmiş",
+      "at_risk": "Risk altında"
+    },
+    "report_name": {
+      "incidents": "Arızalar",
+      "requests": "Talepler",
+      "operations": "Operasyon",
+      "transfers": "Transferler",
+      "assets": "Varlıklar",
+      "warranty": "Garanti"
+    },
+    "report_drill_part": {
+      "numerator": "Pay",
+      "denominator": "Payda"
+    }
+  }
+}
