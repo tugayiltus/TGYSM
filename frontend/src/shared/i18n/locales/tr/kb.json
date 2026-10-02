@@ -1,0 +1,84 @@
+{
+  "home": {
+    "card": "Nasıl Yapılır?",
+    "cardDescription": "Sık karşılaşılan sorunların çözümlerini okuyun."
+  },
+  "list": {
+    "title": "Nasıl Yapılır?",
+    "search": "Makalelerde ara",
+    "category": "Kategori",
+    "allCategories": "Tüm kategoriler",
+    "status": "Durum",
+    "visibility": "Görünürlük",
+    "all": "Tümü",
+    "new": "Yeni makale",
+    "empty": "Aramanızla eşleşen makale bulunamadı.",
+    "caption": "Makaleler"
+  },
+  "status": {
+    "draft": "Taslak",
+    "published": "Yayında",
+    "archived": "Arşivlendi"
+  },
+  "visibility": {
+    "employees": "Tüm çalışanlar",
+    "internal": "Yalnızca BT personeli"
+  },
+  "article": {
+    "back": "Makalelere dön",
+    "category": "Kategori",
+    "author": "Yazar",
+    "publishedAt": "Yayın tarihi",
+    "updatedAt": "Son güncelleme",
+    "edit": "Düzenle",
+    "publish": "Yayınla",
+    "archive": "Arşivle",
+    "restore": "Taslağa geri al",
+    "revisions": "Sürüm geçmişi"
+  },
+  "revisions": {
+    "caption": "Makalenin sürüm geçmişi",
+    "empty": "Henüz sürüm kaydı yok.",
+    "revision": "Sürüm",
+    "title": "Başlık",
+    "visibility": "Görünürlük",
+    "editedBy": "Düzenleyen",
+    "editedAt": "Tarih"
+  },
+  "editor": {
+    "createTitle": "Yeni makale",
+    "editTitle": "Makaleyi düzenle",
+    "title": "Başlık",
+    "summary": "Özet",
+    "body": "İçerik (Markdown)",
+    "bodyHint": "Başlık, liste, bağlantı ve kalın/italik yazı kullanılabilir. HTML ve uzaktan görseller gösterilmez.",
+    "category": "Kategori",
+    "noCategory": "Kategorisiz",
+    "visibility": "Görünürlük",
+    "tabs": "Düzenleme görünümü",
+    "write": "Yaz",
+    "preview": "Önizleme",
+    "previewEmpty": "Önizlenecek içerik yok.",
+    "save": "Kaydet",
+    "saved": "Makale kaydedildi.",
+    "reload": "Sunucudaki sürümü yükle",
+    "loadFailed": "Makale yüklenemedi."
+  },
+  "ticket": {
+    "title": "İlgili makaleler",
+    "empty": "Bu kayda bağlı makale yok.",
+    "link": "Makale bağla",
+    "unlink": "Bağlantıyı kaldır",
+    "search": "Makale ara",
+    "pick": "Makale",
+    "select": "Seçin",
+    "notShown": "Çalışana gösterilmez"
+  },
+  "reply": {
+    "add": "Makale ekle",
+    "search": "Makale ara",
+    "pick": "Makale",
+    "select": "Seçin",
+    "insert": "Ekle"
+  }
+}

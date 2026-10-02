@@ -42,6 +42,19 @@ export const routes: RouteObject[] = [
             ),
             children: [{ path: ROUTES.approvals, lazy: async () => ({ Component: (await import('../features/approvals/ApprovalsPage')).ApprovalsPage }) }],
           },
+          { path: ROUTES.kb, lazy: async () => ({ Component: (await import('../features/kb/KnowledgeListPage')).KnowledgeListPage }) },
+          {
+            element: (
+              <RequireRole roles={IT_STAFF_OR_ADMIN}>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [
+              { path: ROUTES.kbNew, lazy: async () => ({ Component: (await import('../features/kb/ArticleEditorPage')).ArticleCreatePage }) },
+              { path: `${ROUTES.kb}/:id/edit`, lazy: async () => ({ Component: (await import('../features/kb/ArticleEditorPage')).ArticleEditPage }) },
+            ],
+          },
+          { path: `${ROUTES.kb}/:id`, lazy: async () => ({ Component: (await import('../features/kb/ArticlePage')).ArticlePage }) },
           { path: ROUTES.myAssets, lazy: async () => ({ Component: (await import('../features/assets/MyAssetsPage')).MyAssetsPage }) },
           {
             element: (

@@ -11,6 +11,7 @@ import { useComments, useTicket, useTimeline, type TicketDetail } from './api';
 import { CommentBox, CommentList } from './Comments';
 import { SlaSummary } from './SlaBadge';
 import { TicketActions } from './TicketActions';
+import { TicketArticles } from './TicketArticles';
 import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
 import { TicketLinks } from './TicketLinks';
 import { Timeline } from './Timeline';
@@ -112,6 +113,7 @@ function TicketDetail({ number }: { number: string }) {
 
       <TicketActions ticket={item} />
       <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
+      <TicketArticles ticket={item} />
 
       {/* min-w-0: grid items otherwise grow to their content's min width and push the page wider than 360 px. */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

@@ -12,6 +12,8 @@ export const ROUTES = {
   tickets: '/tickets',
   newIncident: '/tickets/new/incident',
   newRequest: '/tickets/new/request',
+  kb: '/kb',
+  kbNew: '/kb/new',
   workspace: '/workspace',
   workspaceQueue: '/workspace/queue',
   approvals: '/approvals',
@@ -33,3 +35,7 @@ export const ROUTES = {
 export const assetPath = (id: string) => `${ROUTES.assets}/${id}`;
 
 export const ticketPath = (number: string) => `${ROUTES.tickets}/${number}`;
+
+export const articlePath = (id: string) => `${ROUTES.kb}/${id}`;
+
+export const articleEditPath = (id: string) => `${ROUTES.kb}/${id}/edit`;

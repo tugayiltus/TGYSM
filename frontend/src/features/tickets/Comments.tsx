@@ -9,6 +9,7 @@ import { TextAreaField } from '../../shared/ui/TextAreaField';
 import { useAddComment, type CommentItem, type TicketDetail, type Visibility } from './api';
 import { AttachmentInput } from './AttachmentInput';
 import { describeCommentError } from './commentErrors';
+import { ReplyArticlePicker } from './ReplyArticlePicker';
 
 const ATTACHMENTS_PATH = 'attachments';
 
@@ -103,6 +104,7 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
       <FormAlert message={add.error ? describeCommentError(add.error) : null} />
       {/* Locked while sending: the success handler clears the box, which would drop anything typed meanwhile. */}
       <TextAreaField label={t('comment.body')} value={body} disabled={add.isPending} onChange={(event) => setBody(event.target.value)} />
+      <ReplyArticlePicker onInsert={(text) => setBody((current) => (current.trim() === '' ? text : `${current}\n${text}`))} />
       <AttachmentInput key={formKey} label={t('comment.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
       <Button type="submit" className="self-start" disabled={body.trim() === '' && files.length === 0} isLoading={add.isPending}>
         {t('comment.send')}

@@ -10,6 +10,7 @@ export function HomePage() {
   const { t } = useTranslation('auth');
   const { t: ta } = useTranslation('assets');
   const { t: tt } = useTranslation('tickets');
+  const { t: tk } = useTranslation('kb');
   const me = useSession();
 
   return (
@@ -53,6 +54,12 @@ export function HomePage() {
             </Link>
           </li>
         )}
+        <li>
+          <Link to={ROUTES.kb} className={CARD_CLASS}>
+            <span className="block font-medium">{tk('home.card')}</span>
+            <span className="mt-1 block text-sm text-slate-600">{tk('home.cardDescription')}</span>
+          </Link>
+        </li>
         <li>
           <Link to={ROUTES.profile} className={CARD_CLASS}>
             <span className="block font-medium">{t('home.profileCard')}</span>
