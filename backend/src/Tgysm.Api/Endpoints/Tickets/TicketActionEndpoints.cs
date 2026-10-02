@@ -25,6 +25,8 @@ public sealed record RelatedRequestRequest(Guid RequestTypeId);
 
 public sealed record LinkAssetRequest(Guid AssetId);
 
+public sealed record LinkArticleRequest(Guid ArticleId);
+
 internal static partial class TicketEndpoints
 {
     private static async Task<Created<CommentItem>> AddCommentAsync(string number, HttpRequest request, AddCommentHandler handler, CancellationToken cancellationToken)
@@ -99,6 +101,14 @@ internal static partial class TicketEndpoints
             TypedResults.Ok(await h.HandleAsync(new LinkTicketAssetCommand(number, r.AssetId), ct))).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapDelete($"{NumberRoute}/assets/{{assetId:guid}}", async (string number, Guid assetId, UnlinkTicketAssetHandler h, CancellationToken ct) =>
             TypedResults.Ok(await h.HandleAsync(new UnlinkTicketAssetCommand(number, assetId), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        tickets.MapGet($"{NumberRoute}/articles", async (string number, ListTicketArticlesHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new ListTicketArticlesQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        tickets.MapPost($"{NumberRoute}/articles", async (string number, LinkArticleRequest r, LinkArticleHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new LinkArticleCommand(number, r.ArticleId), ct)))
+            .ProducesProblem(StatusCodes.Status403Forbidden).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapDelete($"{NumberRoute}/articles/{{articleId:guid}}", async (string number, Guid articleId, UnlinkArticleHandler h, CancellationToken ct) =>
+            TypedResults.Ok(await h.HandleAsync(new UnlinkArticleCommand(number, articleId), ct)))
+            .ProducesProblem(StatusCodes.Status403Forbidden).ProducesProblem(StatusCodes.Status404NotFound);
         tickets.MapPost($"{NumberRoute}/approval/reassign", async (string number, ReassignApproverRequest r, ReassignApproverHandler h, CancellationToken ct) =>
             TypedResults.Ok(await h.HandleAsync(new ReassignApproverCommand(number, r.ApproverId, r.Reason), ct)))
             .RequireAuthorization(Policies.Admin)

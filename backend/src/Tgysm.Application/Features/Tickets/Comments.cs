@@ -4,11 +4,14 @@ using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Features.Knowledge;
 using Tgysm.Application.Sla;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Knowledge;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
+using Tgysm.Domain.Users;
 
 namespace Tgysm.Application.Features.Tickets;
 
@@ -54,6 +57,11 @@ public sealed class AddCommentHandler(
             throw new DomainException(ErrorCodes.CommentInternalNotAllowed, "Only people working on the ticket write internal notes.");
         }
 
+        if (visibility == Visibility.Public)
+        {
+            await RejectInternalArticleLinksAsync(command.Body, cancellationToken);
+        }
+
         var now = clock.GetUtcNow();
         var comment = TicketComment.Create(ticket.Id, viewer.UserId, command.Body ?? string.Empty, visibility, now);
         var stored = new List<string>();
@@ -91,6 +99,22 @@ public sealed class AddCommentHandler(
         }
 
         return (await CommentQueries.ListAsync(db, ticket.Id, viewer, cancellationToken)).Single(c => c.Id == comment.Id);
+    }
+
+    /// <summary>A public reply may only point at articles employees can read (spec §6.2); unknown ids count as unreadable.</summary>
+    private async Task RejectInternalArticleLinksAsync(string? body, CancellationToken cancellationToken)
+    {
+        var ids = KnowledgeLinks.ExtractArticleIds(body ?? string.Empty);
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        var readable = await db.KnowledgeArticles.AsNoTracking().Where(ArticleAccess.ReadableBy(UserRole.Employee)).CountAsync(a => ids.Contains(a.Id), cancellationToken);
+        if (readable < ids.Count)
+        {
+            throw new DomainException(ErrorCodes.KnowledgeInternalArticleInPublicReply, "A public reply links an article employees cannot read.");
+        }
     }
 
     private static async Task<List<(UploadedFile File, byte[] Content, string ContentType)>> ReadFilesAsync(IReadOnlyList<UploadedFile> uploads, CancellationToken cancellationToken)
