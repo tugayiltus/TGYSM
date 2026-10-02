@@ -31,7 +31,7 @@ public sealed class KnowledgeArticleTests
     }
 
     [Fact]
-    public void Publish_from_draft_sets_published_at_and_bumps_revision()
+    public void Publish_from_draft_sets_published_at_and_keeps_revision()
     {
         var article = Draft();
 
@@ -39,7 +39,7 @@ public sealed class KnowledgeArticleTests
 
         Assert.Equal(ArticleStatus.Published, article.Status);
         Assert.Equal(Later, article.PublishedAt);
-        Assert.Equal((Editor, Later, 2), (article.UpdatedBy, article.UpdatedAt, article.Revision));
+        Assert.Equal((Editor, Later, 1), (article.UpdatedBy, article.UpdatedAt, article.Revision));
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public sealed class KnowledgeArticleTests
     }
 
     [Fact]
-    public void Status_changes_rebuild_search_text_unchanged_and_bump_revision()
+    public void Status_changes_keep_search_text_and_revision()
     {
         var article = Draft();
         var before = article.SearchText;
@@ -135,6 +135,30 @@ public sealed class KnowledgeArticleTests
         article.Publish(Editor, Later);
 
         Assert.Equal(before, article.SearchText);
+        Assert.Equal(1, article.Revision);
+    }
+
+    [Fact]
+    public void Archive_and_restore_keep_revision()
+    {
+        var article = Draft();
+
+        article.Archive(Editor, Later);
+        article.Restore(Editor, Latest);
+
+        Assert.Equal(1, article.Revision);
+    }
+
+    [Fact]
+    public void Update_on_archived_article_throws_until_restored()
+    {
+        var article = Draft();
+        article.Archive(Editor, Later);
+
+        AssertInvalid(() => article.Update("t", "s", "b", null, null, ArticleVisibility.Employees, Editor, Latest));
+
+        article.Restore(Editor, Latest);
+        article.Update("t", "s", "b", null, null, ArticleVisibility.Employees, Editor, Latest.AddDays(1));
         Assert.Equal(2, article.Revision);
     }
 

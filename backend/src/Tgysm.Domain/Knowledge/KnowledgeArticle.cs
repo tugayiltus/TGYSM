@@ -4,7 +4,8 @@ namespace Tgysm.Domain.Knowledge;
 
 /// <summary>
 /// Knowledge base article (spec §6). State machine: draft → published; draft/published → archived; archived → draft.
-/// Every mutating call bumps <see cref="Revision"/> so the handler can append one <see cref="ArticleRevision"/> per save.
+/// Only <see cref="Create"/> and <see cref="Update"/> (content changes) bump <see cref="Revision"/>, so revisions have no gaps;
+/// status changes keep it. Archived articles must be restored before they can be edited.
 /// </summary>
 public sealed class KnowledgeArticle : Entity
 {
@@ -36,8 +37,11 @@ public sealed class KnowledgeArticle : Entity
     }
 
     public void Update(
-        string title, string summary, string body, Guid? categoryId, string? categoryName, ArticleVisibility visibility, Guid editorId, DateTimeOffset now) =>
+        string title, string summary, string body, Guid? categoryId, string? categoryName, ArticleVisibility visibility, Guid editorId, DateTimeOffset now)
+    {
+        Require([ArticleStatus.Draft, ArticleStatus.Published], nameof(Update));
         Apply(title, summary, body, categoryId, categoryName, visibility, editorId, now);
+    }
 
     public void Publish(Guid actorId, DateTimeOffset now)
     {
@@ -78,13 +82,13 @@ public sealed class KnowledgeArticle : Entity
         Visibility = visibility;
         SearchText = TurkishText.ToSearchKey($"{trimmedTitle} {trimmedSummary} {trimmedBody} {categoryName}");
         Touch(editorId, now);
+        Revision++;
     }
 
     private void Touch(Guid actorId, DateTimeOffset now)
     {
         UpdatedBy = actorId;
         UpdatedAt = now;
-        Revision++;
     }
 
     private static void RequireLength(string value, int max, string field)
