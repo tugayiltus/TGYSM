@@ -1,12 +1,12 @@
 # TGYSM — ITSM web platform
 
-Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–3 done (auth, `/admin`, assets + CSV import, tickets + approvals + comments/attachments). Phase 4 done on branch `phase-4-sla-email` (not merged): Worker host, outbox + email, templates and deliveries, password set links, SLA calendar/policy/instances/monitor, `/admin/system`, UI pages. Next: Phase 5 (knowledge base/reports). Requirements: `tgysm.md`.
+Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–4 done and merged to `master` (auth, `/admin`, assets + CSV import, tickets + approvals + comments/attachments, Worker host, outbox + email, password set links, SLA, `/admin/system`). Phase 5 in progress on branch `phase-5-knowledge-reports` (plan `docs/superpowers/plans/2026-10-02-phase-5-knowledge-reports.md`): done = knowledge base (data, API, ticket links + public-reply guard, UI), report model, incident/request/operations/transfers/asset/warranty reports, drill-down, synchronous Excel export; open = background export jobs + download (Task 12), reports UI (Task 13), E2E/review (Task 14). Requirements: `tgysm.md`.
 
 ## Stack & Architecture
 - **Backend:** .NET 10 modular monolith (ADR-0001) — `backend/src/Tgysm.Domain` (rules, no framework deps) → `Tgysm.Application` (handlers + FluentValidation, ports) → `Tgysm.Infrastructure` (EF Core + Npgsql, migrations) → `Tgysm.Api` (Minimal APIs, auth, CLI). `backend/src/Tgysm.Worker` (Generic Host, jobs `OutboxDispatcher`, `EmailSender`, `SlaMonitor`, `Cleanup`, row leases; references Application + Infrastructure, never Api; ADR-0014/0015) runs next to the API. Solution: `backend/Tgysm.slnx`.
 - **Database:** PostgreSQL 17, local Homebrew (ADR-0002). snake_case, `uuid` v7, `xmin` concurrency.
 - **Frontend:** React 19 + Vite + TypeScript in `frontend/` (ADR-0008). Server state via TanStack Query; typed client `src/shared/api/client.ts` generated from OpenAPI.
-- Out of scope unless asked: mobile app. The export runner job, knowledge base and reports belong to Phase 5.
+- Out of scope unless asked: mobile app.
 
 ## Commands
 Run through `tools/` scripts.
@@ -15,10 +15,11 @@ Run through `tools/` scripts.
 - `tools/setup-admin.sh --email … --first-name … --last-name …` — create first admin (once).
 - `tools/reset-password.sh --email …` — temporary password from the console (locked-out operator).
 - `tools/add-migration.sh <Name>` — add an EF Core migration.
-- `tools/run.sh` — API on `http://localhost:5080`, Worker (email to `tmp/email-pickup`) + Vite on `http://localhost:5173`.
+- `tools/run.sh` — API on `http://localhost:5080`, Worker (email to `tmp/email-pickup`) + Vite on `http://localhost:5173`, in the terminal; refuses while the dev services run.
+- `tools/dev-service.sh install|uninstall|start|stop|restart|status|logs` — launchd agents keep API/Worker/Vite running (last-good-build fallback via `tools/dev-dotnet-host.sh`). Stopping them for builds or E2E is fine, but restart them afterwards (`tools/dev-service.sh start`, or `restart` to pick up backend changes).
 - `tools/lint.sh` — `dotnet format --verify-no-changes` + ESLint + TypeScript.
 - `tools/test.sh` — backend tests with coverage gate + frontend tests with coverage gate. Backend uses Microsoft.Testing.Platform (repo-root `global.json`): `dotnet test --solution backend/Tgysm.slnx`, filters `--filter-class` / `--filter-method`.
-- `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5080/4173. Also starts the Worker (`Email:Mode=Pickup` into a per-run temp folder, 2 s job intervals; E2E-only env overrides). Tests seed their data through the admin API (`frontend/e2e/world.ts`).
+- `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5080/4173 (stop the dev services first). Also starts the Worker (`Email:Mode=Pickup` into a per-run temp folder, 2 s job intervals; E2E-only env overrides). Tests seed their data through the admin API (`frontend/e2e/world.ts`).
 - `tools/gen-api-types.sh` — regenerate OpenAPI JSON and `schema.d.ts` after API contract changes.
 - `tools/build.sh` — lint + tests, then Release build + frontend build with chunk sizes.
 - `tools/progress.sh [plan-file]` — plan task status from the SDD ledger (`.superpowers/sdd/<plan>/progress.md`) + branch, recent commits, uncommitted changes. Default: newest plan.

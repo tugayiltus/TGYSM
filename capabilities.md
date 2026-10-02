@@ -14,8 +14,10 @@ Status legend: **Available** = implemented and tested; **Planned** = later phase
 | Email (Phase 4): worker host, transactional outbox, ticket notification events, admin-managed templates, sending with retry (SMTP or pickup folder), deliveries list and retry, password set links with forgot-password, `/admin/email-templates` and `/admin/email-deliveries` pages | Available (Phase 4, on branch `phase-4-sla-email`) |
 | SLA (Phase 4): business calendar and holidays, versioned policy, SLA instances per ticket, monitor job with warning and breach events, `sla_risk` queue, SLA block on tickets, `/admin/sla/*` pages | Available (Phase 4, on branch `phase-4-sla-email`) |
 | `/admin/system` worker status page, cleanup job | Available (Phase 4, on branch `phase-4-sla-email`) |
-| Export runner | Planned |
-| Knowledge base and reports (Phase 5), release (Phase 6) | Planned |
+| Knowledge base: articles with visibility and status, revisions, Turkish-aware search, links to tickets, public-reply guard, `/kb*` pages, ticket article box and reply picker | Available (Phase 5, in progress on branch `phase-5-knowledge-reports`) |
+| Reports: incident, request, operations, transfers, asset and warranty reports (`GET /reports/{report}`), drill-down rows, synchronous Excel export up to 5,000 rows | Available (API only; Phase 5, in progress on branch `phase-5-knowledge-reports`) |
+| Background export jobs and download (plan Task 12), reports UI (Task 13), Phase 5 E2E and review (Task 14) | Planned (Phase 5, open) |
+| Release (Phase 6) | Planned |
 
 ## Tech stack
 
@@ -34,6 +36,8 @@ Status legend: **Available** = implemented and tested; **Planned** = later phase
 | Ticket access | Employees own tickets, IT staff own + their teams', admins all; everything else 404 | ADR-0013 |
 | Tests | xUnit v3 on Microsoft.Testing.Platform, NetArchTest, coverlet.MTP; Vitest + React Testing Library (jsdom 29); Playwright (360×800, 1280×800) | ADR-0008 |
 | Background worker | `Tgysm.Worker` (.NET Generic Host, references `Application` and `Infrastructure`, never `Api`); one `BackgroundService` per job on a `PeriodicTimer`; batches claimed with `SELECT … FOR UPDATE SKIP LOCKED` row leases (`locked_until`), so several instances can run side by side; one DI scope per unit of work | ADR-0014 |
+| Knowledge base | Articles with `employees`/`internal` visibility and `draft`/`published`/`archived` status, append-only revisions, search over a Turkish-folded `search_text` with a trigram GIN index, Markdown rendered in the browser with `react-markdown` without raw HTML | ADR-0019 |
+| Reports | One `ReportFilter` and one query builder per report family; every metric's figure, drill-down rows and Excel export share one predicate; Excel files by ClosedXML 0.105 | ADR-0020 |
 | Data Protection | `AddDataProtection()` with the shared application name `Tgysm`, so the Worker can read secrets the API protected. Key persistence is not configured yet (open item, see `SECURITY.md`) | ADR-0004, ADR-0015 |
 | Outbox and email | Transactional outbox (`notification_outbox`), dispatcher job, sender job with retry; `IEmailSender` implemented by MailKit 4.18 SMTP (production) and a pickup folder of `.eml` files (development, tests); at-least-once delivery | ADR-0015 |
 | Email templates | Database rows per event type, plain text, fixed `{{variable}}` allow-list per event, Turkish defaults seeded by migration | ADR-0016 |
@@ -143,6 +147,17 @@ Users: `POST /admin/users` and `POST /admin/users/{id}/reset-password` take `del
 | POST | `/assets/import/preview` | Multipart `file` (≤ 10 MB, ≤ 5,000 rows) → job with parsed rows and per-row errors; nothing written to the inventory |
 | POST | `/assets/import/{jobId}/commit` | Inserts all rows in one transaction; refused while errors exist (`imports.has_errors`); a second commit returns the same result |
 
+### Knowledge base (signed in; writes IT staff or admin)
+
+| Method | Path | Behavior |
+|---|---|---|
+| GET | `/kb/articles` | Paged list (`page`, `pageSize`), newest update first. Query: `search`, `categoryId`, `status`, `visibility`. Employees get only `published` + `employees` articles and their `status`/`visibility` filters are ignored. With `search`, title matches sort first |
+| GET | `/kb/articles/{id}` | Article detail; an article the caller may not read is 404 |
+| POST | `/kb/articles` | Create a draft (IT staff, admin): `title` (≤ 200), `summary` (≤ 500), `body` Markdown (≤ 50,000), `categoryId`, `visibility`. 201 |
+| PUT | `/kb/articles/{id}` | Edit with `version` (409 on a stale version); an `archived` article must be restored first (`knowledge.invalid_transition`) |
+| POST | `/kb/articles/{id}/publish`, `/archive`, `/restore` | Status actions with `version`; archived restores to `draft`; other transitions give 409 `knowledge.invalid_transition` |
+| GET | `/kb/articles/{id}/revisions` | Revision history (IT staff, admin) |
+
 ### Tickets (signed in; scope rules in "Auth & permissions")
 
 | Method | Path | Behavior |
@@ -156,6 +171,7 @@ Users: `POST /admin/users` and `POST /admin/users/{id}/reset-password` take `del
 | GET / POST / DELETE | `/tickets/{number}/assets`, `/assets/{assetId}` | Linked assets; workers link any asset, the requester only one assigned to them; duplicates `common.duplicate` |
 | POST | `/tickets/{number}/comments` | Multipart `body`, `visibility` (`public`/`internal`), up to 5 `files` of 10 MB (PDF, PNG, JPEG, TXT, CSV) |
 | GET | `/tickets/{number}/comments`, `/timeline` | Employees see public items only |
+| GET / POST / DELETE | `/tickets/{number}/articles`, `/articles/{articleId}` | Knowledge articles linked to a ticket. GET: same scope as the ticket (404 outside it); employees get only employee-visible, published links. POST (body `articleId`) and DELETE: IT staff and admin only (employees 403); duplicate link `knowledge.article_already_linked` (409) |
 | GET | `/tickets/{number}/attachments/{id}` | Download of clean, visible files only; `Content-Disposition: attachment`, `nosniff` |
 | GET | `/approvals/mine` (admin) | Pending approvals assigned to me plus unassigned ones |
 | POST | `/approvals/{id}/approve`, `/reject` (admin) | With the approval's `version`; reject needs a reason |
@@ -163,6 +179,52 @@ Users: `POST /admin/users` and `POST /admin/users/{id}/reset-password` take `del
 Ticket list and detail carry an `sla` block (one entry per metric: `metric`, `dueAt`, `remainingSeconds`, `isPaused`, `isWarned`, `isBreached`, `result`). `GET /tickets?queue=sla_risk` (IT staff and admins only, else 403) lists tickets with a running or paused instance that is warned or breached; the workspace shows it as "SLA Riski".
 
 Status codes: 400 `validation.*` and field codes (`imports.*`, `attachments.*` on `file`/`files`), 401 `auth.unauthenticated`, 403 `common.forbidden` / `auth.password_change_required` / `auth.csrf_invalid`, 404 `common.not_found`, 409 business rules and `concurrency.conflict`, 429 `auth.rate_limited`. Responses carrying a temporary password send `Cache-Control: no-store`.
+
+### Reports (IT staff or admin; employees 403)
+
+| Method | Path | Behavior |
+|---|---|---|
+| GET | `/reports/{report}` | `report` is `incidents`, `requests`, `operations`, `transfers`, `assets` or `warranty` (otherwise 400 `reports.unknown_report`). Returns `{ report, filter, scopeLabel, figures }`; `scopeLabel` is `all` (admin; also asset and warranty reports for IT staff) or `teams` (IT staff: tickets whose current team is one of theirs) |
+| GET | `/reports/{report}/drilldown` | Rows behind one figure. Query: `metric` (required; unknown gives 400 `reports.unknown_metric`), `bucket`, `part` (`numerator` default, or `denominator` for ratios), `page`, `pageSize`, plus the filter |
+| GET | `/reports/{report}/export` | Same rows as the drill-down as an `.xlsx` stream (`tgysm-<report>-<metric>-<yyyyMMddHHmm>.xlsx`). Above 5,000 rows (`ReportExportLimits.SyncMaxRows`): 409 `reports.export_too_large` |
+
+Filter query parameters (all optional): `from`, `to` (`yyyy-MM-dd`, whole days in the company time zone, `to` inclusive, range 2000-01-01..2100-12-31, `from` after `to` gives 400 `reports.invalid_filter`), `kind`, `priority`, `categoryId`, `teamId`, `assigneeId`, `departmentId`, `locationId`, `status`, `slaState` (`met`, `breached`, `open_breached`, `at_risk`), `assetType`, `assetStatus`. Ticket reports use the ticket fields and asset reports the asset ones; the rest is ignored. The incident and request reports fix `kind` themselves.
+
+Metrics by report (key: definition, date basis). Calendar time and SLA time are always reported apart; a ratio carries numerator and denominator, and a zero denominator gives no value.
+
+| Report | Metric key | Definition | Date basis |
+|---|---|---|---|
+| `incidents` | `volume` | Incidents created in the window | creation |
+| `incidents` | `first_response_time` | Average first-response timer, calendar (start to stop) and SLA (`elapsed_seconds`); cancelled timers do not count | first response (timer stop) |
+| `incidents` | `resolution_time` | Average calendar and SLA time from creation to completion of incidents completed as `resolved` | completion |
+| `incidents` | `mttr` | Total resolution seconds ÷ resolved incidents; buckets `mttr_calendar` and `mttr_sla` | completion |
+| `incidents` | `open_backlog` | Open incidents now by age in whole days: `0-1`, `2-3`, `4-7`, `8+` | none (snapshot) |
+| `incidents` | `sla_compliance` | Resolution timer `met` ÷ completed incidents whose SLA counts (not `service_request_required`, not `approval_rejected`) | completion |
+| `incidents` | `excluded_outcomes` | Closed without counting toward SLA: buckets `cancelled`, `service_request_required` | completion |
+| `requests` | `volume`, `sla_compliance` | As for incidents, for requests | creation / completion |
+| `requests` | `fulfilment_time` | Average calendar and SLA time from creation to completion of requests completed as `fulfilled` | completion |
+| `requests` | `approval_wait` | Average `decided_at` − creation of approved or rejected approvals, one per request | approval decision |
+| `requests` | `rejection_rate` | Requests rejected at approval ÷ requests that ended by completion or rejection (a plain cancellation is apart) | completion |
+| `requests` | `excluded_outcomes` | Buckets `cancelled` (not by rejection), `approval_rejected` | completion |
+| `operations` | `team_load`, `assignee_load` | Open tickets now by current team / assignee (`unassigned` bucket) | none (snapshot) |
+| `operations` | `by_category`, `by_location`, `by_department` | Tickets created in the window by category, location, requester department (`none` bucket for missing values) | creation |
+| `operations` | `team_completed` | Tickets completed in the window by the team that held them at completion (target of the last assignment up to then, else the current team) | completion |
+| `operations` | `hold_reasons` | Tickets on hold now by hold reason | none (snapshot) |
+| `transfers` | `transfer_count` | Assignment rows in the window where the team changed (one per row) | assignment row time |
+| `transfers` | `reassignments` | Assignment rows in the window with the same team and a changed assignee | assignment row time |
+| `transfers` | `transfer_rate` | Tickets created in the window with at least one transfer in the window ÷ tickets created in the window | creation |
+| `transfers` | `incident_to_request` | Incident-to-request relations created in the window whose incident is in scope, each once | relation time |
+| `assets` | `by_type`, `by_status`, `by_location` | Assets as they are now by type, status, location | none (snapshot) |
+| `assets` | `active_assignments` | Assets with an open assignment | none (snapshot) |
+| `assets` | `stock` | Assets in `in_stock` | none (snapshot) |
+| `assets` | `maintenance_lost_retired` | Assets in `maintenance`, `lost` or `retired`, by status | none (snapshot) |
+| `warranty` | `expired` | Assets whose warranty ended before today | none |
+| `warranty` | `expiring` | Warranty ends from today (or a later `from`) to `to`, inclusive; `to` defaults to today + 90 days | none |
+| `warranty` | `no_warranty_date` | Assets without a warranty date (in no other warranty figure) | none |
+
+Transfer figures are scoped by the ticket: only rows of tickets the viewer may see count, and a drill-down entry is the ticket, repeated once per row.
+
+Report export audit: `reports.exported` (entity `report`) records report, metric, bucket, part and filter, never the rows. Error codes: `reports.unknown_report`, `reports.unknown_metric`, `reports.invalid_filter` (400), `reports.export_too_large` (409).
 
 ## Data models
 
@@ -193,6 +255,9 @@ Status codes: 400 `validation.*` and field codes (`imports.*`, `attachments.*` o
 | `sla_policy_versions`, `sla_targets`, `sla_pause_rules` | immutable policy versions (one `is_current`); targets per kind, priority, optional request type and metric (`target_minutes`, `warning_percent`); which hold reasons pause which timer |
 | `sla_instances` | per ticket and metric: `policy_version_id`, `target_minutes`, `warning_percent`, `elapsed_seconds`, `running_since`, `due_at`, `warn_at`, `warned_at`, `breached_at`, `stopped_at`, `result` (`met`, `breached`, `cancelled`); no `xmin` token (ADR-0018) |
 | `sla_pauses`, `sla_events` | pause periods with the hold reason; append-only log (`started`, `paused`, `resumed`, `target_changed`, `warning`, `breached`, `stopped`, `calendar_changed`) |
+| `knowledge_articles` | `title`, `summary`, `body` (Markdown), `category_id`, `visibility` (`employees`, `internal`), `status` (`draft`, `published`, `archived`), `author_id`, `published_at`, `revision`, `search_text` (folded title + summary + body + category, trigram GIN index), `xmin` token |
+| `article_revisions` | Append-only: one row per content save with title, summary, body, visibility, category, editor, time |
+| `ticket_articles` | Ticket–article link, unique per pair |
 | `worker_heartbeats` | `job`, `instance`, `last_run_at`, `last_error`; unique `(job, instance)` |
 
 Relationships: all foreign keys are `RESTRICT`; records are deactivated or closed, never deleted.
@@ -206,11 +271,15 @@ Relationships: all foreign keys are `RESTRICT`; records are deactivated or close
 - Fallback and default authorization policies require a signed-in user whose password change is not pending; `/admin/*` and `/approvals/*` need `admin`; `/assets/*` (except `/me/assets`), `/reference/users` and `/reference/teams` need IT staff or admin.
 - Ticket scope (ADR-0013): employees see their own tickets and public content only; IT staff see their own tickets and their teams' tickets with internal content; admins see all. Work actions need admin or membership in the ticket's team. Out-of-scope numbers and ids return 404 everywhere, including attachments.
 - `/admin/email-templates`, `/admin/email-deliveries`, `/admin/sla/*` and `/admin/system/*` sit under the `admin` policy like the rest of `/admin/*`. `GET /health` and the account-link endpoints (`/auth/forgot-password`, `/auth/set-password`) are anonymous.
+- Knowledge base (ADR-0019): any signed-in user may call the read endpoints, but employees see only `published` + `employees` articles; any other article is 404 on list, detail and search, and its ticket links are not shown to them. Create, edit, status actions and revisions need IT staff or admin. Linking and unlinking articles on a ticket need IT staff or admin and a ticket in their scope.
+- Reports (ADR-0020): `/reports/*` need IT staff or admin (employees 403). Admins see all tickets; IT staff see only tickets whose current `team_id` is one of their teams, not tickets they merely requested. Asset and warranty reports show all assets to both roles.
 - Password set links (ADR-0017): activation links last 72 hours, reset links 1 hour, each works once. A user's unused links are revoked when the user sets a password, when an admin changes the email address, and when an admin issues a temporary password. An account email queued before an email change is never sent to the new address. A forgot-password request is skipped (no link, no email) while the account has an unused reset link younger than 15 minutes; this also counts a link an admin issued. Every forgot-password request answers 202 and does the same work on the request path for any address, so the response does not reveal whether an account exists.
 - Development only: the API trusts `X-Forwarded-Proto` from the loopback Vite proxy so Secure cookies work on `http://localhost`.
 
 ## UI / pages
 
+- Knowledge base: `/kb` (search, category, and for IT staff status and visibility filters; list of cards), `/kb/:id` (article rendered from Markdown, revision history for IT staff), `/kb/new` and `/kb/:id/edit` (IT staff and admin: editor, publish, archive, restore). On a ticket, IT staff see an article box to link and unlink articles and a picker that inserts an employee-visible article link into a reply; employees see the linked articles that are visible to them. Markdown is shown without raw HTML and links open with `rel="noopener noreferrer"`.
+- Reports UI (`/reports`) is not built yet (plan Task 13).
 - Account links: `/forgot-password` (always shows the same confirmation) and `/set-password?token=…` (link target for activation and reset emails). The user create and reset dialogs offer "email link" (default) or "temporary password".
 
 - `/login`, `/change-password`, `/` home with role-based cards ("Bir şey çalışmıyor", "Bir şey istiyorum", "Kayıtlarım", "Zimmetlerim", IT: "İş listem", "Envanter", admin: "Onaylar", "Yönetim paneli"), `/profile`.
@@ -232,6 +301,12 @@ Relationships: all foreign keys are `RESTRICT`; records are deactivated or close
 - **Asset lifecycle (ADR-0010):** `in_stock` → assign → `assigned`; return, transfer, maintenance (optionally keeping the user responsible), lost/found, retire. Operations are serialized; concurrent handovers give one active assignment and 409 for the rest. Every operation writes a movement and an audit row.
 - **Handover against a request:** only to the open request's requester, and only after a required approval is granted (`assets.request_mismatch`, `tickets.approval_required`).
 - **CSV import:** strict UTF-8 (`imports.encoding` explains how to save from Excel), `,` or `;`, dates `yyyy-MM-dd` or `dd.MM.yyyy`; location by full or unique trailing path; duplicates inside the file and against the database reported per row; `assigned`/`lost` refused; one bad row blocks the whole commit; commit re-checks conflicts and is idempotent.
+- **Ticket closing time:** `tickets.completed_at` is set when a ticket is completed, cancelled, or cancelled by approval rejection (`approval_rejected`). It is the "closed at" instant that reports use as the completion date basis. No migration backfills rows closed earlier.
+- **Knowledge base search (ADR-0019, ADR-0006):** the key is the trimmed text lower-cased with `tr-TR` rules (`I`→`ı`, `İ`→`i`), then `ı` folded to `i`, so "Yazıcı" and "yazici" match (stored text is folded the same way) and "Isik", "ısık" and "İsik" match each other. Other diacritics (`ş`, `ç`, `ğ`, `ö`, `ü`) are not folded: "sifre" does not find "şifre", "gorev" does not find "görev". Input with no letter or digit means no search. Matching is substring over `search_text`.
+- **Article revisions:** only create and edit (content changes) bump `revision` and write an `article_revisions` row; publish, archive and restore keep it. Visibility changes, publish, archive and restore are audited (`knowledge.visibility_changed`, `knowledge.published`, `knowledge.archived`, `knowledge.restored`; also `knowledge.created`, `knowledge.updated`, `tickets.article_linked`, `tickets.article_unlinked`).
+- **Public-reply guard:** a public ticket comment whose body contains a `/kb/{uuid}` link to an `internal` article is refused with `knowledge.internal_article_in_public_reply`; the check is on the server, the reply picker is a convenience.
+- **Report consistency:** a figure, its drill-down rows and its export are produced from the same filtered query and metric predicate, so counts agree. Exports write one data sheet plus a `Filtreler` sheet with the filters and scope; Turkish headers come from `ExportHeaders.tr.json`. Cell values are stored as text or numbers, never as formulas.
+- **Dev services:** `tools/dev-service.sh install` registers three launchd user agents (`com.tgysm.dev.api`, `.worker`, `.web`) that start at login and restart on exit (10 s throttle); logs in `tmp/logs/`. API and Worker start through `tools/dev-dotnet-host.sh`, which builds into `tmp/dev-artifacts/<name>/build`, copies a good build to `current/`, and falls back to the last good build when the build fails.
 - **Ticket lifecycle:** open → in_progress → completed; open/in_progress ↔ on_hold (reason, "other" needs a note); cancel with a reason; no reopen. Completion needs a user-visible resolution; incidents need an outcome, `service_request_required` needs a related request; requests needing approval need a granted approval. Completed tickets still accept comments.
 - **Priority:** impact × urgency matrix (P1–P4), default medium/medium = P3; IT changes it with a reason, old and new values audited.
 - **Assignment:** IT claims unassigned tickets of their team (concurrent claims: one wins); transfer needs a reason ("other" needs a note) and an assignee who is an active member of the target team.
@@ -254,5 +329,5 @@ Relationships: all foreign keys are `RESTRICT`; records are deactivated or close
 - **Cleanup:** hourly, with a 30-day retention cutoff. Deletes password tokens that expired before the cutoff; `dispatched` or `skipped` outbox events older than the cutoff whose deliveries are all `sent` or `failed` (deliveries go with the event); `password_reset_requested` events (they hold an email address) that are no longer `pending` and are older than the cutoff; and `worker_heartbeats` rows not updated since the cutoff.
 - **Audit:** security, admin, asset and ticket events are written in the same transaction as the change; passwords, hashes and tokens are never recorded.
 
-<!-- DOC-BASELINE: 550302d -->
-_Documentation baseline: current as of commit 550302d (2026-10-02). Refresh with `git log --oneline 550302d..HEAD`._
+<!-- DOC-BASELINE: fa1588a -->
+_Documentation baseline: current as of commit fa1588a (2026-10-02). Refresh with `git log --oneline fa1588a..HEAD`._
