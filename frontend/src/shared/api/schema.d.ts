@@ -5690,6 +5690,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{report}/drilldown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    metric: string;
+                    bucket?: string;
+                    part?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    report: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DrilldownResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6071,6 +6132,38 @@ export interface components {
             /** Format: uint32 */
             version: number;
         };
+        DrilldownAssetRow: {
+            /** Format: uuid */
+            id: string;
+            assetTag: string;
+            type: components["schemas"]["AssetType"];
+            brand: string;
+            model: string;
+            status: components["schemas"]["AssetStatus"];
+            locationName: string;
+            /** Format: date */
+            warrantyEndsOn: null | string;
+        };
+        /** @enum {unknown} */
+        DrilldownKind: "tickets" | "assets";
+        DrilldownResult: {
+            kind: components["schemas"]["DrilldownKind"];
+            tickets: null | components["schemas"]["PagedResultOfDrilldownTicketRow"];
+            assets: null | components["schemas"]["PagedResultOfDrilldownAssetRow"];
+        };
+        DrilldownTicketRow: {
+            number: string;
+            kind: components["schemas"]["TicketKind"];
+            subject: string;
+            status: components["schemas"]["TicketStatus"];
+            priority: components["schemas"]["Priority"];
+            teamName: string;
+            assigneeName: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            completedAt: null | string;
+        };
         EmailDeliveryItem: {
             /** Format: uuid */
             id: string;
@@ -6229,6 +6322,24 @@ export interface components {
         };
         PagedResultOfDepartmentItem: {
             items: components["schemas"]["DepartmentItem"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        PagedResultOfDrilldownAssetRow: {
+            items: components["schemas"]["DrilldownAssetRow"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        PagedResultOfDrilldownTicketRow: {
+            items: components["schemas"]["DrilldownTicketRow"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */

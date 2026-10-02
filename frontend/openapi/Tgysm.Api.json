@@ -5655,6 +5655,93 @@
           }
         }
       }
+    },
+    "/api/v1/reports/{report}/drilldown": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "report",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bucket",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "part",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrilldownResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7094,6 +7181,140 @@
           }
         }
       },
+      "DrilldownAssetRow": {
+        "required": [
+          "id",
+          "assetTag",
+          "type",
+          "brand",
+          "model",
+          "status",
+          "locationName",
+          "warrantyEndsOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assetTag": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AssetType"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssetStatus"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "warrantyEndsOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        }
+      },
+      "DrilldownKind": {
+        "enum": [
+          "tickets",
+          "assets"
+        ]
+      },
+      "DrilldownResult": {
+        "required": [
+          "kind",
+          "tickets",
+          "assets"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/DrilldownKind"
+          },
+          "tickets": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PagedResultOfDrilldownTicketRow"
+              }
+            ]
+          },
+          "assets": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PagedResultOfDrilldownAssetRow"
+              }
+            ]
+          }
+        }
+      },
+      "DrilldownTicketRow": {
+        "required": [
+          "number",
+          "kind",
+          "subject",
+          "status",
+          "priority",
+          "teamName",
+          "assigneeName",
+          "createdAt",
+          "completedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TicketKind"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "assigneeName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "EmailDeliveryItem": {
         "required": [
           "id",
@@ -7658,6 +7879,64 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DepartmentItem"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PagedResultOfDrilldownAssetRow": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DrilldownAssetRow"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PagedResultOfDrilldownTicketRow": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DrilldownTicketRow"
             }
           },
           "page": {

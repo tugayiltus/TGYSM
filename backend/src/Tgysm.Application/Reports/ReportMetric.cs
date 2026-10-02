@@ -8,7 +8,7 @@ namespace Tgysm.Application.Reports;
 /// What a ticket metric needs besides the filtered tickets: the database (SLA instances, approvals), the current instant and the
 /// report's day window, for metrics whose dated rows are not tickets (assignment history, ticket relations).
 /// </summary>
-public sealed record ReportContext(IAppDbContext Db, DateTimeOffset Now, ReportWindow Window = default);
+public sealed record ReportContext(IAppDbContext Db, DateTimeOffset Now, ReportWindow Window);
 
 /// <summary>What every metric states about itself, ticket-based or asset-based.</summary>
 public interface IReportMetric
