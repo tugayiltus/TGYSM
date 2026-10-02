@@ -5606,6 +5606,55 @@
           }
         }
       }
+    },
+    "/api/v1/reports/{report}": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "report",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7412,6 +7461,14 @@
           }
         }
       },
+      "MetricShape": {
+        "enum": [
+          "count",
+          "ratio",
+          "duration",
+          "distribution"
+        ]
+      },
       "MyApprovalItem": {
         "required": [
           "id",
@@ -8067,6 +8124,235 @@
           }
         }
       },
+      "ReportBucket": {
+        "required": [
+          "key",
+          "label",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ReportFigure": {
+        "required": [
+          "metric",
+          "shape",
+          "value",
+          "numerator",
+          "denominator",
+          "buckets",
+          "unit"
+        ],
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "shape": {
+            "$ref": "#/components/schemas/MetricShape"
+          },
+          "value": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "numerator": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int64"
+          },
+          "denominator": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int64"
+          },
+          "buckets": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ReportBucket"
+            }
+          },
+          "unit": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ReportFilter": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "to": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketKind"
+              }
+            ]
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Priority"
+              }
+            ]
+          },
+          "categoryId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "teamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "assigneeId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "departmentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketStatus"
+              }
+            ]
+          },
+          "slaState": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SlaStateFilter"
+              }
+            ]
+          },
+          "assetType": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssetType"
+              }
+            ]
+          },
+          "assetStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssetStatus"
+              }
+            ]
+          }
+        }
+      },
+      "ReportName": {
+        "enum": [
+          "incidents",
+          "requests",
+          "operations",
+          "transfers",
+          "assets",
+          "warranty"
+        ]
+      },
+      "ReportResult": {
+        "required": [
+          "report",
+          "filter",
+          "scopeLabel",
+          "figures"
+        ],
+        "type": "object",
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/ReportName"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/ReportFilter"
+          },
+          "scopeLabel": {
+            "type": "string"
+          },
+          "figures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportFigure"
+            }
+          }
+        }
+      },
       "RequestTypeItem": {
         "required": [
           "id",
@@ -8154,6 +8440,15 @@
           "met",
           "breached",
           "cancelled",
+          null
+        ]
+      },
+      "SlaStateFilter": {
+        "enum": [
+          "met",
+          "breached",
+          "open_breached",
+          "at_risk",
           null
         ]
       },
@@ -9472,6 +9767,9 @@
     },
     {
       "name": "Knowledge"
+    },
+    {
+      "name": "Reports"
     }
   ]
 }

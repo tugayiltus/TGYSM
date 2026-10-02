@@ -1,7 +1,11 @@
+using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;
+
+/// <summary>What a ticket metric needs besides the filtered tickets: the database (SLA instances, approvals) and the current instant.</summary>
+public sealed record ReportContext(IAppDbContext Db, DateTimeOffset Now);
 
 /// <summary>What every metric states about itself, ticket-based or asset-based.</summary>
 public interface IReportMetric
@@ -26,12 +30,12 @@ public abstract class ReportMetric : IReportMetric
 
     public abstract MetricShape Shape { get; }
 
-    public abstract IQueryable<Ticket> Rows(IQueryable<Ticket> filtered);
+    public abstract IQueryable<Ticket> Rows(IQueryable<Ticket> filtered, ReportContext context);
 
     /// <summary>Rows behind a ratio's denominator; null for other shapes.</summary>
-    public virtual IQueryable<Ticket>? DenominatorRows(IQueryable<Ticket> filtered) => null;
+    public virtual IQueryable<Ticket>? DenominatorRows(IQueryable<Ticket> filtered, ReportContext context) => null;
 
-    public abstract Task<ReportFigure> ComputeAsync(IQueryable<Ticket> filtered, CancellationToken cancellationToken);
+    public abstract Task<ReportFigure> ComputeAsync(IQueryable<Ticket> filtered, ReportContext context, CancellationToken cancellationToken);
 }
 
 /// <summary>A metric over assets (asset and warranty reports).</summary>

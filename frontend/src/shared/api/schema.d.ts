@@ -5635,6 +5635,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{report}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    report: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReportResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6118,6 +6173,8 @@ export interface components {
             departmentName: null | string;
             locationName: null | string;
         };
+        /** @enum {unknown} */
+        MetricShape: "count" | "ratio" | "duration" | "distribution";
         MyApprovalItem: {
             /** Format: uuid */
             id: string;
@@ -6309,6 +6366,54 @@ export interface components {
             subject: string;
             status: components["schemas"]["TicketStatus"];
         };
+        ReportBucket: {
+            key: string;
+            label: null | string;
+            /** Format: int64 */
+            count: number;
+        };
+        ReportFigure: {
+            metric: string;
+            shape: components["schemas"]["MetricShape"];
+            /** Format: double */
+            value: null | number;
+            /** Format: int64 */
+            numerator: null | number;
+            /** Format: int64 */
+            denominator: null | number;
+            buckets: null | components["schemas"]["ReportBucket"][];
+            unit: null | string;
+        };
+        ReportFilter: {
+            /** Format: date */
+            from?: null | string;
+            /** Format: date */
+            to?: null | string;
+            kind?: null | components["schemas"]["TicketKind"];
+            priority?: null | components["schemas"]["Priority"];
+            /** Format: uuid */
+            categoryId?: null | string;
+            /** Format: uuid */
+            teamId?: null | string;
+            /** Format: uuid */
+            assigneeId?: null | string;
+            /** Format: uuid */
+            departmentId?: null | string;
+            /** Format: uuid */
+            locationId?: null | string;
+            status?: null | components["schemas"]["TicketStatus"];
+            slaState?: null | components["schemas"]["SlaStateFilter"];
+            assetType?: null | components["schemas"]["AssetType"];
+            assetStatus?: null | components["schemas"]["AssetStatus"];
+        };
+        /** @enum {unknown} */
+        ReportName: "incidents" | "requests" | "operations" | "transfers" | "assets" | "warranty";
+        ReportResult: {
+            report: components["schemas"]["ReportName"];
+            filter: components["schemas"]["ReportFilter"];
+            scopeLabel: string;
+            figures: components["schemas"]["ReportFigure"][];
+        };
         RequestTypeItem: {
             /** Format: uuid */
             id: string;
@@ -6337,6 +6442,8 @@ export interface components {
         SlaMetric: "first_response" | "resolution";
         /** @enum {unknown} */
         SlaResult: "met" | "breached" | "cancelled" | null;
+        /** @enum {unknown} */
+        SlaStateFilter: "met" | "breached" | "open_breached" | "at_risk" | null;
         StartMaintenanceRequest: {
             /** Format: uint32 */
             version: number;

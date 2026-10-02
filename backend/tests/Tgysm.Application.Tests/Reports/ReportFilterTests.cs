@@ -112,6 +112,27 @@ public sealed class ReportFilterTests
         Assert.Equal("2-3", ReportBuckets.AgeingBand(3).Key);
         Assert.Equal("8+", ReportBuckets.AgeingBand(400).Key);
         Assert.Equal("0-1", ReportBuckets.AgeingBand(0).Key);
+        Assert.Equal("0-1", ReportBuckets.AgeingBand(-5).Key);
+    }
+
+    [Theory]
+    [InlineData("1999-12-31", null)]
+    [InlineData("2101-01-01", null)]
+    [InlineData(null, "1999-12-31")]
+    [InlineData(null, "2101-01-01")]
+    public void Days_outside_the_supported_range_are_invalid_filters(string? from, string? to)
+    {
+        var filter = new ReportFilter { From = from is null ? null : DateOnly.Parse(from), To = to is null ? null : DateOnly.Parse(to) };
+
+        var error = Assert.Throws<ValidationException>(filter.EnsureValid);
+
+        Assert.Equal(ErrorCodes.ReportsInvalidFilter, Assert.Single(error.Errors).ErrorCode);
+    }
+
+    [Fact]
+    public void Days_at_the_range_edges_are_valid()
+    {
+        new ReportFilter { From = ReportFilter.MinDay, To = ReportFilter.MaxDay }.EnsureValid();
     }
 
     [Fact]

@@ -43,6 +43,7 @@ public sealed class Ticket : Entity
     public string? CancelReason { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
+    /// <summary>When the ticket closed: completion, cancellation or approval rejection (reports use it as the "completed" date basis).</summary>
     public DateTimeOffset? CompletedAt { get; private set; }
 
     public bool IsClosed => Status is TicketStatus.Completed or TicketStatus.Cancelled;
@@ -152,6 +153,7 @@ public sealed class Ticket : Entity
         Status = TicketStatus.Cancelled;
         Outcome = TicketOutcome.ApprovalRejected;
         CancelReason = reason.Trim();
+        CompletedAt = now;
         ClearHold();
         Touch(now);
     }
@@ -214,6 +216,7 @@ public sealed class Ticket : Entity
 
         Status = TicketStatus.Cancelled;
         CancelReason = reason.Trim();
+        CompletedAt = now;
         ClearHold();
         Touch(now);
     }

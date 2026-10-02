@@ -10,16 +10,7 @@ public sealed class TicketReportSource(IAppDbContext db, ICompanyClock clock)
 {
     public IQueryable<Ticket> Apply(IQueryable<Ticket> tickets, ReportFilter filter, ReportDateBasis basis)
     {
-        var window = filter.Window(clock.Zone);
-        if (window.FromInclusive is { } from)
-        {
-            tickets = basis == ReportDateBasis.Created ? tickets.Where(t => t.CreatedAt >= from) : tickets.Where(t => t.CompletedAt >= from);
-        }
-
-        if (window.ToExclusive is { } to)
-        {
-            tickets = basis == ReportDateBasis.Created ? tickets.Where(t => t.CreatedAt < to) : tickets.Where(t => t.CompletedAt < to);
-        }
+        tickets = InWindow(tickets, filter.Window(clock.Zone), basis);
 
         if (filter.Kind is { } kind)
         {
@@ -62,6 +53,38 @@ public sealed class TicketReportSource(IAppDbContext db, ICompanyClock clock)
         }
 
         return filter.SlaState is { } state ? WithSlaState(tickets, state) : tickets;
+    }
+
+    private IQueryable<Ticket> InWindow(IQueryable<Ticket> tickets, ReportWindow window, ReportDateBasis basis)
+    {
+        var (from, to) = (window.FromInclusive, window.ToExclusive);
+        switch (basis)
+        {
+            case ReportDateBasis.None:
+                return tickets;
+            case ReportDateBasis.FirstResponded:
+                var responses = ReportQueries.FirstResponses(db);
+                responses = from is { } f ? responses.Where(i => i.StoppedAt >= f) : responses;
+                responses = to is { } u ? responses.Where(i => i.StoppedAt < u) : responses;
+                return tickets.Where(t => responses.Any(i => i.TicketId == t.Id));
+            case ReportDateBasis.Decided:
+                var decisions = ReportQueries.DecidedApprovals(db);
+                decisions = from is { } d ? decisions.Where(a => a.DecidedAt >= d) : decisions;
+                decisions = to is { } e ? decisions.Where(a => a.DecidedAt < e) : decisions;
+                return tickets.Where(t => decisions.Any(a => a.TicketId == t.Id));
+            default:
+                if (from is { } start)
+                {
+                    tickets = basis == ReportDateBasis.Created ? tickets.Where(t => t.CreatedAt >= start) : tickets.Where(t => t.CompletedAt >= start);
+                }
+
+                if (to is { } end)
+                {
+                    tickets = basis == ReportDateBasis.Created ? tickets.Where(t => t.CreatedAt < end) : tickets.Where(t => t.CompletedAt < end);
+                }
+
+                return tickets;
+        }
     }
 
     // Resolution timer only (spec §7.1).

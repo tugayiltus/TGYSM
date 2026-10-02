@@ -8,10 +8,23 @@ using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;
 
+/// <summary>Which instant of a ticket the day window applies to.</summary>
 public enum ReportDateBasis
 {
+    /// <summary>The ticket's creation.</summary>
     Created,
+
+    /// <summary>The ticket's closing (completion, cancellation or approval rejection).</summary>
     Completed,
+
+    /// <summary>The stop of the first-response timer (cancelled timers do not count).</summary>
+    FirstResponded,
+
+    /// <summary>The decision of an approval (approved or rejected).</summary>
+    Decided,
+
+    /// <summary>No window: a snapshot of tickets as they are now (open backlog).</summary>
+    None,
 }
 
 public enum SlaStateFilter
@@ -52,7 +65,12 @@ public readonly record struct ReportWindow(DateTimeOffset? FromInclusive, DateTi
 /// </summary>
 public sealed record ReportFilter
 {
+    private const string FromField = "from";
     private const string RangeField = "to";
+
+    /// <summary>Earliest and latest day a window may name; keeps the day arithmetic far from <see cref="DateOnly"/> overflow.</summary>
+    public static readonly DateOnly MinDay = new(2000, 1, 1);
+    public static readonly DateOnly MaxDay = new(2100, 12, 31);
 
     public DateOnly? From { get; init; }
     public DateOnly? To { get; init; }
@@ -68,9 +86,19 @@ public sealed record ReportFilter
     public AssetType? AssetType { get; init; }
     public AssetStatus? AssetStatus { get; init; }
 
-    /// <summary>Rejects <c>From &gt; To</c> as a 400 field error (<see cref="ErrorCodes.ReportsInvalidFilter"/>).</summary>
+    /// <summary>Rejects a day outside <see cref="MinDay"/>..<see cref="MaxDay"/> and <c>From &gt; To</c> as 400 field errors (<see cref="ErrorCodes.ReportsInvalidFilter"/>).</summary>
     public void EnsureValid()
     {
+        if (From is { } early && (early < MinDay || early > MaxDay))
+        {
+            throw new ValidationException([new ValidationFailure(FromField, "Day out of range.") { ErrorCode = ErrorCodes.ReportsInvalidFilter }]);
+        }
+
+        if (To is { } late && (late < MinDay || late > MaxDay))
+        {
+            throw new ValidationException([new ValidationFailure(RangeField, "Day out of range.") { ErrorCode = ErrorCodes.ReportsInvalidFilter }]);
+        }
+
         if (From is { } from && To is { } to && from > to)
         {
             throw new ValidationException([new ValidationFailure(RangeField, "From must not be after to.") { ErrorCode = ErrorCodes.ReportsInvalidFilter }]);

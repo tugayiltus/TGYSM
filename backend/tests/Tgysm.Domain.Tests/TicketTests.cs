@@ -109,6 +109,7 @@ public sealed class TicketTests
         Assert.Equal(TicketStatus.Cancelled, ticket.Status);
         Assert.Equal(TicketOutcome.ApprovalRejected, ticket.Outcome);
         Assert.Equal("Bütçe yok", ticket.CancelReason);
+        Assert.Equal(Now, ticket.CompletedAt);
         Assert.Null(ticket.HoldReason);
     }
 
@@ -147,6 +148,7 @@ public sealed class TicketTests
         ticket.Cancel(" Mükerrer kayıt ", Now);
 
         Assert.Equal((TicketStatus.Cancelled, "Mükerrer kayıt"), (ticket.Status, ticket.CancelReason));
+        Assert.Equal(Now, ticket.CompletedAt); // the close date reports use
         AssertInvalid(() => ticket.Cancel("Tekrar", Now));
         AssertInvalid(() => ticket.Resume(Now));
         AssertInvalid(() => ticket.Assign(Team, Agent, Now));

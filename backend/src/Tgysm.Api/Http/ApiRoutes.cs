@@ -24,6 +24,7 @@ internal static class ApiRoutes
     public const string EmailTemplates = "/email-templates";
     public const string EmailDeliveries = "/email-deliveries";
     public const string Sla = "/sla";
+    public const string Reports = "/reports";
     public const string System = "/system";
     public const string Health = "/health";
 }

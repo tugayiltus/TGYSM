@@ -59,6 +59,7 @@ internal static class ApiApplicationExtensions
         api.MapTicketEndpoints();
         api.MapApprovalEndpoints();
         api.MapKnowledgeEndpoints();
+        api.MapReportEndpoints();
 
         // Unknown API routes are API errors, not SPA pages.
         app.MapFallback(ApiFallbackPattern, context => ApiProblem.WriteAsync(context, StatusCodes.Status404NotFound, ErrorCodes.NotFound))

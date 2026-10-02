@@ -1,15 +1,25 @@
 using FluentValidation;
 using FluentValidation.Results;
+using Tgysm.Application.Reports.Metrics;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;
 
-/// <summary>All report metrics by report. Starts empty; Tasks 7–9 add their metrics to <see cref="All"/>.</summary>
+/// <summary>All report metrics by report.</summary>
 public static class ReportCatalog
 {
     private const string MetricField = "metric";
 
-    private static readonly IReadOnlyList<IReportMetric> All = [];
+    private static readonly IReadOnlyList<IReportMetric> All = [.. IncidentMetrics.All, .. RequestMetrics.All];
+
+    /// <summary>The filter a report really runs with: the incident and request reports fix the ticket kind themselves, so a <c>Kind</c> filter is ignored there.</summary>
+    public static ReportFilter EffectiveFilter(ReportName report, ReportFilter filter) => report switch
+    {
+        ReportName.Incidents => filter with { Kind = TicketKind.Incident },
+        ReportName.Requests => filter with { Kind = TicketKind.Request },
+        _ => filter,
+    };
 
     public static IReadOnlyList<IReportMetric> Get(ReportName report) => [.. All.Where(m => m.Report == report)];
 

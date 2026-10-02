@@ -14,6 +14,10 @@ public static class ReportBuckets
         new("8+", 8, null),
     ];
 
-    public static AgeBand AgeingBand(int ageDays) =>
-        AgeingDays.Last(band => ageDays >= band.FromDays);
+    /// <summary>The band of an age in whole days; a negative age (clock skew) counts as 0.</summary>
+    public static AgeBand AgeingBand(int ageDays)
+    {
+        var age = Math.Max(ageDays, 0);
+        return AgeingDays.Last(band => age >= band.FromDays);
+    }
 }
