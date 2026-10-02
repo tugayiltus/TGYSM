@@ -84,4 +84,13 @@ public static class AuditActions
     public const string SlaHolidayAdded = "sla.holiday_added";
     public const string SlaHolidayRemoved = "sla.holiday_removed";
     public const string SlaPolicyVersioned = "sla.policy_versioned";
+
+    public const string KnowledgeCreated = "knowledge.created";
+    public const string KnowledgeUpdated = "knowledge.updated";
+    public const string KnowledgePublished = "knowledge.published";
+    public const string KnowledgeArchived = "knowledge.archived";
+    public const string KnowledgeRestored = "knowledge.restored";
+    public const string KnowledgeVisibilityChanged = "knowledge.visibility_changed";
+    public const string TicketArticleLinked = "tickets.article_linked";
+    public const string TicketArticleUnlinked = "tickets.article_unlinked";
 }

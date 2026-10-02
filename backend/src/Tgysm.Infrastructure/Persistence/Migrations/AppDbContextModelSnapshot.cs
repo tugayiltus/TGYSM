@@ -498,6 +498,175 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("request_types", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Knowledge.ArticleRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ArticleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("article_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(50000)
+                        .HasColumnType("character varying(50000)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTimeOffset>("EditedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("edited_at");
+
+                    b.Property<Guid>("EditedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("edited_by");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id")
+                        .HasName("pk_article_revisions");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("ix_article_revisions_category_id");
+
+                    b.HasIndex("EditedBy")
+                        .HasDatabaseName("ix_article_revisions_edited_by");
+
+                    b.HasIndex("ArticleId", "Revision")
+                        .IsUnique()
+                        .HasDatabaseName("ix_article_revisions_article_id_revision");
+
+                    b.ToTable("article_revisions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_article_revisions_visibility", "visibility IN ('employees', 'internal')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Knowledge.KnowledgeArticle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(50000)
+                        .HasColumnType("character varying(50000)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("SearchText")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("search_text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id")
+                        .HasName("pk_knowledge_articles");
+
+                    b.HasIndex("AuthorId")
+                        .HasDatabaseName("ix_knowledge_articles_author_id");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("ix_knowledge_articles_category_id");
+
+                    b.HasIndex("SearchText")
+                        .HasDatabaseName("ix_knowledge_articles_search_text_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchText"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchText"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex("UpdatedBy")
+                        .HasDatabaseName("ix_knowledge_articles_updated_by");
+
+                    b.HasIndex("Status", "UpdatedAt")
+                        .HasDatabaseName("ix_knowledge_articles_status_updated_at");
+
+                    b.ToTable("knowledge_articles", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_knowledge_articles_status", "status IN ('draft', 'published', 'archived')");
+
+                            t.HasCheckConstraint("ck_knowledge_articles_visibility", "visibility IN ('employees', 'internal')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Notifications.EmailDelivery", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1612,6 +1781,44 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketArticle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ArticleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("article_id");
+
+                    b.Property<DateTimeOffset>("LinkedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("linked_at");
+
+                    b.Property<Guid>("LinkedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("linked_by");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ticket_articles");
+
+                    b.HasIndex("ArticleId")
+                        .HasDatabaseName("ix_ticket_articles_article_id");
+
+                    b.HasIndex("LinkedBy")
+                        .HasDatabaseName("ix_ticket_articles_linked_by");
+
+                    b.HasIndex("TicketId", "ArticleId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ticket_articles_ticket_id_article_id");
+
+                    b.ToTable("ticket_articles", (string)null);
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAsset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2182,6 +2389,52 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_categories_categories_parent_id");
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Knowledge.ArticleRevision", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Knowledge.KnowledgeArticle", null)
+                        .WithMany()
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_article_revisions_knowledge_articles_article_id");
+
+                    b.HasOne("Tgysm.Domain.Catalog.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_article_revisions_categories_category_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("EditedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_article_revisions_users_edited_by");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Knowledge.KnowledgeArticle", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_knowledge_articles_users_author_id");
+
+                    b.HasOne("Tgysm.Domain.Catalog.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_knowledge_articles_categories_category_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_knowledge_articles_users_updated_by");
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Notifications.EmailDelivery", b =>
                 {
                     b.HasOne("Tgysm.Domain.Notifications.OutboxEvent", null)
@@ -2351,6 +2604,30 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tickets_teams_team_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tickets.TicketArticle", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Knowledge.KnowledgeArticle", null)
+                        .WithMany()
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_articles_knowledge_articles_article_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("LinkedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_articles_users_linked_by");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ticket_articles_tickets_ticket_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Tickets.TicketAsset", b =>

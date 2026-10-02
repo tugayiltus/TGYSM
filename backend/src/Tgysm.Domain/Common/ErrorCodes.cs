@@ -100,4 +100,8 @@ public static class ErrorCodes
     public const string SlaInvalidHours = "sla.invalid_hours";
     public const string SlaHolidayExists = "sla.holiday_exists";
     public const string SlaTargetMissing = "sla.target_missing";
+
+    public const string KnowledgeInvalidTransition = "knowledge.invalid_transition";
+    public const string KnowledgeInternalArticleInPublicReply = "knowledge.internal_article_in_public_reply";
+    public const string KnowledgeArticleAlreadyLinked = "knowledge.article_already_linked";
 }

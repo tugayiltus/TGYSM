@@ -116,5 +116,10 @@
     "invalid_hours": "Çalışma saatleri geçersiz: başlangıç bitişten önce olmalı ve her gün için en fazla bir aralık girilmelidir.",
     "holiday_exists": "Bu tarih için zaten bir tatil tanımlı.",
     "target_missing": "Her kayıt türü, öncelik ve süre ölçüsü için bir hedef tanımlanmalıdır."
+  },
+  "knowledge": {
+    "invalid_transition": "Makalenin mevcut durumunda bu işlem yapılamaz.",
+    "internal_article_in_public_reply": "Yalnızca BT personeline açık bir makale, çalışanın göreceği yanıta eklenemez.",
+    "article_already_linked": "Bu makale kayda zaten bağlı."
   }
 }

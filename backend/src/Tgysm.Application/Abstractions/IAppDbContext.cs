@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Catalog;
+using Tgysm.Domain.Knowledge;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
@@ -32,6 +33,9 @@ public interface IAppDbContext
     DbSet<TicketEvent> TicketEvents { get; }
     DbSet<TicketRelation> TicketRelations { get; }
     DbSet<TicketAsset> TicketAssets { get; }
+    DbSet<TicketArticle> TicketArticles { get; }
+    DbSet<KnowledgeArticle> KnowledgeArticles { get; }
+    DbSet<ArticleRevision> ArticleRevisions { get; }
     DbSet<Category> Categories { get; }
     DbSet<RequestType> RequestTypes { get; }
     DbSet<WorkerHeartbeat> WorkerHeartbeats { get; }

@@ -4,6 +4,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Catalog;
+using Tgysm.Domain.Knowledge;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
@@ -35,6 +36,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<TicketEvent> TicketEvents => Set<TicketEvent>();
     public DbSet<TicketRelation> TicketRelations => Set<TicketRelation>();
     public DbSet<TicketAsset> TicketAssets => Set<TicketAsset>();
+    public DbSet<TicketArticle> TicketArticles => Set<TicketArticle>();
+    public DbSet<KnowledgeArticle> KnowledgeArticles => Set<KnowledgeArticle>();
+    public DbSet<ArticleRevision> ArticleRevisions => Set<ArticleRevision>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<RequestType> RequestTypes => Set<RequestType>();
     public DbSet<TicketCounter> TicketCounters => Set<TicketCounter>();

@@ -152,7 +152,8 @@
     "email_delivery": "E-posta gönderimi",
     "sla_calendar": "SLA takvimi",
     "holiday": "Tatil günü",
-    "sla_policy": "SLA politikası"
+    "sla_policy": "SLA politikası",
+    "knowledge_article": "Bilgi bankası makalesi"
   },
   "auditActions": {
     "setup": {
@@ -230,7 +231,9 @@
       "cancelled": "Kayıt iptal edildi",
       "asset_linked": "Kayda cihaz bağlandı",
       "asset_unlinked": "Kayıttan cihaz ayrıldı",
-      "related_request_created": "İlgili talep oluşturuldu"
+      "related_request_created": "İlgili talep oluşturuldu",
+      "article_linked": "Kayda makale bağlandı",
+      "article_unlinked": "Kayıttan makale ayrıldı"
     },
     "approvals": {
       "approved": "Talep onaylandı",
@@ -249,6 +252,14 @@
       "holiday_added": "Tatil günü eklendi",
       "holiday_removed": "Tatil günü kaldırıldı",
       "policy_versioned": "SLA politikasının yeni sürümü oluşturuldu"
+    },
+    "knowledge": {
+      "created": "Makale oluşturuldu",
+      "updated": "Makale güncellendi",
+      "published": "Makale yayımlandı",
+      "archived": "Makale arşivlendi",
+      "restored": "Makale taslağa geri alındı",
+      "visibility_changed": "Makale görünürlüğü değişti"
     }
   },
   "emailEvents": {
