@@ -18,7 +18,7 @@ public sealed class GetReportHandler(ReportScope scope, TicketReportSource sourc
         var viewer = await scope.ViewerAsync(cancellationToken);
         var tickets = scope.TicketsFor(viewer);
         var filter = ReportCatalog.EffectiveFilter(query.Report, query.Filter);
-        var context = new ReportContext(db, clock.GetUtcNow());
+        var context = new ReportContext(db, clock.GetUtcNow(), source.Window(filter));
 
         var figures = new List<ReportFigure>();
         foreach (var metric in ReportCatalog.Get(query.Report).OfType<ReportMetric>())
@@ -26,6 +26,6 @@ public sealed class GetReportHandler(ReportScope scope, TicketReportSource sourc
             figures.Add(await metric.ComputeAsync(source.Apply(tickets, filter, metric.DateBasis), context, cancellationToken));
         }
 
-        return new ReportResult(query.Report, query.Filter, viewer.Role == UserRole.Admin ? AllScope : TeamsScope, figures);
+        return new ReportResult(query.Report, filter, viewer.Role == UserRole.Admin ? AllScope : TeamsScope, figures);
     }
 }

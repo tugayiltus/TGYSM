@@ -4,8 +4,11 @@ using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;
 
-/// <summary>What a ticket metric needs besides the filtered tickets: the database (SLA instances, approvals) and the current instant.</summary>
-public sealed record ReportContext(IAppDbContext Db, DateTimeOffset Now);
+/// <summary>
+/// What a ticket metric needs besides the filtered tickets: the database (SLA instances, approvals), the current instant and the
+/// report's day window, for metrics whose dated rows are not tickets (assignment history, ticket relations).
+/// </summary>
+public sealed record ReportContext(IAppDbContext Db, DateTimeOffset Now, ReportWindow Window = default);
 
 /// <summary>What every metric states about itself, ticket-based or asset-based.</summary>
 public interface IReportMetric
@@ -31,6 +34,10 @@ public abstract class ReportMetric : IReportMetric
     public abstract MetricShape Shape { get; }
 
     public abstract IQueryable<Ticket> Rows(IQueryable<Ticket> filtered, ReportContext context);
+
+    /// <summary>The <see cref="Rows"/> of one bucket of a distribution; its count equals the bucket's count. Only distributions have buckets.</summary>
+    public virtual IQueryable<Ticket> BucketRows(IQueryable<Ticket> filtered, ReportContext context, string bucket) =>
+        throw new NotSupportedException($"Metric '{Key}' has no buckets.");
 
     /// <summary>Rows behind a ratio's denominator; null for other shapes.</summary>
     public virtual IQueryable<Ticket>? DenominatorRows(IQueryable<Ticket> filtered, ReportContext context) => null;

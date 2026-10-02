@@ -92,28 +92,35 @@ public static class IncidentMetrics
 
         public override IQueryable<Ticket> Rows(IQueryable<Ticket> filtered, ReportContext context) => filtered.Where(TicketRules.Open);
 
+        public override IQueryable<Ticket> BucketRows(IQueryable<Ticket> filtered, ReportContext context, string bucket) =>
+            InBand(Rows(filtered, context), ReportBuckets.AgeingDays.FirstOrDefault(b => b.Key == bucket) ?? throw new NotSupportedException($"Unknown bucket '{bucket}'."), context.Now);
+
+        // Age in whole days >= from  <=>  created at or before now - from days; age <= to  <=>  created after now - (to + 1) days.
+        // The first band has no lower edge: a creation time in the future (clock skew) counts as age 0.
+        private static IQueryable<Ticket> InBand(IQueryable<Ticket> open, AgeBand band, DateTimeOffset now)
+        {
+            if (band.FromDays > 0)
+            {
+                var oldest = now.AddDays(-band.FromDays);
+                open = open.Where(t => t.CreatedAt <= oldest);
+            }
+
+            if (band.ToDays is { } to)
+            {
+                var newest = now.AddDays(-(to + 1));
+                open = open.Where(t => t.CreatedAt > newest);
+            }
+
+            return open;
+        }
+
         public override async Task<ReportFigure> ComputeAsync(IQueryable<Ticket> filtered, ReportContext context, CancellationToken cancellationToken)
         {
             var open = Rows(filtered, context);
             var buckets = new List<ReportBucket>();
             foreach (var band in ReportBuckets.AgeingDays)
             {
-                // Age in whole days >= from  <=>  created at or before now - from days; age <= to  <=>  created after now - (to + 1) days.
-                // The first band has no lower edge: a creation time in the future (clock skew) counts as age 0.
-                var inBand = open;
-                if (band.FromDays > 0)
-                {
-                    var oldest = context.Now.AddDays(-band.FromDays);
-                    inBand = inBand.Where(t => t.CreatedAt <= oldest);
-                }
-
-                if (band.ToDays is { } to)
-                {
-                    var newest = context.Now.AddDays(-(to + 1));
-                    inBand = inBand.Where(t => t.CreatedAt > newest);
-                }
-
-                buckets.Add(new ReportBucket(band.Key, null, await inBand.LongCountAsync(cancellationToken)));
+                buckets.Add(new ReportBucket(band.Key, null, await InBand(open, band, context.Now).LongCountAsync(cancellationToken)));
             }
 
             return new ReportFigure(Key, Shape, buckets.Sum(b => b.Count), null, null, buckets, MetricKeys.UnitTickets);

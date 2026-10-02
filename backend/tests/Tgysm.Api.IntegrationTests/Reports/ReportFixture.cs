@@ -26,9 +26,10 @@ internal sealed class ReportFixture(ReportWorld world)
 
     public ReportWorld World { get; } = world;
 
-    public async Task<Ticket> IncidentAsync(DateTimeOffset created, Action<Ticket>? change = null)
+    public async Task<Ticket> IncidentAsync(DateTimeOffset created, Action<Ticket>? change = null, Guid? teamId = null, Guid? requesterId = null)
     {
-        var ticket = Ticket.CreateIncident($"INC-2026-{++_counter:D6}", "Konu", "Aciklama", null, null, World.Employee.Id, World.DeskTeam.Id, created);
+        var ticket = Ticket.CreateIncident(
+            $"INC-2026-{++_counter:D6}", "Konu", "Aciklama", null, null, requesterId ?? World.Employee.Id, teamId ?? World.DeskTeam.Id, created);
         return await SaveAsync(ticket, change);
     }
 
@@ -82,6 +83,22 @@ internal sealed class ReportFixture(ReportWorld world)
         await db.SaveChangesAsync(Ct);
     }
 
+    /// <summary>Claims or transfers a stored ticket at <paramref name="at"/>, writing its history row.</summary>
+    public async Task AssignAsync(Ticket ticket, Guid teamId, Guid? assigneeId, DateTimeOffset at)
+    {
+        await using var db = World.Db();
+        var stored = await db.Tickets.SingleAsync(t => t.Id == ticket.Id, Ct);
+        db.TicketAssignments.Add(stored.Assign(teamId, assigneeId, at, World.Admin.Id));
+        await db.SaveChangesAsync(Ct);
+    }
+
+    public async Task RelateAsync(Ticket incident, Ticket request, DateTimeOffset at)
+    {
+        await using var db = World.Db();
+        db.TicketRelations.Add(TicketRelation.Create(incident.Id, request.Id, at));
+        await db.SaveChangesAsync(Ct);
+    }
+
     public async Task<ReportResult> RunAsync(ReportName report, Guid userId, ReportFilter filter, DateTimeOffset now)
     {
         await using var db = World.Db();
@@ -100,8 +117,8 @@ internal sealed class ReportFixture(ReportWorld world)
         await using var db = World.Db();
         var scope = new ReportScope(db, new FixedActor(World.Admin.Id));
         var source = new TicketReportSource(db, new TestClock());
-        var context = new ReportContext(db, now);
         var effective = ReportCatalog.EffectiveFilter(report, filter);
+        var context = new ReportContext(db, now, source.Window(effective));
         foreach (var metric in ReportCatalog.Get(report).Cast<ReportMetric>())
         {
             var filtered = source.Apply(await scope.TicketsAsync(Ct), effective, metric.DateBasis);
@@ -116,6 +133,11 @@ internal sealed class ReportFixture(ReportWorld world)
                 case MetricShape.Distribution:
                     Assert.Equal(rows, (long)figure.Value!.Value);
                     Assert.Equal(rows, figure.Buckets!.Sum(b => b.Count));
+                    foreach (var bucket in figure.Buckets!)
+                    {
+                        Assert.Equal(bucket.Count, await metric.BucketRows(filtered, context, bucket.Key).CountAsync(Ct));
+                    }
+
                     break;
                 case MetricShape.Duration:
                     Assert.Equal(rows, figure.Denominator);

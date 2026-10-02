@@ -11,7 +11,7 @@ public static class ReportCatalog
 {
     private const string MetricField = "metric";
 
-    private static readonly IReadOnlyList<IReportMetric> All = [.. IncidentMetrics.All, .. RequestMetrics.All];
+    private static readonly IReadOnlyList<IReportMetric> All = [.. IncidentMetrics.All, .. RequestMetrics.All, .. OperationsMetrics.All, .. TransferMetrics.All];
 
     /// <summary>The filter a report really runs with: the incident and request reports fix the ticket kind themselves, so a <c>Kind</c> filter is ignored there.</summary>
     public static ReportFilter EffectiveFilter(ReportName report, ReportFilter filter) => report switch

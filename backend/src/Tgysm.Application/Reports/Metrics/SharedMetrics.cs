@@ -142,6 +142,9 @@ internal sealed class ExcludedOutcomesMetric(
     public override IQueryable<Ticket> Rows(IQueryable<Ticket> filtered, ReportContext context) =>
         filtered.Where(Or(first.Rule, second.Rule));
 
+    public override IQueryable<Ticket> BucketRows(IQueryable<Ticket> filtered, ReportContext context, string bucket) =>
+        filtered.Where(bucket == first.Key ? first.Rule : bucket == second.Key ? second.Rule : throw new NotSupportedException($"Unknown bucket '{bucket}'."));
+
     public override async Task<ReportFigure> ComputeAsync(IQueryable<Ticket> filtered, ReportContext context, CancellationToken cancellationToken)
     {
         var firstCount = await filtered.Where(first.Rule).LongCountAsync(cancellationToken);

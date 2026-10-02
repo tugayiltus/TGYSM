@@ -8,6 +8,9 @@ namespace Tgysm.Application.Reports;
 /// <summary>Applies a <see cref="ReportFilter"/> to tickets: every non-date filter plus the day window on the metric's date basis.</summary>
 public sealed class TicketReportSource(IAppDbContext db, ICompanyClock clock)
 {
+    /// <summary>The filter's day window in company time, for metrics that date rows other than tickets.</summary>
+    public ReportWindow Window(ReportFilter filter) => filter.Window(clock.Zone);
+
     public IQueryable<Ticket> Apply(IQueryable<Ticket> tickets, ReportFilter filter, ReportDateBasis basis)
     {
         tickets = InWindow(tickets, filter.Window(clock.Zone), basis);
