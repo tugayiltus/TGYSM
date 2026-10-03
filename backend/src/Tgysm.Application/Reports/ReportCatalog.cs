@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Tgysm.Application.Reports.Metrics;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;

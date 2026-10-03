@@ -21,7 +21,7 @@ public sealed class CleanupJob(
     {
         var result = await scoped.GetRequiredService<CleanupHandler>().HandleAsync(cancellationToken);
         logger.LogInformation(
-            "Cleanup removed {Tokens} password tokens, {Events} outbox events, {Heartbeats} heartbeats.",
-            result.PasswordTokens, result.OutboxEvents, result.Heartbeats);
+            "Cleanup removed {Tokens} password tokens, {Events} outbox events, {Heartbeats} heartbeats, {ExportFiles} expired export files.",
+            result.PasswordTokens, result.OutboxEvents, result.Heartbeats, result.ExportFiles);
     }
 }

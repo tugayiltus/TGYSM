@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using Tgysm.Application.Reports;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Reports;
 
 namespace Tgysm.Api.IntegrationTests.Reports;
 

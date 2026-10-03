@@ -126,6 +126,8 @@
     "unknown_report": "Bilinmeyen rapor.",
     "unknown_metric": "Bilinmeyen rapor ölçüsü.",
     "invalid_filter": "Rapor filtresi geçersiz: tarih aralığını ve seçilen değerleri kontrol edin.",
-    "export_too_large": "Bu rapor eşzamanlı dışa aktarım için çok büyük (en fazla 5.000 satır). Filtreyi daraltın veya arka planda dışa aktarın."
+    "export_too_large": "Bu rapor dışa aktarım için çok büyük. 5.000 satırdan büyük raporlar arka planda hazırlanabilir (en fazla 100.000 satır); daha büyükse filtreyi daraltın.",
+    "export_not_ready": "Dışa aktarım dosyası henüz hazır değil. Biraz sonra yeniden deneyin.",
+    "export_expired": "Dışa aktarım dosyasının süresi doldu. Raporu yeniden dışa aktarın."
   }
 }

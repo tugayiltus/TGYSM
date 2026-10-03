@@ -1,6 +1,7 @@
 using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Application.Reports;
 using Tgysm.Application.Reports.Metrics;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
 

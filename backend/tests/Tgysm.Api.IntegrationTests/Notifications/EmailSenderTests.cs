@@ -6,6 +6,7 @@ using MimeKit;
 using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Api.IntegrationTests.Tickets;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Common;
 using Tgysm.Application.Notifications;
 using Tgysm.Domain.Notifications;
 using Tgysm.Infrastructure.Email;
@@ -484,7 +485,7 @@ public sealed class EmailSenderTests(ApiFactory factory) : IAsyncLifetime
         const string password = "Sup3rSecretPa55w0rd!";
         var exception = new InvalidOperationException($"Authentication failed; password={password}");
 
-        var sanitized = ErrorSanitizer.Sanitize(exception);
+        var sanitized = ErrorSanitizer.Sanitize(exception, EmailDelivery.LastErrorMaxLength);
 
         Assert.DoesNotContain(password, sanitized, StringComparison.Ordinal);
         Assert.Contains("[redacted]", sanitized, StringComparison.Ordinal);

@@ -74,10 +74,11 @@ export Email__PickupFolder="$pickup_folder"
 export E2E_EMAIL_PICKUP_FOLDER="$pickup_folder"
 # The set-password link in the activation email points at the preview server the tests drive.
 export App__PublicBaseUrl="$PREVIEW_URL"
-# Short job intervals so a test waits seconds, not the 30 s production default, for an email.
+# Short job intervals so a test waits seconds, not the 30 s production default, for an email or an export file.
 export Security__LoginPermitLimitPerMinute="$E2E_LOGIN_PERMIT_LIMIT_PER_MINUTE"
 export Worker__Jobs__OutboxDispatcher__IntervalSeconds="$E2E_JOB_INTERVAL_SECONDS"
 export Worker__Jobs__EmailSender__IntervalSeconds="$E2E_JOB_INTERVAL_SECONDS"
+export Worker__Jobs__ExportRunner__IntervalSeconds="$E2E_JOB_INTERVAL_SECONDS"
 
 for project in "${PROJECTS[@]}"; do
   mkdir -p "$LOG_DIR"

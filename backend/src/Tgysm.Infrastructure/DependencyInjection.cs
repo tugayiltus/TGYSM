@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
         services.AddScoped<IOutboxClaimer, OutboxClaimer>();
         services.AddScoped<IEmailDeliveryClaimer, EmailDeliveryClaimer>();
+        services.AddScoped<IExportJobClaimer, ExportJobClaimer>();
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddOptions<FileStorageOptions>().BindConfiguration(FileStorageOptions.SectionName);
         services.AddSingleton<IFileStore, LocalFileStore>();

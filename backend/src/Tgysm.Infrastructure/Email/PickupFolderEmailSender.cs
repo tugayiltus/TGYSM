@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Options;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Common;
+using Tgysm.Domain.Notifications;
 
 namespace Tgysm.Infrastructure.Email;
 
@@ -31,7 +33,7 @@ internal sealed class PickupFolderEmailSender(IOptionsMonitor<EmailOptions> opti
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            throw new InvalidOperationException(ErrorSanitizer.Sanitize(exception));
+            throw new InvalidOperationException(ErrorSanitizer.Sanitize(exception, EmailDelivery.LastErrorMaxLength));
         }
     }
 }

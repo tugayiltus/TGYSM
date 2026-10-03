@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using Microsoft.Extensions.Time.Testing;
 using Tgysm.Application.Reports;
 using Tgysm.Application.Abstractions;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 using Tgysm.Infrastructure.Reports;
 

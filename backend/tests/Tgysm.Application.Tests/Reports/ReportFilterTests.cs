@@ -2,6 +2,7 @@ using FluentValidation;
 using Tgysm.Application.Reports;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Tests.Reports;
@@ -83,6 +84,36 @@ public sealed class ReportFilterTests
         Assert.Contains("assetStatus=in_stock", query);
         Assert.Contains($"teamId={id}", query);
         Assert.Equal(string.Empty, new ReportFilter().ToQueryString());
+    }
+
+    [Fact]
+    public void Json_round_trips_every_filter_with_readable_values()
+    {
+        var id = Guid.NewGuid();
+        var filter = new ReportFilter
+        {
+            From = new DateOnly(2026, 3, 1),
+            To = new DateOnly(2026, 3, 31),
+            Kind = TicketKind.Request,
+            Priority = Priority.P2,
+            CategoryId = id,
+            TeamId = id,
+            AssigneeId = id,
+            DepartmentId = id,
+            LocationId = id,
+            Status = TicketStatus.OnHold,
+            SlaState = SlaStateFilter.AtRisk,
+            AssetType = AssetType.Phone,
+            AssetStatus = AssetStatus.Maintenance,
+        };
+
+        var json = filter.ToJson();
+
+        Assert.Equal(filter, ReportFilter.FromJson(json));
+        Assert.Contains("\"status\":\"on_hold\"", json);
+        Assert.Contains("\"from\":\"2026-03-01\"", json);
+        Assert.Equal("{}", new ReportFilter().ToJson());
+        Assert.Equal(new ReportFilter(), ReportFilter.FromJson("{}"));
     }
 
     [Theory]

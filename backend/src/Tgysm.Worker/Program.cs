@@ -41,7 +41,7 @@ internal static class Program
         builder.Services.AddHostedService<EmailSenderJob>();
         builder.Services.AddHostedService<SlaMonitorJob>();
         builder.Services.AddHostedService<CleanupJob>();
-        // Remaining jobs (export runner) register themselves here in later tasks.
+        builder.Services.AddHostedService<ExportRunnerJob>();
 
         var app = builder.Build();
         await app.RunAsync();

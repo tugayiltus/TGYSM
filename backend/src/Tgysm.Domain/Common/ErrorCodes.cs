@@ -109,4 +109,6 @@ public static class ErrorCodes
     public const string ReportsUnknownMetric = "reports.unknown_metric";
     public const string ReportsInvalidFilter = "reports.invalid_filter";
     public const string ReportsExportTooLarge = "reports.export_too_large";
+    public const string ReportsExportNotReady = "reports.export_not_ready";
+    public const string ReportsExportExpired = "reports.export_expired";
 }

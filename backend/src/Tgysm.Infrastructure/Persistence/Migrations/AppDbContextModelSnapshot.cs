@@ -1088,6 +1088,109 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("team_memberships", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Reports.ExportJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Bucket")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("bucket");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("FileKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("file_key");
+
+                    b.Property<string>("Filters")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("filters");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until");
+
+                    b.Property<string>("Metric")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("metric");
+
+                    b.Property<string>("Part")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("part");
+
+                    b.Property<string>("Report")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("report");
+
+                    b.Property<int?>("RowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_count");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_export_jobs");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_export_jobs_status");
+
+                    b.HasIndex("CreatedBy", "CreatedAt")
+                        .HasDatabaseName("ix_export_jobs_created_by_created_at");
+
+                    b.ToTable("export_jobs", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_export_jobs_part", "part IN ('numerator', 'denominator')");
+
+                            t.HasCheckConstraint("ck_export_jobs_report", "report IN ('incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty')");
+
+                            t.HasCheckConstraint("ck_export_jobs_status", "status IN ('pending', 'running', 'ready', 'failed', 'expired')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Sla.BusinessCalendar", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2478,6 +2581,16 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_team_memberships_users_user_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Reports.ExportJob", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_export_jobs_users_created_by");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Sla.SlaEvent", b =>

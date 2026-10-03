@@ -1,4 +1,5 @@
 using Tgysm.Application.Common.Paging;
+using Tgysm.Domain.Reports;
 
 namespace Tgysm.Application.Reports;
 

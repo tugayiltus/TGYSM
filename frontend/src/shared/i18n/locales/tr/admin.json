@@ -154,7 +154,8 @@
     "holiday": "Tatil günü",
     "sla_policy": "SLA politikası",
     "knowledge_article": "Bilgi bankası makalesi",
-    "report": "Rapor"
+    "report": "Rapor",
+    "export_job": "Rapor dışa aktarımı"
   },
   "auditActions": {
     "setup": {
@@ -263,7 +264,9 @@
       "visibility_changed": "Makale görünürlüğü değişti"
     },
     "reports": {
-      "exported": "Rapor Excel olarak dışa aktarıldı"
+      "exported": "Rapor Excel olarak dışa aktarıldı",
+      "export_requested": "Arka planda rapor dışa aktarımı istendi",
+      "export_downloaded": "Dışa aktarılan rapor dosyası indirildi"
     }
   },
   "emailEvents": {

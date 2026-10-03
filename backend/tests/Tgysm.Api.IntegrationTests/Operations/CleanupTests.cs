@@ -2,9 +2,11 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tgysm.Api.IntegrationTests.Infrastructure;
+using Tgysm.Application.Abstractions;
 using Tgysm.Application.Operations;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Operations;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Users;
 
 namespace Tgysm.Api.IntegrationTests.Operations;
@@ -142,5 +144,47 @@ public sealed class CleanupTests(FakeClockApiFactory factory) : IClassFixture<Fa
         Assert.Equal(1, result.Heartbeats);
         await using var check = factory.Database.CreateDbContext();
         Assert.Equal("new:2", (await check.WorkerHeartbeats.SingleAsync(Ct)).Instance);
+    }
+
+    [Fact]
+    public async Task Expired_export_files_are_deleted_and_their_jobs_marked_expired_while_live_ones_stay()
+    {
+        var user = await TestUsers.CreateAsync(factory, UserRole.Admin, "exports@example.com");
+        var files = factory.Services.GetRequiredService<IFileStore>();
+        var expiredKey = await files.SaveAsync(new byte[] { 1 }, Ct);
+        var liveKey = await files.SaveAsync(new byte[] { 2 }, Ct);
+        ExportJob Ready(string key, DateTimeOffset finished)
+        {
+            var job = ExportJob.Create(ReportName.Incidents, "volume", null, ReportDrillPart.Numerator, "{}", user.Id, finished);
+            job.Start(finished);
+            job.Complete(key, 1, finished);
+            return job;
+        }
+
+        var expired = Ready(expiredKey, Today - ReportExportLimits.FileLifetime); // expires exactly now
+        var live = Ready(liveKey, Today - TimeSpan.FromHours(1));
+        var failed = ExportJob.Create(ReportName.Incidents, "volume", null, ReportDrillPart.Numerator, "{}", user.Id, Today - Old);
+        failed.Fail("x", Today - Old);
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            db.ExportJobs.AddRange(expired, live, failed);
+            await db.SaveChangesAsync(Ct);
+        }
+
+        var result = await RunAsync();
+
+        Assert.Equal(1, result.ExportFiles);
+        Assert.Null(files.OpenRead(expiredKey));
+        using (var stillThere = files.OpenRead(liveKey))
+        {
+            Assert.NotNull(stillThere);
+        }
+
+        await using var check = factory.Database.CreateDbContext();
+        var jobs = await check.ExportJobs.AsNoTracking().ToDictionaryAsync(j => j.Id, Ct);
+        Assert.Equal(ExportJobStatus.Expired, jobs[expired.Id].Status);
+        Assert.Null(jobs[expired.Id].FileKey);
+        Assert.Equal(ExportJobStatus.Ready, jobs[live.Id].Status);
+        Assert.Equal(ExportJobStatus.Failed, jobs[failed.Id].Status);
     }
 }

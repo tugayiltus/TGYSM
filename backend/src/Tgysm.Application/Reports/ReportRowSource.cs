@@ -4,16 +4,10 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;
-
-/// <summary>Which half of a ratio a drill-down lists. Only ratios have a <see cref="Denominator"/>.</summary>
-public enum ReportDrillPart
-{
-    Numerator,
-    Denominator,
-}
 
 public enum DrilldownKind
 {

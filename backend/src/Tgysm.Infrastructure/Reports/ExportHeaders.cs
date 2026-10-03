@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Text.Json;
 using Tgysm.Application.Reports;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Infrastructure.Reports;
@@ -18,6 +20,11 @@ public static class ExportHeaders
     private const string ColumnsGroup = "columns";
     private const string FiltersGroup = "filters";
     private const string ValuesGroup = "values";
+    private const string MetricsGroup = "metrics";
+    private const string BucketsGroup = "buckets";
+
+    /// <summary>How the "Filtreler" sheet shows a day filter.</summary>
+    public const string DayFormat = "dd.MM.yyyy";
     private const char KeySeparator = '.';
 
     /// <summary>Labels of the "Filtreler" sheet and the sheet names.</summary>
@@ -64,13 +71,35 @@ public static class ExportHeaders
 
     public static string FilterName(string filterKey) => Get(FiltersGroup, filterKey);
 
+    public static string Metric(string metricKey) => Get(MetricsGroup, metricKey);
+
+    /// <summary>
+    /// Text of a fixed bucket key ("8+", "none", an enum name). A key without text (an id bucket whose name could not be resolved)
+    /// is shown as it is rather than failing the whole export.
+    /// </summary>
+    public static string Bucket(string bucketKey) =>
+        Texts.Value.TryGetValue(BucketsGroup + KeySeparator + bucketKey, out var text) ? text : bucketKey;
+
     /// <summary>The text of an enum value ("on_hold" of <c>TicketStatus</c>), looked up by its type and snake_case name.</summary>
     public static string Value<TEnum>(TEnum value)
         where TEnum : struct, Enum => ValueOf(typeof(TEnum), ReportFilter.EnumName(value));
 
-    /// <summary>Text of a filter value: enum-valued filters are translated, ids and days stay as they are.</summary>
-    public static string FilterValue(string filterKey, string rawValue) =>
-        FilterEnums.TryGetValue(filterKey, out var type) ? ValueOf(type, rawValue) : rawValue;
+    /// <summary>
+    /// Text of a filter value: enum-valued filters are translated, days are shown as <see cref="DayFormat"/>; anything else (an id
+    /// whose name the caller did not resolve) stays as it is.
+    /// </summary>
+    public static string FilterValue(string filterKey, string rawValue)
+    {
+        if (FilterEnums.TryGetValue(filterKey, out var type))
+        {
+            return ValueOf(type, rawValue);
+        }
+
+        return filterKey is ReportFilterKeys.From or ReportFilterKeys.To
+            && DateOnly.TryParseExact(rawValue, ReportFilterKeys.DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
+                ? day.ToString(DayFormat, CultureInfo.InvariantCulture)
+                : rawValue;
+    }
 
     /// <summary>Text of a cell value that is an enum; other cell values are returned as null for the writer to format.</summary>
     public static string? EnumCell(object value) =>

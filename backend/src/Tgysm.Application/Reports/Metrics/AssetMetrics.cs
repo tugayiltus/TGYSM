@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Reports;
 
 namespace Tgysm.Application.Reports.Metrics;
 

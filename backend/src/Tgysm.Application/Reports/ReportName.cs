@@ -1,18 +1,9 @@
 using FluentValidation;
 using FluentValidation.Results;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Reports;
 
 namespace Tgysm.Application.Reports;
-
-public enum ReportName
-{
-    Incidents,
-    Requests,
-    Operations,
-    Transfers,
-    Assets,
-    Warranty,
-}
 
 /// <summary>Route values of <see cref="ReportName"/>: lower kebab-case ("incidents").</summary>
 public static class ReportNames

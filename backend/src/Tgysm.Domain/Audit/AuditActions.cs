@@ -95,4 +95,6 @@ public static class AuditActions
     public const string TicketArticleUnlinked = "tickets.article_unlinked";
 
     public const string ReportExported = "reports.exported";
+    public const string ReportExportRequested = "reports.export_requested";
+    public const string ReportExportDownloaded = "reports.export_downloaded";
 }

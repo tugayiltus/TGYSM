@@ -3,6 +3,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Reports;
 
 namespace Tgysm.Application.Reports;
 
@@ -47,10 +48,17 @@ public sealed class ExportReportHandler(
             });
         await db.SaveChangesAsync(cancellationToken);
 
+        var names = await ReportExportNames.ResolveAsync(db, query.Filter, query.Bucket, cancellationToken);
         var content = ReportExportRows.ContentOf(
-            opened, query.Report, query.Metric, query.Bucket, query.Part, query.Filter, GetReportHandler.ScopeLabelOf(viewer, query.Report));
-        var stamp = TimeZoneInfo.ConvertTime(clock.GetUtcNow(), companyClock.Zone).ToString(FileStampFormat, CultureInfo.InvariantCulture);
-        var fileName = string.Format(CultureInfo.InvariantCulture, FileNameFormat, ReportNames.ToRoute(query.Report), query.Metric, stamp);
+            opened, query.Report, query.Metric, query.Bucket, query.Part, query.Filter, GetReportHandler.ScopeLabelOf(viewer, query.Report), names);
+        var fileName = FileNameOf(query.Report, query.Metric, clock.GetUtcNow(), companyClock.Zone);
         return new ReportExportFile(fileName, XlsxContentType, (output, ct) => writer.WriteAsync(content, output, ct));
+    }
+
+    /// <summary>"tgysm-{report}-{metric}-{yyyyMMddHHmm}.xlsx", stamped in the company time zone; shared with background export downloads.</summary>
+    public static string FileNameOf(ReportName report, string metric, DateTimeOffset at, TimeZoneInfo zone)
+    {
+        var stamp = TimeZoneInfo.ConvertTime(at, zone).ToString(FileStampFormat, CultureInfo.InvariantCulture);
+        return string.Format(CultureInfo.InvariantCulture, FileNameFormat, ReportNames.ToRoute(report), metric, stamp);
     }
 }

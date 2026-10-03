@@ -1,4 +1,5 @@
 using Tgysm.Application.Common;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Users;
 
 namespace Tgysm.Application.Reports;

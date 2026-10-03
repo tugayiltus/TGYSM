@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports.Metrics;

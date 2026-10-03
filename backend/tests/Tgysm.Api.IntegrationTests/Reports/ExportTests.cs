@@ -10,6 +10,7 @@ using Tgysm.Application.Reports.Metrics;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Sla;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
@@ -125,10 +126,11 @@ public sealed class ExportTests(ApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task Filters_sheet_lists_report_metric_filters_scope_and_row_count_and_header_is_frozen_and_filtered()
     {
-        await SeedAsync();
+        var (fx, _) = await SeedAsync();
         var (admin, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "boss@example.com");
 
-        using var response = await admin.GetAsync($"{ReportsPath}/incidents/export?metric=volume&{March}&priority=p2&status=open");
+        using var response = await admin.GetAsync(
+            $"{ReportsPath}/incidents/export?metric=volume&{March}&priority=p2&status=open&teamId={fx.World.DeskTeam.Id}");
         Assert.Matches(@"^tgysm-incidents-volume-\d{12}\.xlsx$", response.Content.Headers.ContentDisposition!.FileNameStar ?? response.Content.Headers.ContentDisposition.FileName);
         using var workbook = Open(await response.Content.ReadAsByteArrayAsync(Ct));
 
@@ -141,16 +143,33 @@ public sealed class ExportTests(ApiFactory factory) : IAsyncLifetime
         var sheet = workbook.Worksheet(FiltersSheet);
         var pairs = sheet.RowsUsed().Skip(1).ToDictionary(r => r.Cell(1).GetString(), r => r.Cell(2).GetString());
         Assert.Equal("Arızalar", pairs["Rapor"]);
-        Assert.Equal("volume", pairs["Ölçü"]);
+        Assert.Equal("Kayıt sayısı", pairs["Ölçü"]);
         Assert.Equal("Pay", pairs["Bölüm"]);
-        Assert.Equal("2026-03-01", pairs["Başlangıç tarihi"]);
-        Assert.Equal("2026-03-31", pairs["Bitiş tarihi"]);
+        Assert.Equal("01.03.2026", pairs["Başlangıç tarihi"]);
+        Assert.Equal("31.03.2026", pairs["Bitiş tarihi"]);
+        Assert.Equal("Masa", pairs["Ekip"]); // an id filter shows the name, not the guid
         Assert.Equal("P2", pairs["Öncelik"]);
         Assert.Equal("Açık", pairs["Durum"]);
         Assert.Equal("Tüm kayıtlar", pairs["Kapsam"]);
         Assert.Equal("0", pairs["Satır sayısı"]);
         Assert.True(pairs.ContainsKey("Oluşturulma zamanı"));
         Assert.False(pairs.ContainsKey("Tür")); // an unset filter is not listed
+    }
+
+    [Theory]
+    [InlineData("incidents", IncidentMetrics.OpenBacklog, false, "Açık kayıtların yaşı", "8+ gün")]
+    [InlineData("operations", OperationsMetrics.TeamLoad, true, "Ekip iş yükü", "Masa")]
+    public async Task Filters_sheet_names_the_metric_and_the_bucket(string report, string metric, bool teamBucket, string metricLabel, string bucketLabel)
+    {
+        var (fx, _) = await SeedAsync();
+        var (admin, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "boss@example.com");
+        var bucket = teamBucket ? fx.World.DeskTeam.Id.ToString() : Uri.EscapeDataString("8+");
+
+        using var workbook = Open(await ExportBytesAsync(admin, $"{ReportsPath}/{report}/export?metric={metric}&{March}&bucket={bucket}"));
+
+        var pairs = workbook.Worksheet(FiltersSheet).RowsUsed().Skip(1).ToDictionary(r => r.Cell(1).GetString(), r => r.Cell(2).GetString());
+        Assert.Equal(metricLabel, pairs["Ölçü"]);
+        Assert.Equal(bucketLabel, pairs["Dilim"]);
     }
 
     [Fact]

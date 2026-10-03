@@ -6,6 +6,7 @@ using Tgysm.Application.Reports;
 using Tgysm.Application.Reports.Metrics;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Sla;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;

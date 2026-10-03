@@ -1,4 +1,5 @@
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Reports;
 
 namespace Tgysm.Application.Reports.Metrics;
 

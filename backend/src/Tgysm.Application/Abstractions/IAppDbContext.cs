@@ -8,6 +8,7 @@ using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Operations;
 using Tgysm.Domain.Organization;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Sla;
 using Tgysm.Domain.Users;
 
@@ -52,6 +53,7 @@ public interface IAppDbContext
     DbSet<SlaInstance> SlaInstances { get; }
     DbSet<SlaPause> SlaPauses { get; }
     DbSet<SlaEvent> SlaEvents { get; }
+    DbSet<ExportJob> ExportJobs { get; }
 
     /// <summary>
     /// Saves all tracked changes in one transaction. Throws <see cref="Common.ConcurrencyException"/> on a stale

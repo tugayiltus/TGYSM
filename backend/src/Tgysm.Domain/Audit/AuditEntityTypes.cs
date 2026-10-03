@@ -21,4 +21,5 @@ public static class AuditEntityTypes
     public const string SlaPolicy = "sla_policy";
     public const string KnowledgeArticle = "knowledge_article";
     public const string Report = "report";
+    public const string ExportJob = "export_job";
 }

@@ -2,6 +2,8 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Common;
+using Tgysm.Domain.Notifications;
 
 namespace Tgysm.Infrastructure.Email;
 
@@ -45,7 +47,7 @@ internal sealed class SmtpEmailSender(IOptionsMonitor<EmailOptions> options) : I
             // No inner exception kept: a caller that logs this (e.g. ILogger.LogError(exception, ...)) must never
             // be able to print the original, unsanitized message (which could echo Email:Smtp:Password) via
             // Exception.ToString()'s inner-exception chain.
-            throw new InvalidOperationException(ErrorSanitizer.Sanitize(exception));
+            throw new InvalidOperationException(ErrorSanitizer.Sanitize(exception, EmailDelivery.LastErrorMaxLength));
         }
     }
 }

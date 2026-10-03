@@ -11,6 +11,7 @@ using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Operations;
 using Tgysm.Domain.Organization;
+using Tgysm.Domain.Reports;
 using Tgysm.Domain.Sla;
 using Tgysm.Domain.Users;
 
@@ -56,6 +57,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<SlaInstance> SlaInstances => Set<SlaInstance>();
     public DbSet<SlaPause> SlaPauses => Set<SlaPause>();
     public DbSet<SlaEvent> SlaEvents => Set<SlaEvent>();
+    public DbSet<ExportJob> ExportJobs => Set<ExportJob>();
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

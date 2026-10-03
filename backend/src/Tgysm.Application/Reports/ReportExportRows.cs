@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
+using Tgysm.Domain.Reports;
 
 namespace Tgysm.Application.Reports;
 
@@ -36,8 +37,15 @@ public static class ReportExportRows
 
     /// <summary>The cell content for <paramref name="rows"/>; the rows are read lazily while the file is written.</summary>
     public static ReportExportContent ContentOf(
-        DrilldownRows rows, ReportName report, string metric, string? bucket, ReportDrillPart part, ReportFilter filter, string scopeLabel) =>
-        new(report, metric, bucket, part, filter, scopeLabel, ColumnKeysOf(rows.Kind), Cells(rows));
+        DrilldownRows rows,
+        ReportName report,
+        string metric,
+        string? bucket,
+        ReportDrillPart part,
+        ReportFilter filter,
+        string scopeLabel,
+        IReadOnlyDictionary<string, string> names) =>
+        new(report, metric, bucket, part, filter, scopeLabel, ColumnKeysOf(rows.Kind), Cells(rows), names);
 
     public static Task<int> CountAsync(DrilldownRows rows, CancellationToken cancellationToken) =>
         rows.Kind == DrilldownKind.Assets ? rows.Assets!.CountAsync(cancellationToken) : rows.Tickets!.CountAsync(cancellationToken);

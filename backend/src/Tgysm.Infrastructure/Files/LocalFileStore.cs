@@ -37,6 +37,26 @@ public sealed class LocalFileStore(IOptions<FileStorageOptions> options) : IFile
         return key;
     }
 
+    public async Task<string> SaveAsync(Func<Stream, CancellationToken, Task> write, CancellationToken cancellationToken)
+    {
+        var key = Guid.NewGuid().ToString(KeyFormat);
+        var path = PathOf(key);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        try
+        {
+            await using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            await write(stream, cancellationToken);
+        }
+        catch
+        {
+            // Includes cancellation: a half-written file must never stay behind without a key anyone knows.
+            File.Delete(path);
+            throw;
+        }
+
+        return key;
+    }
+
     public Stream? OpenRead(string storageKey)
     {
         var path = PathOf(storageKey);

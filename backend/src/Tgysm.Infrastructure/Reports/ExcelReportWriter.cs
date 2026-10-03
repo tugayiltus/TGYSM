@@ -100,16 +100,16 @@ internal sealed class ExcelReportWriter(ICompanyClock companyClock, TimeProvider
         }
 
         Add(ExportHeaders.Label(ExportHeaders.Labels.Report), ExportHeaders.Value(content.Report));
-        Add(ExportHeaders.Label(ExportHeaders.Labels.Metric), content.Metric);
+        Add(ExportHeaders.Label(ExportHeaders.Labels.Metric), ExportHeaders.Metric(content.Metric));
         if (content.Bucket is not null)
         {
-            Add(ExportHeaders.Label(ExportHeaders.Labels.Bucket), content.Bucket);
+            Add(ExportHeaders.Label(ExportHeaders.Labels.Bucket), NameOf(content, content.Bucket) ?? ExportHeaders.Bucket(content.Bucket));
         }
 
         Add(ExportHeaders.Label(ExportHeaders.Labels.Part), ExportHeaders.Value(content.Part));
         foreach (var (key, raw) in content.Filter.Entries())
         {
-            Add(ExportHeaders.FilterName(key), ExportHeaders.FilterValue(key, raw));
+            Add(ExportHeaders.FilterName(key), NameOf(content, raw) ?? ExportHeaders.FilterValue(key, raw));
         }
 
         Add(ExportHeaders.Label(ExportHeaders.Labels.Scope), ExportHeaders.Scope(content.ScopeLabel));
@@ -117,4 +117,7 @@ internal sealed class ExcelReportWriter(ICompanyClock companyClock, TimeProvider
         Add(ExportHeaders.Label(ExportHeaders.Labels.RowCount), rowCount.ToString(CultureInfo.InvariantCulture));
         sheet.Columns(FieldColumn, ValueColumn).Width = ColumnWidth;
     }
+
+    private static string? NameOf(ReportExportContent content, string raw) =>
+        content.Names is { } names && names.TryGetValue(raw, out var name) ? name : null;
 }

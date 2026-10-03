@@ -1,13 +1,11 @@
 using System.Text.RegularExpressions;
-using Tgysm.Domain.Notifications;
 
-namespace Tgysm.Infrastructure.Email;
+namespace Tgysm.Application.Common;
 
 /// <summary>
-/// Turns a send failure into text safe to store as an <see cref="EmailDelivery"/>'s <c>last_error</c> (CLAUDE.md:
-/// the SMTP password must never appear in logs, audit or <c>last_error</c>). Used by <see cref="SmtpEmailSender"/>
-/// and <see cref="PickupFolderEmailSender"/> before they rethrow, so the exception that ever reaches Application
-/// code is already safe — Application stores <c>exception.Message</c> verbatim without needing to know this type.
+/// Turns a failure into text safe to store in a <c>last_error</c> column (CLAUDE.md: the SMTP password must never appear in
+/// logs, audit or <c>last_error</c>). The email senders (Infrastructure) use it before they rethrow, so the exception that
+/// reaches the email use cases is already safe; the export runner uses it before it records a failed export job.
 /// </summary>
 public static partial class ErrorSanitizer
 {
@@ -18,11 +16,11 @@ public static partial class ErrorSanitizer
     [GeneratedRegex(@"(?i)\b(password|pwd|secret|token|authorization)\b\s*[:=]\s*\S+")]
     private static partial Regex CredentialPattern();
 
-    /// <summary>Type name + message, credential-shaped substrings redacted, truncated to <see cref="EmailDelivery.LastErrorMaxLength"/>.</summary>
-    public static string Sanitize(Exception exception)
+    /// <summary>Type name + message, credential-shaped substrings redacted, truncated to <paramref name="maxLength"/>.</summary>
+    public static string Sanitize(Exception exception, int maxLength)
     {
         var message = $"{exception.GetType().Name}: {exception.Message}";
         message = CredentialPattern().Replace(message, match => $"{match.Groups[1].Value}: {RedactedValue}");
-        return message.Length > EmailDelivery.LastErrorMaxLength ? message[..EmailDelivery.LastErrorMaxLength] : message;
+        return message.Length > maxLength ? message[..maxLength] : message;
     }
 }

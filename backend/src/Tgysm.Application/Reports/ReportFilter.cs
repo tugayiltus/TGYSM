@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentValidation;
 using FluentValidation.Results;
 using Tgysm.Domain.Assets;
@@ -72,6 +73,13 @@ public sealed record ReportFilter
     public static readonly DateOnly MinDay = new(2000, 1, 1);
     public static readonly DateOnly MaxDay = new(2100, 12, 31);
 
+    /// <summary>How an export job stores its filter (<c>export_jobs.filters</c>): camelCase keys, snake_case enum names, ISO days, set values only.</summary>
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower) },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     public DateOnly? From { get; init; }
     public DateOnly? To { get; init; }
     public TicketKind? Kind { get; init; }
@@ -108,6 +116,12 @@ public sealed record ReportFilter
     /// <summary>The instant range of the day window in <paramref name="zone"/>; <c>To</c> covers its whole day.</summary>
     public ReportWindow Window(TimeZoneInfo zone) =>
         new(From is { } from ? StartOfDay(from, zone) : null, To is { } to ? StartOfDay(to.AddDays(1), zone) : null);
+
+    /// <summary>The filter as JSON, read back by <see cref="FromJson"/> to an equal filter.</summary>
+    public string ToJson() => JsonSerializer.Serialize(this, JsonOptions);
+
+    public static ReportFilter FromJson(string json) =>
+        JsonSerializer.Deserialize<ReportFilter>(json, JsonOptions) ?? throw new JsonException("An export job's filter JSON is null.");
 
     /// <summary>Query string (no leading '?') that <c>ReportFilterBinder.Bind</c> reads back to an equal filter.</summary>
     public string ToQueryString() => string.Join('&', Entries().Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));

@@ -1,5 +1,10 @@
 using System.Reflection;
+using System.Text.Json;
 using Tgysm.Application.Reports;
+using Tgysm.Application.Reports.Metrics;
+using Tgysm.Domain.Assets;
+using Tgysm.Domain.Reports;
+using Tgysm.Domain.Tickets;
 using Tgysm.Infrastructure.Reports;
 
 namespace Tgysm.Application.Tests.Reports;
@@ -8,6 +13,32 @@ namespace Tgysm.Application.Tests.Reports;
 public sealed class ExportHeadersCoverageTests
 {
     private static readonly IReadOnlySet<string> Keys = ExportHeaders.Keys;
+
+    private static IEnumerable<string> MetricKeysOfAllReports() =>
+        Enum.GetValues<ReportName>().SelectMany(r => ReportCatalog.Get(r)).Select(m => m.Key).Distinct();
+
+    /// <summary>Bucket keys that are not ids: ageing bands, the "no value" keys, excluded outcomes and the enum-named buckets.</summary>
+    private static IEnumerable<string> FixedBucketKeys() =>
+        ReportBuckets.AgeingDays.Select(b => b.Key)
+            .Concat([OperationsMetrics.None, OperationsMetrics.Unassigned, MetricKeys.Cancelled, IncidentMetrics.ServiceRequestRequired, RequestMetrics.ApprovalRejected])
+            .Concat(new[] { typeof(HoldReason), typeof(AssetType), typeof(AssetStatus) }.SelectMany(t => Enum.GetNames(t)).Select(JsonNamingPolicy.SnakeCaseLower.ConvertName))
+            .Distinct();
+
+    [Fact]
+    public void Every_metric_and_fixed_bucket_has_a_label()
+    {
+        Assert.All(MetricKeysOfAllReports(), key => Assert.Contains($"metrics.{key}", Keys));
+        Assert.All(FixedBucketKeys(), key => Assert.Contains($"buckets.{key}", Keys));
+        Assert.Equal("8+ gün", ExportHeaders.Bucket("8+"));
+        Assert.Equal("0190a1b2-0000-7000-8000-000000000000", ExportHeaders.Bucket("0190a1b2-0000-7000-8000-000000000000")); // unresolved id
+    }
+
+    [Fact]
+    public void Day_filters_are_shown_as_turkish_dates()
+    {
+        Assert.Equal("01.03.2026", ExportHeaders.FilterValue(ReportFilterKeys.From, "2026-03-01"));
+        Assert.Equal("31.03.2026", ExportHeaders.FilterValue(ReportFilterKeys.To, "2026-03-31"));
+    }
 
     [Fact]
     public void Every_column_key_has_a_header_and_covers_its_row_record()
@@ -69,6 +100,8 @@ public sealed class ExportHeadersCoverageTests
             .Concat(ExportColumns.Tickets.Concat(ExportColumns.Assets).Select(c => $"columns.{c}"))
             .Concat(typeof(ExportHeaders.Labels).GetFields(BindingFlags.Public | BindingFlags.Static).Select(f => $"labels.{f.GetRawConstantValue()}"))
             .Concat([$"scope.{GetReportHandler.AllScope}", $"scope.{GetReportHandler.TeamsScope}"])
+            .Concat(MetricKeysOfAllReports().Select(k => $"metrics.{k}"))
+            .Concat(FixedBucketKeys().Select(k => $"buckets.{k}"))
             .Concat(ExportHeaders.EnumTypes.SelectMany(t => Enum.GetNames(t).Select(n => $"values.{ExportHeaders.GroupOf(t)}.{System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(n)}")))
             .ToHashSet();
         Assert.Empty(Keys.Except(expected));
