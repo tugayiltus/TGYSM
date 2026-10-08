@@ -215,7 +215,12 @@
     "workspaceCard": "İş listem",
     "workspaceCardDescription": "Size ve ekiplerinize düşen kayıtlar.",
     "approvalsCard": "Onaylar",
-    "approvalsCardDescription": "Onayınızı bekleyen talepler."
+    "approvalsCardDescription": "Onayınızı bekleyen talepler.",
+    "recentTitle": "Son kayıtlarım",
+    "recentEmpty": "Henüz kaydınız yok.",
+    "allTickets": "Tüm kayıtlarım",
+    "queuesTitle": "İş kuyruklarım",
+    "moreTitle": "Diğer işlemler"
   },
   "sla": {
     "title": "SLA",

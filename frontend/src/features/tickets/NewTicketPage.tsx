@@ -1,3 +1,4 @@
+import { CCard, CCardBody } from '@coreui/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -7,12 +8,14 @@ import { z } from 'zod';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ticketPath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
 import { SelectField } from '../../shared/ui/SelectField';
 import { TextAreaField } from '../../shared/ui/TextAreaField';
 import { TextField } from '../../shared/ui/TextField';
+import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
 import { useReferenceLocations } from '../assets/api';
 
 import { useAddComment, useCreateTicket, useReferenceCategories, useReferenceRequestTypes, type TicketKind } from './api';
@@ -57,11 +60,12 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
     control,
     handleSubmit,
     setError,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<TicketFormValues>({
     resolver: zodResolver(isRequest ? requestSchema : ticketSchema),
     defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION },
   });
+  const hasChanges = isDirty || files.length > 0;
   const requestTypeId = useWatch({ control, name: 'requestTypeId' });
   const needsApproval = requestTypes.data?.some((r) => r.id === requestTypeId && r.requiresApproval) ?? false;
 
@@ -82,7 +86,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
       {
         onError: (error) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS),
         onSuccess: (ticket) => {
-          const open = (state?: TicketDetailState) => void navigate(ticketPath(ticket.number), { state });
+          const open = (state?: TicketDetailState) => void navigate(ticketPath(ticket.number), { state: { ...state, created: true } });
           if (files.length === 0) {
             open();
             return;
@@ -100,15 +104,18 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
   const alert = create.error && !isHandledByFields(create.error, FORM_FIELDS, CODE_FIELDS) ? describeError(create.error) : null;
 
   return (
-    <section className="mx-auto flex max-w-2xl flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{isRequest ? t('new.requestTitle') : t('new.incidentTitle')}</h1>
-      <p className="text-slate-700">{isRequest ? t('new.requestIntro') : t('new.incidentIntro')}</p>
-      <form noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
+    <>
+      <PageHeader titleOverride={isRequest ? t('new.requestTitle') : t('new.incidentTitle')} />
+      <UnsavedChangesGuard when={({ nextLocation }) => hasChanges && (nextLocation.state as TicketDetailState | null)?.created !== true} />
+      <CCard className="tgysm-form-card">
+        <CCardBody className="d-flex flex-column gap-3">
+      <p className="mb-0">{isRequest ? t('new.requestIntro') : t('new.incidentIntro')}</p>
+      <form noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         {isRequest && (
           <>
             <SelectField label={t('new.requestType')} options={typeOptions} placeholder={t('new.selectRequestType')} error={fieldError(errors.requestTypeId)} {...register('requestTypeId')} />
-            {needsApproval && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{t('new.approvalHint')}</p>}
+            {needsApproval && <p className="alert alert-warning mb-0">{t('new.approvalHint')}</p>}
           </>
         )}
         <TextField label={t('new.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
@@ -116,11 +123,13 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
         <SelectField label={t('new.category')} options={categoryOptions} placeholder={t('fields.select')} error={fieldError(errors.categoryId)} {...register('categoryId')} />
         <SelectField label={t('new.location')} options={locationOptions} placeholder={t('fields.select')} error={fieldError(errors.locationId)} {...register('locationId')} />
         <AttachmentInput label={t('new.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
-        <Button type="submit" className="self-start" isLoading={create.isPending || upload.isPending}>
+        <Button type="submit" className="align-self-start" isLoading={create.isPending || upload.isPending}>
           {t('new.submit')}
         </Button>
       </form>
-    </section>
+        </CCardBody>
+      </CCard>
+    </>
   );
 }
 

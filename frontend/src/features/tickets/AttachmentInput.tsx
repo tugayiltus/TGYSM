@@ -14,8 +14,8 @@ export function AttachmentInput({ label, hint, files, onChange }: AttachmentInpu
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-slate-800">
+    <div className="d-flex flex-column gap-1">
+      <label htmlFor={id} className="form-label mb-0">
         {label}
       </label>
       <input
@@ -24,16 +24,16 @@ export function AttachmentInput({ label, hint, files, onChange }: AttachmentInpu
         multiple
         accept={ACCEPT}
         aria-describedby={hintId}
-        className="min-h-11 w-full min-w-0 text-base"
+        className="form-control"
         onChange={(event) => onChange(Array.from(event.target.files ?? []))}
       />
       {hint && (
-        <p id={hintId} className="text-xs text-slate-600">
+        <p id={hintId} className="form-text mb-0">
           {hint}
         </p>
       )}
       {files.length > 0 && (
-        <ul className="text-sm text-slate-700">
+        <ul className="small mb-0">
           {files.map((file) => (
             <li key={`${file.name}-${file.size}`}>{file.name}</li>
           ))}

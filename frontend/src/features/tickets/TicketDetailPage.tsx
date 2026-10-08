@@ -43,6 +43,8 @@ function ApprovalBox({ ticket }: { ticket: TicketDetail }) {
 
 /** Navigation state from the new-ticket page when the files could not be uploaded. */
 export interface TicketDetailState {
+  /** Set when the ticket was just created, so the form's leave guard lets this navigation through. */
+  created?: boolean;
   uploadError?: string;
 }
 

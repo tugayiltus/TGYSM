@@ -2,27 +2,13 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router';
 
 import { ROUTES } from '../../shared/routes';
-import { WORKSPACE_QUEUES, useTickets, type TicketQueue } from '../tickets/api';
+import { WORKSPACE_QUEUES, type TicketQueue } from '../tickets/api';
 import { TicketList } from '../tickets/TicketList';
 
-const QUEUE_PARAM = 'queue';
+import { QueueCard } from './QueueCard';
+import { QUEUE_PARAM } from './queuePath';
+
 const DEFAULT_QUEUE: TicketQueue = 'team';
-const COUNT_PAGE_SIZE = 1;
-const FIRST_PAGE = 1;
-const CARD_CLASS = 'block rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-brand-300';
-
-const queuePath = (queue: TicketQueue) => `${ROUTES.workspaceQueue}?${QUEUE_PARAM}=${queue}`;
-
-function QueueCard({ queue }: { queue: TicketQueue }) {
-  const { t } = useTranslation('tickets');
-  const count = useTickets({ queue, status: undefined, kind: undefined, priority: undefined, search: '', page: FIRST_PAGE, pageSize: COUNT_PAGE_SIZE });
-  return (
-    <Link to={queuePath(queue)} className={CARD_CLASS}>
-      <span className="block font-medium">{t(`workspace.${queue}`)}</span>
-      <span className="mt-1 block text-2xl font-semibold text-brand-900">{count.data ? t('workspace.count', { count: count.data.totalCount }) : '…'}</span>
-    </Link>
-  );
-}
 
 /** IT home: one card per queue, each opening the filtered list. */
 export function WorkspacePage() {

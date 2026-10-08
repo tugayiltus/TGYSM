@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Link, useLocation, useSearchParams } from 'react-router';
 
 import { formatDateTime } from '../../shared/lib/format';
+import { readPageParam } from '../../shared/lib/pageParam';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
+import { linkState } from '../../shared/navigation/returnTo';
 import { ticketPath } from '../../shared/routes';
 import { Pagination } from '../../shared/ui/Pagination';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
@@ -12,22 +14,26 @@ import { SelectField } from '../../shared/ui/SelectField';
 import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
 import { TextField } from '../../shared/ui/TextField';
 
-import { PRIORITIES, TICKET_STATUSES, useTickets, type Priority, type TicketListItem, type TicketQueue, type TicketStatus } from './api';
+import { PRIORITIES, TICKET_STATUSES, useTickets, type TicketListItem, type TicketQueue } from './api';
 import { SlaSummary } from './SlaBadge';
 import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
 
 const PAGE_SIZE = 20;
-const FIRST_PAGE = 1;
 const SEARCH_DEBOUNCE_MS = 300;
 const ALL = '';
-
-const LINK_BUTTON_CLASS =
-  'inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50';
+/** Filters live in the URL so a ticket opened from the list can return to the same filtered view (spec §4.5). */
+const PARAM = { search: 'q', status: 'status', priority: 'priority', page: 'page' } as const;
 
 function OpenLink({ ticket }: { ticket: TicketListItem }) {
   const { t } = useTranslation('tickets');
+  const location = useLocation();
   return (
-    <Link to={ticketPath(ticket.number)} className={LINK_BUTTON_CLASS} aria-label={recordActionLabel(t('list.open'), ticket.number)}>
+    <Link
+      to={ticketPath(ticket.number)}
+      state={linkState(location)}
+      className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center"
+      aria-label={recordActionLabel(t('list.open'), ticket.number)}
+    >
       {t('list.open')}
     </Link>
   );
@@ -37,10 +43,35 @@ function OpenLink({ ticket }: { ticket: TicketListItem }) {
 export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | undefined; showWorkColumns: boolean }) {
   const { t } = useTranslation('tickets');
   const { t: tc } = useTranslation();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<TicketStatus | typeof ALL>(ALL);
-  const [priority, setPriority] = useState<Priority | typeof ALL>(ALL);
-  const [page, setPage] = useState(FIRST_PAGE);
+  const [params, setParams] = useSearchParams();
+  const status = TICKET_STATUSES.find((value) => value === params.get(PARAM.status)) ?? ALL;
+  const priority = PRIORITIES.find((value) => value === params.get(PARAM.priority)) ?? ALL;
+  const page = readPageParam(params.get(PARAM.page));
+  // The search box is typed into locally and written to the URL; it starts from the URL value.
+  const [search, setSearchText] = useState(params.get(PARAM.search) ?? '');
+  const setFilter = (key: string, value: string) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (value === '') {
+          next.delete(key);
+        } else {
+          next.set(key, value);
+        }
+        next.delete(PARAM.page);
+        return next;
+      },
+      { replace: true },
+    );
+  const setPage = (next: number) =>
+    setParams(
+      (current) => {
+        const updated = new URLSearchParams(current);
+        updated.set(PARAM.page, String(next));
+        return updated;
+      },
+      { replace: true },
+    );
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
   const tickets = useTickets({
     queue,
@@ -53,7 +84,7 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
   });
 
   const columns: Column<TicketListItem>[] = [
-    { key: 'number', header: t('list.columns.number'), renderCell: (x) => <span className="font-medium whitespace-nowrap">{x.number}</span> },
+    { key: 'number', header: t('list.columns.number'), renderCell: (x) => <span className="fw-semibold text-nowrap">{x.number}</span> },
     { key: 'subject', header: t('list.columns.subject'), renderCell: (x) => x.subject },
     { key: 'status', header: t('list.columns.status'), renderCell: (x) => <TicketStatusBadge status={x.status} /> },
     ...(showWorkColumns
@@ -68,16 +99,16 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
   ];
 
   const renderCard = (x: TicketListItem) => (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-start justify-between gap-2">
+    <div className="d-flex flex-column gap-2">
+      <div className="d-flex align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm text-slate-600">{x.number}</p>
-          <p className="font-medium break-words">{x.subject}</p>
+          <p className="small text-body-secondary mb-0">{x.number}</p>
+          <p className="fw-semibold text-break mb-0">{x.subject}</p>
         </div>
         <TicketStatusBadge status={x.status} />
       </div>
       {showWorkColumns && (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+        <div className="d-flex flex-wrap align-items-center gap-2 small text-body-secondary">
           <PriorityBadge priority={x.priority} />
           <span>{x.assigneeName ?? x.teamName}</span>
           <SlaSummary sla={x.sla} />
@@ -87,40 +118,35 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
     </div>
   );
 
-  const reset = () => setPage(FIRST_PAGE);
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className={`grid gap-3 ${showWorkColumns ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+    <div className="d-flex flex-column gap-3">
+      <div className="row g-3">
         <TextField
+          className={showWorkColumns ? 'col-12 col-md-4' : 'col-12 col-md-6'}
           type="search"
           label={t('list.search')}
           value={search}
           onChange={(event) => {
-            setSearch(event.target.value);
-            reset();
+            setSearchText(event.target.value);
+            setFilter(PARAM.search, event.target.value);
           }}
         />
         <SelectField
           label={t('list.statusFilter')}
           placeholder={t('list.all')}
           options={TICKET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
+          className={showWorkColumns ? 'col-12 col-md-4' : 'col-12 col-md-6'}
           value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as TicketStatus | typeof ALL);
-            reset();
-          }}
+          onChange={(event) => setFilter(PARAM.status, event.target.value)}
         />
         {showWorkColumns && (
           <SelectField
             label={t('list.priorityFilter')}
             placeholder={t('list.all')}
             options={PRIORITIES.map((value) => ({ value, label: t(`priorities.${value}`) }))}
+            className="col-12 col-md-4"
             value={priority}
-            onChange={(event) => {
-              setPriority(event.target.value as Priority | typeof ALL);
-              reset();
-            }}
+            onChange={(event) => setFilter(PARAM.priority, event.target.value)}
           />
         )}
       </div>

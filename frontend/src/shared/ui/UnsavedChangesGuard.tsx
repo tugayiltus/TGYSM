@@ -1,19 +1,19 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBlocker } from 'react-router';
+import { useBlocker, type BlockerFunction } from 'react-router';
 
 import { ConfirmDialog } from './ConfirmDialog';
 
 /**
- * While `when` is true, in-app navigation asks for confirmation and closing or reloading the tab triggers
- * the browser's own leave prompt.
+ * While `when` holds, in-app navigation asks for confirmation and closing or reloading the tab triggers
+ * the browser's own leave prompt. A function decides per navigation (e.g. "not when opening the record just created").
  */
-export function UnsavedChangesGuard({ when }: { when: boolean }) {
+export function UnsavedChangesGuard({ when }: { when: boolean | BlockerFunction }) {
   const { t } = useTranslation();
   const blocker = useBlocker(when);
 
   useEffect(() => {
-    if (!when) {
+    if (when === false) {
       return undefined;
     }
     const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
