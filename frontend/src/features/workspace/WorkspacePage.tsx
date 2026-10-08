@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 
-import { ROUTES } from '../../shared/routes';
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { WORKSPACE_QUEUES, type TicketQueue } from '../tickets/api';
 import { TicketList } from '../tickets/TicketList';
 
@@ -14,16 +14,16 @@ const DEFAULT_QUEUE: TicketQueue = 'team';
 export function WorkspacePage() {
   const { t } = useTranslation('tickets');
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('workspace.title')}</h1>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <>
+      <PageHeader titleOverride={t('workspace.title')} />
+      <ul className="list-unstyled row g-3 mb-0">
         {WORKSPACE_QUEUES.map((queue) => (
-          <li key={queue}>
+          <li key={queue} className="col-12 col-sm-6 col-xl">
             <QueueCard queue={queue} />
           </li>
         ))}
       </ul>
-    </section>
+    </>
   );
 }
 
@@ -33,12 +33,9 @@ export function QueuePage() {
   const requested = params.get(QUEUE_PARAM);
   const queue = WORKSPACE_QUEUES.find((q) => q === requested) ?? DEFAULT_QUEUE;
   return (
-    <section className="flex flex-col gap-4">
-      <Link to={ROUTES.workspace} className="text-sm text-brand-900 underline">
-        {t('workspace.back')}
-      </Link>
-      <h1 className="text-2xl font-semibold">{t(`workspace.${queue}`)}</h1>
+    <>
+      <PageHeader titleOverride={t(`workspace.${queue}`)} />
       <TicketList key={queue} queue={queue} showWorkColumns />
-    </section>
+    </>
   );
 }

@@ -198,7 +198,8 @@
     "reason": "Neden",
     "approver": "Onaylayıcı",
     "unassigned": "Onaylayıcı yok",
-    "requestedBy": "Talep sahibi: {{name}}"
+    "requestedBy": "Talep sahibi: {{name}}",
+    "assignApprover": "Onaylayıcıyı ata"
   },
   "nav": {
     "tickets": "Kayıtlarım",

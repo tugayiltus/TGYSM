@@ -52,3 +52,30 @@ body {
 .tgysm-form-card {
   max-width: 40rem;
 }
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.tgysm-pre-wrap {
+  white-space: pre-wrap;
+}
+
+// Selected tab in small tab lists built from buttons (aria-selected carries the state).
+.aria-selected-active[aria-selected="true"] {
+  background-color: var(--cui-primary-bg-subtle);
+  color: var(--cui-primary-text-emphasis);
+}
+
+.tgysm-timeline > li {
+  border-left: 2px solid var(--cui-border-color);
+  padding-left: 1rem;
+}
+
+// Detail pages: actions and facts stay in view beside long content from 992 px.
+@media (min-width: 992px) {
+  .tgysm-sticky-aside {
+    position: sticky;
+    top: 4.5rem;
+  }
+}

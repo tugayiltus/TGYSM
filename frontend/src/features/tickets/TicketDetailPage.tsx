@@ -1,7 +1,11 @@
+import { CCard, CCardBody } from '@coreui/react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams } from 'react-router';
 
 import { formatDateTime } from '../../shared/lib/format';
+import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
+import { PageHeader } from '../../shared/navigation/PageHeader';
+import { useReturnTo } from '../../shared/navigation/returnTo';
 import { ROUTES } from '../../shared/routes';
 import { FormAlert } from '../../shared/ui/FormAlert';
 import { ErrorState, LoadingState } from '../../shared/ui/States';
@@ -16,12 +20,12 @@ import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
 import { TicketLinks } from './TicketLinks';
 import { Timeline } from './Timeline';
 
-function Field({ label, value }: { label: string; value: string | null }) {
+function Field({ label, value, wide = false }: { label: string; value: string | null; wide?: boolean }) {
   const { t: tc } = useTranslation();
   return (
-    <div>
-      <dt className="text-xs text-slate-600">{label}</dt>
-      <dd className="font-medium break-words">{value ?? tc('none')}</dd>
+    <div className={wide ? 'col-12' : 'col-12 col-sm-6 col-lg-12'}>
+      <dt className="small fw-normal text-body-secondary">{label}</dt>
+      <dd className="mb-0 fw-medium text-break tgysm-pre-wrap">{value ?? tc('none')}</dd>
     </div>
   );
 }
@@ -33,10 +37,10 @@ function ApprovalBox({ ticket }: { ticket: TicketDetail }) {
     return null;
   }
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
-      <p className="font-medium">{`${t('detail.approval')}: ${t(`approvalStatuses.${approval.status}`)}`}</p>
-      <p>{approval.approverName ? t('detail.approver', { name: approval.approverName }) : t('detail.noApprover')}</p>
-      {approval.reason && <p>{approval.reason}</p>}
+    <div className="alert alert-warning mb-0 small">
+      <p className="fw-semibold mb-1">{`${t('detail.approval')}: ${t(`approvalStatuses.${approval.status}`)}`}</p>
+      <p className="mb-0">{approval.approverName ? t('detail.approver', { name: approval.approverName }) : t('detail.noApprover')}</p>
+      {approval.reason && <p className="mb-0 mt-1">{approval.reason}</p>}
     </div>
   );
 }
@@ -62,6 +66,9 @@ function TicketDetail({ number }: { number: string }) {
   const ticket = useTicket(number);
   const comments = useComments(number);
   const timeline = useTimeline(number);
+  const backTo = useReturnTo(ROUTES.tickets);
+  // Only from loaded data: a 404 must not show the number typed into the URL as a title.
+  useBreadcrumbLabel('ticketDetail', ticket.data?.number);
 
   if (ticket.isPending) {
     return <LoadingState />;
@@ -72,66 +79,81 @@ function TicketDetail({ number }: { number: string }) {
   const item = ticket.data;
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Link to={ROUTES.tickets} className="text-sm text-brand-900 underline">
-          {t('detail.back')}
-        </Link>
-        <p className="text-sm text-slate-600">{`${item.number} · ${t(`kinds.${item.kind}`)}`}</p>
-        <h1 className="text-2xl font-semibold break-words">{item.subject}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <TicketStatusBadge status={item.status} />
-          <PriorityBadge priority={item.priority} />
-          {item.holdReason && <span className="text-sm text-slate-700">{t(`holdReasons.${item.holdReason}`)}</span>}
-        </div>
+    <>
+      <PageHeader
+        titleOverride={item.subject}
+        actions={
+          <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+            {t('detail.back')}
+          </Link>
+        }
+      />
+      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <span className="small text-body-secondary">{`${item.number} · ${t(`kinds.${item.kind}`)}`}</span>
+        <TicketStatusBadge status={item.status} />
+        <PriorityBadge priority={item.priority} />
+        {item.holdReason && <span className="small">{t(`holdReasons.${item.holdReason}`)}</span>}
       </div>
 
-      <section aria-labelledby="ticket-sla" className="flex flex-col gap-2">
-        <h2 id="ticket-sla" className="text-lg font-semibold">
-          {t('sla.title')}
-        </h2>
-        <SlaSummary sla={item.sla} showDue />
-      </section>
+      <div className="row g-4">
+        {/* First in the DOM: on phones the actions come before the long content; beside it from 992 px. */}
+        <aside className="col-12 col-lg-4 order-lg-2">
+          <div className="tgysm-sticky-aside d-flex flex-column gap-3">
+            <TicketActions ticket={item} />
+            <ApprovalBox ticket={item} />
+            <CCard>
+              <CCardBody className="d-flex flex-column gap-2">
+                <h2 id="ticket-sla" className="h6 mb-0">
+                  {t('sla.title')}
+                </h2>
+                <SlaSummary sla={item.sla} showDue />
+              </CCardBody>
+            </CCard>
+            <CCard>
+              <CCardBody>
+                <dl className="row g-2 mb-0">
+                  <Field label={t('detail.requester')} value={item.requesterName} />
+                  <Field label={t('detail.team')} value={item.teamName} />
+                  <Field label={t('detail.assignee')} value={item.assigneeName} />
+                  <Field label={t('detail.category')} value={item.categoryName} />
+                  <Field label={t('detail.location')} value={item.locationName} />
+                  {item.kind === 'request' && <Field label={t('detail.requestType')} value={item.requestTypeName} />}
+                  <Field label={t('detail.createdAt')} value={formatDateTime(item.createdAt)} />
+                </dl>
+              </CCardBody>
+            </CCard>
+          </div>
+        </aside>
 
-      <FormAlert message={uploadError} />
-      <ApprovalBox ticket={item} />
-
-      <dl className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label={t('detail.requester')} value={item.requesterName} />
-        <Field label={t('detail.team')} value={item.teamName} />
-        <Field label={t('detail.assignee')} value={item.assigneeName} />
-        <Field label={t('detail.category')} value={item.categoryName} />
-        <Field label={t('detail.location')} value={item.locationName} />
-        {item.kind === 'request' && <Field label={t('detail.requestType')} value={item.requestTypeName} />}
-        <Field label={t('detail.createdAt')} value={formatDateTime(item.createdAt)} />
-        <div className="sm:col-span-2 lg:col-span-3">
-          <Field label={t('detail.description')} value={item.description} />
+        <div className="col-12 col-lg-8 order-lg-1 d-flex flex-column gap-4 min-w-0">
+          <FormAlert message={uploadError} />
+          <CCard>
+            <CCardBody>
+              <dl className="row g-3 mb-0">
+                <Field wide label={t('detail.description')} value={item.description} />
+                {item.holdNote && <Field wide label={t('detail.holdNote')} value={item.holdNote} />}
+                {item.resolution && <Field wide label={t('detail.resolution')} value={item.resolution} />}
+                {item.rootCause && <Field wide label={t('detail.rootCause')} value={item.rootCause} />}
+                {item.cancelReason && <Field wide label={t('detail.cancelReason')} value={item.cancelReason} />}
+              </dl>
+            </CCardBody>
+          </CCard>
+          <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
+          <TicketArticles ticket={item} />
+          <div className="d-flex flex-column gap-3">
+            {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}
+            {comments.data && <CommentList ticket={item} comments={comments.data} />}
+            <CommentBox ticket={item} />
+          </div>
+          <section aria-labelledby="ticket-timeline" className="d-flex flex-column gap-2">
+            <h2 id="ticket-timeline" className="h5 mb-0">
+              {t('detail.timeline')}
+            </h2>
+            {timeline.isError && <ErrorState error={timeline.error} onRetry={() => void timeline.refetch()} />}
+            {timeline.data && <Timeline events={timeline.data} />}
+          </section>
         </div>
-        {item.holdNote && <Field label={t('detail.holdNote')} value={item.holdNote} />}
-        {item.resolution && <Field label={t('detail.resolution')} value={item.resolution} />}
-        {item.rootCause && <Field label={t('detail.rootCause')} value={item.rootCause} />}
-        {item.cancelReason && <Field label={t('detail.cancelReason')} value={item.cancelReason} />}
-      </dl>
-
-      <TicketActions ticket={item} />
-      <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
-      <TicketArticles ticket={item} />
-
-      {/* min-w-0: grid items otherwise grow to their content's min width and push the page wider than 360 px. */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-4">
-          {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}
-          {comments.data && <CommentList ticket={item} comments={comments.data} />}
-          <CommentBox ticket={item} />
-        </div>
-        <section aria-labelledby="ticket-timeline" className="flex min-w-0 flex-col gap-3">
-          <h2 id="ticket-timeline" className="text-lg font-semibold">
-            {t('detail.timeline')}
-          </h2>
-          {timeline.isError && <ErrorState error={timeline.error} onRetry={() => void timeline.refetch()} />}
-          {timeline.data && <Timeline events={timeline.data} />}
-        </section>
       </div>
-    </section>
+    </>
   );
 }

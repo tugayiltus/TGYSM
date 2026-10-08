@@ -41,7 +41,7 @@ function LinkArticleDialog({ ticketNumber, onClose, onLinked }: { ticketNumber: 
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="d-flex flex-column gap-3">
         <FormAlert message={link.error ? describeError(link.error) : null} />
         <TextField type="search" label={t('ticket.search')} value={search} onChange={(event) => setSearch(event.target.value)} />
         <SelectField label={t('ticket.pick')} placeholder={t('ticket.select')} options={options} value={articleId} onChange={(event) => setArticleId(event.target.value)} />
@@ -60,20 +60,20 @@ export function TicketArticles({ ticket }: { ticket: TicketDetail }) {
   const items = articles.data ?? [];
 
   return (
-    <section aria-labelledby="ticket-articles" className="flex flex-col gap-2">
-      <h2 id="ticket-articles" className="text-lg font-semibold">
+    <section aria-labelledby="ticket-articles" className="d-flex flex-column gap-2">
+      <h2 id="ticket-articles" className="fs-5 fw-semibold">
         {t('ticket.title')}
       </h2>
       <FormAlert message={unlink.error ? describeError(unlink.error) : null} />
-      {items.length === 0 && <p className="text-slate-600">{t('ticket.empty')}</p>}
-      <ul className="flex flex-col gap-2">
+      {items.length === 0 && <p className="mb-0 text-body-secondary">{t('ticket.empty')}</p>}
+      <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
         {items.map((a) => (
-          <li key={a.articleId} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2">
-            <span className="flex min-w-0 flex-col">
-              <Link to={articlePath(a.articleId)} className="text-brand-900 underline break-words">
+          <li key={a.articleId} className="d-flex align-items-center justify-content-between gap-2 rounded border bg-body p-2">
+            <span className="d-flex min-w-0 flex-column">
+              <Link to={articlePath(a.articleId)} className="link-primary text-decoration-underline text-break">
                 {a.title}
               </Link>
-              {a.visibility === 'internal' && <span className="text-xs text-slate-600">{t('ticket.notShown')}</span>}
+              {a.visibility === 'internal' && <span className="small text-body-secondary">{t('ticket.notShown')}</span>}
             </span>
             {ticket.canWork && open && (
               <Button variant="ghost" aria-label={recordActionLabel(t('ticket.unlink'), a.title)} onClick={() => unlink.mutate(a.articleId)}>
@@ -84,7 +84,7 @@ export function TicketArticles({ ticket }: { ticket: TicketDetail }) {
         ))}
       </ul>
       {ticket.canWork && open && (
-        <Button variant="secondary" className="self-start" onClick={() => setLinking(true)}>
+        <Button variant="secondary" className="align-self-start" onClick={() => setLinking(true)}>
           {t('ticket.link')}
         </Button>
       )}

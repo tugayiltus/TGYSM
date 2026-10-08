@@ -11,15 +11,14 @@ export function Timeline({ events }: { events: readonly TimelineItem[] }) {
     return <EmptyState />;
   }
   return (
-    <ol className="flex flex-col gap-2 border-l-2 border-slate-200 pl-4">
+    <ol className="list-unstyled mb-0 d-flex flex-column gap-2 tgysm-timeline">
       {events.map((e) => (
-        <li key={e.id} className="relative">
-          <span aria-hidden="true" className="absolute top-2 -left-[1.4rem] size-2.5 rounded-full bg-slate-400" />
-          <p className="text-sm">
-            <span className="font-medium">{t(`events.${e.kind}`)}</span>
-            {e.visibility === 'internal' && <span className="ml-2 rounded bg-amber-100 px-1.5 text-xs text-amber-900">{t('detail.internal')}</span>}
+        <li key={e.id} className="position-relative">
+          <p className="mb-0 small">
+            <span className="fw-medium">{t(`events.${e.kind}`)}</span>
+            {e.visibility === 'internal' && <span className="badge bg-warning-subtle text-warning-emphasis ms-1">{t('detail.internal')}</span>}
           </p>
-          <p className="text-xs text-slate-600">
+          <p className="mb-0 small text-body-secondary">
             <time dateTime={e.occurredAt}>{formatDateTime(e.occurredAt)}</time>
             {e.actorName && ` · ${e.actorName}`}
           </p>

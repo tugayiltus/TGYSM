@@ -67,7 +67,7 @@ function LinkAssetDialog({ ticket, onClose }: { ticket: TicketDetail; onClose: (
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="d-flex flex-column gap-3">
         <FormAlert message={link.error ? describeError(link.error) : null} />
         <AssetPicker ticket={ticket} value={assetId} onChange={setAssetId} />
       </div>
@@ -106,7 +106,7 @@ function RelatedRequestDialog({ ticket, onClose }: { ticket: TicketDetail; onClo
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="d-flex flex-column gap-3">
         <FormAlert message={create.error ? describeError(create.error) : null} />
         <SelectField
           label={t('fields.requestType')}
@@ -129,16 +129,16 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
   const open = ticket.status !== 'completed' && ticket.status !== 'cancelled';
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 [&>*]:min-w-0">
-      <section aria-labelledby="ticket-assets" className="flex flex-col gap-2">
-        <h2 id="ticket-assets" className="text-lg font-semibold">
+    <div className="row g-3">
+      <section aria-labelledby="ticket-assets" className="col-12 col-md-6 d-flex flex-column gap-2">
+        <h2 id="ticket-assets" className="fs-5 fw-semibold">
           {t('detail.assets')}
         </h2>
         <FormAlert message={unlink.error ? describeError(unlink.error) : null} />
-        {(assets.data ?? []).length === 0 && <p className="text-slate-600">{t('detail.noAssets')}</p>}
-        <ul className="flex flex-col gap-2">
+        {(assets.data ?? []).length === 0 && <p className="mb-0 text-body-secondary">{t('detail.noAssets')}</p>}
+        <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
           {(assets.data ?? []).map((a) => (
-            <li key={a.assetId} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2">
+            <li key={a.assetId} className="d-flex align-items-center justify-content-between gap-2 rounded border bg-body p-2">
               <span>{`${a.assetTag} · ${a.brand} ${a.model}`}</span>
               {ticket.canWork && open && (
                 <Button variant="ghost" aria-label={recordActionLabel(t('actions.unlinkAsset'), a.assetTag)} onClick={() => unlink.mutate(a.assetId)}>
@@ -149,19 +149,19 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
           ))}
         </ul>
         {open && (ticket.canWork || isRequester) && (
-          <Button variant="secondary" className="self-start" onClick={() => setDialog('asset')}>
+          <Button variant="secondary" className="align-self-start" onClick={() => setDialog('asset')}>
             {t('actions.linkAsset')}
           </Button>
         )}
       </section>
-      <section aria-labelledby="ticket-related" className="flex flex-col gap-2">
-        <h2 id="ticket-related" className="text-lg font-semibold">
+      <section aria-labelledby="ticket-related" className="col-12 col-md-6 d-flex flex-column gap-2">
+        <h2 id="ticket-related" className="fs-5 fw-semibold">
           {t('detail.related')}
         </h2>
-        <ul className="flex flex-col gap-2">
+        <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
           {ticket.relatedTickets.map((r) => (
-            <li key={r.number} className="flex items-center justify-between gap-2">
-              <Link to={ticketPath(r.number)} className="text-brand-900 underline">
+            <li key={r.number} className="d-flex align-items-center justify-content-between gap-2">
+              <Link to={ticketPath(r.number)} className="link-primary text-decoration-underline">
                 {`${r.number} · ${r.subject}`}
               </Link>
               <TicketStatusBadge status={r.status} />
@@ -169,7 +169,7 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
           ))}
         </ul>
         {ticket.canWork && open && ticket.kind === 'incident' && (
-          <Button variant="secondary" className="self-start" onClick={() => setDialog('related')}>
+          <Button variant="secondary" className="align-self-start" onClick={() => setDialog('related')}>
             {t('actions.relatedRequest')}
           </Button>
         )}

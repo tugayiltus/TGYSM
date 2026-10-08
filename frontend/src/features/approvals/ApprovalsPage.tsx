@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 
 import { describeError } from '../../shared/api/errorMessage';
 import { formatDateTime } from '../../shared/lib/format';
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ticketPath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { Dialog } from '../../shared/ui/Dialog';
@@ -54,12 +55,12 @@ function DecisionDialog({ pending, onClose }: { pending: Pending; onClose: () =>
             {tc('actions.cancel')}
           </Button>
           <Button variant={kind === 'reject' ? 'danger' : 'primary'} disabled={disabled} isLoading={mutation.isPending} onClick={confirm}>
-            {tc('actions.confirm')}
+            {kind === 'reassign' ? t('approvals.assignApprover') : tc('actions.confirm')}
           </Button>
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="d-flex flex-column gap-3">
         <FormAlert message={mutation.error ? describeError(mutation.error) : null} />
         <p>{item.subject}</p>
         {kind === 'reassign' && (
@@ -83,25 +84,25 @@ export function ApprovalsPage() {
   const [pending, setPending] = useState<Pending | null>(null);
 
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('approvals.title')}</h1>
+    <>
+      <PageHeader titleOverride={t('approvals.title')} />
       {approvals.isPending && <LoadingState />}
       {approvals.isError && <ErrorState error={approvals.error} onRetry={() => void approvals.refetch()} />}
       {approvals.data && approvals.data.length === 0 && <EmptyState message={t('approvals.empty')} />}
       {approvals.data && approvals.data.length > 0 && (
-        <ul className="flex flex-col gap-3">
+        <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
           {approvals.data.map((item) => (
-            <li key={item.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+            <li key={item.id} className="card card-body d-flex flex-column gap-2">
               <div>
-                <Link to={ticketPath(item.ticketNumber)} className="text-sm text-brand-900 underline">
+                <Link to={ticketPath(item.ticketNumber)} className="small link-primary text-decoration-underline">
                   {item.ticketNumber}
                 </Link>
-                <p className="font-medium break-words">{item.subject}</p>
-                <p className="text-sm text-slate-600">{t('approvals.requestedBy', { name: item.requesterName })}</p>
-                {item.requestTypeName && <p className="text-sm text-slate-600">{item.requestTypeName}</p>}
-                <p className="text-xs text-slate-600">{formatDateTime(item.createdAt)}</p>
+                <p className="mb-0 fw-medium text-break">{item.subject}</p>
+                <p className="mb-0 small text-body-secondary">{t('approvals.requestedBy', { name: item.requesterName })}</p>
+                {item.requestTypeName && <p className="mb-0 small text-body-secondary">{item.requestTypeName}</p>}
+                <p className="mb-0 small text-body-secondary">{formatDateTime(item.createdAt)}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="d-flex flex-wrap gap-2">
                 {item.approverId === null ? (
                   <Button variant="secondary" aria-label={recordActionLabel(t('approvals.reassign'), item.ticketNumber)} onClick={() => setPending({ item, kind: 'reassign' })}>
                     {t('approvals.reassign')}
@@ -122,6 +123,6 @@ export function ApprovalsPage() {
         </ul>
       )}
       {pending !== null && <DecisionDialog key={`${pending.item.id}-${pending.kind}`} pending={pending} onClose={() => setPending(null)} />}
-    </section>
+    </>
   );
 }

@@ -55,7 +55,7 @@ describe('ApprovalsPage', () => {
     const dialog = await screen.findByRole('dialog');
     await user.selectOptions(within(dialog).getByLabelText('Onaylayıcı'), await within(dialog).findByRole('option', { name: 'Onay Veren' }));
     await user.type(within(dialog).getByLabelText('Neden'), 'Departman onaylayıcısı yok');
-    await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Onaylayıcıyı ata' }));
 
     await waitFor(() => expect(posted).toEqual({ approverId: 'adm-2', reason: 'Departman onaylayıcısı yok' }));
   });

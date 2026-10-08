@@ -18,25 +18,25 @@ const attachmentUrl = (number: string, id: string) => `/api/v1/tickets/${number}
 export function CommentList({ ticket, comments }: { ticket: TicketDetail; comments: readonly CommentItem[] }) {
   const { t } = useTranslation('tickets');
   if (comments.length === 0) {
-    return <p className="text-slate-600">{t('detail.noComments')}</p>;
+    return <p className="mb-0 text-body-secondary">{t('detail.noComments')}</p>;
   }
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
       {comments.map((c) => (
-        <li key={c.id} className={`rounded-xl border p-3 ${c.visibility === 'internal' ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white'}`}>
-          <p className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium">{c.authorName}</span>
-            <time className="text-slate-600" dateTime={c.createdAt}>
+        <li key={c.id} className={`rounded border p-3 ${c.visibility === 'internal' ? 'border-warning-subtle bg-warning-subtle' : 'bg-body'}`}>
+          <p className="mb-0 d-flex flex-wrap align-items-center gap-2 small">
+            <span className="fw-medium">{c.authorName}</span>
+            <time className="text-body-secondary" dateTime={c.createdAt}>
               {formatDateTime(c.createdAt)}
             </time>
-            {c.visibility === 'internal' && <span className="rounded bg-amber-200 px-1.5 text-xs text-amber-900">{t('detail.internal')}</span>}
+            {c.visibility === 'internal' && <span className="badge bg-warning text-dark">{t('detail.internal')}</span>}
           </p>
-          {c.body && <p className="mt-1 whitespace-pre-wrap break-words">{c.body}</p>}
+          {c.body && <p className="mb-0 mt-1 tgysm-pre-wrap text-break">{c.body}</p>}
           {c.attachments.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-2">
+            <ul className="list-unstyled mb-0 mt-2 d-flex flex-wrap gap-2">
               {c.attachments.map((a) => (
                 <li key={a.id}>
-                  <a href={attachmentUrl(ticket.number, a.id)} className="text-sm text-brand-900 underline" download>
+                  <a href={attachmentUrl(ticket.number, a.id)} className="small link-primary text-decoration-underline" download>
                     {a.originalName}
                   </a>
                 </li>
@@ -75,17 +75,17 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
   return (
     <form
       aria-labelledby={titleId}
-      className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4"
+      className="d-flex flex-column gap-2 rounded-3 border bg-body p-3"
       onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}
     >
-      <h2 id={titleId} className="text-lg font-semibold">
+      <h2 id={titleId} className="fs-5 fw-semibold">
         {t('detail.comments')}
       </h2>
       {ticket.canWork && (
-        <div role="tablist" aria-label={t('comment.tabs')} className="flex gap-2">
+        <div role="tablist" aria-label={t('comment.tabs')} className="d-flex gap-2">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -93,7 +93,7 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
               role="tab"
               aria-selected={visibility === tab}
               disabled={add.isPending}
-              className="min-h-11 rounded-lg px-3 text-sm font-medium aria-selected:bg-brand-50 aria-selected:text-brand-900"
+              className="btn btn-sm btn-ghost-secondary tgysm-touch aria-selected-active"
               onClick={() => setVisibility(tab)}
             >
               {t(`comment.${tab}`)}
@@ -106,7 +106,7 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
       <TextAreaField label={t('comment.body')} value={body} disabled={add.isPending} onChange={(event) => setBody(event.target.value)} />
       <ReplyArticlePicker onInsert={(text) => setBody((current) => (current.trim() === '' ? text : `${current}\n${text}`))} />
       <AttachmentInput key={formKey} label={t('comment.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
-      <Button type="submit" className="self-start" disabled={body.trim() === '' && files.length === 0} isLoading={add.isPending}>
+      <Button type="submit" className="align-self-start" disabled={body.trim() === '' && files.length === 0} isLoading={add.isPending}>
         {t('comment.send')}
       </Button>
     </form>

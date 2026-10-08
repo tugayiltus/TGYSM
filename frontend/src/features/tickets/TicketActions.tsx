@@ -50,12 +50,12 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
   }
 
   return (
-    <section aria-labelledby="ticket-actions" className="flex flex-col gap-3">
-      <h2 id="ticket-actions" className="text-lg font-semibold">
+    <section aria-labelledby="ticket-actions" className="card card-body d-flex flex-column gap-2">
+      <h2 id="ticket-actions" className="h6 mb-0">
         {t('actions.title')}
       </h2>
       <FormAlert message={direct.error ? describeError(direct.error) : null} />
-      <div className="flex flex-wrap gap-2">
+      <div className="d-flex flex-wrap gap-2">
         {actions.direct.map((kind) => (
           <Button key={kind} isLoading={direct.isPending && direct.variables?.kind === kind} onClick={() => direct.mutate({ kind })}>
             {t(`actions.${kind}`)}
