@@ -1,5 +1,6 @@
-import { Dialog as RadixDialog } from 'radix-ui';
-import type { ReactNode } from 'react';
+import { CCloseButton, CModal, CModalBody, CModalFooter, CModalHeader, CModalTitle } from '@coreui/react';
+import { useId, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 export interface DialogProps {
@@ -11,30 +12,40 @@ export interface DialogProps {
   children?: ReactNode;
 }
 
-/** Bottom sheet on phones, centered modal from 640 px. Focus is trapped and returned by Radix. */
+/**
+ * Full screen on phones, centred modal from 576 px. CoreUI traps focus and returns it to the trigger.
+ * The portal is ours: CoreUI's own portal renders in place first and moves to <body> one render later,
+ * which remounts the dialog (lost focus and input state on open).
+ */
 export function Dialog({ open, onOpenChange, title, description, footer, children }: DialogProps) {
   const { t } = useTranslation();
-  return (
-    <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
-      <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-slate-900/40" />
-        <RadixDialog.Content
-          {...(description === undefined ? { 'aria-describedby': undefined } : {})}
-          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-2xl bg-white shadow-xl sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
-        >
-          <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-4">
-            <div>
-              <RadixDialog.Title className="text-lg font-semibold">{title}</RadixDialog.Title>
-              {description !== undefined && <RadixDialog.Description className="mt-1 text-sm text-slate-600">{description}</RadixDialog.Description>}
-            </div>
-            <RadixDialog.Close className="min-h-11 min-w-11 rounded-lg text-slate-500 hover:bg-slate-100" aria-label={t('actions.close')}>
-              <span aria-hidden="true">×</span>
-            </RadixDialog.Close>
-          </div>
-          <div className="overflow-y-auto p-4">{children}</div>
-          {footer !== undefined && <div className="flex flex-col-reverse gap-2 border-t border-slate-100 p-4 sm:flex-row sm:justify-end">{footer}</div>}
-        </RadixDialog.Content>
-      </RadixDialog.Portal>
-    </RadixDialog.Root>
+  const titleId = useId();
+  const descriptionId = useId();
+  return createPortal(
+    <CModal
+      visible={open}
+      onClose={() => onOpenChange(false)}
+      alignment="center"
+      fullscreen="sm"
+      portal={false}
+      scrollable
+      aria-labelledby={titleId}
+      {...(description === undefined ? {} : { 'aria-describedby': descriptionId })}
+    >
+      <CModalHeader closeButton={false}>
+        <div className="flex-grow-1">
+          <CModalTitle id={titleId}>{title}</CModalTitle>
+          {description !== undefined && (
+            <p id={descriptionId} className="mb-0 mt-1 small text-body-secondary">
+              {description}
+            </p>
+          )}
+        </div>
+        <CCloseButton aria-label={t('actions.close')} onClick={() => onOpenChange(false)} />
+      </CModalHeader>
+      <CModalBody>{children}</CModalBody>
+      {footer !== undefined && <CModalFooter className="flex-column-reverse flex-sm-row gap-2">{footer}</CModalFooter>}
+    </CModal>,
+    document.body,
   );
 }

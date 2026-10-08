@@ -1,5 +1,4 @@
 /// <reference types="vitest/config" />
-import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
@@ -14,13 +13,13 @@ const FORWARDED_PROTO_HEADER = 'X-Forwarded-Proto';
 // react-markdown and its unified tree (remark/micromark/mdast/unist/hast and their small helpers).
 const MARKDOWN_PACKAGES =
   /node_modules[\\/](react-markdown|remark-[^\\/]+|micromark[^\\/]*|mdast-[^\\/]+|unist-[^\\/]+|hast-[^\\/]+|unified|vfile[^\\/]*|bail|trough|devlop|ccount|character-[^\\/]+|comma-separated-tokens|space-separated-tokens|decode-named-character-reference|estree-util-[^\\/]+|html-url-attributes|is-(alphabetical|alphanumerical|decimal|hexadecimal|plain-obj)|longest-streak|parse-entities|property-information|stringify-entities|trim-lines|zwitch)[\\/]/;
-// Recharts and the packages only it pulls in (d3 scales/shapes via victory-vendor, its redux store and helpers).
+// Chart.js (+ its CoreUI wrapper and colour helper); Recharts and the packages only it pulls in until Task 16 removes it.
 const CHART_PACKAGES =
-  /node_modules[\\/](recharts|victory-vendor|d3-[^\\/]+|internmap|@reduxjs[\\/]toolkit|react-redux|redux|redux-thunk|reselect|immer|es-toolkit|decimal\.js-light|eventemitter3|tiny-invariant|clsx)[\\/]/;
+  /node_modules[\\/](chart\.js|@kurkle[\\/]color|@coreui[\\/]react-chartjs|recharts|victory-vendor|d3-[^\\/]+|internmap|@reduxjs[\\/]toolkit|react-redux|redux|redux-thunk|reselect|immer|es-toolkit|decimal\.js-light|eventemitter3|tiny-invariant|clsx)[\\/]/;
 const apiProxy = { '/api': { target: API_TARGET, changeOrigin: false, headers: { [FORWARDED_PROTO_HEADER]: 'https' } } };
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   resolve: { dedupe: ['react', 'react-dom'] },
   server: { port: DEV_PORT, strictPort: true, proxy: apiProxy },
   preview: { port: PREVIEW_PORT, strictPort: true, proxy: apiProxy },
@@ -34,7 +33,7 @@ export default defineConfig({
             { name: 'vendor-react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 100 },
             { name: 'vendor-router', test: /node_modules[\\/]react-router/, priority: 90 },
             { name: 'vendor-tanstack', test: /node_modules[\\/]@tanstack[\\/]/, priority: 90 },
-            { name: 'vendor-radix', test: /node_modules[\\/](radix-ui|@radix-ui)[\\/]/, priority: 90 },
+            { name: 'vendor-coreui', test: /node_modules[\\/](@coreui[\\/](react|icons|icons-react|coreui)|@popperjs)[\\/]/, priority: 90 },
             { name: 'vendor-forms', test: /node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/, priority: 90 },
             { name: 'vendor-i18n', test: /node_modules[\\/](i18next|react-i18next)[\\/]/, priority: 90 },
             { name: 'vendor-markdown', test: MARKDOWN_PACKAGES, priority: 90 },

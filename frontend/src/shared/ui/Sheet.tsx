@@ -1,31 +1,33 @@
-import { Dialog as RadixDialog } from 'radix-ui';
-import type { ReactNode } from 'react';
+import { CCloseButton, COffcanvas, COffcanvasBody, COffcanvasHeader, COffcanvasTitle } from '@coreui/react';
+import { useId, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 export interface SheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  placement?: 'start' | 'end' | 'bottom';
   children: ReactNode;
 }
 
-/** Left drawer for navigation on small screens. */
-export function Sheet({ open, onOpenChange, title, children }: SheetProps) {
+/** Side panel (navigation, filters) on small screens. */
+export function Sheet({ open, onOpenChange, title, placement = 'start', children }: SheetProps) {
   const { t } = useTranslation();
-  return (
-    <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
-      <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-slate-900/40" />
-        <RadixDialog.Content aria-describedby={undefined} className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-white p-4 shadow-xl">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <RadixDialog.Title className="text-base font-semibold">{title}</RadixDialog.Title>
-            <RadixDialog.Close className="min-h-11 min-w-11 rounded-lg text-slate-500 hover:bg-slate-100" aria-label={t('actions.close')}>
-              <span aria-hidden="true">×</span>
-            </RadixDialog.Close>
-          </div>
-          {children}
-        </RadixDialog.Content>
-      </RadixDialog.Portal>
-    </RadixDialog.Root>
+  const titleId = useId();
+  // COffcanvas keeps a hidden panel in the DOM; unmount it so closed sheets are not extra dialogs.
+  if (!open) {
+    return null;
+  }
+  // Our own portal for the same reason as Dialog: CoreUI's portal remounts the panel one render after opening.
+  return createPortal(
+    <COffcanvas visible={open} onHide={() => onOpenChange(false)} placement={placement} portal={false} aria-labelledby={titleId}>
+      <COffcanvasHeader>
+        <COffcanvasTitle id={titleId}>{title}</COffcanvasTitle>
+        <CCloseButton aria-label={t('actions.close')} onClick={() => onOpenChange(false)} />
+      </COffcanvasHeader>
+      <COffcanvasBody>{children}</COffcanvasBody>
+    </COffcanvas>,
+    document.body,
   );
 }

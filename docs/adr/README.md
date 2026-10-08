@@ -24,3 +24,4 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0018](0018-sla-calculation-model.md) | SLA Calculation Model | accepted | 2026-09-27 |
 | [0019](0019-knowledge-base.md) | Knowledge Base | accepted | 2026-10-02 |
 | [0020](0020-reporting-and-excel-export.md) | Reporting and Excel Export | accepted | 2026-10-02 |
+| [0021](0021-coreui-ui-layer.md) | CoreUI Free as the UI Layer | accepted | 2026-10-09 |
