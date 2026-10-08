@@ -84,3 +84,28 @@ body {
 .tgysm-fields {
   grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
 }
+
+.tgysm-editor {
+  max-width: 56rem;
+}
+
+.tgysm-preview {
+  min-height: 8rem;
+}
+
+// Rendered article Markdown (headings start at h2 under the page title).
+.tgysm-markdown {
+  max-width: 48rem;
+
+  h2 { font-size: 1.5rem; font-weight: 600; }
+  h3 { font-size: 1.25rem; font-weight: 600; }
+  h4 { font-size: 1.125rem; font-weight: 600; }
+  h5, h6 { font-weight: 600; }
+  ul, ol { padding-left: 1.5rem; }
+  pre {
+    background: var(--cui-tertiary-bg);
+    border-radius: var(--cui-border-radius);
+    overflow-x: auto;
+    padding: 0.75rem;
+  }
+}

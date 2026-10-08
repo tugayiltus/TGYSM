@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useLocation, useSearchParams } from 'react-router';
 
 import { readPageParam } from '../../shared/lib/pageParam';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
+import { PageHeader } from '../../shared/navigation/PageHeader';
+import { linkState } from '../../shared/navigation/returnTo';
 import { articlePath, ROUTES } from '../../shared/routes';
 import { Pagination } from '../../shared/ui/Pagination';
 import { SelectField } from '../../shared/ui/SelectField';
@@ -29,13 +31,14 @@ const asStatus = (value: string): ArticleStatus | '' => ARTICLE_STATUSES.find((s
 const asVisibility = (value: string): ArticleVisibility | '' => ARTICLE_VISIBILITIES.find((v) => v === value) ?? '';
 
 function ArticleCard({ article, staff }: { article: ArticleListItem; staff: boolean }) {
+  const location = useLocation();
   return (
-    <li className="rounded-xl border border-slate-200 bg-white p-4">
-      <Link to={articlePath(article.id)} className="font-medium text-brand-900 underline break-words">
+    <li className="card card-body">
+      <Link to={articlePath(article.id)} state={linkState(location)} className="fw-semibold text-break">
         {article.title}
       </Link>
-      {article.summary && <p className="mt-1 text-sm text-slate-700 break-words">{article.summary}</p>}
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+      {article.summary && <p className="mt-1 small text-break">{article.summary}</p>}
+      <div className="mt-2 d-flex flex-wrap align-items-center gap-2 small text-body-secondary">
         {article.categoryName && <span>{article.categoryName}</span>}
         {staff && <ArticleStatusBadge status={article.status} />}
         {staff && <ArticleVisibilityBadge visibility={article.visibility} />}
@@ -78,19 +81,26 @@ export function KnowledgeListPage() {
       { replace: true },
     );
 
+  // First use (nothing written yet) and a filter that matches nothing are different situations (UX-11).
+  const filtered = search !== '' || categoryId !== '' || status !== '' || visibility !== '';
+
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('list.title')}</h1>
-        {staff && (
-          <Link to={ROUTES.kbNew} className="inline-flex min-h-11 items-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700">
-            {t('list.new')}
-          </Link>
-        )}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
-        <TextField type="search" label={t('list.search')} value={search} onChange={(event) => setParam(PARAM.search, event.target.value)} />
+    <>
+      <PageHeader
+        titleOverride={t('list.title')}
+        actions={
+          staff ? (
+            <Link to={ROUTES.kbNew} className="btn btn-primary tgysm-touch d-inline-flex align-items-center">
+              {t('list.new')}
+            </Link>
+          ) : undefined
+        }
+      />
+      <div className="d-flex flex-column gap-2">
+      <div className="row g-3">
+        <TextField className="col-12 col-sm-6 col-lg-3" type="search" label={t('list.search')} value={search} onChange={(event) => setParam(PARAM.search, event.target.value)} />
         <SelectField
+          className="col-12 col-sm-6 col-lg-3"
           label={t('list.category')}
           placeholder={t('list.allCategories')}
           options={(categories.data ?? []).map((c) => ({ value: c.id, label: c.path }))}
@@ -100,6 +110,7 @@ export function KnowledgeListPage() {
         {staff && (
           <>
             <SelectField
+              className="col-12 col-sm-6 col-lg-3"
               label={t('list.status')}
               placeholder={t('list.all')}
               options={ARTICLE_STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
@@ -107,6 +118,7 @@ export function KnowledgeListPage() {
               onChange={(event) => setParam(PARAM.status, event.target.value)}
             />
             <SelectField
+              className="col-12 col-sm-6 col-lg-3"
               label={t('list.visibility')}
               placeholder={t('list.all')}
               options={ARTICLE_VISIBILITIES.map((v) => ({ value: v, label: t(`visibility.${v}`) }))}
@@ -118,14 +130,14 @@ export function KnowledgeListPage() {
       </div>
       {articles.isPending && <LoadingState />}
       {articles.isError && <ErrorState error={articles.error} onRetry={() => void articles.refetch()} />}
-      {articles.data && articles.data.items.length === 0 && <EmptyState message={t('list.empty')} />}
+      {articles.data && articles.data.items.length === 0 && <EmptyState message={filtered ? t('list.empty') : t('list.emptyFirst')} />}
       {articles.data && articles.data.items.length > 0 && (
         <>
           {/* keepPreviousData shows the last result while the next one loads: mark it busy and dim it, as reports do. */}
           <ul
             aria-label={t('list.caption')}
             aria-busy={articles.isPlaceholderData}
-            className={`flex flex-col gap-3 transition-opacity ${articles.isPlaceholderData ? 'opacity-60' : ''}`}
+            className={`list-unstyled mb-0 d-flex flex-column gap-3 ${articles.isPlaceholderData ? 'opacity-50' : ''}`}
           >
             {articles.data.items.map((article) => (
               <ArticleCard key={article.id} article={article} staff={staff} />
@@ -134,6 +146,7 @@ export function KnowledgeListPage() {
           <Pagination page={articles.data.page} pageSize={articles.data.pageSize} totalCount={articles.data.totalCount} onPageChange={(next) => setParam(PARAM.page, String(next))} />
         </>
       )}
-    </section>
+      </div>
+    </>
   );
 }

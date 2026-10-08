@@ -3,6 +3,9 @@ import { Link, useParams } from 'react-router';
 
 import { describeError } from '../../shared/api/errorMessage';
 import { formatDateTime } from '../../shared/lib/format';
+import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
+import { PageHeader } from '../../shared/navigation/PageHeader';
+import { useReturnTo } from '../../shared/navigation/returnTo';
 import { articleEditPath, ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
@@ -24,11 +27,11 @@ function StaffActions({ article }: { article: ArticleDetail }) {
   const { t } = useTranslation('kb');
   const action = useArticleAction(article.id);
   return (
-    <div className="flex flex-col gap-2">
+    <div className="d-flex flex-column gap-2">
       <FormAlert message={action.error ? describeError(action.error) : null} />
-      <div className="flex flex-wrap gap-2">
+      <div className="d-flex flex-wrap gap-2">
         {article.status !== 'archived' && (
-          <Link to={articleEditPath(article.id)} className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium hover:bg-slate-50">
+          <Link to={articleEditPath(article.id)} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
             {t('article.edit')}
           </Link>
         )}
@@ -46,20 +49,26 @@ function ArticleView({ article }: { article: ArticleDetail }) {
   const { t } = useTranslation('kb');
   const me = useSession();
   const staff = isItStaffOrAdmin(me.role);
+  const backTo = useReturnTo(ROUTES.kb);
+  useBreadcrumbLabel('kbArticle', article.title);
   return (
-    <article className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Link to={ROUTES.kb} className="text-sm text-brand-900 underline">
-          {t('article.back')}
-        </Link>
-        <h1 className="text-2xl font-semibold break-words">{article.title}</h1>
+    <article className="d-flex flex-column gap-3">
+      <PageHeader
+        titleOverride={article.title}
+        actions={
+          <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+            {t('article.back')}
+          </Link>
+        }
+      />
+      <div className="d-flex flex-column gap-2">
         {staff && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="d-flex flex-wrap align-items-center gap-2">
             <ArticleStatusBadge status={article.status} />
             <ArticleVisibilityBadge visibility={article.visibility} />
           </div>
         )}
-        <p className="text-sm text-slate-600">
+        <p className="small text-body-secondary">
           {[
             article.categoryName,
             `${t('article.author')}: ${article.authorName}`,
@@ -69,13 +78,13 @@ function ArticleView({ article }: { article: ArticleDetail }) {
             .filter(Boolean)
             .join(' · ')}
         </p>
-        {article.summary && <p className="text-slate-700 break-words">{article.summary}</p>}
+        {article.summary && <p className="text-break">{article.summary}</p>}
       </div>
       {staff && <StaffActions article={article} />}
       <ArticleMarkdown body={article.body} />
       {staff && (
-        <section aria-labelledby="article-revisions" className="flex flex-col gap-3">
-          <h2 id="article-revisions" className="text-lg font-semibold">
+        <section aria-labelledby="article-revisions" className="d-flex flex-column gap-2">
+          <h2 id="article-revisions" className="fs-5 fw-semibold">
             {t('article.revisions')}
           </h2>
           <ArticleRevisions articleId={article.id} />

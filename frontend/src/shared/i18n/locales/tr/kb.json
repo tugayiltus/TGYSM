@@ -16,7 +16,8 @@
     "all": "Tümü",
     "new": "Yeni makale",
     "empty": "Aramanızla eşleşen makale bulunamadı.",
-    "caption": "Makaleler"
+    "caption": "Makaleler",
+    "emptyFirst": "Henüz yayınlanmış makale yok."
   },
   "status": {
     "draft": "Taslak",

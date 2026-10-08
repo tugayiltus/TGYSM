@@ -9,7 +9,7 @@ import { useArticleRevisions, type ArticleRevisionItem } from './api';
 export function ArticleRevisionTable({ revisions }: { revisions: readonly ArticleRevisionItem[] }) {
   const { t } = useTranslation('kb');
   if (revisions.length === 0) {
-    return <p className="text-slate-600">{t('revisions.empty')}</p>;
+    return <p className="text-body-secondary">{t('revisions.empty')}</p>;
   }
   const columns: Column<ArticleRevisionItem>[] = [
     { key: 'revision', header: t('revisions.revision'), renderCell: (r) => r.revision },
@@ -19,10 +19,10 @@ export function ArticleRevisionTable({ revisions }: { revisions: readonly Articl
     { key: 'editedAt', header: t('revisions.editedAt'), renderCell: (r) => formatDateTime(r.editedAt) },
   ];
   const renderCard = (r: ArticleRevisionItem) => (
-    <div className="flex flex-col gap-1">
-      <p className="font-medium break-words">{`${t('revisions.revision')} ${r.revision} · ${r.title}`}</p>
-      <p className="text-sm text-slate-600">{t(`visibility.${r.visibility}`)}</p>
-      <p className="text-sm text-slate-600">{`${r.editedByName} · ${formatDateTime(r.editedAt)}`}</p>
+    <div className="d-flex flex-column gap-1">
+      <p className="fw-medium text-break">{`${t('revisions.revision')} ${r.revision} · ${r.title}`}</p>
+      <p className="small text-body-secondary">{t(`visibility.${r.visibility}`)}</p>
+      <p className="small text-body-secondary">{`${r.editedByName} · ${formatDateTime(r.editedAt)}`}</p>
     </div>
   );
   return <ResponsiveList items={revisions} columns={columns} getKey={(r) => String(r.revision)} renderCard={renderCard} caption={t('revisions.caption')} />;

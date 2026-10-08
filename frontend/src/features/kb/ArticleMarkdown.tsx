@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import Markdown, { type Components } from 'react-markdown';
 
-const LINK_CLASS = 'text-brand-900 underline break-words';
+const LINK_CLASS = 'link-primary text-break';
 
 type AnchorProps = ComponentProps<'a'>;
 type ImageProps = ComponentProps<'img'>;
@@ -44,7 +44,7 @@ const COMPONENTS: Components = {
  */
 export function ArticleMarkdown({ body }: { body: string }) {
   return (
-    <div className="flex max-w-3xl flex-col gap-3 break-words [&_h2]:text-2xl [&_h2]:font-semibold [&_h3]:text-xl [&_h3]:font-semibold [&_h4]:text-lg [&_h4]:font-semibold [&_h5]:font-semibold [&_h6]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-slate-100 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6">
+    <div className="d-flex flex-column gap-2 text-break tgysm-markdown">
       <Markdown components={COMPONENTS}>{body}</Markdown>
     </div>
   );

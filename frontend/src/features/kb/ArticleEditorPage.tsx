@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router';
 
 import { describeError, translateErrorCode } from '../../shared/api/errorMessage';
 import { ApiError, ERROR_CODES } from '../../shared/api/errors';
+import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { articlePath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
@@ -11,6 +13,7 @@ import { SelectField } from '../../shared/ui/SelectField';
 import { ErrorState, LoadingState } from '../../shared/ui/States';
 import { TextAreaField } from '../../shared/ui/TextAreaField';
 import { TextField } from '../../shared/ui/TextField';
+import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
 
 import {
   ARTICLE_LIMITS,
@@ -92,6 +95,9 @@ function serverFieldProblems(error: unknown): Problems {
   return problems;
 }
 
+/** Navigation state after a save, so the unsaved-changes guard lets it through. */
+const SAVED = { saved: true } as const;
+
 interface EditorFormProps {
   initial: Draft;
   isPending: boolean;
@@ -133,9 +139,14 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
   const fieldMessage = (field: Field) => (shown[field] === undefined ? undefined : translateErrorCode(shown[field]));
   const alert = error && Object.keys(serverFieldProblems(error)).length === 0 ? describeError(error) : null;
 
+  const dirty = (Object.keys(initial) as (keyof Draft)[]).some((key) => draft[key] !== initial[key]);
+
   return (
-    <form noValidate className="flex max-w-3xl flex-col gap-4" onSubmit={submit}>
-      <h1 className="text-2xl font-semibold">{heading}</h1>
+    <>
+    <PageHeader titleOverride={heading} />
+    {/* A saved article navigates with state.saved; only other ways out ask about unsaved changes. */}
+    <UnsavedChangesGuard when={({ nextLocation }) => dirty && (nextLocation.state as { saved?: boolean } | null)?.saved !== true} />
+    <form noValidate className="card card-body d-flex flex-column gap-2 tgysm-editor" onSubmit={submit}>
       <FormAlert message={alert} />
       {isConflict(error) && onReload && (
         <div>
@@ -146,8 +157,9 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
       )}
       <TextField label={t('editor.title')} autoComplete="off" value={draft.title} error={fieldMessage('title')} onChange={(event) => change({ title: event.target.value })} />
       <TextAreaField label={t('editor.summary')} rows={SUMMARY_ROWS} value={draft.summary} error={fieldMessage('summary')} onChange={(event) => change({ summary: event.target.value })} />
-      <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
+      <div className="row g-3">
         <SelectField
+          className="col-12 col-sm-6"
           label={t('editor.category')}
           placeholder={t('editor.noCategory')}
           options={(categories.data ?? []).map((c) => ({ value: c.id, label: c.path }))}
@@ -155,6 +167,7 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
           onChange={(event) => change({ categoryId: event.target.value })}
         />
         <SelectField
+          className="col-12 col-sm-6"
           label={t('editor.visibility')}
           options={ARTICLE_VISIBILITIES.map((v) => ({ value: v, label: t(`visibility.${v}`) }))}
           value={draft.visibility}
@@ -162,13 +175,13 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
         />
       </div>
       {/* Two toggle buttons, not a tablist: a tab pattern would also need arrow-key focus and tabpanel wiring. */}
-      <div role="group" aria-label={t('editor.tabs')} className="flex gap-2">
+      <div role="group" aria-label={t('editor.tabs')} className="btn-group align-self-start">
         {(['write', 'preview'] as const).map((name) => (
           <button
             key={name}
             type="button"
             aria-pressed={tab === name}
-            className="min-h-11 rounded-lg px-3 text-sm font-medium aria-pressed:bg-brand-50 aria-pressed:text-brand-900"
+            className={`btn tgysm-touch ${tab === name ? 'btn-primary' : 'btn-outline-primary'}`}
             onClick={() => setTab(name)}
           >
             {t(`editor.${name}`)}
@@ -185,16 +198,17 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
           onChange={(event) => change({ body: event.target.value })}
         />
       ) : (
-        <div className="min-h-32 rounded-lg border border-slate-200 bg-white p-3">
-          {draft.body.trim() === '' ? <p className="text-slate-600">{t('editor.previewEmpty')}</p> : <ArticleMarkdown body={draft.body} />}
+        <div className="border rounded bg-body p-2 tgysm-preview">
+          {draft.body.trim() === '' ? <p className="mb-0 text-body-secondary">{t('editor.previewEmpty')}</p> : <ArticleMarkdown body={draft.body} />}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="d-flex flex-wrap align-items-center gap-2">
         <Button type="submit" isLoading={isPending}>
           {t('editor.save')}
         </Button>
       </div>
     </form>
+    </>
   );
 }
 
@@ -208,7 +222,7 @@ export function ArticleCreatePage() {
       heading={t('editor.createTitle')}
       isPending={create.isPending}
       error={create.error}
-      onSubmit={(draft) => create.mutate(toInput(draft), { onSuccess: (article) => void navigate(articlePath(article.id)) })}
+      onSubmit={(draft) => create.mutate(toInput(draft), { onSuccess: (article) => void navigate(articlePath(article.id), { state: SAVED }) })}
     />
   );
 }
@@ -217,6 +231,7 @@ function EditLoaded({ article, onReload }: { article: ArticleDetail; onReload: (
   const { t } = useTranslation('kb');
   const navigate = useNavigate();
   const update = useUpdateArticle(article.id);
+  useBreadcrumbLabel('kbArticle', article.title);
   return (
     <EditorForm
       initial={toDraft(article)}
@@ -227,7 +242,7 @@ function EditLoaded({ article, onReload }: { article: ArticleDetail; onReload: (
         update.reset();
         return onReload();
       }}
-      onSubmit={(draft) => update.mutate({ ...toInput(draft), version: draft.baseVersion }, { onSuccess: () => void navigate(articlePath(article.id)) })}
+      onSubmit={(draft) => update.mutate({ ...toInput(draft), version: draft.baseVersion }, { onSuccess: () => void navigate(articlePath(article.id), { state: SAVED }) })}
     />
   );
 }
