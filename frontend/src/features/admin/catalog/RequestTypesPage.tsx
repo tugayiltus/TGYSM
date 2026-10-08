@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Dialog } from '../../../shared/ui/Dialog';
@@ -69,11 +70,11 @@ function RequestTypeFormDialog({ type, onClose }: { type: RequestTypeItem | null
         </>
       }
     >
-      <form id={formId} noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('requestTypes.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
-        <label className="flex min-h-11 items-center gap-3 text-sm">
-          <input type="checkbox" className="size-5" {...register('requiresApproval')} />
+        <label className="d-flex tgysm-touch align-items-center gap-2 small">
+          <input type="checkbox" className="form-check-input" {...register('requiresApproval')} />
           {t('requestTypes.fields.requiresApproval')}
         </label>
       </form>
@@ -91,7 +92,7 @@ export function RequestTypesPage() {
 
   const approvalText = (r: RequestTypeItem) => (r.requiresApproval ? t('requestTypes.approval') : t('requestTypes.noApproval'));
   const actions = (r: RequestTypeItem) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="d-flex flex-wrap gap-2">
       <Button variant="secondary" aria-label={recordActionLabel(tc('actions.edit'), r.name)} onClick={() => setForm({ type: r })}>
         {tc('actions.edit')}
       </Button>
@@ -108,17 +109,17 @@ export function RequestTypesPage() {
     </div>
   );
   const columns: Column<RequestTypeItem>[] = [
-    { key: 'name', header: t('requestTypes.columns.name'), renderCell: (r) => <span className="font-medium">{r.name}</span> },
+    { key: 'name', header: t('requestTypes.columns.name'), renderCell: (r) => <span className="fw-medium">{r.name}</span> },
     { key: 'approval', header: t('requestTypes.columns.approval'), renderCell: approvalText },
     { key: 'status', header: t('requestTypes.columns.status'), renderCell: (r) => <StatusBadge isActive={r.isActive} /> },
     { key: 'actions', header: t('requestTypes.columns.actions'), renderCell: actions },
   ];
   const renderCard = (r: RequestTypeItem) => (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="d-flex flex-column gap-2">
+      <div className="d-flex align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <p className="font-medium break-words">{r.name}</p>
-          <p className="text-sm text-slate-600">{approvalText(r)}</p>
+          <p className="mb-0 fw-medium text-break">{r.name}</p>
+          <p className="mb-0 small text-body-secondary">{approvalText(r)}</p>
         </div>
         <StatusBadge isActive={r.isActive} />
       </div>
@@ -127,11 +128,8 @@ export function RequestTypesPage() {
   );
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('requestTypes.title')}</h1>
-        <Button onClick={() => setForm({ type: null })}>{t('requestTypes.new')}</Button>
-      </div>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('requestTypes.title')} actions={<Button onClick={() => setForm({ type: null })}>{t('requestTypes.new')}</Button>} />
       {types.isPending && <LoadingState />}
       {types.isError && <ErrorState error={types.error} onRetry={() => void types.refetch()} />}
       {types.data && types.data.length === 0 && <EmptyState />}

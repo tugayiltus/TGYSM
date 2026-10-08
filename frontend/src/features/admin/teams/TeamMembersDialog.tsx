@@ -47,11 +47,11 @@ export function TeamMembersDialog({ teamId, teamName, onClose }: { teamId: strin
       title={t('teams.membersTitle', { name: teamName })}
       footer={<Button onClick={onClose}>{tc('actions.close')}</Button>}
     >
-      <div className="flex flex-col gap-4">
+      <div className="d-flex flex-column gap-3">
         <FormAlert message={error ? describeError(error) : null} />
-        <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={addSelected}>
+        <form className="d-flex flex-column gap-2 flex-sm-row" onSubmit={addSelected}>
           <SelectField
-            className="flex-1"
+            className="flex-grow-1"
             label={t('teams.memberToAdd')}
             value={selected}
             options={options}
@@ -67,12 +67,12 @@ export function TeamMembersDialog({ teamId, teamName, onClose }: { teamId: strin
         {team.isError && <ErrorState error={team.error} onRetry={() => void team.refetch()} />}
         {team.data && team.data.members.length === 0 && <EmptyState message={t('teams.noMembers')} />}
         {team.data && team.data.members.length > 0 && (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <ul className="list-unstyled mb-0 rounded border">
             {team.data.members.map((member) => (
-              <li key={member.userId} className="flex items-center justify-between gap-2 p-3">
+              <li key={member.userId} className="d-flex align-items-center justify-content-between gap-2 p-2">
                 <div className="min-w-0">
-                  <p className="font-medium">{`${member.firstName} ${member.lastName}`}</p>
-                  <p className="text-sm break-all text-slate-600">
+                  <p className="mb-0 fw-medium">{`${member.firstName} ${member.lastName}`}</p>
+                  <p className="mb-0 small text-break text-body-secondary">
                     {member.email} · {tc(`roles.${member.role}`)}
                   </p>
                 </div>

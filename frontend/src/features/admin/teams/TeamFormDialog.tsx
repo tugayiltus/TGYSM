@@ -73,15 +73,15 @@ export function TeamFormDialog({ team, onClose }: { team: TeamItem | null; onClo
         </>
       }
     >
-      <form id={formId} noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('teams.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
         {team !== null && (
-          <label className="flex min-h-11 items-center gap-3 text-sm">
-            <input type="checkbox" className="size-5" {...register('isDefaultIntake')} />
+          <label className="d-flex tgysm-touch align-items-center gap-2 small">
+            <input type="checkbox" className="form-check-input" {...register('isDefaultIntake')} />
             <span>
               {t('teams.fields.isDefaultIntake')}
-              <span className="block text-xs text-slate-600">{t('teams.intakeHint')}</span>
+              <span className="d-block small text-body-secondary">{t('teams.intakeHint')}</span>
             </span>
           </label>
         )}

@@ -20,10 +20,10 @@ export function DeliveryChoice({ value, onChange }: DeliveryChoiceProps) {
   const { t } = useTranslation('admin');
   const name = useId();
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium text-slate-800">{t('users.delivery.label')}</legend>
+    <fieldset className="d-flex flex-column gap-2">
+      <legend className="small fw-medium">{t('users.delivery.label')}</legend>
       {DELIVERIES.map((delivery) => (
-        <label key={delivery} className="flex min-h-11 items-center gap-2 text-base">
+        <label key={delivery} className="d-flex tgysm-touch align-items-center gap-2">
           <input type="radio" name={name} value={delivery} checked={value === delivery} onChange={() => onChange(delivery)} />
           {t(DELIVERY_LABEL_KEY[delivery])}
         </label>

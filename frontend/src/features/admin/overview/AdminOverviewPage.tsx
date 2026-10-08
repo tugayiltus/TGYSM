@@ -36,13 +36,13 @@ export function AdminOverviewPage() {
   return (
     <>
       <PageHeader />
-      <div className="d-flex flex-column gap-3">
+      <div className="d-flex flex-column gap-2">
         {allGood && <p className="mb-0">{t('overview.allGood')}</p>}
         {withoutApprover.length > 0 && (
           <CCard>
             <CCardBody>
               <h2 className="h6">{t('overview.missingApprovers')}</h2>
-              <ul className="mb-0">
+              <ul className="list-unstyled mb-0 mb-0">
                 {withoutApprover.map((department) => (
                   <li key={department.id}>
                     <Link to={ROUTES.adminDepartments}>{department.name}</Link>

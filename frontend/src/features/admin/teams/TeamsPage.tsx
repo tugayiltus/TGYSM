@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Pagination } from '../../../shared/ui/Pagination';
@@ -30,7 +31,7 @@ function TeamActions({ team, onEdit, onMembers, onToggle }: TeamActionsProps) {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="d-flex flex-wrap gap-2">
       <Button aria-label={recordActionLabel(t('teams.manageMembers'), team.name)} variant="secondary" onClick={() => onMembers(team)}>
         {t('teams.manageMembers')}
       </Button>
@@ -41,6 +42,17 @@ function TeamActions({ team, onEdit, onMembers, onToggle }: TeamActionsProps) {
         {team.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
       </Button>
     </div>
+  );
+}
+
+/** Active state plus the intake marker, rendered once per view (UX-08). */
+function TeamBadges({ team }: { team: TeamItem }) {
+  const { t } = useTranslation('admin');
+  return (
+    <span className="d-inline-flex flex-wrap gap-1">
+      <StatusBadge isActive={team.isActive} />
+      {team.isDefaultIntake && <span className="badge bg-primary-subtle text-primary-emphasis">{t('teams.intakeBadge')}</span>}
+    </span>
   );
 }
 
@@ -63,43 +75,31 @@ export function TeamsPage() {
   };
 
   const columns: Column<TeamItem>[] = [
-    { key: 'name', header: t('teams.columns.name'), renderCell: (team) => <span className="font-medium">{team.name}</span> },
+    { key: 'name', header: t('teams.columns.name'), renderCell: (team) => <span className="fw-medium">{team.name}</span> },
     { key: 'members', header: t('teams.columns.members'), renderCell: (team) => t('teams.memberCount', { count: team.memberCount }) },
-    { key: 'status', header: t('teams.columns.status'), renderCell: (team) => (
-        <>
-          <div>
-          <StatusBadge isActive={team.isActive} />
-          {team.isDefaultIntake && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-900">{t('teams.intakeBadge')}</span>}
-        </div>
-          {team.isDefaultIntake && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-900">{t('teams.intakeBadge')}</span>}
-        </>
-      ),
-    },
+    { key: 'status', header: t('teams.columns.status'), renderCell: (team) => <TeamBadges team={team} /> },
     { key: 'actions', header: t('teams.columns.actions'), renderCell: (team) => <TeamActions team={team} onEdit={edit} onMembers={setMembersOf} onToggle={openToggle} /> },
   ];
 
   const renderCard = (team: TeamItem) => (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="d-flex flex-column gap-2">
+      <div className="d-flex align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <p className="font-medium break-words">{team.name}</p>
-          <p className="text-sm text-slate-600">{t('teams.memberCount', { count: team.memberCount })}</p>
+          <p className="mb-0 fw-medium text-break">{team.name}</p>
+          <p className="mb-0 small text-body-secondary">{t('teams.memberCount', { count: team.memberCount })}</p>
         </div>
-        <StatusBadge isActive={team.isActive} />
+        <TeamBadges team={team} />
       </div>
       <TeamActions team={team} onEdit={edit} onMembers={setMembersOf} onToggle={openToggle} />
     </div>
   );
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('teams.title')}</h1>
-        <Button onClick={() => setForm({ team: null })}>{t('teams.new')}</Button>
-      </div>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('teams.title')} actions={<Button onClick={() => setForm({ team: null })}>{t('teams.new')}</Button>} />
       <TextField
         type="search"
-        className="sm:max-w-sm"
+       
         label={t('teams.searchLabel')}
         value={search}
         onChange={(event) => {

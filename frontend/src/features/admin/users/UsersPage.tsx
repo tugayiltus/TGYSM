@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Pagination } from '../../../shared/ui/Pagination';
@@ -43,7 +44,7 @@ function UserActions({ user, onEdit, onAction }: UserActionsProps) {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="d-flex flex-wrap gap-2">
       <Button aria-label={recordActionLabel(tc('actions.edit'), fullName(user))} variant="secondary" onClick={() => onEdit(user)}>
         {tc('actions.edit')}
       </Button>
@@ -122,8 +123,8 @@ export function UsersPage() {
   }[pending.kind];
 
   const columns: Column<UserListItem>[] = [
-    { key: 'name', header: t('users.columns.name'), renderCell: (user) => <span className="font-medium">{fullName(user)}</span> },
-    { key: 'email', header: t('users.columns.email'), renderCell: (user) => <span className="break-all">{user.email}</span> },
+    { key: 'name', header: t('users.columns.name'), renderCell: (user) => <span className="fw-medium">{fullName(user)}</span> },
+    { key: 'email', header: t('users.columns.email'), renderCell: (user) => <span className="text-break">{user.email}</span> },
     { key: 'role', header: t('users.columns.role'), renderCell: (user) => tc(`roles.${user.role}`) },
     { key: 'department', header: t('users.columns.department'), renderCell: (user) => user.departmentName ?? tc('none') },
     { key: 'status', header: t('users.columns.status'), renderCell: (user) => <StatusBadge isActive={user.isActive} /> },
@@ -131,15 +132,15 @@ export function UsersPage() {
   ];
 
   const renderCard = (user: UserListItem) => (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="d-flex flex-column gap-2">
+      <div className="d-flex align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <p className="font-medium">{fullName(user)}</p>
-          <p className="text-sm break-all text-slate-600">{user.email}</p>
+          <p className="mb-0 fw-medium">{fullName(user)}</p>
+          <p className="mb-0 small text-break text-body-secondary">{user.email}</p>
         </div>
         <StatusBadge isActive={user.isActive} />
       </div>
-      <p className="text-sm text-slate-700">
+      <p className="mb-0 small">
         {tc(`roles.${user.role}`)} · {user.departmentName ?? tc('none')}
       </p>
       <UserActions user={user} onEdit={editUser} onAction={openAction} />
@@ -147,13 +148,10 @@ export function UsersPage() {
   );
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('users.title')}</h1>
-        <Button onClick={() => setForm({ mode: 'create' })}>{t('users.new')}</Button>
-      </div>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('users.title')} actions={<Button onClick={() => setForm({ mode: 'create' })}>{t('users.new')}</Button>} />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="tgysm-grid tgysm-grid-3">
         <TextField
           type="search"
           label={t('users.searchLabel')}

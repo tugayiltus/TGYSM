@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { describeError } from '../../../shared/api/errorMessage';
 import { formatDateTime } from '../../../shared/lib/format';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { FormAlert } from '../../../shared/ui/FormAlert';
 import { Pagination } from '../../../shared/ui/Pagination';
@@ -24,15 +25,15 @@ const DELIVERY_STATUSES = ['pending', 'sending', 'sent', 'failed'] as const sati
 const RETRYABLE_STATUS: DeliveryStatus = 'failed';
 
 const STATUS_CLASS: Record<DeliveryStatus, string> = {
-  pending: 'bg-slate-100 text-slate-700',
-  sending: 'bg-sky-50 text-sky-800',
-  sent: 'bg-emerald-50 text-emerald-800',
-  failed: 'bg-red-50 text-red-800',
+  pending: 'bg-secondary-subtle text-secondary-emphasis',
+  sending: 'bg-info-subtle text-info-emphasis',
+  sent: 'bg-success-subtle text-success-emphasis',
+  failed: 'bg-danger-subtle text-danger-emphasis',
 };
 
 function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
   const { t } = useTranslation('admin');
-  return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}>{t(`emailDeliveries.statuses.${status}`)}</span>;
+  return <span className={`badge rounded-pill fw-medium ${STATUS_CLASS[status]}`}>{t(`emailDeliveries.statuses.${status}`)}</span>;
 }
 
 export function EmailDeliveriesPage() {
@@ -65,7 +66,7 @@ export function EmailDeliveriesPage() {
     ) : null;
 
   const columns: Column<EmailDeliveryItem>[] = [
-    { key: 'recipient', header: t('emailDeliveries.columns.recipient'), renderCell: (delivery) => <span className="break-all">{delivery.recipientEmail}</span> },
+    { key: 'recipient', header: t('emailDeliveries.columns.recipient'), renderCell: (delivery) => <span className="text-break">{delivery.recipientEmail}</span> },
     { key: 'event', header: t('emailDeliveries.columns.event'), renderCell: (delivery) => eventLabel(delivery.eventType) },
     { key: 'subject', header: t('emailDeliveries.columns.subject'), renderCell: (delivery) => delivery.subject },
     { key: 'status', header: t('emailDeliveries.columns.status'), renderCell: (delivery) => <DeliveryStatusBadge status={delivery.status} /> },
@@ -76,16 +77,16 @@ export function EmailDeliveriesPage() {
   ];
 
   const renderCard = (delivery: EmailDeliveryItem) => (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 font-medium break-all">{delivery.recipientEmail}</p>
+    <div className="d-flex flex-column gap-2">
+      <div className="d-flex align-items-start justify-content-between gap-2">
+        <p className="mb-0 min-w-0 fw-medium text-break">{delivery.recipientEmail}</p>
         <DeliveryStatusBadge status={delivery.status} />
       </div>
-      <p className="text-sm text-slate-700">
+      <p className="mb-0 small">
         {eventLabel(delivery.eventType)} · {delivery.subject}
       </p>
-      {delivery.lastError && <p className="text-sm text-red-800">{delivery.lastError}</p>}
-      <p className="text-sm text-slate-600">
+      {delivery.lastError && <p className="mb-0 small text-danger">{delivery.lastError}</p>}
+      <p className="mb-0 small text-body-secondary">
         {formatDateTime(delivery.eventCreatedAt)} · {t('emailDeliveries.columns.attempts')}: {delivery.attempts}
       </p>
       {retryButton(delivery)}
@@ -95,10 +96,10 @@ export function EmailDeliveriesPage() {
   const resetPage = () => setPage(FIRST_PAGE);
 
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('emailDeliveries.title')}</h1>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('emailDeliveries.title')} />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="tgysm-grid tgysm-grid-3">
         <SelectField
           label={t('emailDeliveries.filters.status')}
           value={status}

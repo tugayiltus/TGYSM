@@ -83,9 +83,9 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
         </>
       }
     >
-      <form id={formId} noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="tgysm-grid tgysm-grid-2">
           <TextField label={t('users.fields.firstName')} autoComplete="off" error={fieldError(errors.firstName)} {...register('firstName')} />
           <TextField label={t('users.fields.lastName')} autoComplete="off" error={fieldError(errors.lastName)} {...register('lastName')} />
         </div>

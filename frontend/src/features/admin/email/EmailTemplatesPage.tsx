@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../../shared/lib/format';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
@@ -31,24 +32,24 @@ export function EmailTemplatesPage() {
   );
 
   const columns: Column<EmailTemplateItem>[] = [
-    { key: 'event', header: t('emailTemplates.columns.event'), renderCell: (template) => <span className="font-medium">{eventLabel(template.eventType)}</span> },
+    { key: 'event', header: t('emailTemplates.columns.event'), renderCell: (template) => <span className="fw-medium">{eventLabel(template.eventType)}</span> },
     { key: 'subject', header: t('emailTemplates.columns.subject'), renderCell: (template) => template.subject },
     { key: 'updated', header: t('emailTemplates.columns.updated'), renderCell: (template) => formatDateTime(template.updatedAt) },
     { key: 'actions', header: t('emailTemplates.columns.actions'), renderCell: editButton },
   ];
 
   const renderCard = (template: EmailTemplateItem) => (
-    <div className="flex flex-col gap-2">
-      <p className="font-medium">{eventLabel(template.eventType)}</p>
-      <p className="text-sm text-slate-700">{template.subject}</p>
-      <p className="text-sm text-slate-600">{formatDateTime(template.updatedAt)}</p>
+    <div className="d-flex flex-column gap-2">
+      <p className="mb-0 fw-medium">{eventLabel(template.eventType)}</p>
+      <p className="mb-0 small">{template.subject}</p>
+      <p className="mb-0 small text-body-secondary">{formatDateTime(template.updatedAt)}</p>
       {editButton(template)}
     </div>
   );
 
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('emailTemplates.title')}</h1>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('emailTemplates.title')} />
       {templates.isPending && <LoadingState />}
       {templates.isError && <ErrorState error={templates.error} onRetry={() => void templates.refetch()} />}
       {templates.data && <ResponsiveList items={templates.data} columns={columns} getKey={(template) => template.id} renderCard={renderCard} caption={t('emailTemplates.listCaption')} />}

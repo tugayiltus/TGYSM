@@ -109,3 +109,67 @@ body {
     padding: 0.75rem;
   }
 }
+
+.tgysm-number-input {
+  max-width: 6rem;
+}
+
+// A data table that becomes one card per row below 992 px; each cell shows its column name from data-label.
+@media (max-width: 991.98px) {
+  .tgysm-stack-table {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: block;
+      border: var(--cui-border-width) solid var(--cui-border-color);
+      border-radius: var(--cui-border-radius);
+      margin-bottom: 0.75rem;
+      padding: 0.5rem;
+    }
+
+    th[scope="row"],
+    td {
+      display: block;
+      border: 0;
+    }
+
+    td[data-label]::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.875em;
+      color: var(--cui-secondary-color);
+    }
+  }
+}
+
+// Form and filter grids: one column on phones, more from 576 px.
+.tgysm-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 576px) {
+  .tgysm-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tgysm-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tgysm-grid-calendar-day {
+    grid-template-columns: 10rem minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .tgysm-grid-holiday {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+    max-width: 42rem;
+  }
+
+  .tgysm-filter-field {
+    max-width: 24rem;
+  }
+}

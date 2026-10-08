@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Pagination } from '../../../shared/ui/Pagination';
@@ -29,7 +30,7 @@ interface RowActionsProps {
 function DepartmentActions({ department, onEdit, onToggle }: RowActionsProps) {
   const { t: tc } = useTranslation();
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="d-flex flex-wrap gap-2">
       <Button aria-label={recordActionLabel(tc('actions.edit'), department.name)} variant="secondary" onClick={() => onEdit(department)}>
         {tc('actions.edit')}
       </Button>
@@ -58,18 +59,18 @@ export function DepartmentsPage() {
   };
 
   const columns: Column<DepartmentItem>[] = [
-    { key: 'name', header: t('departments.columns.name'), renderCell: (d) => <span className="font-medium">{d.name}</span> },
+    { key: 'name', header: t('departments.columns.name'), renderCell: (d) => <span className="fw-medium">{d.name}</span> },
     { key: 'approver', header: t('departments.columns.approver'), renderCell: (d) => d.approverName ?? tc('none') },
     { key: 'status', header: t('departments.columns.status'), renderCell: (d) => <StatusBadge isActive={d.isActive} /> },
     { key: 'actions', header: t('departments.columns.actions'), renderCell: (d) => <DepartmentActions department={d} onEdit={edit} onToggle={openToggle} /> },
   ];
 
   const renderCard = (d: DepartmentItem) => (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="d-flex flex-column gap-2">
+      <div className="d-flex align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <p className="font-medium break-words">{d.name}</p>
-          <p className="text-sm text-slate-600">{d.approverName ?? tc('none')}</p>
+          <p className="mb-0 fw-medium text-break">{d.name}</p>
+          <p className="mb-0 small text-body-secondary">{d.approverName ?? tc('none')}</p>
         </div>
         <StatusBadge isActive={d.isActive} />
       </div>
@@ -78,14 +79,11 @@ export function DepartmentsPage() {
   );
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('departments.title')}</h1>
-        <Button onClick={() => setForm({ department: null })}>{t('departments.new')}</Button>
-      </div>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('departments.title')} actions={<Button onClick={() => setForm({ department: null })}>{t('departments.new')}</Button>} />
       <TextField
         type="search"
-        className="sm:max-w-sm"
+       
         label={t('departments.searchLabel')}
         value={search}
         onChange={(event) => {

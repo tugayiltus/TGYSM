@@ -389,11 +389,15 @@
       "lastRun": "Son çalışma",
       "interval": "Aralık",
       "status": "Durum",
-      "error": "Son hata"
+      "error": "Son hata",
+      "jobStatus": "İş durumu",
+      "instanceStatus": "Örnek durumu"
     },
     "intervalValue": "{{count}} sn",
     "stale": "Gecikmiş",
-    "fresh": "Zamanında"
+    "fresh": "Zamanında",
+    "instanceFresh": "Güncel",
+    "instanceSilent": "Rapor vermiyor"
   },
   "slaCalendar": {
     "title": "SLA takvimi",
@@ -438,7 +442,9 @@
     "pausesResolution": "Çözüm durur",
     "save": "Yeni sürüm olarak kaydet",
     "saved": "Yeni sürüm oluşturuldu.",
-    "invalid": "Hedefler 1 veya daha büyük, uyarı yüzdesi 1 ile 99 arasında olmalıdır."
+    "invalid": "Hedefler 1 veya daha büyük, uyarı yüzdesi 1 ile 99 arasında olmalıdır.",
+    "minutesUnit": "dk",
+    "percentUnit": "%"
   },
   "overview": {
     "missingApprovers": "Onaylayıcısı olmayan departmanlar",

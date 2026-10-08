@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { describeError, translateErrorCode } from '../../../shared/api/errorMessage';
 import { ApiError, ERROR_CODES } from '../../../shared/api/errors';
 import { formatDate } from '../../../shared/lib/format';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { FormAlert } from '../../../shared/ui/FormAlert';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
@@ -93,7 +94,7 @@ function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onRelo
   const alert = problem !== null ? translateErrorCode(problem) : update.error ? describeError(update.error) : null;
 
   return (
-    <form id={formId} noValidate className="flex max-w-2xl flex-col gap-4" onSubmit={onSubmit}>
+    <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={onSubmit}>
       <FormAlert message={alert} />
       {problem === null && isConflict(update.error) && (
         <div>
@@ -113,14 +114,14 @@ function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onRelo
           setSaved(false);
         }}
       />
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium text-slate-800">{t('slaCalendar.hoursTitle')}</legend>
+      <fieldset className="d-flex flex-column gap-2">
+        <legend className="small fw-medium">{t('slaCalendar.hoursTitle')}</legend>
         {WEEKDAYS.map((day) => {
           const name = t(`slaCalendar.weekdays.${day}`);
           return (
-            <div key={day} className="grid grid-cols-[minmax(0,1fr)] items-end gap-2 sm:grid-cols-[10rem_1fr_1fr]">
-              <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
-                <input type="checkbox" checked={week[day].open} onChange={(event) => setDay(day, { open: event.target.checked })} />
+            <div key={day} className="tgysm-grid tgysm-grid-calendar-day align-items-end">
+              <label className="d-flex tgysm-touch align-items-center gap-2 small fw-medium">
+                <input type="checkbox" className="form-check-input" checked={week[day].open} onChange={(event) => setDay(day, { open: event.target.checked })} />
                 {`${name} · ${t('slaCalendar.open')}`}
               </label>
               <TextField
@@ -141,7 +142,7 @@ function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onRelo
           );
         })}
       </fieldset>
-      <div className="flex items-center gap-3">
+      <div className="d-flex align-items-center gap-2">
         <Button type="submit" isLoading={update.isPending}>
           {t('slaCalendar.save')}
         </Button>
@@ -187,19 +188,19 @@ function HolidaysSection() {
     { key: 'actions', header: '', renderCell: removeButton },
   ];
   const renderCard = (h: HolidayItem) => (
-    <div className="flex flex-col gap-2">
-      <p className="font-medium">{h.name}</p>
-      <p className="text-sm text-slate-600">{formatDate(h.date)}</p>
+    <div className="d-flex flex-column gap-2">
+      <p className="mb-0 fw-medium">{h.name}</p>
+      <p className="mb-0 small text-body-secondary">{formatDate(h.date)}</p>
       {removeButton(h)}
     </div>
   );
 
   return (
-    <section aria-labelledby="sla-holidays" className="flex flex-col gap-4">
-      <h2 id="sla-holidays" className="text-lg font-semibold">
+    <section aria-labelledby="sla-holidays" className="d-flex flex-column gap-3">
+      <h2 id="sla-holidays" className="fs-5 fw-semibold">
         {t('slaCalendar.holidays.title')}
       </h2>
-      <form noValidate className="grid max-w-2xl items-end gap-3 sm:grid-cols-[1fr_2fr_auto]" onSubmit={onAdd}>
+      <form noValidate className="tgysm-grid tgysm-grid-holiday align-items-end" onSubmit={onAdd}>
         <TextField type="date" label={t('slaCalendar.holidays.date')} value={date} onChange={(event) => setDate(event.target.value)} />
         <TextField label={t('slaCalendar.holidays.name')} autoComplete="off" value={name} onChange={(event) => setName(event.target.value)} />
         <Button type="submit" isLoading={add.isPending}>
@@ -209,7 +210,7 @@ function HolidaysSection() {
       <FormAlert message={add.error ? describeError(add.error) : remove.error ? describeError(remove.error) : null} />
       {holidays.isPending && <LoadingState />}
       {holidays.isError && <ErrorState error={holidays.error} onRetry={() => void holidays.refetch()} />}
-      {holidays.data && holidays.data.length === 0 && <p className="text-sm text-slate-600">{t('slaCalendar.holidays.empty')}</p>}
+      {holidays.data && holidays.data.length === 0 && <p className="mb-0 small text-body-secondary">{t('slaCalendar.holidays.empty')}</p>}
       {holidays.data && holidays.data.length > 0 && (
         <ResponsiveList items={holidays.data} columns={columns} getKey={(h) => h.id} renderCard={renderCard} caption={t('slaCalendar.holidays.caption')} />
       )}
@@ -221,8 +222,8 @@ export function SlaCalendarPage() {
   const { t } = useTranslation('admin');
   const calendar = useSlaCalendar();
   return (
-    <section className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{t('slaCalendar.title')}</h1>
+    <section className="d-flex flex-column gap-4">
+      <PageHeader titleOverride={t('slaCalendar.title')} />
       {calendar.isPending && <LoadingState />}
       {calendar.isError && <ErrorState error={calendar.error} onRetry={() => void calendar.refetch()} />}
       {calendar.data && <CalendarForm calendar={calendar.data} onReload={async () => (await calendar.refetch()).data} />}

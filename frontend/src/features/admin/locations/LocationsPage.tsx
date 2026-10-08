@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
@@ -22,15 +23,15 @@ function LocationTreeList({ nodes, onEdit, onAddChild, onToggle }: TreeListProps
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
       {nodes.map((node) => (
         <li key={node.item.id}>
-          <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="font-medium break-words">{node.item.name}</span>
+          <div className="d-flex flex-column gap-2 rounded border bg-body p-2 flex-sm-row align-items-sm-center justify-content-sm-between">
+            <div className="d-flex min-w-0 align-items-center gap-2">
+              <span className="fw-medium text-break">{node.item.name}</span>
               {!node.item.isActive && <StatusBadge isActive={false} />}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="d-flex flex-wrap gap-2">
               <Button aria-label={recordActionLabel(tc('actions.edit'), node.item.name)} variant="secondary" onClick={() => onEdit(node)}>
                 {tc('actions.edit')}
               </Button>
@@ -45,7 +46,7 @@ function LocationTreeList({ nodes, onEdit, onAddChild, onToggle }: TreeListProps
             </div>
           </div>
           {node.children.length > 0 && (
-            <div className="mt-2 border-l-2 border-slate-200 pl-3 sm:pl-6">
+            <div className="mt-2 border-l-2 pl-3">
               <LocationTreeList nodes={node.children} onEdit={onEdit} onAddChild={onAddChild} onToggle={onToggle} />
             </div>
           )}
@@ -70,11 +71,8 @@ export function LocationsPage() {
   };
 
   return (
-    <section className="flex flex-col gap-4" aria-label={t('locations.treeLabel')}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('locations.title')}</h1>
-        <Button onClick={() => setTarget({ kind: 'create', parentId: null })}>{t('locations.new')}</Button>
-      </div>
+    <section className="d-flex flex-column gap-3" aria-label={t('locations.treeLabel')}>
+      <PageHeader titleOverride={t('locations.title')} actions={<Button onClick={() => setTarget({ kind: 'create', parentId: null })}>{t('locations.new')}</Button>} />
 
       {locations.isPending && <LoadingState />}
       {locations.isError && <ErrorState error={locations.error} onRetry={() => void locations.refetch()} />}

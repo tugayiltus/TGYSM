@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { describeError } from '../../../shared/api/errorMessage';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { FormAlert } from '../../../shared/ui/FormAlert';
 import { ErrorState, LoadingState } from '../../../shared/ui/States';
@@ -24,7 +25,7 @@ const MIN_WARNING_PERCENT = 1;
 const MAX_WARNING_PERCENT = 99;
 const MIN_TARGET_MINUTES = 1;
 const MAX_TARGET_MINUTES = 366 * 24 * 60;
-const INPUT_CLASS = 'min-h-11 w-24 rounded-lg border border-slate-300 bg-white px-2 text-base';
+const INPUT_CLASS = 'form-control tgysm-number-input';
 
 interface CellDraft {
   minutes: string;
@@ -99,14 +100,14 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
   const alert = invalid ? t('slaPolicy.invalid') : create.error ? describeError(create.error) : null;
 
   return (
-    <form noValidate className="flex flex-col gap-6" onSubmit={onSubmit}>
+    <form noValidate className="d-flex flex-column gap-4" onSubmit={onSubmit}>
       <FormAlert message={alert} />
-      <section aria-labelledby="sla-targets" className="flex flex-col gap-3">
-        <h2 id="sla-targets" className="text-lg font-semibold">
+      <section aria-labelledby="sla-targets" className="d-flex flex-column gap-2">
+        <h2 id="sla-targets" className="fs-5 fw-semibold">
           {t('slaPolicy.targetsTitle')}
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max text-left text-sm">
+        <div className="table-responsive">
+          <table className="table align-middle mb-0 tgysm-stack-table">
             <thead>
               <tr>
                 <th scope="col" className="p-2">
@@ -122,14 +123,15 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
             <tbody>
               {SLA_KINDS.flatMap((kind) =>
                 SLA_PRIORITIES.map((priority) => (
-                  <tr key={`${kind}-${priority}`} className="border-t border-slate-100">
-                    <th scope="row" className="p-2 font-medium">{`${tt(`kinds.${kind}`)} · ${tt(`priorities.${priority}`)}`}</th>
+                  <tr key={`${kind}-${priority}`} className="border-top">
+                    <th scope="row" className="p-2 fw-medium">{`${tt(`kinds.${kind}`)} · ${tt(`priorities.${priority}`)}`}</th>
                     {SLA_METRICS.map((metric) => {
                       const key = cellKey(kind, priority, metric);
                       const label = `${tt(`kinds.${kind}`)} ${tt(`priorities.${priority}`)} ${tt(`sla.metrics.${metric}`)}`;
                       return (
-                        <td key={metric} className="p-2">
-                          <div className="flex gap-2">
+                        <td key={metric} data-label={tt(`sla.metrics.${metric}`)}>
+                          <div className="d-flex flex-wrap gap-2">
+                            <div className="input-group">
                             <input
                               type="number"
                               inputMode="numeric"
@@ -138,6 +140,9 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
                               value={cells[key]?.minutes ?? ''}
                               onChange={(event) => setCell(key, { minutes: event.target.value })}
                             />
+                              <span className="input-group-text">{t('slaPolicy.minutesUnit')}</span>
+                            </div>
+                            <div className="input-group">
                             <input
                               type="number"
                               inputMode="numeric"
@@ -146,6 +151,8 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
                               value={cells[key]?.percent ?? ''}
                               onChange={(event) => setCell(key, { percent: event.target.value })}
                             />
+                              <span className="input-group-text">{t('slaPolicy.percentUnit')}</span>
+                            </div>
                           </div>
                         </td>
                       );
@@ -157,17 +164,17 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
           </table>
         </div>
       </section>
-      <section aria-labelledby="sla-pauses" className="flex flex-col gap-3">
-        <h2 id="sla-pauses" className="text-lg font-semibold">
+      <section aria-labelledby="sla-pauses" className="d-flex flex-column gap-2">
+        <h2 id="sla-pauses" className="fs-5 fw-semibold">
           {t('slaPolicy.pauseTitle')}
         </h2>
-        <p className="text-sm text-slate-600">{t('slaPolicy.pauseHint')}</p>
-        <ul className="flex flex-col gap-2">
+        <p className="mb-0 small text-body-secondary">{t('slaPolicy.pauseHint')}</p>
+        <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
           {SLA_HOLD_REASONS.map((reason) => (
-            <li key={reason} className="flex flex-wrap items-center gap-x-6 gap-y-1">
-              <span className="min-w-60 text-sm font-medium">{tt(`holdReasons.${reason}`)}</span>
+            <li key={reason} className="d-flex flex-wrap align-items-center gap-x-6 gap-y-1">
+              <span className="min-w-60 small fw-medium">{tt(`holdReasons.${reason}`)}</span>
               {SLA_METRICS.map((metric) => (
-                <label key={metric} className="flex min-h-11 items-center gap-2 text-sm">
+                <label key={metric} className="d-flex tgysm-touch align-items-center gap-2 small">
                   <input
                     type="checkbox"
                     checked={metric === 'first_response' ? pauses[reason].firstResponse : pauses[reason].resolution}
@@ -180,7 +187,7 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
           ))}
         </ul>
       </section>
-      <div className="flex items-center gap-3">
+      <div className="d-flex align-items-center gap-2">
         <Button type="submit" isLoading={create.isPending}>
           {t('slaPolicy.save')}
         </Button>
@@ -194,13 +201,13 @@ export function SlaPolicyPage() {
   const { t } = useTranslation('admin');
   const policy = useSlaPolicy();
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('slaPolicy.title')}</h1>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('slaPolicy.title')} />
       {policy.isPending && <LoadingState />}
       {policy.isError && <ErrorState error={policy.error} onRetry={() => void policy.refetch()} />}
       {policy.data && (
         <>
-          <p className="text-sm text-slate-700">{t('slaPolicy.version', { number: policy.data.number })}</p>
+          <p className="mb-0 small">{t('slaPolicy.version', { number: policy.data.number })}</p>
           <PolicyForm policy={policy.data} />
         </>
       )}

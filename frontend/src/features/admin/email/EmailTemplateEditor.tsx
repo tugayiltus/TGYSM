@@ -77,18 +77,18 @@ export function EmailTemplateEditor({ template, onClose }: EmailTemplateEditorPr
         </>
       }
     >
-      <form id={formId} noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('emailTemplates.fields.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
         <TextAreaField label={t('emailTemplates.fields.body')} rows={BODY_ROWS} error={fieldError(errors.body)} {...register('body')} />
         <section aria-labelledby={`${formId}-variables`}>
-          <h3 id={`${formId}-variables`} className="text-sm font-medium text-slate-800">
+          <h3 id={`${formId}-variables`} className="small fw-medium">
             {t('emailTemplates.variables.title')}
           </h3>
-          <p className="mt-1 text-sm text-slate-600">{t('emailTemplates.variables.hint')}</p>
-          <ul className="mt-2 flex flex-wrap gap-2">
+          <p className="mb-0 mt-1 small text-body-secondary">{t('emailTemplates.variables.hint')}</p>
+          <ul className="list-unstyled mb-0 mt-2 d-flex flex-wrap gap-2">
             {template.allowedVariables.map((name) => (
-              <li key={name} className="rounded-md bg-slate-100 px-2 py-1 font-mono text-sm">
+              <li key={name} className="rounded-md bg-body-secondary px-2 py-1 font-monospace small">
                 {`${VARIABLE_OPEN}${name}${VARIABLE_CLOSE}`}
               </li>
             ))}

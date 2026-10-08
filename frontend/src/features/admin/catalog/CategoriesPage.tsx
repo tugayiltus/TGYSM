@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
+import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { Dialog } from '../../../shared/ui/Dialog';
@@ -99,7 +100,7 @@ function CategoryFormDialog({ category, all, onClose }: { category: CategoryItem
         </>
       }
     >
-      <form id={formId} noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('categories.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
         <SelectField label={t('categories.fields.parent')} placeholder={t('categories.noParent')} options={parents} error={fieldError(errors.parentId)} {...register('parentId')} />
@@ -124,7 +125,7 @@ export function CategoriesPage() {
   const rows = useMemo(() => toRows(categories.data ?? []), [categories.data]);
 
   const actions = (row: Row) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="d-flex flex-wrap gap-2">
       <Button variant="secondary" aria-label={recordActionLabel(tc('actions.edit'), row.path)} onClick={() => setForm({ category: row.item })}>
         {tc('actions.edit')}
       </Button>
@@ -147,11 +148,11 @@ export function CategoriesPage() {
     { key: 'actions', header: t('categories.columns.actions'), renderCell: actions },
   ];
   const renderCard = (r: Row) => (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="d-flex flex-column gap-2">
+      <div className="d-flex align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <p className="font-medium break-words">{r.path}</p>
-          <p className="text-sm text-slate-600">{t(`categories.scopes.${r.item.scope}`)}</p>
+          <p className="mb-0 fw-medium text-break">{r.path}</p>
+          <p className="mb-0 small text-body-secondary">{t(`categories.scopes.${r.item.scope}`)}</p>
         </div>
         <StatusBadge isActive={r.item.isActive} />
       </div>
@@ -160,11 +161,8 @@ export function CategoriesPage() {
   );
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('categories.title')}</h1>
-        <Button onClick={() => setForm({ category: null })}>{t('categories.new')}</Button>
-      </div>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader titleOverride={t('categories.title')} actions={<Button onClick={() => setForm({ category: null })}>{t('categories.new')}</Button>} />
       {categories.isPending && <LoadingState />}
       {categories.isError && <ErrorState error={categories.error} onRetry={() => void categories.refetch()} />}
       {categories.data && rows.length === 0 && <EmptyState />}

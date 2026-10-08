@@ -62,7 +62,7 @@ export function ResetPasswordDialog({ name, isPending, error, onConfirm, onCance
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="d-flex flex-column gap-3">
         <FormAlert message={error ? describeError(error) : null} />
         <DeliveryChoice value={delivery} onChange={setDelivery} />
       </div>
