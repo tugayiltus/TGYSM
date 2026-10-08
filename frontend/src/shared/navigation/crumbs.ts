@@ -1,7 +1,7 @@
 import { generatePath } from 'react-router';
 
 import type { ReturnTarget } from './returnTo';
-import { ROUTE_META, type RouteId } from './routeMeta';
+import { ROUTE_META, routeChain, type RouteId } from './routeMeta';
 
 export interface Crumb {
   label: string;
@@ -20,13 +20,6 @@ export interface BuildCrumbsInput {
 
 const ADMIN_ROOT = 'adminOverview' satisfies RouteId;
 
-function chainOf(routeId: RouteId): RouteId[] {
-  const chain: RouteId[] = [];
-  for (let id: RouteId | undefined = routeId; id !== undefined; id = ROUTE_META[id].parent) {
-    chain.unshift(id);
-  }
-  return chain;
-}
 
 function hrefOf(routeId: RouteId, params: Record<string, string | undefined>): string | undefined {
   try {
@@ -67,7 +60,7 @@ export function buildCrumbs(input: BuildCrumbsInput): Crumb[] {
   }
 
   const useFrom = from !== null && from.routeId !== routeId;
-  const parents = useFrom ? chainOf(from.routeId) : chainOf(routeId).slice(0, -1);
+  const parents = useFrom ? routeChain(from.routeId) : routeChain(routeId).slice(0, -1);
   const parentParams = useFrom ? { ...params, ...from.params } : params;
   const crumbs = parents.map((id, index): Crumb => {
     const isReturnTarget = useFrom && index === parents.length - 1;

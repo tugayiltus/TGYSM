@@ -1,4 +1,4 @@
-import { Navigate, Outlet, type RouteObject } from 'react-router';
+import { Outlet, type RouteObject } from 'react-router';
 
 import { ChangePasswordPage } from '../features/auth/ChangePasswordPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
@@ -8,8 +8,8 @@ import { ADMIN_ONLY, IT_STAFF_OR_ADMIN } from '../features/auth/session';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
 import { HomePage } from '../features/home/HomePage';
 import { ProfilePage } from '../features/profile/ProfilePage';
+import { AppLayout } from '../shared/layout/AppLayout';
 import { ROUTES } from '../shared/routes';
-import { AppShell } from '../shared/ui/AppShell';
 import { NotFoundPage } from '../shared/ui/NotFoundPage';
 
 export const routes: RouteObject[] = [
@@ -25,7 +25,7 @@ export const routes: RouteObject[] = [
     children: [
       { id: 'changePassword', path: ROUTES.changePassword, element: <ChangePasswordPage /> },
       {
-        element: <AppShell />,
+        element: <AppLayout />,
         children: [
           { id: 'home', index: true, element: <HomePage /> },
           { id: 'profile', path: ROUTES.profile, element: <ProfilePage /> },
@@ -95,9 +95,9 @@ export const routes: RouteObject[] = [
         children: [
           {
             // Lazy like the admin pages: a static import would put the whole feature-admin chunk on every page's preload list.
-            lazy: async () => ({ Component: (await import('../features/admin/AdminLayout')).AdminLayout }),
+            lazy: async () => ({ Component: (await import('../shared/layout/AdminLayout')).AdminLayout }),
             children: [
-              { id: 'adminOverview', index: true, element: <Navigate to={ROUTES.adminUsers} replace /> },
+              { id: 'adminOverview', index: true, lazy: async () => ({ Component: (await import('../features/admin/overview/AdminOverviewPage')).AdminOverviewPage }) },
               { id: 'adminUsers', path: ROUTES.adminUsers, lazy: async () => ({ Component: (await import('../features/admin/users/UsersPage')).UsersPage }) },
               { id: 'adminDepartments', path: ROUTES.adminDepartments, lazy: async () => ({ Component: (await import('../features/admin/departments/DepartmentsPage')).DepartmentsPage }) },
               { id: 'adminLocations', path: ROUTES.adminLocations, lazy: async () => ({ Component: (await import('../features/admin/locations/LocationsPage')).LocationsPage }) },

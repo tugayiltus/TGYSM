@@ -1,7 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
-import { Breadcrumbs } from './Breadcrumbs';
 import { useCrumbs } from './useCrumbs';
 
 /** Pathname seen by the last mounted header; focus moves to the new H1 only on navigation, not on first load. */
@@ -14,7 +13,7 @@ export interface PageHeaderProps {
   titleOverride?: string;
 }
 
-/** Breadcrumb, page H1 and primary actions (spec §4.1); the H1 takes focus after in-app navigation. */
+/** Page H1 and primary actions (spec §4.1); the layout renders the breadcrumb above it. The H1 takes focus after in-app navigation. */
 export function PageHeader({ actions, titleOverride }: PageHeaderProps) {
   const crumbs = useCrumbs();
   const { pathname } = useLocation();
@@ -30,7 +29,6 @@ export function PageHeader({ actions, titleOverride }: PageHeaderProps) {
 
   return (
     <header className="mb-3">
-      <Breadcrumbs />
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
         <h1 ref={headingRef} tabIndex={-1} className="h3 mb-0 text-break tgysm-page-title">
           {title}

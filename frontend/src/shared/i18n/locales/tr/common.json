@@ -120,5 +120,11 @@
     "label": "Sayfa yolu",
     "more": "Diğer üst sayfalar",
     "loading": "…"
+  },
+  "layout": {
+    "skipToContent": "İçeriğe atla",
+    "collapseSidebar": "Menüyü daralt",
+    "expandSidebar": "Menüyü genişlet",
+    "accountMenu": "Hesap menüsü"
   }
 }

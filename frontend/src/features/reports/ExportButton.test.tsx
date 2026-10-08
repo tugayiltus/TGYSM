@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../test/mockApi';
@@ -60,7 +60,8 @@ describe('ExportButton', () => {
     // The app-wide toast region is also a status; the export's own status is the one with this text.
     const status = (await screen.findByText(/Dışa aktarım arka planda hazırlanıyor\./)).closest('[role="status"]');
     expect(status).not.toBeNull();
-    expect(screen.getByRole('link', { name: 'Dışa aktarımlarım' })).toHaveAttribute('href', '/reports/exports');
+    // The sidebar has the same link; this one is the page's own.
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Dışa aktarımlarım' })).toHaveAttribute('href', '/reports/exports');
     expect(screen.queryByRole('button', { name: 'Arka planda hazırla' })).not.toBeInTheDocument();
     const query = new URL(callsTo(api, 'POST', '/api/v1/reports/exports')[0]?.url ?? '').searchParams;
     expect(query.get('report')).toBe('incidents');

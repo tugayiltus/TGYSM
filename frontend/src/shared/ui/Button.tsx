@@ -1,5 +1,5 @@
 import { CButton, CSpinner } from '@coreui/react';
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
@@ -14,6 +14,7 @@ const VARIANT_STYLE: Record<Variant, { color: string; variant?: 'outline' | 'gho
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   isLoading?: boolean;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 /** 44 px minimum touch target; disabled while loading so a double tap cannot submit twice. */

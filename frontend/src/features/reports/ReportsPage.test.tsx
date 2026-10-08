@@ -27,7 +27,8 @@ describe('ReportsPage', () => {
     expect(within(tabs).getAllByRole('link').map((l) => l.textContent)).toEqual(['Olaylar', 'Talepler', 'Operasyon', 'Transferler', 'Varlıklar', 'Garanti']);
     expect(within(tabs).getByRole('link', { name: 'Olaylar' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('Kapsam: tüm kayıtlar')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Dışa aktarımlarım' })).toHaveAttribute('href', '/reports/exports');
+    // The sidebar has the same link; this one is the page's own.
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Dışa aktarımlarım' })).toHaveAttribute('href', '/reports/exports');
   });
 
   it('names each figure card by its title and describes it by its headline value', async () => {

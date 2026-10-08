@@ -439,5 +439,13 @@
     "save": "Yeni sürüm olarak kaydet",
     "saved": "Yeni sürüm oluşturuldu.",
     "invalid": "Hedefler 1 veya daha büyük, uyarı yüzdesi 1 ile 99 arasında olmalıdır."
+  },
+  "overview": {
+    "missingApprovers": "Onaylayıcısı olmayan departmanlar",
+    "noIntake": "Varsayılan karşılama ekibi seçilmemiş.",
+    "workerIssue": "Arka plan işlerinden en az biri sorunlu.",
+    "allGood": "Eksik kurulum tanımı bulunmadı.",
+    "goToTeams": "Ekiplere git",
+    "goToSystem": "Sistem durumuna git"
   }
 }

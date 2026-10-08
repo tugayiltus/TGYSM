@@ -111,3 +111,12 @@ export const ROUTE_META: Record<RouteId, RouteMeta> = {
 };
 
 export const isRouteId = (value: unknown): value is RouteId => typeof value === 'string' && (ROUTE_IDS as readonly string[]).includes(value);
+
+/** The route and its ancestors, root first. */
+export function routeChain(routeId: RouteId): RouteId[] {
+  const chain: RouteId[] = [];
+  for (let id: RouteId | undefined = routeId; id !== undefined; id = ROUTE_META[id].parent) {
+    chain.unshift(id);
+  }
+  return chain;
+}
