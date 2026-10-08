@@ -11,6 +11,7 @@ import { Dialog } from '../../shared/ui/Dialog';
 import { FormAlert } from '../../shared/ui/FormAlert';
 import { SelectField } from '../../shared/ui/SelectField';
 import { TextField } from '../../shared/ui/TextField';
+import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
 import { withCurrentOption } from '../admin/shared/referenceOptions';
 
 import { ASSET_TYPES, useCreateAsset, useReferenceDepartments, useReferenceLocations, useUpdateAsset, type AssetItem, type AssetType } from './api';
@@ -72,7 +73,7 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
     register,
     handleSubmit,
     setError,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
@@ -113,6 +114,8 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
   const alert = mutation.error && !isHandledByFields(mutation.error, FORM_FIELDS, CODE_FIELDS) ? describeError(mutation.error) : null;
 
   return (
+    <>
+    <UnsavedChangesGuard when={isDirty && !mutation.isPending} />
     <Dialog
       open
       onOpenChange={(open) => {
@@ -132,21 +135,22 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
         </>
       }
     >
-      <form id={formId} noValidate className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => void onSubmit(event)}>
-        <div className="sm:col-span-2">
+      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
+        <div className="col-12">
           <FormAlert message={alert} />
         </div>
-        <TextField label={t('fields.assetTag')} autoComplete="off" error={fieldError(errors.assetTag)} {...register('assetTag')} />
-        <SelectField label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} error={fieldError(errors.type)} {...register('type')} />
-        <TextField label={t('fields.brand')} autoComplete="off" error={fieldError(errors.brand)} {...register('brand')} />
-        <TextField label={t('fields.model')} autoComplete="off" error={fieldError(errors.model)} {...register('model')} />
-        <TextField label={t('fields.serialNumber')} autoComplete="off" error={fieldError(errors.serialNumber)} {...register('serialNumber')} />
-        <SelectField label={t('fields.location')} options={locationOptions} placeholder={t('form.selectLocation')} error={fieldError(errors.locationId)} {...register('locationId')} />
-        <SelectField label={t('fields.department')} options={departmentOptions} placeholder={tc('none')} error={fieldError(errors.departmentId)} {...register('departmentId')} />
-        <TextField type="date" label={t('fields.warrantyEndsOn')} error={fieldError(errors.warrantyEndsOn)} {...register('warrantyEndsOn')} />
-        <TextField type="date" label={t('fields.purchasedOn')} error={fieldError(errors.purchasedOn)} {...register('purchasedOn')} />
-        <TextField className="sm:col-span-2" label={t('fields.notes')} autoComplete="off" error={fieldError(errors.notes)} {...register('notes')} />
+        <TextField className="col-12 col-sm-6" label={t('fields.assetTag')} autoComplete="off" error={fieldError(errors.assetTag)} {...register('assetTag')} />
+        <SelectField className="col-12 col-sm-6" label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} error={fieldError(errors.type)} {...register('type')} />
+        <TextField className="col-12 col-sm-6" label={t('fields.brand')} autoComplete="off" error={fieldError(errors.brand)} {...register('brand')} />
+        <TextField className="col-12 col-sm-6" label={t('fields.model')} autoComplete="off" error={fieldError(errors.model)} {...register('model')} />
+        <TextField className="col-12 col-sm-6" label={t('fields.serialNumber')} autoComplete="off" error={fieldError(errors.serialNumber)} {...register('serialNumber')} />
+        <SelectField className="col-12 col-sm-6" label={t('fields.location')} options={locationOptions} placeholder={t('form.selectLocation')} error={fieldError(errors.locationId)} {...register('locationId')} />
+        <SelectField className="col-12 col-sm-6" label={t('fields.department')} options={departmentOptions} placeholder={tc('none')} error={fieldError(errors.departmentId)} {...register('departmentId')} />
+        <TextField className="col-12 col-sm-6" type="date" label={t('fields.warrantyEndsOn')} error={fieldError(errors.warrantyEndsOn)} {...register('warrantyEndsOn')} />
+        <TextField className="col-12 col-sm-6" type="date" label={t('fields.purchasedOn')} error={fieldError(errors.purchasedOn)} {...register('purchasedOn')} />
+        <TextField className="col-12" label={t('fields.notes')} autoComplete="off" error={fieldError(errors.notes)} {...register('notes')} />
       </form>
     </Dialog>
+    </>
   );
 }

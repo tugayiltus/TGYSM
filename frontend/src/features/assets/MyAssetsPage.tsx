@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../shared/lib/format';
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
 
 import { useMyAssets } from './api';
@@ -10,24 +11,26 @@ export function MyAssetsPage() {
   const assets = useMyAssets();
 
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('mine.title')}</h1>
+    <>
+      <PageHeader titleOverride={t('mine.title')} />
       {assets.isPending && <LoadingState />}
       {assets.isError && <ErrorState error={assets.error} onRetry={() => void assets.refetch()} />}
       {assets.data && assets.data.length === 0 && <EmptyState message={t('mine.empty')} />}
       {assets.data && assets.data.length > 0 && (
-        <ul aria-label={t('mine.caption')} className="grid gap-3 sm:grid-cols-2">
+        <ul aria-label={t('mine.caption')} className="list-unstyled row g-3 mb-0">
           {assets.data.map((a) => (
-            <li key={a.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="font-medium">{a.assetTag}</p>
-              <p className="text-slate-700">{`${a.brand} ${a.model}`}</p>
-              <p className="text-sm text-slate-600">{t(`types.${a.type}`)}</p>
-              {a.serialNumber && <p className="text-sm text-slate-600">{a.serialNumber}</p>}
-              <p className="text-sm text-slate-600">{t('mine.assignedAt', { date: formatDateTime(a.assignedAt) })}</p>
+            <li key={a.id} className="col-12 col-md-6">
+              <div className="card card-body h-100">
+              <p className="mb-0 fw-medium">{a.assetTag}</p>
+              <p className="mb-0">{`${a.brand} ${a.model}`}</p>
+              <p className="mb-0 small text-body-secondary">{t(`types.${a.type}`)}</p>
+              {a.serialNumber && <p className="mb-0 small text-body-secondary">{a.serialNumber}</p>}
+              <p className="mb-0 small text-body-secondary">{t('mine.assignedAt', { date: formatDateTime(a.assignedAt) })}</p>
+              </div>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </>
   );
 }

@@ -79,3 +79,8 @@ body {
     top: 4.5rem;
   }
 }
+
+// Label/value pairs in detail cards: one column on phones, more as space allows.
+.tgysm-fields {
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}

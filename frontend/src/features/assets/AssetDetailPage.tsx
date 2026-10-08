@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
 import { formatDate, formatDateTime } from '../../shared/lib/format';
+import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
+import { PageHeader } from '../../shared/navigation/PageHeader';
+import { useReturnTo } from '../../shared/navigation/returnTo';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
@@ -15,8 +18,8 @@ import { AssetStatusBadge } from './AssetStatusBadge';
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs text-slate-600">{label}</dt>
-      <dd className="font-medium break-words">{value}</dd>
+      <dt className="small fw-normal text-body-secondary">{label}</dt>
+      <dd className="mb-0 fw-medium text-break">{value}</dd>
     </div>
   );
 }
@@ -26,9 +29,10 @@ function AssetCard({ asset }: { asset: AssetItem }) {
   const { t: tc } = useTranslation();
   const optionalDate = (value: string | null) => (value === null ? tc('none') : formatDate(value));
   return (
-    <dl className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-3">
+    <dl className="card card-body d-grid gap-3 mb-0 tgysm-fields">
       <Field label={t('fields.type')} value={t(`types.${asset.type}`)} />
-      <Field label={t('fields.brand')} value={`${asset.brand} ${asset.model}`} />
+      <Field label={t('fields.brand')} value={asset.brand} />
+      <Field label={t('fields.model')} value={asset.model} />
       <Field label={t('fields.serialNumber')} value={asset.serialNumber ?? tc('none')} />
       <Field label={t('fields.holder')} value={asset.assignedUserName ?? tc('none')} />
       <Field label={t('fields.location')} value={asset.locationName} />
@@ -47,19 +51,19 @@ function History({ movements }: { movements: AssetMovementItem[] }) {
     return <EmptyState />;
   }
   return (
-    <ol className="flex flex-col gap-3">
+    <ol className="list-unstyled mb-0 d-flex flex-column gap-2">
       {movements.map((m) => (
-        <li key={m.id} className="rounded-xl border border-slate-200 bg-white p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-medium">{t(`movements.${m.kind}`)}</span>
-            <time className="text-sm text-slate-600" dateTime={m.occurredAt}>
+        <li key={m.id} className="rounded border bg-body p-2">
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span className="fw-medium">{t(`movements.${m.kind}`)}</span>
+            <time className="small text-body-secondary" dateTime={m.occurredAt}>
               {formatDateTime(m.occurredAt)}
             </time>
           </div>
-          {m.userName && <p className="text-sm text-slate-700">{t('detail.to', { name: m.userName })}</p>}
-          {m.userResponsibilityRetained && <p className="text-sm text-slate-700">{t('detail.retained')}</p>}
-          {m.reason && <p className="text-sm text-slate-700">{m.reason}</p>}
-          {m.actorName && <p className="text-xs text-slate-600">{t('detail.by', { name: m.actorName })}</p>}
+          {m.userName && <p className="mb-0 small">{t('detail.to', { name: m.userName })}</p>}
+          {m.userResponsibilityRetained && <p className="mb-0 small">{t('detail.retained')}</p>}
+          {m.reason && <p className="mb-0 small">{m.reason}</p>}
+          {m.actorName && <p className="mb-0 small text-body-secondary">{t('detail.by', { name: m.actorName })}</p>}
         </li>
       ))}
     </ol>
@@ -74,6 +78,8 @@ export function AssetDetailPage() {
   const history = useAssetHistory(id);
   const [operation, setOperation] = useState<AssetOperationKind | null>(null);
   const [editing, setEditing] = useState(false);
+  const backTo = useReturnTo(ROUTES.assets);
+  useBreadcrumbLabel('assetDetail', asset.data?.assetTag);
 
   if (asset.isPending) {
     return <LoadingState />;
@@ -86,32 +92,35 @@ export function AssetDetailPage() {
   const operations = OPERATIONS_BY_STATUS[item.status];
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Link to={ROUTES.assets} className="text-sm text-brand-900 underline">
-          {t('detail.back')}
-        </Link>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold break-all">{item.assetTag}</h1>
-            <AssetStatusBadge status={item.status} />
-          </div>
-          <Button variant="secondary" onClick={() => setEditing(true)}>
-            {tc('actions.edit')}
-          </Button>
-        </div>
+    <>
+      <PageHeader
+        titleOverride={item.assetTag}
+        actions={
+          <>
+            <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+              {t('detail.back')}
+            </Link>
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              {tc('actions.edit')}
+            </Button>
+          </>
+        }
+      />
+      <div className="mb-3">
+        <AssetStatusBadge status={item.status} />
       </div>
+      <div className="row g-4">
+        <aside className="col-12 col-lg-4 order-lg-2">
+          <div className="tgysm-sticky-aside d-flex flex-column gap-3">
 
-      <AssetCard asset={item} />
-
-      <section className="flex flex-col gap-3" aria-labelledby="asset-operations">
-        <h2 id="asset-operations" className="text-lg font-semibold">
+      <section className="card card-body d-flex flex-column gap-2" aria-labelledby="asset-operations">
+        <h2 id="asset-operations" className="h6 mb-0">
           {t('detail.operations')}
         </h2>
         {operations.length === 0 ? (
-          <p className="text-slate-600">{t('detail.noOperations')}</p>
+          <p className="mb-0 text-body-secondary">{t('detail.noOperations')}</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="d-flex flex-wrap gap-2">
             {operations.map((kind) => (
               <Button key={kind} variant={kind === 'lost' || kind === 'retire' ? 'danger' : 'secondary'} onClick={() => setOperation(kind)}>
                 {t(`actions.${kind}`)}
@@ -121,17 +130,23 @@ export function AssetDetailPage() {
         )}
       </section>
 
-      <section className="flex flex-col gap-3" aria-labelledby="asset-history">
-        <h2 id="asset-history" className="text-lg font-semibold">
+          </div>
+        </aside>
+        <div className="col-12 col-lg-8 order-lg-1 d-flex flex-column gap-4 min-w-0">
+          <AssetCard asset={item} />
+      <section className="d-flex flex-column gap-2" aria-labelledby="asset-history">
+        <h2 id="asset-history" className="h5 mb-0">
           {t('detail.history')}
         </h2>
         {history.isPending && <LoadingState />}
         {history.isError && <ErrorState error={history.error} onRetry={() => void history.refetch()} />}
         {history.data && <History movements={history.data.movements} />}
       </section>
+        </div>
+      </div>
 
       {operation !== null && <AssetOperationDialog key={operation} asset={item} kind={operation} onClose={() => setOperation(null)} />}
       {editing && <AssetFormDialog asset={item} onClose={() => setEditing(false)} />}
-    </section>
+    </>
   );
 }

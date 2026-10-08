@@ -48,7 +48,7 @@ describe('AppLayout sidebar', () => {
     expect(within(nav).getByRole('link', { name: 'Ana sayfa' })).not.toHaveAttribute('aria-current');
   });
 
-  it('opens the menu in a panel on phones, closes it on navigation and gives focus back', async () => {
+  it('opens the menu in a panel on phones and closes it on navigation, moving focus to the new page title', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME } });
     const { user, router } = renderRoute('/profile');
     const hamburger = await screen.findByRole('button', { name: 'Menüyü aç' });
@@ -58,6 +58,17 @@ describe('AppLayout sidebar', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana menü' })).not.toBeInTheDocument());
     // The target page is lazy: the location changes once its module has loaded.
     await waitFor(() => expect(router.state.location.pathname).toBe('/assets/mine'));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Zimmetlerim' })).toHaveFocus());
+  });
+
+  it('gives focus back to the menu button when the panel closes without navigating', async () => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME } });
+    const { user } = renderRoute('/profile');
+    const hamburger = await screen.findByRole('button', { name: 'Menüyü aç' });
+    await user.click(hamburger);
+    const panel = await screen.findByRole('dialog', { name: 'Ana menü' });
+    await user.click(within(panel).getByRole('button', { name: 'Kapat' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana menü' })).not.toBeInTheDocument());
     await waitFor(() => expect(hamburger).toHaveFocus());
   });
 });

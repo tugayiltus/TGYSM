@@ -119,7 +119,7 @@ export function AssetOperationDialog({ asset, kind, onClose }: { asset: AssetIte
         </>
       }
     >
-      <form id={formId} noValidate className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={operation.error ? describeError(operation.error) : null} />
         {(kind === 'assign' || kind === 'transfer') && (
           <>
@@ -132,12 +132,12 @@ export function AssetOperationDialog({ asset, kind, onClose }: { asset: AssetIte
         )}
         {(kind === 'lost' || kind === 'retire') && <TextField label={t('actionFields.reason')} autoComplete="off" error={fieldError(errors.reason)} {...register('reason')} />}
         {kind === 'maintenanceStart' && asset.status === 'assigned' && (
-          <label className="flex min-h-11 items-center gap-3 text-sm">
-            <input type="checkbox" className="size-5" {...register('retainResponsibility')} />
+          <label className="d-flex tgysm-touch align-items-center gap-2 small">
+            <input type="checkbox" className="form-check-input" {...register('retainResponsibility')} />
             {t('actionFields.retain')}
           </label>
         )}
-        {kind === 'maintenanceEnd' && <p className="text-sm text-slate-600">{t('actionFields.maintenanceEndHint')}</p>}
+        {kind === 'maintenanceEnd' && <p className="small text-body-secondary">{t('actionFields.maintenanceEndHint')}</p>}
       </form>
     </Dialog>
   );
