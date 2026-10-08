@@ -54,5 +54,16 @@
   },
   "toast": {
     "label": "Bildirimler"
+  },
+  "filters": {
+    "button": "Filtreler ({{count}})",
+    "more": "Diğer filtreler",
+    "apply": "Uygula",
+    "clear": "Temizle"
+  },
+  "unsaved": {
+    "title": "Kaydedilmemiş değişiklikler",
+    "message": "Bu sayfada kaydetmediğiniz değişiklikler var. Sayfadan çıkarsanız kaybolur.",
+    "leave": "Sayfadan çık"
   }
 }

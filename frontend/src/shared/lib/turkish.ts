@@ -114,3 +114,6 @@ export function withSuffix(word: string, kind: SuffixKind, options: SuffixOption
   const separator = options.properNoun === true || isAbbreviation(trimmed) ? APOSTROPHE : '';
   return `${trimmed}${separator}${suffixes[kind]}`;
 }
+
+/** Same key as the server's `TurkishText.ToSearchKey`: trimmed, Turkish lower case, dotless ı folded to i. */
+export const toSearchKey = (value: string): string => trLower(value.trim()).replaceAll('ı', 'i');
