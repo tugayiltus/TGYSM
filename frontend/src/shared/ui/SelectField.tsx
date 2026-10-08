@@ -1,49 +1,39 @@
-import { useId, type Ref, type SelectHTMLAttributes } from 'react';
+import { CFormLabel, CFormSelect } from '@coreui/react';
+import type { Ref, SelectHTMLAttributes } from 'react';
+
+import { useFieldIds } from './fieldIds';
+import { FieldMessages } from './FieldMessages';
 
 export interface SelectOption {
   value: string;
   label: string;
 }
 
-export interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size' | 'value'> {
+  value?: string | number;
   label: string;
   options: readonly SelectOption[];
   error?: string;
+  hint?: string;
   /** Adds an empty first option with this label (e.g. "none"). */
   placeholder?: string;
   ref?: Ref<HTMLSelectElement>;
 }
 
-export function SelectField({ label, options, error, placeholder, id, className = '', ref, ...selectProps }: SelectFieldProps) {
-  const generatedId = useId();
-  const selectId = id ?? generatedId;
-  const errorId = error ? `${selectId}-error` : undefined;
-
+export function SelectField({ label, options, error, hint, placeholder, id, className = '', ref, ...selectProps }: SelectFieldProps) {
+  const { fieldId, hintId, errorId, describedBy } = useFieldIds(id, hint, error);
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      <label htmlFor={selectId} className="text-sm font-medium text-slate-800">
-        {label}
-      </label>
-      <select
-        id={selectId}
-        ref={ref}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={errorId}
-        className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-base aria-invalid:border-red-600"
-        {...selectProps}
-      >
+    <div className={`d-flex flex-column ${className}`.trim()}>
+      <CFormLabel htmlFor={fieldId}>{label}</CFormLabel>
+      <CFormSelect id={fieldId} ref={ref} invalid={Boolean(error)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...selectProps}>
         {placeholder !== undefined && <option value="">{placeholder}</option>}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
-      </select>
-      {error && (
-        <p id={errorId} className="text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      </CFormSelect>
+      <FieldMessages hint={hint} hintId={hintId} error={error} errorId={errorId} />
     </div>
   );
 }

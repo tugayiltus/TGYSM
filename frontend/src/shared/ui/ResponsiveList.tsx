@@ -18,20 +18,20 @@ export interface ResponsiveListProps<T> {
 export function ResponsiveList<T>({ items, columns, getKey, renderCard, caption }: ResponsiveListProps<T>) {
   return (
     <>
-      <ul className="flex flex-col gap-3 md:hidden">
+      <ul className="list-unstyled d-flex flex-column gap-3 mb-0 d-md-none">
         {items.map((item) => (
-          <li key={getKey(item)} className="rounded-xl border border-slate-200 bg-white p-4">
+          <li key={getKey(item)} className="card card-body">
             {renderCard(item)}
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white md:block">
-        <table className="w-full text-left text-sm">
-          <caption className="sr-only">{caption}</caption>
-          <thead className="bg-slate-50 text-slate-600">
+      <div className="d-none d-md-block table-responsive border rounded bg-body">
+        <table className="table table-hover align-top mb-0">
+          <caption className="visually-hidden">{caption}</caption>
+          <thead className="table-light">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} scope="col" className="px-4 py-3 font-medium">
+                <th key={column.key} scope="col">
                   {column.header}
                 </th>
               ))}
@@ -39,9 +39,9 @@ export function ResponsiveList<T>({ items, columns, getKey, renderCard, caption 
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={getKey(item)} className="border-t border-slate-100 align-top">
+              <tr key={getKey(item)}>
                 {columns.map((column) => (
-                  <td key={column.key} className="px-4 py-3">
+                  <td key={column.key}>
                     {column.renderCell(item)}
                   </td>
                 ))}

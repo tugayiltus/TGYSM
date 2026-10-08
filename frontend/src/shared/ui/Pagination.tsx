@@ -21,9 +21,9 @@ export function Pagination({ page, pageSize, totalCount, onPageChange }: Paginat
   const lastPage = Math.ceil(totalCount / pageSize);
 
   return (
-    <nav aria-label={t('pagination.label')} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-      <p className="text-slate-600">{t('pagination.summary', { from, to, total: totalCount })}</p>
-      <div className="flex gap-2">
+    <nav aria-label={t('pagination.label')} className="d-flex flex-wrap align-items-center justify-content-between gap-2 small">
+      <p className="mb-0 text-body-secondary">{t('pagination.summary', { from, to, total: totalCount })}</p>
+      <div className="d-flex gap-2">
         <Button variant="secondary" disabled={page <= FIRST_PAGE} onClick={() => onPageChange(page - 1)}>
           {t('pagination.previous')}
         </Button>
