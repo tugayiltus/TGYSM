@@ -43,3 +43,9 @@ Phase 5 adds a knowledge base: IT staff write how-to articles, employees read th
 ### Risks
 - Raw HTML or script in Markdown is only safe while `rehype-raw` stays out; adding it later needs a sanitiser and a new ADR.
 - Any new endpoint that exposes articles must use the same visibility predicate, or internal content leaks.
+
+## Amendment 2026-10-08
+
+- Article and ticket search match through `EF.Functions.Like(search_text, '%key%', '\')` built by `LikePattern.Containing`, which escapes `%`, `_` and `\` so they match literally. Npgsql translates `string.Contains` to `strpos`, which the `gin_trgm_ops` indexes cannot serve; the trigram index decision above is unchanged (commit 7e3cf77).
+- An article `summary` may be empty (still at most 500 characters); title and body stay required (commit 7e3cf77).
+- Markdown headings render one level below the page title (`#` becomes `<h2>`, `######` stays `<h6>`), so the article title stays the page's only `<h1>`. Raw HTML stays off (commit 7e3cf77).

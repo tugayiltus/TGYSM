@@ -1,11 +1,11 @@
 # TGYSM — ITSM web platform
 
-Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–4 done and merged to `master` (auth, `/admin`, assets + CSV import, tickets + approvals + comments/attachments, Worker host, outbox + email, password set links, SLA, `/admin/system`). Phase 5 in progress on branch `phase-5-knowledge-reports` (plan `docs/superpowers/plans/2026-10-02-phase-5-knowledge-reports.md`): done = knowledge base (data, API, ticket links + public-reply guard, UI), report model, incident/request/operations/transfers/asset/warranty reports, drill-down, synchronous Excel export; open = background export jobs + download (Task 12), reports UI (Task 13), E2E/review (Task 14). Requirements: `tgysm.md`.
+Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–4 done and merged to `master`. Phase 5 (knowledge base, reports, sync + background Excel export, reports UI, E2E) done on branch `phase-5-knowledge-reports`, not merged (plan `docs/superpowers/plans/2026-10-02-phase-5-knowledge-reports.md`). Next: Phase 6 (release). Requirements: `tgysm.md`.
 
 ## Stack & Architecture
-- **Backend:** .NET 10 modular monolith (ADR-0001) — `backend/src/Tgysm.Domain` (rules, no framework deps) → `Tgysm.Application` (handlers + FluentValidation, ports) → `Tgysm.Infrastructure` (EF Core + Npgsql, migrations) → `Tgysm.Api` (Minimal APIs, auth, CLI). `backend/src/Tgysm.Worker` (Generic Host, jobs `OutboxDispatcher`, `EmailSender`, `SlaMonitor`, `Cleanup`, row leases; references Application + Infrastructure, never Api; ADR-0014/0015) runs next to the API. Solution: `backend/Tgysm.slnx`.
+- **Backend:** .NET 10 modular monolith (ADR-0001) — `backend/src/Tgysm.Domain` (rules, no framework deps) → `Tgysm.Application` (handlers + FluentValidation, ports) → `Tgysm.Infrastructure` (EF Core + Npgsql, migrations) → `Tgysm.Api` (Minimal APIs, auth, CLI). `backend/src/Tgysm.Worker` (Generic Host, jobs `OutboxDispatcher`, `EmailSender`, `SlaMonitor`, `ExportRunner`, `Cleanup`, row leases; references Application + Infrastructure, never Api; ADR-0014/0015) runs next to the API. Solution: `backend/Tgysm.slnx`.
 - **Database:** PostgreSQL 17, local Homebrew (ADR-0002). snake_case, `uuid` v7, `xmin` concurrency.
-- **Frontend:** React 19 + Vite + TypeScript in `frontend/` (ADR-0008). Server state via TanStack Query; typed client `src/shared/api/client.ts` generated from OpenAPI.
+- **Frontend:** React 19 + Vite + TypeScript in `frontend/` (ADR-0008). Server state via TanStack Query; typed client `src/shared/api/client.ts` generated from OpenAPI. `react-markdown` (KB, no raw HTML), Recharts (reports); Rolldown chunk groups in `vite.config.ts` — new heavy dependency or feature folder gets its own group.
 - Out of scope unless asked: mobile app.
 
 ## Commands
@@ -36,7 +36,8 @@ Run through `tools/` scripts.
 - New API error → add a constant to `ErrorCodes` and a Turkish text to `errors.json`.
 - Cross-row rules (last admin, location cycles, asset lifecycle, import commit, intake team) run inside `IAppDbContext.RunSerializedAsync` with a key from `SerializationLocks`.
 - Ticket endpoints load through `TicketScope` (404 outside scope); work actions go through `TicketWork` (scope → version → change → one save). Comments/links touch `updated_at` without the version check.
-- Attachments: `AttachmentTypes` (Domain) decides allowed types; storage through `IFileStore`, scanning through `IFileScanner`.
+- Attachments: `AttachmentTypes` (Domain) decides allowed types; storage through `IFileStore`, scanning through `IFileScanner`. `Files:RootPath` must be one absolute folder shared by API and Worker outside Development (export files).
+- Substring search: `EF.Functions.Like` with `LikePattern.Containing` + `LikePattern.EscapeText`, never `string.Contains` (bypasses trigram indexes).
 - `users` has an application-managed `version` (bump only on admin-editable changes via `BumpVersion`); other tables use `xmin`.
 - Handlers: one class per use case in `Tgysm.Application/Features/<Area>/`, `HandleAsync(command, ct)`; validators `internal sealed`.
 - Git: stage named paths only — never `git add -A`/`.`; no dotfiles/dot-dirs unless told. No commit/push without owner approval.

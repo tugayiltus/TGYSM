@@ -44,3 +44,12 @@ Phase 5 adds reports (incidents, requests, operations, transfers, assets, warran
 ### Risks
 - A new report that bypasses `ReportScope` would leak tickets across teams; scope must stay inside the builder.
 - ClosedXML builds the workbook in memory; the 5,000 row sync limit bounds that, but job exports have no cap beyond practical size.
+
+## Amendment 2026-10-08
+
+- Background exports are capped at 100,000 rows (`ReportExportLimits.JobMaxRows`): a larger request is refused when it is queued, and a job that has grown past the cap by the time it runs fails with `reports.export_too_large`. This closes the "no cap beyond practical size" risk above (commit 5ed4cfc).
+- A job may start at most 3 runs (`ReportExportLimits.MaxAttempts`, column `export_jobs.attempts`). A run that takes the Worker down never records a failure, so its expired lease makes the job claimable again; once 3 runs have started, the next claim fails the job with `reports.export_attempts_exhausted` instead of running it (commit 7e3cf77).
+- One user may have at most 3 pending or running background exports (`ReportExportLimits.MaxQueuedPerUser`); one more is refused with 409 `reports.export_queue_full`. The count and the insert run under `SerializationLocks.ExportQueue` so parallel requests cannot both pass (commit 7e3cf77).
+- The API serves files the Worker writes, so both hosts must use one absolute file-store folder (ADR-0012): `Files:RootPath` is required outside Development (startup fails without it) and both hosts log the resolved root at startup (`FileStoreRootLog`). In Development an empty value means the user's local application data folder (`tgysm/files`), which both hosts resolve alike (commit 7e3cf77).
+- Cleanup expires ready exports in batches of 100 (`CleanupHandler.ExportExpiryBatchSize`); it deletes the file first, and a file that cannot be deleted keeps its job `ready` for a later run (commit 7e3cf77).
+- The chart is loaded lazily by the figure card (`DistributionChart`), not by a lazy route, so `vendor-charts` loads only with the first distribution card (commit 65d92e9).
