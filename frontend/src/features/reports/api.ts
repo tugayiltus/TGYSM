@@ -28,7 +28,7 @@ export const isReportName = (value: string | undefined): value is ReportName => 
 export type DrillPart = 'numerator' | 'denominator';
 export const DRILL_PARTS: readonly DrillPart[] = ['numerator', 'denominator'];
 
-export const FIRST_PAGE = 1;
+export { FIRST_PAGE } from '../../shared/lib/pageParam';
 export const DRILLDOWN_PAGE_SIZE = 20;
 export const EXPORTS_PAGE_SIZE = 20;
 /** Pending and running jobs are polled until the worker finishes them. */

@@ -20,4 +20,7 @@ public static class SerializationLocks
 
     /// <summary>Creating an SLA policy version: retires the current one and numbers the next, so exactly one stays current.</summary>
     public const long SlaPolicy = 7_006;
+
+    /// <summary>Queuing a background export: guards the per-user cap on pending and running export jobs.</summary>
+    public const long ExportQueue = 7_007;
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Common;
 using Tgysm.Application.Common.Paging;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Knowledge;
@@ -38,7 +39,7 @@ public sealed class ListArticlesHandler(IAppDbContext db, ICurrentActor actor)
         var key = SearchKeyOf(query.Search);
         var ordered = key.Length == 0
             ? articles.OrderByDescending(a => a.UpdatedAt).ThenByDescending(a => a.Id)
-            : articles.Where(a => a.SearchText.Contains(key))
+            : articles.Where(a => EF.Functions.Like(a.SearchText, LikePattern.Containing(key), LikePattern.EscapeText))
                 // SearchText starts with the folded title, so its first Title.Length characters are the title key.
                 .OrderByDescending(a => a.SearchText.Substring(0, a.Title.Length).Contains(key))
                 .ThenByDescending(a => a.UpdatedAt).ThenByDescending(a => a.Id);

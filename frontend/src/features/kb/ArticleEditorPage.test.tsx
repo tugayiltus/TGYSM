@@ -70,9 +70,17 @@ describe('ArticleEditorPage', () => {
     const { user } = renderRoute('/kb/new');
 
     await user.type(await screen.findByLabelText('İçerik (Markdown)'), '## Başlık adımı');
-    await user.click(screen.getByRole('tab', { name: 'Önizleme' }));
+    const write = screen.getByRole('button', { name: 'Yaz' });
+    const preview = screen.getByRole('button', { name: 'Önizleme' });
+    expect(write).toHaveAttribute('aria-pressed', 'true');
+    expect(preview).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('tab')).toBeNull();
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Başlık adımı' })).toBeInTheDocument();
+    await user.click(preview);
+
+    expect(preview).toHaveAttribute('aria-pressed', 'true');
+    expect(write).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('heading', { level: 3, name: 'Başlık adımı' })).toBeInTheDocument();
   });
 
   it('loads the article and saves with the version it was loaded at', async () => {

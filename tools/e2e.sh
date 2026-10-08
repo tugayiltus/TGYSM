@@ -25,6 +25,7 @@ api_pid=""
 worker_pid=""
 preview_pid=""
 pickup_folder=""
+files_folder=""
 
 stop_servers() {
   if [[ -n "$api_pid" ]]; then kill "$api_pid" 2>/dev/null || true; fi
@@ -38,6 +39,7 @@ stop_servers() {
 cleanup() {
   stop_servers
   if [[ -n "$pickup_folder" ]]; then rm -rf "$pickup_folder"; fi
+  if [[ -n "$files_folder" ]]; then rm -rf "$files_folder"; fi
 }
 trap cleanup EXIT
 
@@ -72,6 +74,9 @@ pickup_folder="$(mktemp -d "${TMPDIR:-/tmp}/tgysm-e2e-pickup.XXXXXX")"
 export Email__Mode="Pickup"
 export Email__PickupFolder="$pickup_folder"
 export E2E_EMAIL_PICKUP_FOLDER="$pickup_folder"
+# Per run and absolute, shared by the API and the Worker: the Worker writes export files the API serves (Files:RootPath).
+files_folder="$(mktemp -d "${TMPDIR:-/tmp}/tgysm-e2e-files.XXXXXX")"
+export Files__RootPath="$files_folder"
 # The set-password link in the activation email points at the preview server the tests drive.
 export App__PublicBaseUrl="$PREVIEW_URL"
 # Short job intervals so a test waits seconds, not the 30 s production default, for an email or an export file.

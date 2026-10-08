@@ -1,8 +1,14 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Api.IntegrationTests.Tickets;
+using Tgysm.Application.Abstractions;
+using Tgysm.Application.Common;
+using Tgysm.Application.Common.Paging;
+using Tgysm.Application.Features.Knowledge;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Knowledge;
@@ -165,6 +171,22 @@ public sealed class ArticleApiTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Search_treats_like_wildcards_and_backslash_literally()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await PublishedAsync(world.Desk, "Disk 100% dolu");
+        await PublishedAsync(world.Desk, "Disk 1000 dolu");
+        await PublishedAsync(world.Desk, "Dosya_adı kuralı");
+        await PublishedAsync(world.Desk, "Dosyaxadı kuralı");
+        await PublishedAsync(world.Desk, @"Yol c:\temp");
+        await PublishedAsync(world.Desk, "Yol c:temp");
+
+        Assert.Equal(["Disk 100% dolu"], await TitlesAsync(world.Employee, $"?search={Uri.EscapeDataString("0%")}"));
+        Assert.Equal(["Dosya_adı kuralı"], await TitlesAsync(world.Employee, $"?search={Uri.EscapeDataString("dosya_")}"));
+        Assert.Equal([@"Yol c:\temp"], await TitlesAsync(world.Employee, $"?search={Uri.EscapeDataString(@"c:\temp")}"));
+    }
+
+    [Fact]
     public async Task Search_matching_only_internal_article_body_is_hidden_from_employee()
     {
         var world = await TicketWorld.CreateAsync(factory);
@@ -172,6 +194,25 @@ public sealed class ArticleApiTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Empty(await TitlesAsync(world.Employee, "?search=gizlikelime"));
         Assert.Equal(["İç rehber"], await TitlesAsync(world.Desk, "?search=gizlikelime"));
+    }
+
+    private sealed class GoneActor : ICurrentActor
+    {
+        public Guid? UserId { get; } = Guid.NewGuid();
+
+        public string CorrelationId => nameof(GoneActor);
+    }
+
+    [Fact]
+    public async Task An_actor_whose_user_no_longer_exists_is_unauthenticated_not_a_server_error()
+    {
+        // The session check rejects a deleted user's cookie; this covers a user removed between that check and the handler.
+        await using var gone = factory.WithWebHostBuilder(b => b.ConfigureTestServices(s => s.AddScoped<ICurrentActor, GoneActor>()));
+        await using var scope = gone.Services.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<ListArticlesHandler>();
+
+        await Assert.ThrowsAsync<AuthenticationFailedException>(() => handler.HandleAsync(
+            new ListArticlesQuery(null, null, null, null, new PageRequest(PageRequest.FirstPage, PageRequest.DefaultPageSize)), Ct));
     }
 
     [Fact]
@@ -243,6 +284,21 @@ public sealed class ArticleApiTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Summary_is_optional_on_create_and_update()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+
+        using var created = await world.Desk.PostAsync(ArticlesPath, new { title = "Özetsiz", summary = "", body = "Gövde", visibility = "employees" });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var article = await world.Desk.ReadJsonAsync<JsonElement>(created);
+        Assert.Equal(string.Empty, article.GetProperty("summary").GetString());
+
+        using var updated = await world.Desk.PutAsync(
+            PathOf(article), new { title = "Özetsiz", summary = " ", body = "Yeni gövde", categoryId = (Guid?)null, visibility = "employees", version = VersionOf(article) });
+        Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+    }
+
+    [Fact]
     public async Task Invalid_input_gives_field_errors()
     {
         var world = await TicketWorld.CreateAsync(factory);
@@ -255,7 +311,8 @@ public sealed class ArticleApiTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.BadRequest, blank.StatusCode);
         var blankFields = await ApiClient.ReadFieldCodesAsync(blank);
-        Assert.All(new[] { "title", "summary", "body" }, f => Assert.Contains(f, blankFields.Keys, StringComparer.OrdinalIgnoreCase));
+        Assert.All(new[] { "title", "body" }, f => Assert.Contains(f, blankFields.Keys, StringComparer.OrdinalIgnoreCase));
+        Assert.DoesNotContain("summary", blankFields.Keys, StringComparer.OrdinalIgnoreCase);
         Assert.Contains("title", (await ApiClient.ReadFieldCodesAsync(tooLong)).Keys, StringComparer.OrdinalIgnoreCase);
         foreach (var response in new[] { unknownCategory, inactiveCategory })
         {

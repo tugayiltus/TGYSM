@@ -13,7 +13,7 @@ internal sealed class CreateArticleValidator : AbstractValidator<CreateArticleCo
     public CreateArticleValidator()
     {
         RuleFor(c => c.Title).NotEmpty().MaximumLength(ArticleLimits.TitleMaxLength);
-        RuleFor(c => c.Summary).NotEmpty().MaximumLength(ArticleLimits.SummaryMaxLength);
+        RuleFor(c => c.Summary).NotNull().MaximumLength(ArticleLimits.SummaryMaxLength);
         RuleFor(c => c.Body).NotEmpty().MaximumLength(ArticleLimits.BodyMaxLength);
         RuleFor(c => c.Visibility).IsInEnum();
     }

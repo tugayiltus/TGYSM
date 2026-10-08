@@ -67,7 +67,7 @@ public sealed class ListTicketsHandler(IAppDbContext db, TicketScope scope, Tick
             var key = TurkishText.ToSearchKey(query.Search);
             tickets = TicketNumber.IsValid(number)
                 ? tickets.Where(t => t.Number == number)
-                : tickets.Where(t => t.SearchText.Contains(key));
+                : tickets.Where(t => EF.Functions.Like(t.SearchText, LikePattern.Containing(key), LikePattern.EscapeText));
         }
 
         var page = await tickets

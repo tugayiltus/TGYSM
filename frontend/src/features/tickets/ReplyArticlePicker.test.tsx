@@ -44,6 +44,21 @@ describe('reply article picker', () => {
     await waitFor(() => expect(screen.getByLabelText('Mesajınız')).toHaveValue(`Şunu deneyin:\n${LIST_ARTICLE.title}: /kb/${ARTICLE_ID}`));
   });
 
+  it('never sends the reply when Enter is pressed in the article search', async () => {
+    const api = base({
+      [`POST /api/v1/tickets/${INCIDENT.number}/comments`]: { status: 201, body: {} },
+    });
+    const { user } = renderRoute(`/tickets/${INCIDENT.number}`);
+
+    await user.type(await screen.findByLabelText('Mesajınız'), 'Taslak yanıt');
+    await user.click(screen.getByRole('button', { name: 'Makale ekle' }));
+    await user.type(await screen.findByRole('searchbox', { name: 'Makale ara' }), 'yazıcı{Enter}');
+
+    expect(api.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(screen.getByLabelText('Mesajınız')).toHaveValue('Taslak yanıt');
+    expect(screen.getByRole('searchbox', { name: 'Makale ara' })).toHaveValue('yazıcı');
+  });
+
   it('shows the refusal when the server rejects an internal article in a public reply', async () => {
     base({
       [`POST /api/v1/tickets/${INCIDENT.number}/comments`]: { status: 409, body: { code: 'knowledge.internal_article_in_public_reply' } },

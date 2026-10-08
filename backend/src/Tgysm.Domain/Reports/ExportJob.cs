@@ -51,6 +51,15 @@ public sealed class ExportJob : Entity
 
     public DateTimeOffset? ExpiresAt { get; private set; }
 
+    /// <summary>Runs started so far (<see cref="Start"/> counts them); see <see cref="ReportExportLimits.MaxAttempts"/>.</summary>
+    public int Attempts { get; private set; }
+
+    /// <summary>
+    /// Every allowed run has started and none finished: the runs keep crashing the runner, so the job must fail instead of
+    /// starting again.
+    /// </summary>
+    public bool AttemptsExhausted => Attempts >= ReportExportLimits.MaxAttempts;
+
     /// <summary>Row lease of the runner working on it (ADR-0014); written by the claim, cleared when the run ends.</summary>
     public DateTimeOffset? LockedUntil { get; private set; }
 
@@ -67,7 +76,10 @@ public sealed class ExportJob : Entity
             CreatedAt = now,
         };
 
-    /// <summary>A runner starts building the file. A <see cref="ExportJobStatus.Running"/> job whose lease ran out (a crashed runner) starts again.</summary>
+    /// <summary>
+    /// A runner starts building the file; each start counts as an attempt. A <see cref="ExportJobStatus.Running"/> job whose lease ran
+    /// out (a crashed runner) starts again.
+    /// </summary>
     public void Start(DateTimeOffset now)
     {
         if (Status is not (ExportJobStatus.Pending or ExportJobStatus.Running))
@@ -77,6 +89,7 @@ public sealed class ExportJob : Entity
 
         Status = ExportJobStatus.Running;
         StartedAt = now;
+        Attempts++;
     }
 
     /// <summary>The file is stored under <paramref name="fileKey"/>; it stays downloadable for <see cref="ReportExportLimits.FileLifetime"/>.</summary>

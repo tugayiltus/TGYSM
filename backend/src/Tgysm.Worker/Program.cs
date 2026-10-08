@@ -6,6 +6,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Infrastructure;
 using Tgysm.Infrastructure.Email;
+using Tgysm.Infrastructure.Files;
 using Tgysm.Worker.Jobs;
 
 namespace Tgysm.Worker;
@@ -36,6 +37,8 @@ internal static class Program
             .Validate(o => o.Mode is EmailModes.Smtp or EmailModes.Pickup, $"Email:Mode must be '{EmailModes.Smtp}' or '{EmailModes.Pickup}'.")
             .ValidateOnStart();
         builder.Services.AddScoped<HeartbeatRecorder>();
+        // Logs the file-store root the API must share (export files); fails startup when it is missing outside Development.
+        builder.Services.AddHostedService<FileStoreRootLog>();
 
         builder.Services.AddHostedService<OutboxDispatcherJob>();
         builder.Services.AddHostedService<EmailSenderJob>();

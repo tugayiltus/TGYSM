@@ -80,6 +80,19 @@ public sealed class TicketScopeTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Search_treats_like_wildcards_literally()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var percent = await TicketWorld.CreateIncidentAsync(world.Employee, "Disk 100% dolu");
+        await TicketWorld.CreateIncidentAsync(world.Employee, "Disk 1000 dolu");
+        var underscore = await TicketWorld.CreateIncidentAsync(world.Employee, "Dosya_adı hatalı");
+        await TicketWorld.CreateIncidentAsync(world.Employee, "Dosyaxadı hatalı");
+
+        Assert.Equal([TicketWorld.NumberOf(percent)], await NumbersAsync(world.Desk, $"?search={Uri.EscapeDataString("0%")}"));
+        Assert.Equal([TicketWorld.NumberOf(underscore)], await NumbersAsync(world.Desk, $"?search={Uri.EscapeDataString("dosya_")}"));
+    }
+
+    [Fact]
     public async Task Employee_detail_has_no_internal_fields()
     {
         var world = await TicketWorld.CreateAsync(factory);

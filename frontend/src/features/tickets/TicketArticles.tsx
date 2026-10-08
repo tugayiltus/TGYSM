@@ -14,7 +14,7 @@ import { useLinkArticle, usePublishedArticleOptions, useTicketArticles, useUnlin
 
 import type { TicketDetail } from './api';
 
-function LinkArticleDialog({ ticketNumber, onClose }: { ticketNumber: string; onClose: () => void }) {
+function LinkArticleDialog({ ticketNumber, onClose, onLinked }: { ticketNumber: string; onClose: () => void; onLinked: () => void }) {
   const { t } = useTranslation('kb');
   const { t: tc } = useTranslation();
   const link = useLinkArticle(ticketNumber);
@@ -35,7 +35,7 @@ function LinkArticleDialog({ ticketNumber, onClose }: { ticketNumber: string; on
           <Button variant="secondary" onClick={onClose}>
             {tc('actions.cancel')}
           </Button>
-          <Button disabled={articleId === ''} isLoading={link.isPending} onClick={() => link.mutate(articleId, { onSuccess: onClose })}>
+          <Button disabled={articleId === ''} isLoading={link.isPending} onClick={() => link.mutate(articleId, { onSuccess: onLinked })}>
             {tc('actions.confirm')}
           </Button>
         </>
@@ -88,7 +88,17 @@ export function TicketArticles({ ticket }: { ticket: TicketDetail }) {
           {t('ticket.link')}
         </Button>
       )}
-      {linking && <LinkArticleDialog ticketNumber={ticket.number} onClose={() => setLinking(false)} />}
+      {linking && (
+        <LinkArticleDialog
+          ticketNumber={ticket.number}
+          onClose={() => setLinking(false)}
+          onLinked={() => {
+            // The list has changed since the failed unlink, so its message no longer describes what is shown.
+            unlink.reset();
+            setLinking(false);
+          }}
+        />
+      )}
     </section>
   );
 }

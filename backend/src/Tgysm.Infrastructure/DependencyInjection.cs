@@ -34,7 +34,8 @@ public static class DependencyInjection
         services.AddScoped<IExportJobClaimer, ExportJobClaimer>();
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddOptions<FileStorageOptions>().BindConfiguration(FileStorageOptions.SectionName);
-        services.AddSingleton<IFileStore, LocalFileStore>();
+        services.AddSingleton<LocalFileStore>();
+        services.AddSingleton<IFileStore>(provider => provider.GetRequiredService<LocalFileStore>());
         services.AddSingleton<IFileScanner, DevelopmentFileScanner>();
         services.AddScoped<IReportFileWriter, ExcelReportWriter>();
 

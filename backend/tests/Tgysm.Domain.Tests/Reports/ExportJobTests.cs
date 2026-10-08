@@ -66,6 +66,23 @@ public sealed class ExportJobTests
     }
 
     [Fact]
+    public void Each_start_counts_an_attempt_until_the_attempts_are_used_up()
+    {
+        var job = NewJob();
+        Assert.Equal(0, job.Attempts);
+        Assert.False(job.AttemptsExhausted);
+
+        for (var attempt = 1; attempt <= ReportExportLimits.MaxAttempts; attempt++)
+        {
+            Assert.False(job.AttemptsExhausted);
+            job.Start(Now.AddMinutes(attempt));
+            Assert.Equal(attempt, job.Attempts);
+        }
+
+        Assert.True(job.AttemptsExhausted);
+    }
+
+    [Fact]
     public void Fail_keeps_no_file_and_cuts_the_error_to_its_column()
     {
         var job = Running();

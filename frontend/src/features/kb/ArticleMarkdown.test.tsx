@@ -36,10 +36,13 @@ describe('ArticleMarkdown', () => {
     expect(screen.getByText('Tıkla').closest('a')?.getAttribute('href') ?? '').not.toMatch(/javascript:/i);
   });
 
-  it('renders headings and lists', () => {
-    render(<ArticleMarkdown body={'## Adımlar\n\n- bir\n- iki'} />);
+  it('renders headings one level below the page title, capped at h6, and lists', () => {
+    render(<ArticleMarkdown body={'# Giriş\n\n## Adımlar\n\n###### Not\n\n- bir\n- iki'} />);
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Adımlar' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Giriş' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Adımlar' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 6, name: 'Not' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 });

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
-import { INCIDENTS, REFERENCE_ROUTES, reportResult, TEAM_LOAD } from '../../test/reportData';
+import { INCIDENTS, REFERENCE_ROUTES, reportResult, TEAM_LOAD, VOLUME } from '../../test/reportData';
 
 const reportCalls = (api: ReturnType<typeof mockApi>, report: string) =>
   api.calls.filter((c) => c.method === 'GET' && new URL(c.url).pathname === `/api/v1/reports/${report}`);
@@ -28,6 +28,14 @@ describe('ReportsPage', () => {
     expect(within(tabs).getByRole('link', { name: 'Olaylar' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('Kapsam: tüm kayıtlar')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dışa aktarımlarım' })).toHaveAttribute('href', '/reports/exports');
+  });
+
+  it('names each figure card by its title and describes it by its headline value', async () => {
+    mockApi(routes());
+    renderRoute('/reports/incidents');
+
+    const card = await screen.findByRole('article', { name: 'Açılan kayıt' });
+    expect(card).toHaveAccessibleDescription(String(VOLUME.value));
   });
 
   it('shows "Veri yok" for a figure without data and the ratio parts', async () => {

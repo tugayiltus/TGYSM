@@ -70,6 +70,14 @@ public sealed class RunExportJobsHandler(
             return false;
         }
 
+        if (job.AttemptsExhausted)
+        {
+            logger.LogWarning("Export job {JobId} started {Attempts} runs without finishing; failing it.", job.Id, job.Attempts);
+            job.Fail(ErrorCodes.ReportsExportAttemptsExhausted, clock.GetUtcNow());
+            await db.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
         ReportViewer viewer;
         try
         {

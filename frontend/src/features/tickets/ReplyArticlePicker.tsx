@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { articlePath } from '../../shared/routes';
@@ -7,6 +7,14 @@ import { SelectField } from '../../shared/ui/SelectField';
 import { TextField } from '../../shared/ui/TextField';
 import { usePublishedArticleOptions } from '../kb/api';
 
+const ENTER_KEY = 'Enter';
+
+/** The panel sits inside the comment form: Enter in its search must not send the (possibly public) reply. */
+function keepEnterFromSubmitting(event: KeyboardEvent<HTMLInputElement>) {
+  if (event.key === ENTER_KEY) {
+    event.preventDefault();
+  }
+}
 
 /** The reply may reach the requester, so only published, employee-visible articles are offered (the server also refuses others). */
 function ArticlePanel({ onInsert }: { onInsert: (articleId: string, title: string) => void }) {
@@ -18,7 +26,7 @@ function ArticlePanel({ onInsert }: { onInsert: (articleId: string, title: strin
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-slate-200 p-3">
-      <TextField type="search" label={t('reply.search')} value={search} onChange={(event) => setSearch(event.target.value)} />
+      <TextField type="search" label={t('reply.search')} value={search} onKeyDown={keepEnterFromSubmitting} onChange={(event) => setSearch(event.target.value)} />
       <SelectField label={t('reply.pick')} placeholder={t('reply.select')} options={options} value={articleId} onChange={(event) => setArticleId(event.target.value)} />
       <Button className="self-start" disabled={chosen === undefined} onClick={() => chosen && onInsert(chosen.value, chosen.label)}>
         {t('reply.insert')}

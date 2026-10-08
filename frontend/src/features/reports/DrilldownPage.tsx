@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router';
 
 import { translateOr } from '../../shared/i18n/dynamic';
 import { formatDate, formatDateTime } from '../../shared/lib/format';
+import { readPageParam } from '../../shared/lib/pageParam';
 import { assetPath, reportPath, ticketPath } from '../../shared/routes';
 import { Pagination } from '../../shared/ui/Pagination';
 import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
@@ -12,7 +13,6 @@ import {
   DRILL_PARAM,
   DRILL_PARTS,
   DRILLDOWN_PAGE_SIZE,
-  FIRST_PAGE,
   isReportName,
   useDrilldown,
   useReport,
@@ -29,15 +29,6 @@ import { filterQuery, readReportFilter, type ReportFilterValues } from './useRep
 const DEFAULT_PART: DrillPart = 'numerator';
 
 const readPart = (value: string | null): DrillPart => DRILL_PARTS.find((part) => part === value) ?? DEFAULT_PART;
-
-/** A whole page number of at least 1; anything else is the first page. */
-/** Digits only: "1e21" is an integer to Number() but not a page the API accepts. */
-const PAGE_DIGITS = /^\d{1,9}$/;
-
-function readPage(value: string | null): number {
-  const page = value !== null && PAGE_DIGITS.test(value) ? Number(value) : FIRST_PAGE;
-  return page >= FIRST_PAGE ? page : FIRST_PAGE;
-}
 
 function useTicketColumns(): Column<DrilldownTicketRow>[] {
   const { t } = useTranslation('reports');
@@ -176,7 +167,7 @@ function Drilldown({ report, metric }: { report: ReportName; metric: string }) {
   const [params, setParams] = useSearchParams();
   const filter = readReportFilter(params, report);
   const selection: DrillSelection = { metric, bucket: params.get(DRILL_PARAM.bucket) ?? '', part: readPart(params.get(DRILL_PARAM.part)) };
-  const page = readPage(params.get(DRILL_PARAM.page));
+  const page = readPageParam(params.get(DRILL_PARAM.page));
   const bucketName = useBucketName(report, selection, filter);
   const backQuery = filterQuery(filter).toString();
 

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
@@ -19,17 +19,28 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
   const { t } = useTranslation('reports');
   const view = describeFigure(figure);
   const title = metricLabel(figure.metric);
+  const titleId = useId();
+  const headlineId = useId();
   const bars = figure.shape === 'distribution' ? (figure.buckets ?? []).map((b) => ({ key: b.key, label: bucketLabel(figure.metric, b), count: b.count })) : [];
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="font-medium">
+    // Named by its title and described by its headline, so the value can be read (and found) apart from the card's other numbers.
+    <article
+      aria-labelledby={titleId}
+      aria-describedby={view.headline !== null ? headlineId : undefined}
+      className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+    >
+      <h2 id={titleId} className="font-medium">
         <Link to={figureListHref(report, figure.metric, filter)} className="text-brand-900 underline-offset-2 hover:underline">
           {title}
         </Link>
       </h2>
       {view.noData && <p className="text-lg text-slate-500">{t('figure.noData')}</p>}
-      {view.headline !== null && <p className="text-3xl font-semibold text-brand-900">{view.headline}</p>}
+      {view.headline !== null && (
+        <p id={headlineId} className="text-3xl font-semibold text-brand-900">
+          {view.headline}
+        </p>
+      )}
       {view.lines.length > 0 && (
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
           {view.lines.map((line) => (

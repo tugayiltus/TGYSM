@@ -344,6 +344,32 @@ public sealed class ExportJobTests(FakeClockApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task A_job_that_crashed_the_runner_on_every_attempt_fails_instead_of_running_again()
+    {
+        var world = await SeedAsync();
+        var id = await InsertJobAsync(world.Admin.Id);
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            // What MaxAttempts runs that each took the Worker down leave behind: 'running', attempts used up, lease expired.
+            await db.Database.ExecuteSqlAsync(
+                $"UPDATE export_jobs SET status = 'running', attempts = {ReportExportLimits.MaxAttempts}, locked_until = now() - interval '1 minute' WHERE id = {id}",
+                Ct);
+        }
+
+        var files = StoredFileCount();
+        Assert.Equal(1, await RunAsync(factory.Services));
+
+        var job = await JobAsync(id);
+        Assert.Equal(ExportJobStatus.Failed, job.Status);
+        Assert.Equal(ErrorCodes.ReportsExportAttemptsExhausted, job.LastError);
+        Assert.Equal(ReportExportLimits.MaxAttempts, job.Attempts);
+        Assert.Null(job.FileKey);
+        Assert.Null(job.LockedUntil);
+        Assert.Equal(files, StoredFileCount());
+        Assert.Equal(0, await RunAsync(factory.Services));
+    }
+
+    [Fact]
     public async Task A_failure_mid_write_leaves_no_file_and_a_sanitized_error()
     {
         var world = await SeedAsync();
@@ -401,6 +427,36 @@ public sealed class ExportJobTests(FakeClockApiFactory factory) : IClassFixture<
         var job = await JobAsync(grown);
         Assert.Equal(ExportJobStatus.Failed, job.Status);
         Assert.Equal(ErrorCodes.ReportsExportTooLarge, job.LastError);
+    }
+
+    [Fact]
+    public async Task A_creator_with_a_full_export_queue_gets_409_until_one_finishes_while_others_can_still_queue()
+    {
+        var world = await SeedAsync();
+        var admin = await LoginAsync(world.Admin.Email);
+        var desk = await LoginAsync(world.Desk.Email);
+        var queued = new List<Guid>();
+        for (var i = 0; i < ReportExportLimits.MaxQueuedPerUser; i++)
+        {
+            queued.Add(await RequestAsync(admin));
+        }
+
+        using (var full = await admin.PostAsync($"{ExportsPath}?{VolumeQuery}"))
+        {
+            Assert.Equal(HttpStatusCode.Conflict, full.StatusCode);
+            Assert.Equal(ErrorCodes.ReportsExportQueueFull, await ApiClient.ReadCodeAsync(full));
+        }
+
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            Assert.Equal(ReportExportLimits.MaxQueuedPerUser, await db.ExportJobs.CountAsync(j => j.CreatedBy == world.Admin.Id, Ct));
+        }
+
+        await RequestAsync(desk);
+
+        // Once the queued jobs are finished (ready), the creator can queue again.
+        Assert.Equal(ReportExportLimits.MaxQueuedPerUser + 1, await RunAsync(factory.Services));
+        await RequestAsync(admin);
     }
 
     [Fact]

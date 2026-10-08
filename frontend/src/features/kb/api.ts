@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { api, unwrap } from '../../shared/api/client';
 import type { components } from '../../shared/api/schema';
+import { FIRST_PAGE } from '../../shared/lib/pageParam';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
 
 type Schemas = components['schemas'];
@@ -20,7 +21,7 @@ export const ARTICLE_LIMITS = { title: 200, summary: 500, body: 50_000 } as cons
 
 export const ARTICLE_PAGE_SIZE = 20;
 export const PICKER_PAGE_SIZE = 20;
-export const FIRST_PAGE = 1;
+export { FIRST_PAGE };
 const PICKER_SEARCH_DEBOUNCE_MS = 300;
 
 export const kbKeys = {

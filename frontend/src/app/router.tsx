@@ -1,6 +1,5 @@
 import { Navigate, Outlet, type RouteObject } from 'react-router';
 
-import { AdminLayout } from '../features/admin/AdminLayout';
 import { ChangePasswordPage } from '../features/auth/ChangePasswordPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { RequireRole, RequireSession } from '../features/auth/guards';
@@ -90,23 +89,29 @@ export const routes: RouteObject[] = [
         path: ROUTES.admin,
         element: (
           <RequireRole roles={ADMIN_ONLY}>
-            <AdminLayout />
+            <Outlet />
           </RequireRole>
         ),
         children: [
-          { index: true, element: <Navigate to={ROUTES.adminUsers} replace /> },
-          { path: ROUTES.adminUsers, lazy: async () => ({ Component: (await import('../features/admin/users/UsersPage')).UsersPage }) },
-          { path: ROUTES.adminDepartments, lazy: async () => ({ Component: (await import('../features/admin/departments/DepartmentsPage')).DepartmentsPage }) },
-          { path: ROUTES.adminLocations, lazy: async () => ({ Component: (await import('../features/admin/locations/LocationsPage')).LocationsPage }) },
-          { path: ROUTES.adminTeams, lazy: async () => ({ Component: (await import('../features/admin/teams/TeamsPage')).TeamsPage }) },
-          { path: ROUTES.adminCategories, lazy: async () => ({ Component: (await import('../features/admin/catalog/CategoriesPage')).CategoriesPage }) },
-          { path: ROUTES.adminRequestTypes, lazy: async () => ({ Component: (await import('../features/admin/catalog/RequestTypesPage')).RequestTypesPage }) },
-          { path: ROUTES.adminEmailTemplates, lazy: async () => ({ Component: (await import('../features/admin/email/EmailTemplatesPage')).EmailTemplatesPage }) },
-          { path: ROUTES.adminEmailDeliveries, lazy: async () => ({ Component: (await import('../features/admin/email/EmailDeliveriesPage')).EmailDeliveriesPage }) },
-          { path: ROUTES.adminSlaCalendar, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaCalendarPage')).SlaCalendarPage }) },
-          { path: ROUTES.adminSlaPolicy, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaPolicyPage')).SlaPolicyPage }) },
-          { path: ROUTES.adminSystem, lazy: async () => ({ Component: (await import('../features/admin/system/SystemPage')).SystemPage }) },
-          { path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
+          {
+            // Lazy like the admin pages: a static import would put the whole feature-admin chunk on every page's preload list.
+            lazy: async () => ({ Component: (await import('../features/admin/AdminLayout')).AdminLayout }),
+            children: [
+              { index: true, element: <Navigate to={ROUTES.adminUsers} replace /> },
+              { path: ROUTES.adminUsers, lazy: async () => ({ Component: (await import('../features/admin/users/UsersPage')).UsersPage }) },
+              { path: ROUTES.adminDepartments, lazy: async () => ({ Component: (await import('../features/admin/departments/DepartmentsPage')).DepartmentsPage }) },
+              { path: ROUTES.adminLocations, lazy: async () => ({ Component: (await import('../features/admin/locations/LocationsPage')).LocationsPage }) },
+              { path: ROUTES.adminTeams, lazy: async () => ({ Component: (await import('../features/admin/teams/TeamsPage')).TeamsPage }) },
+              { path: ROUTES.adminCategories, lazy: async () => ({ Component: (await import('../features/admin/catalog/CategoriesPage')).CategoriesPage }) },
+              { path: ROUTES.adminRequestTypes, lazy: async () => ({ Component: (await import('../features/admin/catalog/RequestTypesPage')).RequestTypesPage }) },
+              { path: ROUTES.adminEmailTemplates, lazy: async () => ({ Component: (await import('../features/admin/email/EmailTemplatesPage')).EmailTemplatesPage }) },
+              { path: ROUTES.adminEmailDeliveries, lazy: async () => ({ Component: (await import('../features/admin/email/EmailDeliveriesPage')).EmailDeliveriesPage }) },
+              { path: ROUTES.adminSlaCalendar, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaCalendarPage')).SlaCalendarPage }) },
+              { path: ROUTES.adminSlaPolicy, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaPolicyPage')).SlaPolicyPage }) },
+              { path: ROUTES.adminSystem, lazy: async () => ({ Component: (await import('../features/admin/system/SystemPage')).SystemPage }) },
+              { path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
+            ],
+          },
         ],
       },
     ],

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router';
 
+import { readPageParam } from '../../shared/lib/pageParam';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
 import { articlePath, ROUTES } from '../../shared/routes';
 import { Pagination } from '../../shared/ui/Pagination';
@@ -13,7 +14,6 @@ import {
   ARTICLE_PAGE_SIZE,
   ARTICLE_STATUSES,
   ARTICLE_VISIBILITIES,
-  FIRST_PAGE,
   useArticleCategories,
   useArticles,
   type ArticleListItem,
@@ -54,7 +54,7 @@ export function KnowledgeListPage() {
   const categoryId = params.get(PARAM.category) ?? '';
   const status = staff ? asStatus(params.get(PARAM.status) ?? '') : '';
   const visibility = staff ? asVisibility(params.get(PARAM.visibility) ?? '') : '';
-  const page = Math.max(FIRST_PAGE, Number(params.get(PARAM.page)) || FIRST_PAGE);
+  const page = readPageParam(params.get(PARAM.page));
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
 
   const categories = useArticleCategories();
@@ -121,7 +121,12 @@ export function KnowledgeListPage() {
       {articles.data && articles.data.items.length === 0 && <EmptyState message={t('list.empty')} />}
       {articles.data && articles.data.items.length > 0 && (
         <>
-          <ul aria-label={t('list.caption')} className="flex flex-col gap-3">
+          {/* keepPreviousData shows the last result while the next one loads: mark it busy and dim it, as reports do. */}
+          <ul
+            aria-label={t('list.caption')}
+            aria-busy={articles.isPlaceholderData}
+            className={`flex flex-col gap-3 transition-opacity ${articles.isPlaceholderData ? 'opacity-60' : ''}`}
+          >
             {articles.data.items.map((article) => (
               <ArticleCard key={article.id} article={article} staff={staff} />
             ))}

@@ -27,7 +27,7 @@ describe('ArticlePage', () => {
     renderRoute(`/kb/${ARTICLE_ID}`);
 
     expect(await screen.findByRole('heading', { level: 1, name: ARTICLE.title })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'Adımlar' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Adımlar' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Düzenle' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Yayınla' })).not.toBeInTheDocument();
     expect(screen.queryByText('Sürüm geçmişi')).not.toBeInTheDocument();

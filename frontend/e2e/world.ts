@@ -61,6 +61,8 @@ export interface World {
   itPassword: string;
   requestTypeName: string;
   assetTag: string;
+  /** Unique per seed, so a report filtered by it counts only this world's tickets. */
+  departmentName: string;
 }
 
 /**
@@ -96,7 +98,38 @@ export async function seedWorld(admin: Session): Promise<World> {
     itPassword: String(it.temporaryPassword),
     requestTypeName,
     assetTag,
+    departmentName: String(department.name),
   };
+}
+
+export type ArticleVisibility = 'employees' | 'internal';
+
+export interface SeededArticle {
+  id: string;
+  title: string;
+}
+
+/** Creates and publishes an article as the session's user (IT staff or admin). */
+export async function seedPublishedArticle(author: Session, title: string, visibility: ArticleVisibility): Promise<SeededArticle> {
+  const request = author.context.request;
+  const created = await send(request, 'POST', '/api/v1/kb/articles', { title, summary: `${title} özeti`, body: `${title} adımları`, categoryId: null, visibility });
+  await send(request, 'POST', `/api/v1/kb/articles/${String(created.id)}/publish`, { version: created.version });
+  return { id: String(created.id), title };
+}
+
+/** Opens incidents as the session's user (the requester) and returns their numbers, oldest first. */
+export async function seedIncidents(requester: Session, subjects: readonly string[]): Promise<string[]> {
+  const numbers: string[] = [];
+  for (const subject of subjects) {
+    const ticket = await send(requester.context.request, 'POST', '/api/v1/tickets/incidents', { subject, description: subject, categoryId: null, locationId: null });
+    numbers.push(String(ticket.number));
+  }
+  return numbers;
+}
+
+/** Queues a background export of a report figure's rows as the session's user; the query matches the drill-down URL. */
+export async function requestBackgroundExport(session: Session, query: URLSearchParams): Promise<void> {
+  await send(session.context.request, 'POST', `/api/v1/reports/exports?${query.toString()}`, undefined);
 }
 
 const PICKUP_ENV = 'E2E_EMAIL_PICKUP_FOLDER';

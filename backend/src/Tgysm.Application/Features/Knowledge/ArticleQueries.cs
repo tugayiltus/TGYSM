@@ -20,7 +20,9 @@ internal static class ArticleQueries
     public static async Task<UserRole> RoleOfAsync(IAppDbContext db, ICurrentActor actor, CancellationToken cancellationToken)
     {
         var userId = actor.UserId ?? throw new AuthenticationFailedException();
-        return await db.Users.Where(u => u.Id == userId).Select(u => u.Role).SingleAsync(cancellationToken);
+        // A user removed after the session check is treated like a rejected session (401), not as a server error.
+        return await db.Users.Where(u => u.Id == userId).Select(u => (UserRole?)u.Role).SingleOrDefaultAsync(cancellationToken)
+            ?? throw new AuthenticationFailedException();
     }
 
     /// <summary>Name of an existing active category, or a field error on <c>categoryId</c>.</summary>

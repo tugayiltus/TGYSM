@@ -161,14 +161,14 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
           onChange={(event) => change({ visibility: event.target.value as ArticleVisibility })}
         />
       </div>
-      <div role="tablist" aria-label={t('editor.tabs')} className="flex gap-2">
+      {/* Two toggle buttons, not a tablist: a tab pattern would also need arrow-key focus and tabpanel wiring. */}
+      <div role="group" aria-label={t('editor.tabs')} className="flex gap-2">
         {(['write', 'preview'] as const).map((name) => (
           <button
             key={name}
             type="button"
-            role="tab"
-            aria-selected={tab === name}
-            className="min-h-11 rounded-lg px-3 text-sm font-medium aria-selected:bg-brand-50 aria-selected:text-brand-900"
+            aria-pressed={tab === name}
+            className="min-h-11 rounded-lg px-3 text-sm font-medium aria-pressed:bg-brand-50 aria-pressed:text-brand-900"
             onClick={() => setTab(name)}
           >
             {t(`editor.${name}`)}

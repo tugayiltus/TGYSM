@@ -111,4 +111,6 @@ public static class ErrorCodes
     public const string ReportsExportTooLarge = "reports.export_too_large";
     public const string ReportsExportNotReady = "reports.export_not_ready";
     public const string ReportsExportExpired = "reports.export_expired";
+    public const string ReportsExportAttemptsExhausted = "reports.export_attempts_exhausted";
+    public const string ReportsExportQueueFull = "reports.export_queue_full";
 }

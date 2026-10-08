@@ -1,13 +1,49 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { kbRoutes } from '../../test/kbData';
+import { kbRoutes, LIST_ARTICLE, paged } from '../../test/kbData';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
 const articleCalls = (api: ReturnType<typeof mockApi>) => api.calls.filter((c) => c.method === 'GET' && new URL(c.url).pathname === '/api/v1/kb/articles');
 
 describe('KnowledgeListPage', () => {
+  it.each(['1.5', 'Infinity', '1e21'])('asks for the first page when the URL page is %s', async (value) => {
+    const api = mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME }, ...kbRoutes() });
+    renderRoute(`/kb?page=${value}`);
+
+    await screen.findByRole('link', { name: LIST_ARTICLE.title });
+    for (const call of articleCalls(api)) {
+      expect(new URL(call.url).searchParams.get('page')).toBe('1');
+    }
+  });
+
+  it('marks the list busy while the next result loads', async () => {
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME },
+      ...kbRoutes(),
+      'GET /api/v1/kb/articles': (async (request: Request) => {
+        if (new URL(request.url).searchParams.get('search')) {
+          await gate;
+        }
+        return { status: 200, body: paged([LIST_ARTICLE]) };
+      }) as never,
+    });
+    const { user } = renderRoute('/kb');
+
+    const list = await screen.findByRole('list', { name: 'Makaleler' });
+    expect(list).toHaveAttribute('aria-busy', 'false');
+    await user.type(screen.getByLabelText('Makalelerde ara'), 'vpn');
+
+    await waitFor(() => expect(screen.getByRole('list', { name: 'Makaleler' })).toHaveAttribute('aria-busy', 'true'));
+    release();
+    await waitFor(() => expect(screen.getByRole('list', { name: 'Makaleler' })).toHaveAttribute('aria-busy', 'false'));
+  });
+
   it('shows articles to an employee without status filter or the new-article button', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME }, ...kbRoutes() });
     renderRoute('/kb');

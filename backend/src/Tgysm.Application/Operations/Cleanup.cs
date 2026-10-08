@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Reports;
@@ -16,9 +17,12 @@ public sealed record CleanupResult(int PasswordTokens, int OutboxEvents, int Hea
 /// have deliveries, so they are removed once old whatever their status, except while still pending. Ready export files whose
 /// lifetime is over (ADR-0020) are deleted from the file store and their jobs marked <see cref="ExportJobStatus.Expired"/>.
 /// </summary>
-public sealed class CleanupHandler(IAppDbContext db, IFileStore files, TimeProvider clock)
+public sealed class CleanupHandler(IAppDbContext db, IFileStore files, TimeProvider clock, ILogger<CleanupHandler> logger)
 {
     public static readonly TimeSpan Retention = TimeSpan.FromDays(30);
+
+    /// <summary>Expired export jobs loaded and saved per round, so a backlog never loads every job at once.</summary>
+    public const int ExportExpiryBatchSize = 100;
 
     public async Task<CleanupResult> HandleAsync(CancellationToken cancellationToken)
     {
@@ -54,24 +58,58 @@ public sealed class CleanupHandler(IAppDbContext db, IFileStore files, TimeProvi
     /// <summary>
     /// Deletes the file before marking the job: a crash in between leaves a ready job without a file (its download answers 410 and the
     /// next run marks it), never a file no job points at. The save is xmin-guarded, so two cleanup runs cannot both mark a job.
+    /// Works in rounds of <see cref="ExportExpiryBatchSize"/>. A file that cannot be deleted is logged and its job stays ready (so a
+    /// later run retries it); the other jobs still expire.
     /// </summary>
     private async Task<int> ExpireExportsAsync(CancellationToken cancellationToken)
     {
         var now = clock.GetUtcNow();
-        var expired = await db.ExportJobs
-            .Where(j => j.Status == ExportJobStatus.Ready && j.ExpiresAt <= now)
-            .ToListAsync(cancellationToken);
-        foreach (var job in expired)
+        var undeletable = new List<Guid>();
+        var expiredCount = 0;
+        while (true)
         {
-            if (job.FileKey is { } key)
+            var batch = await db.ExportJobs
+                .Where(j => j.Status == ExportJobStatus.Ready && j.ExpiresAt <= now && !undeletable.Contains(j.Id))
+                .OrderBy(j => j.ExpiresAt).ThenBy(j => j.Id)
+                .Take(ExportExpiryBatchSize)
+                .ToListAsync(cancellationToken);
+            foreach (var job in batch)
             {
-                files.Delete(key);
+                if (TryDeleteFile(job))
+                {
+                    job.Expire(now);
+                    expiredCount++;
+                }
+                else
+                {
+                    undeletable.Add(job.Id);
+                }
             }
 
-            job.Expire(now);
+            await db.SaveChangesAsync(cancellationToken);
+            if (batch.Count < ExportExpiryBatchSize)
+            {
+                return expiredCount;
+            }
+        }
+    }
+
+    private bool TryDeleteFile(ExportJob job)
+    {
+        if (job.FileKey is not { } key)
+        {
+            return true;
         }
 
-        await db.SaveChangesAsync(cancellationToken);
-        return expired.Count;
+        try
+        {
+            files.Delete(key);
+            return true;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Deleting the file of expired export job {JobId} failed; the job stays ready until a later run.", job.Id);
+            return false;
+        }
     }
 }

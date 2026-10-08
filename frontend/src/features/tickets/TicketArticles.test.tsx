@@ -93,4 +93,29 @@ describe('TicketArticles', () => {
 
     await waitFor(() => expect(deleted).toBe(true));
   });
+
+  it('clears an earlier unlink error once a later link succeeds', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: IT_ME },
+      ...detailRoutes({ ...INCIDENT, canWork: true }),
+      ...kbRoutes([LIST_ARTICLE]),
+      [`GET ${ARTICLES_ROUTE}`]: { status: 200, body: [INTERNAL] },
+      [`DELETE ${ARTICLES_ROUTE}/${INTERNAL.articleId}`]: { status: 404, body: { code: 'not_found' } },
+      [`POST ${ARTICLES_ROUTE}`]: { status: 200, body: [INTERNAL, LINKED] },
+    } as never);
+    const { user } = renderRoute(`/tickets/${INCIDENT.number}`);
+
+    await user.click(await screen.findByRole('button', { name: `Bağlantıyı kaldır ${INTERNAL.title}` }));
+    const unlinkError = await screen.findByRole('alert');
+
+    await user.click(screen.getByRole('button', { name: 'Makale bağla' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.selectOptions(await within(dialog).findByLabelText('Makale'), LIST_ARTICLE.title);
+    await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
+
+    expect(await screen.findByRole('link', { name: LINKED.title })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(unlinkError).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });
