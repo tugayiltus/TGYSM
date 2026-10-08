@@ -70,6 +70,20 @@ export const routes: RouteObject[] = [
               { path: `${ROUTES.assets}/:id`, lazy: async () => ({ Component: (await import('../features/assets/AssetDetailPage')).AssetDetailPage }) },
             ],
           },
+          {
+            // Employees never see the entry; a direct URL shows the 403 page instead of silently going home.
+            element: (
+              <RequireRole roles={IT_STAFF_OR_ADMIN} forbidden>
+                <Outlet />
+              </RequireRole>
+            ),
+            children: [
+              { path: ROUTES.reports, lazy: async () => ({ Component: (await import('../features/reports/ReportsPage')).ReportsIndexRedirect }) },
+              { path: ROUTES.reportExports, lazy: async () => ({ Component: (await import('../features/reports/MyExportsPage')).MyExportsPage }) },
+              { path: `${ROUTES.reports}/:report`, lazy: async () => ({ Component: (await import('../features/reports/ReportsPage')).ReportsPage }) },
+              { path: `${ROUTES.reports}/:report/list`, lazy: async () => ({ Component: (await import('../features/reports/DrilldownPage')).DrilldownPage }) },
+            ],
+          },
         ],
       },
       {

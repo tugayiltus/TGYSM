@@ -15,6 +15,8 @@ function MainLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation('auth');
   const { t: ta } = useTranslation('assets');
   const { t: tt } = useTranslation('tickets');
+  const { t: tk } = useTranslation('kb');
+  const { t: tr } = useTranslation('reports');
   const me = useSession();
   const links = [
     { to: ROUTES.tickets, label: tt('nav.tickets'), visible: true },
@@ -22,6 +24,8 @@ function MainLinks({ onNavigate }: { onNavigate?: () => void }) {
     { to: ROUTES.approvals, label: tt('nav.approvals'), visible: me.role === 'admin' },
     { to: ROUTES.myAssets, label: ta('nav.mine'), visible: true },
     { to: ROUTES.assets, label: ta('nav.inventory'), visible: isItStaffOrAdmin(me.role) },
+    { to: ROUTES.kb, label: tk('nav.kb'), visible: true },
+    { to: ROUTES.reports, label: tr('nav.reports'), visible: isItStaffOrAdmin(me.role) },
     { to: ROUTES.profile, label: t('shell.profile'), visible: true },
     { to: ROUTES.admin, label: t('shell.admin'), visible: me.role === 'admin' },
   ];

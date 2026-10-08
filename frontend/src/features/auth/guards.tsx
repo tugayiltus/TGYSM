@@ -2,6 +2,7 @@ import type { PropsWithChildren } from 'react';
 import { Navigate, useLocation } from 'react-router';
 
 import { ROUTES } from '../../shared/routes';
+import { ForbiddenPage } from '../../shared/ui/ForbiddenPage';
 import { ErrorState, LoadingState } from '../../shared/ui/States';
 
 import { useMe, type Role } from './api';
@@ -26,10 +27,11 @@ export function RequireSession({ children }: PropsWithChildren) {
   return <SessionContext value={me.data}>{children}</SessionContext>;
 }
 
-export function RequireRole({ roles, children }: PropsWithChildren<{ roles: readonly Role[] }>) {
+/** Other roles go home, or see the 403 page when `forbidden` is set (pages whose entry they never see, e.g. reports). */
+export function RequireRole({ roles, forbidden = false, children }: PropsWithChildren<{ roles: readonly Role[]; forbidden?: boolean }>) {
   const me = useSession();
   if (!roles.includes(me.role)) {
-    return <Navigate to={ROUTES.home} replace />;
+    return forbidden ? <ForbiddenPage /> : <Navigate to={ROUTES.home} replace />;
   }
   return children;
 }

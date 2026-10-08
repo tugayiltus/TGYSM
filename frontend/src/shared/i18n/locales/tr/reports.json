@@ -1,0 +1,161 @@
+{
+  "nav": {
+    "reports": "Raporlar"
+  },
+  "page": {
+    "title": "Raporlar",
+    "tabs": "Rapor türleri",
+    "myExports": "Dışa aktarımlarım",
+    "unknown": "Böyle bir rapor yok.",
+    "empty": "Bu rapor için gösterilecek sonuç yok."
+  },
+  "tabs": {
+    "incidents": "Olaylar",
+    "requests": "Talepler",
+    "operations": "Operasyon",
+    "transfers": "Transferler",
+    "assets": "Varlıklar",
+    "warranty": "Garanti"
+  },
+  "scope": {
+    "all": "Kapsam: tüm kayıtlar",
+    "teams": "Kapsam: yalnızca ekiplerinizin kayıtları"
+  },
+  "filters": {
+    "label": "Rapor filtreleri",
+    "from": "Başlangıç tarihi",
+    "to": "Bitiş tarihi",
+    "kind": "Kayıt türü",
+    "priority": "Öncelik",
+    "categoryId": "Kategori",
+    "teamId": "Ekip",
+    "assigneeId": "Atanan kişi",
+    "departmentId": "Departman",
+    "locationId": "Lokasyon",
+    "status": "Durum",
+    "slaState": "SLA durumu",
+    "assetType": "Varlık türü",
+    "assetStatus": "Varlık durumu",
+    "all": "Tümü",
+    "clear": "Filtreleri temizle"
+  },
+  "slaStates": {
+    "met": "Karşılandı",
+    "breached": "İhlal edildi",
+    "open_breached": "Açık ve ihlal edilmiş",
+    "at_risk": "Risk altında"
+  },
+  "metrics": {
+    "volume": "Açılan kayıt",
+    "first_response_time": "İlk yanıt süresi",
+    "resolution_time": "Çözüm süresi",
+    "mttr": "Ortalama çözüm süresi (MTTR)",
+    "open_backlog": "Açık olay birikimi (gün)",
+    "sla_compliance": "SLA uyumu",
+    "excluded_outcomes": "SLA dışı kapananlar",
+    "fulfilment_time": "Karşılama süresi",
+    "approval_wait": "Onay bekleme süresi",
+    "rejection_rate": "Ret oranı",
+    "team_load": "Ekip yükü (açık kayıtlar)",
+    "assignee_load": "Kişi yükü (açık kayıtlar)",
+    "by_category": "Kategoriye göre",
+    "by_location": "Lokasyona göre",
+    "by_department": "Departmana göre",
+    "hold_reasons": "Bekletme nedenleri",
+    "team_completed": "Ekibe göre tamamlanan",
+    "transfer_count": "Transfer sayısı",
+    "transfer_rate": "Transfer oranı",
+    "reassignments": "Yeniden atamalar",
+    "incident_to_request": "Olaydan açılan talepler",
+    "by_type": "Türe göre",
+    "by_status": "Duruma göre",
+    "active_assignments": "Aktif zimmetler",
+    "stock": "Stoktaki varlıklar",
+    "maintenance_lost_retired": "Bakım, kayıp ve hurda",
+    "expired": "Garantisi bitmiş",
+    "expiring": "Garantisi bitecek",
+    "no_warranty_date": "Garanti tarihi girilmemiş"
+  },
+  "buckets": {
+    "0-1": "0–1 gün",
+    "2-3": "2–3 gün",
+    "4-7": "4–7 gün",
+    "8+": "8 gün ve üzeri",
+    "none": "Belirtilmemiş",
+    "unassigned": "Atanmamış",
+    "cancelled": "İptal edildi",
+    "approval_rejected": "Onay reddedildi",
+    "service_request_required": "Hizmet talebi gerekli"
+  },
+  "figure": {
+    "noData": "Veri yok",
+    "ratio": "{{numerator}} / {{denominator}}",
+    "calendar": "Takvim süresi",
+    "sla": "SLA süresi (mesai)",
+    "sample": "{{count}} kayıt üzerinden",
+    "tickets": "{{count}} kayıt",
+    "assets": "{{count}} varlık",
+    "openList": "Listeyi aç",
+    "openDenominator": "Tümünü listele ({{count}})",
+    "buckets": "Dağılım",
+    "chartLoading": "Grafik yükleniyor…"
+  },
+  "duration": {
+    "daysHours": "{{days}} gün {{hours}} sa",
+    "hoursMinutes": "{{hours}} sa {{minutes}} dk",
+    "minutes": "{{minutes}} dk"
+  },
+  "drilldown": {
+    "back": "Rapora dön",
+    "caption": "Rapor satırları",
+    "empty": "Bu seçimde kayıt yok.",
+    "denominator": "tümü",
+    "missingMetric": "Listelenecek ölçü seçilmedi.",
+    "columns": {
+      "number": "Kayıt no",
+      "subject": "Konu",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "team": "Ekip",
+      "assignee": "Atanan",
+      "createdAt": "Açılış",
+      "assetTag": "Varlık etiketi",
+      "type": "Tür",
+      "device": "Marka / model",
+      "location": "Lokasyon",
+      "warrantyEndsOn": "Garanti bitişi"
+    }
+  },
+  "export": {
+    "button": "Excel'e aktar",
+    "tooLarge": "Bu liste anında indirilemeyecek kadar büyük. Dosya arka planda hazırlanabilir.",
+    "background": "Arka planda hazırla",
+    "queued": "Dışa aktarım arka planda hazırlanıyor.",
+    "queuedLink": "Dışa aktarımlarım"
+  },
+  "exports": {
+    "title": "Dışa aktarımlarım",
+    "caption": "Dışa aktarım işleri",
+    "empty": "Henüz bir dışa aktarım yok.",
+    "back": "Raporlara dön",
+    "download": "İndir",
+    "rows": "{{count}} satır",
+    "expiresAt": "Son indirme: {{date}}",
+    "columns": {
+      "report": "Rapor",
+      "metric": "Ölçü",
+      "status": "Durum",
+      "rows": "Satır",
+      "createdAt": "Oluşturulma",
+      "expiresAt": "Son indirme",
+      "actions": "İşlem"
+    },
+    "statuses": {
+      "pending": "Sırada",
+      "running": "Hazırlanıyor",
+      "ready": "Hazır",
+      "failed": "Başarısız",
+      "expired": "Süresi doldu"
+    }
+  }
+}

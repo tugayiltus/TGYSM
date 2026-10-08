@@ -47,5 +47,9 @@
     "title": "Geçici şifre",
     "description": "Bu şifre yalnızca bir kez gösterilir. Kullanıcıya güvenli bir yoldan iletin; ilk girişte değiştirmesi istenir.",
     "label": "Geçici şifre"
+  },
+  "forbidden": {
+    "title": "Bu sayfayı görme yetkiniz yok",
+    "back": "Ana sayfaya dön"
   }
 }

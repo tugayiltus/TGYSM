@@ -21,6 +21,7 @@ export const ERROR_CODES = {
   categoryNameTaken: 'categories.name_taken',
   categoryTooDeep: 'categories.too_deep',
   requestTypeNameTaken: 'request_types.name_taken',
+  reportExportTooLarge: 'reports.export_too_large',
 } as const;
 
 const NETWORK_STATUS = 0;

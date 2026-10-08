@@ -18,4 +18,15 @@ describe('AdminLayout', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Yönetim menüsü' })).not.toBeInTheDocument());
   });
+
+  it('links to the reports outside the admin panel', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      'GET /api/v1/admin/users': { status: 200, body: { items: [], page: 1, pageSize: 20, totalCount: 0 } },
+    });
+    renderRoute('/admin/users');
+
+    const nav = (await screen.findAllByRole('navigation', { name: 'Yönetim menüsü' }))[0] as HTMLElement;
+    expect(within(nav).getByRole('link', { name: 'Raporlar' })).toHaveAttribute('href', '/reports');
+  });
 });

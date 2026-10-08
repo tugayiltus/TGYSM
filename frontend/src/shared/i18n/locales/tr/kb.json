@@ -1,4 +1,7 @@
 {
+  "nav": {
+    "kb": "Bilgi Bankası"
+  },
   "home": {
     "card": "Nasıl Yapılır?",
     "cardDescription": "Sık karşılaşılan sorunların çözümlerini okuyun."

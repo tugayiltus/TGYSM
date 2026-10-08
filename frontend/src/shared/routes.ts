@@ -17,6 +17,8 @@ export const ROUTES = {
   workspace: '/workspace',
   workspaceQueue: '/workspace/queue',
   approvals: '/approvals',
+  reports: '/reports',
+  reportExports: '/reports/exports',
   admin: '/admin',
   adminUsers: '/admin/users',
   adminDepartments: '/admin/departments',
@@ -39,3 +41,8 @@ export const ticketPath = (number: string) => `${ROUTES.tickets}/${number}`;
 export const articlePath = (id: string) => `${ROUTES.kb}/${id}`;
 
 export const articleEditPath = (id: string) => `${ROUTES.kb}/${id}/edit`;
+
+export const reportPath = (report: string) => `${ROUTES.reports}/${report}`;
+
+/** Drill-down rows behind a report figure; metric, bucket and filters go in the query string. */
+export const reportListPath = (report: string) => `${ROUTES.reports}/${report}/list`;

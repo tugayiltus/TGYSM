@@ -36,6 +36,11 @@ function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
           </li>
         ))}
         <li className="mt-4 border-t border-slate-100 pt-4">
+          <NavLink to={ROUTES.reports} className={LINK_CLASS} onClick={onNavigate}>
+            {t('nav.reports')}
+          </NavLink>
+        </li>
+        <li>
           <NavLink to={ROUTES.home} end className={LINK_CLASS} onClick={onNavigate}>
             {t('nav.backToApp')}
           </NavLink>

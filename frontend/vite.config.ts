@@ -14,6 +14,9 @@ const FORWARDED_PROTO_HEADER = 'X-Forwarded-Proto';
 // react-markdown and its unified tree (remark/micromark/mdast/unist/hast and their small helpers).
 const MARKDOWN_PACKAGES =
   /node_modules[\\/](react-markdown|remark-[^\\/]+|micromark[^\\/]*|mdast-[^\\/]+|unist-[^\\/]+|hast-[^\\/]+|unified|vfile[^\\/]*|bail|trough|devlop|ccount|character-[^\\/]+|comma-separated-tokens|space-separated-tokens|decode-named-character-reference|estree-util-[^\\/]+|html-url-attributes|is-(alphabetical|alphanumerical|decimal|hexadecimal|plain-obj)|longest-streak|parse-entities|property-information|stringify-entities|trim-lines|zwitch)[\\/]/;
+// Recharts and the packages only it pulls in (d3 scales/shapes via victory-vendor, its redux store and helpers).
+const CHART_PACKAGES =
+  /node_modules[\\/](recharts|victory-vendor|d3-[^\\/]+|internmap|@reduxjs[\\/]toolkit|react-redux|redux|redux-thunk|reselect|immer|es-toolkit|decimal\.js-light|eventemitter3|tiny-invariant|clsx)[\\/]/;
 const apiProxy = { '/api': { target: API_TARGET, changeOrigin: false, headers: { [FORWARDED_PROTO_HEADER]: 'https' } } };
 
 export default defineConfig({
@@ -35,11 +38,14 @@ export default defineConfig({
             { name: 'vendor-forms', test: /node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/, priority: 90 },
             { name: 'vendor-i18n', test: /node_modules[\\/](i18next|react-i18next)[\\/]/, priority: 90 },
             { name: 'vendor-markdown', test: MARKDOWN_PACKAGES, priority: 90 },
+            { name: 'vendor-charts', test: CHART_PACKAGES, priority: 90 },
             { name: 'vendor-other', test: /node_modules/, priority: 10 },
             // App code; everything else falls to the entry chunk.
             { name: 'feature-admin', test: /[\\/]src[\\/]features[\\/]admin[\\/]/, priority: 40 },
             { name: 'feature-assets', test: /[\\/]src[\\/]features[\\/]assets[\\/]/, priority: 40 },
             { name: 'feature-kb', test: /[\\/]src[\\/]features[\\/]kb[\\/]/, priority: 40 },
+            // DistributionChart stays out so the chart code (and vendor-charts) loads only with the first distribution card.
+            { name: 'feature-reports', test: /[\\/]src[\\/]features[\\/]reports[\\/](?!DistributionChart)/, priority: 40 },
             { name: 'feature-tickets', test: /[\\/]src[\\/]features[\\/](tickets|workspace|approvals)[\\/]/, priority: 40 },
             { name: 'app-shared', test: /[\\/]src[\\/]shared[\\/]/, priority: 30 },
           ],

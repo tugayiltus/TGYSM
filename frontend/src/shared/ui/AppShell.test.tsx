@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
+import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
 describe('AppShell', () => {
@@ -26,5 +26,22 @@ describe('AppShell', () => {
     expect(within(drawer).queryByRole('link', { name: 'Envanter' })).not.toBeInTheDocument();
     await user.click(within(drawer).getByRole('link', { name: 'Zimmetlerim' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    { me: EMPLOYEE_ME, seesReports: false },
+    { me: IT_ME, seesReports: true },
+    { me: ADMIN_ME, seesReports: true },
+  ])('shows the knowledge base to $me.role and reports only to IT staff and admins', async ({ me, seesReports }) => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: me } });
+    renderRoute('/profile');
+
+    const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    expect(within(nav).getByRole('link', { name: 'Bilgi Bankası' })).toHaveAttribute('href', '/kb');
+    if (seesReports) {
+      expect(within(nav).getByRole('link', { name: 'Raporlar' })).toHaveAttribute('href', '/reports');
+    } else {
+      expect(within(nav).queryByRole('link', { name: 'Raporlar' })).not.toBeInTheDocument();
+    }
   });
 });
