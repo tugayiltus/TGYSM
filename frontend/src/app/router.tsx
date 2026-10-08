@@ -23,25 +23,25 @@ export const routes: RouteObject[] = [
       </RequireSession>
     ),
     children: [
-      { path: ROUTES.changePassword, element: <ChangePasswordPage /> },
+      { id: 'changePassword', path: ROUTES.changePassword, element: <ChangePasswordPage /> },
       {
         element: <AppShell />,
         children: [
-          { index: true, element: <HomePage /> },
-          { path: ROUTES.profile, element: <ProfilePage /> },
-          { path: ROUTES.tickets, lazy: async () => ({ Component: (await import('../features/tickets/MyTicketsPage')).MyTicketsPage }) },
-          { path: ROUTES.newIncident, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewIncidentPage }) },
-          { path: ROUTES.newRequest, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewRequestPage }) },
-          { path: `${ROUTES.tickets}/:number`, lazy: async () => ({ Component: (await import('../features/tickets/TicketDetailPage')).TicketDetailPage }) },
+          { id: 'home', index: true, element: <HomePage /> },
+          { id: 'profile', path: ROUTES.profile, element: <ProfilePage /> },
+          { id: 'myTickets', path: ROUTES.tickets, lazy: async () => ({ Component: (await import('../features/tickets/MyTicketsPage')).MyTicketsPage }) },
+          { id: 'newIncident', path: ROUTES.newIncident, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewIncidentPage }) },
+          { id: 'newRequest', path: ROUTES.newRequest, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewRequestPage }) },
+          { id: 'ticketDetail', path: `${ROUTES.tickets}/:number`, lazy: async () => ({ Component: (await import('../features/tickets/TicketDetailPage')).TicketDetailPage }) },
           {
             element: (
               <RequireRole roles={ADMIN_ONLY}>
                 <Outlet />
               </RequireRole>
             ),
-            children: [{ path: ROUTES.approvals, lazy: async () => ({ Component: (await import('../features/approvals/ApprovalsPage')).ApprovalsPage }) }],
+            children: [{ id: 'approvals', path: ROUTES.approvals, lazy: async () => ({ Component: (await import('../features/approvals/ApprovalsPage')).ApprovalsPage }) }],
           },
-          { path: ROUTES.kb, lazy: async () => ({ Component: (await import('../features/kb/KnowledgeListPage')).KnowledgeListPage }) },
+          { id: 'kbList', path: ROUTES.kb, lazy: async () => ({ Component: (await import('../features/kb/KnowledgeListPage')).KnowledgeListPage }) },
           {
             element: (
               <RequireRole roles={IT_STAFF_OR_ADMIN}>
@@ -49,12 +49,12 @@ export const routes: RouteObject[] = [
               </RequireRole>
             ),
             children: [
-              { path: ROUTES.kbNew, lazy: async () => ({ Component: (await import('../features/kb/ArticleEditorPage')).ArticleCreatePage }) },
-              { path: `${ROUTES.kb}/:id/edit`, lazy: async () => ({ Component: (await import('../features/kb/ArticleEditorPage')).ArticleEditPage }) },
+              { id: 'kbNew', path: ROUTES.kbNew, lazy: async () => ({ Component: (await import('../features/kb/ArticleEditorPage')).ArticleCreatePage }) },
+              { id: 'kbEdit', path: `${ROUTES.kb}/:id/edit`, lazy: async () => ({ Component: (await import('../features/kb/ArticleEditorPage')).ArticleEditPage }) },
             ],
           },
-          { path: `${ROUTES.kb}/:id`, lazy: async () => ({ Component: (await import('../features/kb/ArticlePage')).ArticlePage }) },
-          { path: ROUTES.myAssets, lazy: async () => ({ Component: (await import('../features/assets/MyAssetsPage')).MyAssetsPage }) },
+          { id: 'kbArticle', path: `${ROUTES.kb}/:id`, lazy: async () => ({ Component: (await import('../features/kb/ArticlePage')).ArticlePage }) },
+          { id: 'myAssets', path: ROUTES.myAssets, lazy: async () => ({ Component: (await import('../features/assets/MyAssetsPage')).MyAssetsPage }) },
           {
             element: (
               <RequireRole roles={IT_STAFF_OR_ADMIN}>
@@ -62,11 +62,11 @@ export const routes: RouteObject[] = [
               </RequireRole>
             ),
             children: [
-              { path: ROUTES.workspace, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).WorkspacePage }) },
-              { path: ROUTES.workspaceQueue, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).QueuePage }) },
-              { path: ROUTES.assets, lazy: async () => ({ Component: (await import('../features/assets/AssetsPage')).AssetsPage }) },
-              { path: ROUTES.assetImport, lazy: async () => ({ Component: (await import('../features/assets/AssetImportPage')).AssetImportPage }) },
-              { path: `${ROUTES.assets}/:id`, lazy: async () => ({ Component: (await import('../features/assets/AssetDetailPage')).AssetDetailPage }) },
+              { id: 'workspace', path: ROUTES.workspace, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).WorkspacePage }) },
+              { id: 'workspaceQueue', path: ROUTES.workspaceQueue, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).QueuePage }) },
+              { id: 'assets', path: ROUTES.assets, lazy: async () => ({ Component: (await import('../features/assets/AssetsPage')).AssetsPage }) },
+              { id: 'assetImport', path: ROUTES.assetImport, lazy: async () => ({ Component: (await import('../features/assets/AssetImportPage')).AssetImportPage }) },
+              { id: 'assetDetail', path: `${ROUTES.assets}/:id`, lazy: async () => ({ Component: (await import('../features/assets/AssetDetailPage')).AssetDetailPage }) },
             ],
           },
           {
@@ -77,10 +77,10 @@ export const routes: RouteObject[] = [
               </RequireRole>
             ),
             children: [
-              { path: ROUTES.reports, lazy: async () => ({ Component: (await import('../features/reports/ReportsPage')).ReportsIndexRedirect }) },
-              { path: ROUTES.reportExports, lazy: async () => ({ Component: (await import('../features/reports/MyExportsPage')).MyExportsPage }) },
-              { path: `${ROUTES.reports}/:report`, lazy: async () => ({ Component: (await import('../features/reports/ReportsPage')).ReportsPage }) },
-              { path: `${ROUTES.reports}/:report/list`, lazy: async () => ({ Component: (await import('../features/reports/DrilldownPage')).DrilldownPage }) },
+              { id: 'reports', path: ROUTES.reports, lazy: async () => ({ Component: (await import('../features/reports/ReportsPage')).ReportsIndexRedirect }) },
+              { id: 'reportExports', path: ROUTES.reportExports, lazy: async () => ({ Component: (await import('../features/reports/MyExportsPage')).MyExportsPage }) },
+              { id: 'report', path: `${ROUTES.reports}/:report`, lazy: async () => ({ Component: (await import('../features/reports/ReportsPage')).ReportsPage }) },
+              { id: 'reportList', path: `${ROUTES.reports}/:report/list`, lazy: async () => ({ Component: (await import('../features/reports/DrilldownPage')).DrilldownPage }) },
             ],
           },
         ],
@@ -97,19 +97,19 @@ export const routes: RouteObject[] = [
             // Lazy like the admin pages: a static import would put the whole feature-admin chunk on every page's preload list.
             lazy: async () => ({ Component: (await import('../features/admin/AdminLayout')).AdminLayout }),
             children: [
-              { index: true, element: <Navigate to={ROUTES.adminUsers} replace /> },
-              { path: ROUTES.adminUsers, lazy: async () => ({ Component: (await import('../features/admin/users/UsersPage')).UsersPage }) },
-              { path: ROUTES.adminDepartments, lazy: async () => ({ Component: (await import('../features/admin/departments/DepartmentsPage')).DepartmentsPage }) },
-              { path: ROUTES.adminLocations, lazy: async () => ({ Component: (await import('../features/admin/locations/LocationsPage')).LocationsPage }) },
-              { path: ROUTES.adminTeams, lazy: async () => ({ Component: (await import('../features/admin/teams/TeamsPage')).TeamsPage }) },
-              { path: ROUTES.adminCategories, lazy: async () => ({ Component: (await import('../features/admin/catalog/CategoriesPage')).CategoriesPage }) },
-              { path: ROUTES.adminRequestTypes, lazy: async () => ({ Component: (await import('../features/admin/catalog/RequestTypesPage')).RequestTypesPage }) },
-              { path: ROUTES.adminEmailTemplates, lazy: async () => ({ Component: (await import('../features/admin/email/EmailTemplatesPage')).EmailTemplatesPage }) },
-              { path: ROUTES.adminEmailDeliveries, lazy: async () => ({ Component: (await import('../features/admin/email/EmailDeliveriesPage')).EmailDeliveriesPage }) },
-              { path: ROUTES.adminSlaCalendar, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaCalendarPage')).SlaCalendarPage }) },
-              { path: ROUTES.adminSlaPolicy, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaPolicyPage')).SlaPolicyPage }) },
-              { path: ROUTES.adminSystem, lazy: async () => ({ Component: (await import('../features/admin/system/SystemPage')).SystemPage }) },
-              { path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
+              { id: 'adminOverview', index: true, element: <Navigate to={ROUTES.adminUsers} replace /> },
+              { id: 'adminUsers', path: ROUTES.adminUsers, lazy: async () => ({ Component: (await import('../features/admin/users/UsersPage')).UsersPage }) },
+              { id: 'adminDepartments', path: ROUTES.adminDepartments, lazy: async () => ({ Component: (await import('../features/admin/departments/DepartmentsPage')).DepartmentsPage }) },
+              { id: 'adminLocations', path: ROUTES.adminLocations, lazy: async () => ({ Component: (await import('../features/admin/locations/LocationsPage')).LocationsPage }) },
+              { id: 'adminTeams', path: ROUTES.adminTeams, lazy: async () => ({ Component: (await import('../features/admin/teams/TeamsPage')).TeamsPage }) },
+              { id: 'adminCategories', path: ROUTES.adminCategories, lazy: async () => ({ Component: (await import('../features/admin/catalog/CategoriesPage')).CategoriesPage }) },
+              { id: 'adminRequestTypes', path: ROUTES.adminRequestTypes, lazy: async () => ({ Component: (await import('../features/admin/catalog/RequestTypesPage')).RequestTypesPage }) },
+              { id: 'adminEmailTemplates', path: ROUTES.adminEmailTemplates, lazy: async () => ({ Component: (await import('../features/admin/email/EmailTemplatesPage')).EmailTemplatesPage }) },
+              { id: 'adminEmailDeliveries', path: ROUTES.adminEmailDeliveries, lazy: async () => ({ Component: (await import('../features/admin/email/EmailDeliveriesPage')).EmailDeliveriesPage }) },
+              { id: 'adminSlaCalendar', path: ROUTES.adminSlaCalendar, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaCalendarPage')).SlaCalendarPage }) },
+              { id: 'adminSlaPolicy', path: ROUTES.adminSlaPolicy, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaPolicyPage')).SlaPolicyPage }) },
+              { id: 'adminSystem', path: ROUTES.adminSystem, lazy: async () => ({ Component: (await import('../features/admin/system/SystemPage')).SystemPage }) },
+              { id: 'adminAudit', path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
             ],
           },
         ],

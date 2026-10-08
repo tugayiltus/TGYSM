@@ -19,3 +19,18 @@ body {
 .tgysm-combobox-list {
   max-height: 16rem;
 }
+
+// Breadcrumb items truncate instead of widening the page; the full text stays in `title` and the H1.
+.tgysm-crumb {
+  max-width: 12rem;
+}
+
+@media (min-width: 768px) {
+  .tgysm-crumb {
+    max-width: 20rem;
+  }
+}
+
+.tgysm-page-title:focus {
+  outline: none;
+}

@@ -19,7 +19,7 @@ export function RequireSession({ children }: PropsWithChildren) {
     return <ErrorState error={me.error} onRetry={() => void me.refetch()} />;
   }
   if (me.data === null) {
-    return <Navigate to={ROUTES.login} replace state={{ from: location.pathname }} />;
+    return <Navigate to={ROUTES.login} replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
   if (me.data.mustChangePassword && location.pathname !== ROUTES.changePassword) {
     return <Navigate to={ROUTES.changePassword} replace />;
