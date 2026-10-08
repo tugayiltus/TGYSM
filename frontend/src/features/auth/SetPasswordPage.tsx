@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields, translateErrorCode } from '../../shared/api/errorMessage';
 import { ApiError, ERROR_CODES } from '../../shared/api/errors';
+import { AuthCard } from '../../shared/layout/AuthCard';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
@@ -63,20 +64,19 @@ export function SetPasswordPage() {
       : null;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">{t('setPassword.title')}</h1>
+    <AuthCard>
+        <h1 className="h4 mb-0">{t('setPassword.title')}</h1>
         {done ? (
-          <div className="mt-6 flex flex-col gap-4">
-            <p role="status" className="rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
+          <div className="d-flex flex-column gap-3">
+            <p role="status" className="alert alert-success mb-0">
               {t('setPassword.success')}
             </p>
             <Button onClick={() => void navigate(ROUTES.login, { replace: true })}>{t('setPassword.toLogin')}</Button>
           </div>
         ) : (
           <>
-            <p className="mt-1 text-sm text-slate-600">{t('setPassword.description')}</p>
-            <form className="mt-6 flex flex-col gap-4" noValidate onSubmit={(event) => void onSubmit(event)}>
+            <p className="text-body-secondary mb-0">{t('setPassword.description')}</p>
+            <form className="d-flex flex-column gap-3" noValidate onSubmit={(event) => void onSubmit(event)}>
               <FormAlert message={alert} />
               <TextField
                 label={t('setPassword.new')}
@@ -91,14 +91,16 @@ export function SetPasswordPage() {
                 {t('setPassword.submit')}
               </Button>
               {(tokenMissing || tokenRejected) && (
-                <Link to={ROUTES.forgotPassword} className="text-center text-sm font-medium text-brand-900 underline">
+                <Link to={ROUTES.forgotPassword} className="text-center">
                   {t('setPassword.requestNew')}
                 </Link>
               )}
             </form>
           </>
         )}
-      </div>
-    </main>
+        <Link to={ROUTES.login} className="text-center">
+          {t('forgotPassword.backToLogin')}
+        </Link>
+    </AuthCard>
   );
 }

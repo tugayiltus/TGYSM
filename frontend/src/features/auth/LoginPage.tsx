@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { describeError, fieldError } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
+import { AuthCard } from '../../shared/layout/AuthCard';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
@@ -53,11 +54,12 @@ export function LoginPage() {
   const onSubmit = handleSubmit((values) => login.mutate(values));
 
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">{t('login.title')}</h1>
-        <p className="mt-1 text-sm text-slate-600">{t('login.subtitle')}</p>
-        <form className="mt-6 flex flex-col gap-4" noValidate onSubmit={(event) => void onSubmit(event)}>
+    <AuthCard>
+      <div>
+        <h1 className="h4 mb-1">{t('login.title')}</h1>
+        <p className="text-body-secondary mb-0">{t('login.subtitle')}</p>
+      </div>
+      <form className="d-flex flex-column gap-3" noValidate onSubmit={(event) => void onSubmit(event)}>
           <FormAlert message={login.error ? describeError(login.error) : null} />
           <TextField label={t('login.email')} type="email" autoComplete="username" error={fieldError(errors.email)} {...register('email')} />
           <TextField
@@ -71,11 +73,10 @@ export function LoginPage() {
           <Button type="submit" isLoading={login.isPending}>
             {t('login.submit')}
           </Button>
-          <Link to={ROUTES.forgotPassword} className="text-center text-sm font-medium text-brand-900 underline">
+          <Link to={ROUTES.forgotPassword} className="text-center">
             {t('login.forgotLink')}
           </Link>
         </form>
-      </div>
-    </main>
+    </AuthCard>
   );
 }

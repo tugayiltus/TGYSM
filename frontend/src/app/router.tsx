@@ -23,12 +23,12 @@ export const routes: RouteObject[] = [
       </RequireSession>
     ),
     children: [
-      { id: 'changePassword', path: ROUTES.changePassword, element: <ChangePasswordPage /> },
       {
         element: <AppLayout />,
         children: [
           { id: 'home', index: true, element: <HomePage /> },
           { id: 'profile', path: ROUTES.profile, element: <ProfilePage /> },
+          { id: 'changePassword', path: ROUTES.changePassword, element: <ChangePasswordPage /> },
           { id: 'myTickets', path: ROUTES.tickets, lazy: async () => ({ Component: (await import('../features/tickets/MyTicketsPage')).MyTicketsPage }) },
           { id: 'newIncident', path: ROUTES.newIncident, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewIncidentPage }) },
           { id: 'newRequest', path: ROUTES.newRequest, lazy: async () => ({ Component: (await import('../features/tickets/NewTicketPage')).NewRequestPage }) },

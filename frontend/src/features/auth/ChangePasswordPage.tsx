@@ -1,9 +1,12 @@
+import { CCard, CCardBody } from '@coreui/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../shared/api/errorMessage';
+import { AuthCard } from '../../shared/layout/AuthCard';
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
@@ -42,31 +45,45 @@ export function ChangePasswordPage() {
 
   const alert = changePassword.error && !isHandledByFields(changePassword.error, SERVER_FIELDS) ? describeError(changePassword.error) : null;
 
+  const form = (
+    <form className="d-flex flex-column gap-3" noValidate onSubmit={(event) => void onSubmit(event)}>
+      <FormAlert message={alert} />
+      <TextField label={t('changePassword.current')} type="password" autoComplete="current-password" error={fieldError(errors.currentPassword)} {...register('currentPassword')} />
+      <TextField
+        label={t('changePassword.new')}
+        type="password"
+        autoComplete="new-password"
+        hint={t('changePassword.hint')}
+        error={fieldError(errors.newPassword)}
+        {...register('newPassword')}
+      />
+      <TextField label={t('changePassword.confirm')} type="password" autoComplete="new-password" error={fieldError(errors.confirmPassword)} {...register('confirmPassword')} />
+      <Button type="submit" isLoading={changePassword.isPending}>
+        {t('changePassword.submit')}
+      </Button>
+    </form>
+  );
+
+  // Forced change: outside the app (no menu or breadcrumb to escape through); logout is the only way out.
+  if (me.mustChangePassword) {
+    return (
+      <AuthCard>
+        <h1 className="h4 mb-0">{t('changePassword.title')}</h1>
+        <p className="alert alert-info mb-0">{t('changePassword.requiredNotice')}</p>
+        {form}
+        <Button variant="ghost" isLoading={logout.isPending} onClick={() => logout.mutate(undefined, { onSuccess: () => void navigate(ROUTES.login, { replace: true }) })}>
+          {tc('actions.logout')}
+        </Button>
+      </AuthCard>
+    );
+  }
+
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">{t('changePassword.title')}</h1>
-        {me.mustChangePassword && <p className="mt-2 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">{t('changePassword.requiredNotice')}</p>}
-        <form className="mt-6 flex flex-col gap-4" noValidate onSubmit={(event) => void onSubmit(event)}>
-          <FormAlert message={alert} />
-          <TextField label={t('changePassword.current')} type="password" autoComplete="current-password" error={fieldError(errors.currentPassword)} {...register('currentPassword')} />
-          <TextField
-            label={t('changePassword.new')}
-            type="password"
-            autoComplete="new-password"
-            hint={t('changePassword.hint')}
-            error={fieldError(errors.newPassword)}
-            {...register('newPassword')}
-          />
-          <TextField label={t('changePassword.confirm')} type="password" autoComplete="new-password" error={fieldError(errors.confirmPassword)} {...register('confirmPassword')} />
-          <Button type="submit" isLoading={changePassword.isPending}>
-            {t('changePassword.submit')}
-          </Button>
-          <Button variant="ghost" isLoading={logout.isPending} onClick={() => logout.mutate(undefined, { onSuccess: () => void navigate(ROUTES.login, { replace: true }) })}>
-            {tc('actions.logout')}
-          </Button>
-        </form>
-      </div>
-    </main>
+    <>
+      <PageHeader />
+      <CCard className="tgysm-form-card">
+        <CCardBody>{form}</CCardBody>
+      </CCard>
+    </>
   );
 }

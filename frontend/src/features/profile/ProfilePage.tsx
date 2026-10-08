@@ -1,6 +1,8 @@
+import { CCard, CListGroup, CListGroupItem } from '@coreui/react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTES } from '../../shared/routes';
 import { useSession } from '../auth/session';
 
@@ -17,19 +19,24 @@ export function ProfilePage() {
   ];
 
   return (
-    <section className="flex max-w-xl flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('profile.title')}</h1>
-      <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
-        {rows.map((row) => (
-          <div key={row.label} className="flex flex-col gap-1 p-4 sm:flex-row sm:justify-between">
-            <dt className="text-sm text-slate-600">{row.label}</dt>
-            <dd className="font-medium break-words">{row.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <Link to={ROUTES.changePassword} className="self-start text-brand-700 underline">
-        {t('profile.changePassword')}
-      </Link>
-    </section>
+    <>
+      <PageHeader
+        actions={
+          <Link to={ROUTES.changePassword} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+            {t('profile.changePassword')}
+          </Link>
+        }
+      />
+      <CCard className="tgysm-form-card">
+        <CListGroup flush as="dl" className="mb-0">
+          {rows.map((row) => (
+            <CListGroupItem key={row.label} className="d-flex flex-column flex-sm-row justify-content-between gap-1">
+              <dt className="fw-normal text-body-secondary">{row.label}</dt>
+              <dd className="mb-0 fw-semibold text-break">{row.value}</dd>
+            </CListGroupItem>
+          ))}
+        </CListGroup>
+      </CCard>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Link, Outlet } from 'react-router';
 
 import { useSession } from '../../features/auth/session';
 import { ROUTES } from '../routes';
@@ -11,6 +11,10 @@ export function AppLayout() {
   const { t } = useTranslation();
   const { t: ta } = useTranslation('auth');
   const me = useSession();
+  // A forced password change shows only its own card: the menu would offer a way around it.
+  if (me.mustChangePassword) {
+    return <Outlet />;
+  }
   const areaSwitch =
     me.role === 'admin' ? (
       <Link to={ROUTES.admin} className="btn btn-ghost-secondary tgysm-touch d-inline-flex align-items-center">

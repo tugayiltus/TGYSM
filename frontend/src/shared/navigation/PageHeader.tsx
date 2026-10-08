@@ -28,13 +28,13 @@ export function PageHeader({ actions, titleOverride }: PageHeaderProps) {
   }, [pathname]);
 
   return (
-    <header className="mb-3">
+    <div className="mb-3">
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
         <h1 ref={headingRef} tabIndex={-1} className="h3 mb-0 text-break tgysm-page-title">
           {title}
         </h1>
         {actions !== undefined && <div className="d-flex flex-wrap gap-2">{actions}</div>}
       </div>
-    </header>
+    </div>
   );
 }
