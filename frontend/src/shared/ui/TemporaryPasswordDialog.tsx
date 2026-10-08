@@ -26,8 +26,8 @@ export function TemporaryPasswordDialog({ password, onClose }: { password: strin
       description={t('temporaryPassword.description')}
       footer={<Button onClick={onClose}>{t('actions.close')}</Button>}
     >
-      <p className="text-sm text-slate-600">{t('temporaryPassword.label')}</p>
-      <p data-testid="temporary-password" className="mt-1 rounded-lg bg-slate-100 p-3 font-mono text-lg break-all select-all">
+      <p className="small text-body-secondary mb-1">{t('temporaryPassword.label')}</p>
+      <p data-testid="temporary-password" className="rounded bg-body-tertiary p-3 font-monospace fs-5 text-break user-select-all mb-0">
         {password}
       </p>
       <Button variant="secondary" className="mt-3" onClick={() => void copy()}>

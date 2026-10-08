@@ -51,5 +51,8 @@
   "forbidden": {
     "title": "Bu sayfayı görme yetkiniz yok",
     "back": "Ana sayfaya dön"
+  },
+  "toast": {
+    "label": "Bildirimler"
   }
 }

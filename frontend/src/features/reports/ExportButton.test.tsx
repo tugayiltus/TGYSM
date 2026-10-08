@@ -57,8 +57,9 @@ describe('ExportButton', () => {
 
     await user.click(screen.getByRole('button', { name: 'Arka planda hazırla' }));
 
-    const status = await screen.findByRole('status');
-    expect(status).toHaveTextContent('Dışa aktarım arka planda hazırlanıyor.');
+    // The app-wide toast region is also a status; the export's own status is the one with this text.
+    const status = (await screen.findByText(/Dışa aktarım arka planda hazırlanıyor\./)).closest('[role="status"]');
+    expect(status).not.toBeNull();
     expect(screen.getByRole('link', { name: 'Dışa aktarımlarım' })).toHaveAttribute('href', '/reports/exports');
     expect(screen.queryByRole('button', { name: 'Arka planda hazırla' })).not.toBeInTheDocument();
     const query = new URL(callsTo(api, 'POST', '/api/v1/reports/exports')[0]?.url ?? '').searchParams;
