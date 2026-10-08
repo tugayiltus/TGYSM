@@ -14,8 +14,8 @@ Status legend: **Available** = implemented and tested; **Planned** = later phase
 | Email (Phase 4): worker host, transactional outbox, ticket notification events, admin-managed templates, sending with retry (SMTP or pickup folder), deliveries list and retry, password set links with forgot-password, `/admin/email-templates` and `/admin/email-deliveries` pages | Available (Phase 4) |
 | SLA (Phase 4): business calendar and holidays, versioned policy, SLA instances per ticket, monitor job with warning and breach events, `sla_risk` queue, SLA block on tickets, `/admin/sla/*` pages | Available (Phase 4) |
 | `/admin/system` worker status page, cleanup job | Available (Phase 4) |
-| Knowledge base: articles with visibility and status, revisions, Turkish-aware search, links to tickets, public-reply guard, `/kb*` pages, ticket article box and reply picker, "Bilgi Bankası" menu entry | Available (Phase 5, on branch `phase-5-knowledge-reports`, not merged) |
-| Reports: incident, request, operations, transfers, asset and warranty reports, drill-down rows, synchronous Excel export up to 5,000 rows, background export jobs up to 100,000 rows with download, `/reports*` pages, "Raporlar" menu entry | Available (Phase 5, on branch `phase-5-knowledge-reports`, not merged) |
+| Knowledge base: articles with visibility and status, revisions, Turkish-aware search, links to tickets, public-reply guard, `/kb*` pages, ticket article box and reply picker, "Bilgi Bankası" menu entry | Available (Phase 5) |
+| Reports: incident, request, operations, transfers, asset and warranty reports, drill-down rows, synchronous Excel export up to 5,000 rows, background export jobs up to 100,000 rows with download, `/reports*` pages, "Raporlar" menu entry | Available (Phase 5) |
 | Release (Phase 6) | Planned |
 
 ## Tech stack

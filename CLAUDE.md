@@ -1,6 +1,6 @@
 # TGYSM — ITSM web platform
 
-Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–4 done and merged to `master`. Phase 5 (knowledge base, reports, sync + background Excel export, reports UI, E2E) done on branch `phase-5-knowledge-reports`, not merged (plan `docs/superpowers/plans/2026-10-02-phase-5-knowledge-reports.md`). Next: Phase 6 (release). Requirements: `tgysm.md`.
+Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–5 done and merged to `master` (Phase 5: knowledge base, reports, sync + background Excel export, reports UI, E2E; plan `docs/superpowers/plans/2026-10-02-phase-5-knowledge-reports.md`). Next: Phase 6 (release). Requirements: `tgysm.md`.
 
 ## Stack & Architecture
 - **Backend:** .NET 10 modular monolith (ADR-0001) — `backend/src/Tgysm.Domain` (rules, no framework deps) → `Tgysm.Application` (handlers + FluentValidation, ports) → `Tgysm.Infrastructure` (EF Core + Npgsql, migrations) → `Tgysm.Api` (Minimal APIs, auth, CLI). `backend/src/Tgysm.Worker` (Generic Host, jobs `OutboxDispatcher`, `EmailSender`, `SlaMonitor`, `ExportRunner`, `Cleanup`, row leases; references Application + Infrastructure, never Api; ADR-0014/0015) runs next to the API. Solution: `backend/Tgysm.slnx`.
