@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { describeError } from '../../shared/api/errorMessage';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { PageCard } from '../../shared/ui/PageCard';
 
 import { ticketKeys, useTicketAction, type TicketDetail } from './api';
 import { TicketActionDialog, type DialogActionKind } from './TicketActionDialog';
@@ -55,10 +56,7 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
   }
 
   return (
-    <section aria-labelledby="ticket-actions" className="card card-body d-flex flex-column gap-2">
-      <h2 id="ticket-actions" className="h6 mb-0">
-        {t('actions.title')}
-      </h2>
+    <PageCard title={t('actions.title')} bodyClassName="d-flex flex-column gap-2">
       <FormAlert message={direct.error ? describeError(direct.error) : null} />
       <div className="d-flex flex-wrap gap-2">
         {actions.direct.map((kind) => (
@@ -81,6 +79,6 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
         ))}
       </div>
       {dialog !== null && <TicketActionDialog key={dialog} ticket={ticket} kind={dialog} onClose={() => setDialog(null)} />}
-    </section>
+    </PageCard>
   );
 }

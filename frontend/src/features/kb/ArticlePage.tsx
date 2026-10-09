@@ -1,3 +1,4 @@
+import CIcon from '@coreui/icons-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
@@ -6,9 +7,12 @@ import { formatDateTime } from '../../shared/lib/format';
 import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { useReturnTo } from '../../shared/navigation/returnTo';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { articleEditPath, ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { cilArrowLeft } from '../../shared/ui/icons';
+import { PageCard } from '../../shared/ui/PageCard';
 import { ErrorState, LoadingState } from '../../shared/ui/States';
 import { isItStaffOrAdmin, useSession } from '../auth/session';
 
@@ -54,41 +58,44 @@ function ArticleView({ article }: { article: ArticleDetail }) {
   return (
     <article className="d-flex flex-column gap-3">
       <PageHeader
+        icon={ROUTE_META.kbList.icon}
         titleOverride={article.title}
         actions={
-          <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+          <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
+            <CIcon icon={cilArrowLeft} aria-hidden="true" />
             {t('article.back')}
           </Link>
         }
       />
-      <div className="d-flex flex-column gap-2">
-        {staff && (
-          <div className="d-flex flex-wrap align-items-center gap-2">
-            <ArticleStatusBadge status={article.status} />
-            <ArticleVisibilityBadge visibility={article.visibility} />
-          </div>
-        )}
-        <p className="small text-body-secondary">
-          {[
-            article.categoryName,
-            `${t('article.author')}: ${article.authorName}`,
-            article.publishedAt ? `${t('article.publishedAt')}: ${formatDateTime(article.publishedAt)}` : null,
-            `${t('article.updatedAt')}: ${formatDateTime(article.updatedAt)}`,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-        {article.summary && <p className="text-break">{article.summary}</p>}
-      </div>
-      {staff && <StaffActions article={article} />}
-      <ArticleMarkdown body={article.body} />
+      <PageCard bodyClassName="d-flex flex-column gap-3">
+        <div className="d-flex flex-column gap-2">
+          {staff && (
+            <div className="d-flex flex-wrap align-items-center gap-2">
+              <ArticleStatusBadge status={article.status} />
+              <ArticleVisibilityBadge visibility={article.visibility} />
+            </div>
+          )}
+          <p className="small text-body-secondary mb-0">
+            {[
+              article.categoryName,
+              `${t('article.author')}: ${article.authorName}`,
+              article.publishedAt ? `${t('article.publishedAt')}: ${formatDateTime(article.publishedAt)}` : null,
+              `${t('article.updatedAt')}: ${formatDateTime(article.updatedAt)}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+          {article.summary && <p className="text-break mb-0 fw-medium">{article.summary}</p>}
+        </div>
+        {staff && <StaffActions article={article} />}
+        <div className="border-top pt-3">
+          <ArticleMarkdown body={article.body} />
+        </div>
+      </PageCard>
       {staff && (
-        <section aria-labelledby="article-revisions" className="d-flex flex-column gap-2">
-          <h2 id="article-revisions" className="fs-5 fw-semibold">
-            {t('article.revisions')}
-          </h2>
+        <PageCard title={t('article.revisions')}>
           <ArticleRevisions articleId={article.id} />
-        </section>
+        </PageCard>
       )}
     </article>
   );

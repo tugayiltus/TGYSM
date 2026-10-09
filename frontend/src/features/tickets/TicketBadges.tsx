@@ -14,8 +14,8 @@ const STATUS_CLASS: Record<TicketStatus, string> = {
 const PRIORITY_CLASS: Record<Priority, string> = {
   p1: 'bg-danger-subtle text-danger-emphasis border-danger-subtle',
   p2: 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
-  p3: 'bg-light text-body border',
-  p4: 'bg-light text-body-secondary border',
+  p3: 'bg-info-subtle text-info-emphasis border-info-subtle',
+  p4: 'bg-secondary-subtle text-secondary-emphasis border-secondary-subtle',
 };
 
 const BADGE_CLASS = 'badge rounded-pill border fw-medium';

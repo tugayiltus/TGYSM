@@ -27,6 +27,7 @@ export {
   cilMenu,
   cilMoon,
   cilNotes,
+  cilPencil,
   cilPeople,
   cilPlus,
   cilScreenDesktop,

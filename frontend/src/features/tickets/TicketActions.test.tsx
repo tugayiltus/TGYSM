@@ -202,3 +202,14 @@ describe('TicketActions', () => {
     expect(within(box).getByLabelText('Mesajınız')).toHaveValue('');
   });
 });
+
+describe('ticket detail look', () => {
+  it('shows every section as a titled card', async () => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: IT_ME }, ...detailRoutes(WORKABLE) });
+    renderRoute(`/tickets/${INCIDENT.number}`);
+    for (const name of ['İşlemler', 'SLA', 'Bağlı cihazlar', 'Geçmiş']) {
+      const region = await screen.findByRole('region', { name });
+      expect(region.querySelector('.card-header h2')).not.toBeNull();
+    }
+  });
+});

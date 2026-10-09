@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../shared/lib/format';
@@ -23,13 +23,13 @@ export function CommentList({ ticket, comments }: { ticket: TicketDetail; commen
   return (
     <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
       {comments.map((c) => (
-        <li key={c.id} className={`rounded border p-3 ${c.visibility === 'internal' ? 'border-warning-subtle bg-warning-subtle' : 'bg-body'}`}>
+        <li key={c.id} className={`rounded border p-3 ${c.visibility === 'internal' ? 'border-warning-subtle bg-warning-subtle' : 'bg-body-tertiary'}`}>
           <p className="mb-0 d-flex flex-wrap align-items-center gap-2 small">
             <span className="fw-medium">{c.authorName}</span>
             <time className="text-body-secondary" dateTime={c.createdAt}>
               {formatDateTime(c.createdAt)}
             </time>
-            {c.visibility === 'internal' && <span className="badge bg-warning text-dark">{t('detail.internal')}</span>}
+            {c.visibility === 'internal' && <span className="badge bg-warning-subtle text-warning-emphasis">{t('detail.internal')}</span>}
           </p>
           {c.body && <p className="mb-0 mt-1 tgysm-pre-wrap text-break">{c.body}</p>}
           {c.attachments.length > 0 && (
@@ -52,7 +52,6 @@ export function CommentList({ ticket, comments }: { ticket: TicketDetail; commen
 /** Reply box; people working on the ticket also get an internal-note tab (spec §3.7). */
 export function CommentBox({ ticket }: { ticket: TicketDetail }) {
   const { t } = useTranslation('tickets');
-  const titleId = useId();
   const add = useAddComment();
   const [visibility, setVisibility] = useState<Visibility>('public');
   const [body, setBody] = useState('');
@@ -73,17 +72,15 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
     );
 
   return (
+    // Inside the "Yazışmalar" card: the form keeps that name for screen readers and tests.
     <form
-      aria-labelledby={titleId}
-      className="d-flex flex-column gap-2 rounded-3 border bg-body p-3"
+      aria-label={t('detail.comments')}
+      className="d-flex flex-column gap-2 border-top pt-3"
       onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}
     >
-      <h2 id={titleId} className="fs-5 fw-semibold">
-        {t('detail.comments')}
-      </h2>
       {ticket.canWork && (
         <div role="tablist" aria-label={t('comment.tabs')} className="d-flex gap-2">
           {tabs.map((tab) => (

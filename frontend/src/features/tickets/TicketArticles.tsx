@@ -7,6 +7,7 @@ import { articlePath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { Dialog } from '../../shared/ui/Dialog';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { PageCard } from '../../shared/ui/PageCard';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 import { SelectField } from '../../shared/ui/SelectField';
 import { TextField } from '../../shared/ui/TextField';
@@ -60,15 +61,12 @@ export function TicketArticles({ ticket }: { ticket: TicketDetail }) {
   const items = articles.data ?? [];
 
   return (
-    <section aria-labelledby="ticket-articles" className="d-flex flex-column gap-2">
-      <h2 id="ticket-articles" className="fs-5 fw-semibold">
-        {t('ticket.title')}
-      </h2>
+    <PageCard title={t('ticket.title')} bodyClassName="d-flex flex-column gap-2">
       <FormAlert message={unlink.error ? describeError(unlink.error) : null} />
       {items.length === 0 && <p className="mb-0 text-body-secondary">{t('ticket.empty')}</p>}
       <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
         {items.map((a) => (
-          <li key={a.articleId} className="d-flex align-items-center justify-content-between gap-2 rounded border bg-body p-2">
+          <li key={a.articleId} className="d-flex align-items-center justify-content-between gap-2 rounded border bg-body-tertiary p-2">
             <span className="d-flex min-w-0 flex-column">
               <Link to={articlePath(a.articleId)} className="link-primary text-decoration-underline text-break">
                 {a.title}
@@ -99,6 +97,6 @@ export function TicketArticles({ ticket }: { ticket: TicketDetail }) {
           }}
         />
       )}
-    </section>
+    </PageCard>
   );
 }

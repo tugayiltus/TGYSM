@@ -8,6 +8,7 @@ import { ticketPath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { Dialog } from '../../shared/ui/Dialog';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { PageCard } from '../../shared/ui/PageCard';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 import { SelectField } from '../../shared/ui/SelectField';
 import { TextField } from '../../shared/ui/TextField';
@@ -130,15 +131,13 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
 
   return (
     <div className="row g-3">
-      <section aria-labelledby="ticket-assets" className="col-12 col-md-6 d-flex flex-column gap-2">
-        <h2 id="ticket-assets" className="fs-5 fw-semibold">
-          {t('detail.assets')}
-        </h2>
+      <div className="col-12 col-md-6">
+      <PageCard title={t('detail.assets')} className="h-100" bodyClassName="d-flex flex-column gap-2">
         <FormAlert message={unlink.error ? describeError(unlink.error) : null} />
         {(assets.data ?? []).length === 0 && <p className="mb-0 text-body-secondary">{t('detail.noAssets')}</p>}
         <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
           {(assets.data ?? []).map((a) => (
-            <li key={a.assetId} className="d-flex align-items-center justify-content-between gap-2 rounded border bg-body p-2">
+            <li key={a.assetId} className="d-flex align-items-center justify-content-between gap-2 rounded border bg-body-tertiary p-2">
               <span>{`${a.assetTag} · ${a.brand} ${a.model}`}</span>
               {ticket.canWork && open && (
                 <Button variant="ghost" aria-label={recordActionLabel(t('actions.unlinkAsset'), a.assetTag)} onClick={() => unlink.mutate(a.assetId)}>
@@ -153,11 +152,10 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
             {t('actions.linkAsset')}
           </Button>
         )}
-      </section>
-      <section aria-labelledby="ticket-related" className="col-12 col-md-6 d-flex flex-column gap-2">
-        <h2 id="ticket-related" className="fs-5 fw-semibold">
-          {t('detail.related')}
-        </h2>
+      </PageCard>
+      </div>
+      <div className="col-12 col-md-6">
+      <PageCard title={t('detail.related')} className="h-100" bodyClassName="d-flex flex-column gap-2">
         <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
           {ticket.relatedTickets.map((r) => (
             <li key={r.number} className="d-flex align-items-center justify-content-between gap-2">
@@ -173,7 +171,8 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
             {t('actions.relatedRequest')}
           </Button>
         )}
-      </section>
+      </PageCard>
+      </div>
       {dialog === 'asset' && <LinkAssetDialog ticket={ticket} onClose={() => setDialog(null)} />}
       {dialog === 'related' && <RelatedRequestDialog ticket={ticket} onClose={() => setDialog(null)} />}
     </div>

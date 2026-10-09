@@ -17,6 +17,6 @@ export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
 
 export function ArticleVisibilityBadge({ visibility }: { visibility: ArticleVisibility }) {
   const { t } = useTranslation('kb');
-  const classes = visibility === 'internal' ? 'bg-dark-subtle text-dark-emphasis' : 'bg-info-subtle text-info-emphasis';
+  const classes = visibility === 'internal' ? 'bg-secondary-subtle text-secondary-emphasis' : 'bg-info-subtle text-info-emphasis';
   return <span className={`${BADGE_BASE} ${classes}`}>{t(`visibility.${visibility}`)}</span>;
 }

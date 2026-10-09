@@ -1,3 +1,4 @@
+import CIcon from '@coreui/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
@@ -6,9 +7,12 @@ import { formatDate, formatDateTime } from '../../shared/lib/format';
 import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { useReturnTo } from '../../shared/navigation/returnTo';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
-import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
+import { cilArrowLeft, cilPencil } from '../../shared/ui/icons';
+import { PageCard } from '../../shared/ui/PageCard';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
 
 import { OPERATIONS_BY_STATUS, useAsset, useAssetHistory, type AssetItem, type AssetMovementItem, type AssetOperationKind } from './api';
 import { AssetFormDialog } from './AssetFormDialog';
@@ -29,7 +33,8 @@ function AssetCard({ asset }: { asset: AssetItem }) {
   const { t: tc } = useTranslation();
   const optionalDate = (value: string | null) => (value === null ? tc('none') : formatDate(value));
   return (
-    <dl className="card card-body d-grid gap-3 mb-0 tgysm-fields">
+    <PageCard title={t('detail.facts')}>
+    <dl className="d-grid gap-3 mb-0 tgysm-fields">
       <Field label={t('fields.type')} value={t(`types.${asset.type}`)} />
       <Field label={t('fields.brand')} value={asset.brand} />
       <Field label={t('fields.model')} value={asset.model} />
@@ -42,6 +47,7 @@ function AssetCard({ asset }: { asset: AssetItem }) {
       <Field label={t('fields.createdAt')} value={formatDateTime(asset.createdAt)} />
       {asset.notes && <Field label={t('fields.notes')} value={asset.notes} />}
     </dl>
+    </PageCard>
   );
 }
 
@@ -53,7 +59,7 @@ function History({ movements }: { movements: AssetMovementItem[] }) {
   return (
     <ol className="list-unstyled mb-0 d-flex flex-column gap-2">
       {movements.map((m) => (
-        <li key={m.id} className="rounded border bg-body p-2">
+        <li key={m.id} className="rounded border bg-body-tertiary p-2">
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
             <span className="fw-medium">{t(`movements.${m.kind}`)}</span>
             <time className="small text-body-secondary" dateTime={m.occurredAt}>
@@ -94,13 +100,15 @@ export function AssetDetailPage() {
   return (
     <>
       <PageHeader
+        icon={ROUTE_META.assets.icon}
         titleOverride={item.assetTag}
         actions={
           <>
-            <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+            <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
+              <CIcon icon={cilArrowLeft} aria-hidden="true" />
               {t('detail.back')}
             </Link>
-            <Button variant="secondary" onClick={() => setEditing(true)}>
+            <Button variant="secondary" icon={cilPencil} onClick={() => setEditing(true)}>
               {tc('actions.edit')}
             </Button>
           </>
@@ -113,10 +121,7 @@ export function AssetDetailPage() {
         <aside className="col-12 col-lg-4 order-lg-2">
           <div className="tgysm-sticky-aside d-flex flex-column gap-3">
 
-      <section className="card card-body d-flex flex-column gap-2" aria-labelledby="asset-operations">
-        <h2 id="asset-operations" className="h6 mb-0">
-          {t('detail.operations')}
-        </h2>
+      <PageCard title={t('detail.operations')} bodyClassName="d-flex flex-column gap-2">
         {operations.length === 0 ? (
           <p className="mb-0 text-body-secondary">{t('detail.noOperations')}</p>
         ) : (
@@ -128,20 +133,16 @@ export function AssetDetailPage() {
             ))}
           </div>
         )}
-      </section>
-
+      </PageCard>
           </div>
         </aside>
-        <div className="col-12 col-lg-8 order-lg-1 d-flex flex-column gap-4 min-w-0">
+        <div className="col-12 col-lg-8 order-lg-1 d-flex flex-column gap-3 min-w-0">
           <AssetCard asset={item} />
-      <section className="d-flex flex-column gap-2" aria-labelledby="asset-history">
-        <h2 id="asset-history" className="h5 mb-0">
-          {t('detail.history')}
-        </h2>
-        {history.isPending && <LoadingState />}
-        {history.isError && <ErrorState error={history.error} onRetry={() => void history.refetch()} />}
-        {history.data && <History movements={history.data.movements} />}
-      </section>
+          <PageCard title={t('detail.history')}>
+            {history.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+            {history.isError && <ErrorState error={history.error} onRetry={() => void history.refetch()} />}
+            {history.data && <History movements={history.data.movements} />}
+          </PageCard>
         </div>
       </div>
 

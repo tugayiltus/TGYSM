@@ -1,4 +1,4 @@
-import { CCard, CCardBody } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams } from 'react-router';
 
@@ -6,8 +6,11 @@ import { formatDateTime } from '../../shared/lib/format';
 import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { useReturnTo } from '../../shared/navigation/returnTo';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ROUTES } from '../../shared/routes';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { cilArrowLeft } from '../../shared/ui/icons';
+import { PageCard } from '../../shared/ui/PageCard';
 import { ErrorState, LoadingState } from '../../shared/ui/States';
 import { useSession } from '../auth/session';
 
@@ -81,9 +84,11 @@ function TicketDetail({ number }: { number: string }) {
   return (
     <>
       <PageHeader
+        icon={ROUTE_META.myTickets.icon}
         titleOverride={item.subject}
         actions={
-          <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+          <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
+            <CIcon icon={cilArrowLeft} aria-hidden="true" />
             {t('detail.back')}
           </Link>
         }
@@ -101,17 +106,11 @@ function TicketDetail({ number }: { number: string }) {
           <div className="tgysm-sticky-aside d-flex flex-column gap-3">
             <TicketActions ticket={item} />
             <ApprovalBox ticket={item} />
-            <CCard>
-              <CCardBody className="d-flex flex-column gap-2">
-                <h2 id="ticket-sla" className="h6 mb-0">
-                  {t('sla.title')}
-                </h2>
-                <SlaSummary sla={item.sla} showDue />
-              </CCardBody>
-            </CCard>
-            <CCard>
-              <CCardBody>
-                <dl className="row g-2 mb-0">
+            <PageCard title={t('sla.title')}>
+              <SlaSummary sla={item.sla} showDue />
+            </PageCard>
+            <PageCard>
+              <dl className="row g-2 mb-0">
                   <Field label={t('detail.requester')} value={item.requesterName} />
                   <Field label={t('detail.team')} value={item.teamName} />
                   <Field label={t('detail.assignee')} value={item.assigneeName} />
@@ -119,39 +118,33 @@ function TicketDetail({ number }: { number: string }) {
                   <Field label={t('detail.location')} value={item.locationName} />
                   {item.kind === 'request' && <Field label={t('detail.requestType')} value={item.requestTypeName} />}
                   <Field label={t('detail.createdAt')} value={formatDateTime(item.createdAt)} />
-                </dl>
-              </CCardBody>
-            </CCard>
+              </dl>
+            </PageCard>
           </div>
         </aside>
 
-        <div className="col-12 col-lg-8 order-lg-1 d-flex flex-column gap-4 min-w-0">
+        <div className="col-12 col-lg-8 order-lg-1 d-flex flex-column gap-3 min-w-0">
           <FormAlert message={uploadError} />
-          <CCard>
-            <CCardBody>
-              <dl className="row g-3 mb-0">
+          <PageCard>
+            <dl className="row g-3 mb-0">
                 <Field wide label={t('detail.description')} value={item.description} />
                 {item.holdNote && <Field wide label={t('detail.holdNote')} value={item.holdNote} />}
                 {item.resolution && <Field wide label={t('detail.resolution')} value={item.resolution} />}
                 {item.rootCause && <Field wide label={t('detail.rootCause')} value={item.rootCause} />}
                 {item.cancelReason && <Field wide label={t('detail.cancelReason')} value={item.cancelReason} />}
-              </dl>
-            </CCardBody>
-          </CCard>
+            </dl>
+          </PageCard>
           <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
           <TicketArticles ticket={item} />
-          <div className="d-flex flex-column gap-3">
+          <PageCard title={t('detail.comments')} bodyClassName="d-flex flex-column gap-3">
             {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}
             {comments.data && <CommentList ticket={item} comments={comments.data} />}
             <CommentBox ticket={item} />
-          </div>
-          <section aria-labelledby="ticket-timeline" className="d-flex flex-column gap-2">
-            <h2 id="ticket-timeline" className="h5 mb-0">
-              {t('detail.timeline')}
-            </h2>
+          </PageCard>
+          <PageCard title={t('detail.timeline')}>
             {timeline.isError && <ErrorState error={timeline.error} onRetry={() => void timeline.refetch()} />}
             {timeline.data && <Timeline events={timeline.data} />}
-          </section>
+          </PageCard>
         </div>
       </div>
     </>

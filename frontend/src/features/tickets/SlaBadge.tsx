@@ -8,7 +8,7 @@ import { slaState, useFormatBusinessDuration, type SlaState } from './slaState';
 const BADGE_CLASS = 'badge rounded-pill border fw-medium d-inline-flex flex-wrap align-items-center gap-1 text-wrap text-start';
 
 const STATE_CLASS: Record<SlaState, string> = {
-  running: 'bg-light text-body',
+  running: 'bg-primary-subtle text-primary-emphasis border-primary-subtle',
   paused: 'bg-secondary-subtle text-secondary-emphasis border-secondary-subtle',
   warned: 'bg-warning-subtle text-warning-emphasis border-warning-subtle',
   breached: 'bg-danger-subtle text-danger-emphasis border-danger-subtle',

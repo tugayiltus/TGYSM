@@ -15,13 +15,13 @@ const MS_PER_SECOND = 1000;
 /** The job as a whole (server-judged by its newest heartbeat across instances). */
 function FreshnessBadge({ stale }: { stale: boolean }) {
   const { t } = useTranslation('admin');
-  return <span className={`badge ${stale ? 'text-bg-danger' : 'text-bg-success'}`}>{stale ? t('system.stale') : t('system.fresh')}</span>;
+  return <span className={`badge ${stale ? 'bg-danger-subtle text-danger-emphasis' : 'bg-success-subtle text-success-emphasis'}`}>{stale ? t('system.stale') : t('system.fresh')}</span>;
 }
 
 /** One instance: an old host that stopped writing heartbeats is silent even when its job runs elsewhere (UX-04). */
 function InstanceBadge({ silent }: { silent: boolean }) {
   const { t } = useTranslation('admin');
-  return <span className={`badge ${silent ? 'text-bg-warning' : 'text-bg-light border'}`}>{silent ? t('system.instanceSilent') : t('system.instanceFresh')}</span>;
+  return <span className={`badge ${silent ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis'}`}>{silent ? t('system.instanceSilent') : t('system.instanceFresh')}</span>;
 }
 
 /** Judged against the time the list was fetched, so rendering stays pure. */

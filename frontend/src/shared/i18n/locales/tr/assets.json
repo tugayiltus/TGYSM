@@ -72,6 +72,7 @@
     "created": "Cihaz kaydedildi: {{tag}}"
   },
   "detail": {
+    "facts": "Cihaz bilgileri",
     "back": "Envantere dön",
     "operations": "İşlemler",
     "history": "Geçmiş",
