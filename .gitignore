@@ -24,3 +24,8 @@ e2e-logs/
 
 # Runtime scratch data (e.g. the Worker's Email:Mode=Pickup .eml folder)
 tmp/
+
+# Deployment secrets and data (deploy/.env.example and deploy/certs/.gitkeep are tracked)
+deploy/certs/*
+!deploy/certs/.gitkeep
+deploy/backups/

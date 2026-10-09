@@ -1,0 +1,18 @@
+# Build context: sources only. Secrets, local data and build output never reach an image.
+**/bin/
+**/obj/
+**/TestResults/
+**/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/e2e-logs/
+tmp/
+deploy/
+docs/
+.git/
+.github/
+.superpowers/
+**/.env
+**/.env.*
