@@ -7,7 +7,8 @@
     "tabs": "Rapor türleri",
     "myExports": "Dışa aktarımlarım",
     "unknown": "Böyle bir rapor yok.",
-    "empty": "Bu rapor için gösterilecek sonuç yok."
+    "empty": "Bu rapor için gösterilecek sonuç yok.",
+    "reversedRange": "Başlangıç tarihi bitişten sonra olduğu için tarih aralığı yok sayıldı."
   },
   "tabs": {
     "incidents": "Olaylar",
@@ -37,7 +38,10 @@
     "assetType": "Varlık türü",
     "assetStatus": "Varlık durumu",
     "all": "Tümü",
-    "clear": "Filtreleri temizle"
+    "clear": "Filtreleri temizle",
+    "active": "Etkin filtreler",
+    "remove": "{{name}} filtresini kaldır",
+    "panel": "Filtreler"
   },
   "slaStates": {
     "met": "Karşılandı",
@@ -157,5 +161,13 @@
       "failed": "Başarısız",
       "expired": "Süresi doldu"
     }
+  },
+  "period": {
+    "label": "Dönem",
+    "last7": "Son 7 gün",
+    "last30": "Son 30 gün",
+    "thisMonth": "Bu ay",
+    "lastMonth": "Geçen ay",
+    "thisYear": "Bu yıl"
   }
 }

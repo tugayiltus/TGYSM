@@ -1,4 +1,4 @@
-import { Bar, BarChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { CChartBar } from '@coreui/react-chartjs';
 
 import { formatNumber } from './formatMetric';
 
@@ -10,25 +10,26 @@ export interface ChartBar {
 
 const BAR_ROW_PX = 32;
 const CHART_PADDING_PX = 24;
-const LABEL_WIDTH_PX = 128;
-const BAR_RADIUS_PX = 4;
-const BAR_FILL = 'var(--color-brand-600)';
-const CHART_MARGIN = { top: 4, right: 16, bottom: 4, left: 4 };
+const BAR_COLOR = '#1d4ed8';
 
 /**
- * Horizontal bars of a distribution. Loaded lazily (own `vendor-charts` chunk); the card lists the same numbers as links,
- * so the chart is hidden from screen readers.
+ * Horizontal bars of a distribution (Chart.js through CoreUI, ADR-0022). Loaded lazily in its own chunk; the card lists the
+ * same numbers as links, so the canvas is hidden from screen readers.
  */
 export function DistributionChart({ bars }: { bars: readonly ChartBar[] }) {
   const height = bars.length * BAR_ROW_PX + CHART_PADDING_PX;
   return (
-    <div aria-hidden="true" data-testid="distribution-chart">
-      <BarChart responsive layout="vertical" data={[...bars]} style={{ width: '100%', height }} margin={CHART_MARGIN} accessibilityLayer={false}>
-        <XAxis type="number" allowDecimals={false} hide />
-        <YAxis type="category" dataKey="label" width={LABEL_WIDTH_PX} tickLine={false} axisLine={false} />
-        <Tooltip formatter={(value) => formatNumber(Number(value))} />
-        <Bar dataKey="count" fill={BAR_FILL} radius={BAR_RADIUS_PX} isAnimationActive={false} />
-      </BarChart>
+    <div aria-hidden="true" data-testid="distribution-chart" style={{ height }}>
+      <CChartBar
+        data={{ labels: bars.map((bar) => bar.label), datasets: [{ data: bars.map((bar) => bar.count), backgroundColor: BAR_COLOR, borderRadius: 4 }] }}
+        options={{
+          indexAxis: 'y',
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (item) => formatNumber(Number(item.raw)) } } },
+          scales: { x: { ticks: { precision: 0 } } },
+        }}
+      />
     </div>
   );
 }

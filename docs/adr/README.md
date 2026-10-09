@@ -25,4 +25,5 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0019](0019-knowledge-base.md) | Knowledge Base | accepted | 2026-10-02 |
 | [0020](0020-reporting-and-excel-export.md) | Reporting and Excel Export | accepted | 2026-10-02 |
 | [0021](0021-coreui-ui-layer.md) | CoreUI Free as the UI Layer | accepted | 2026-10-09 |
+| [0022](0022-chartjs-charts.md) | Chart.js through CoreUI for Report Charts | accepted | 2026-10-09 |
 | [0023](0023-asset-catalog-and-asset-tags.md) | Admin-Managed Device Catalog for Asset Brands and Models | accepted | 2026-10-09 |

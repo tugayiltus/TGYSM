@@ -13,9 +13,9 @@ const FORWARDED_PROTO_HEADER = 'X-Forwarded-Proto';
 // react-markdown and its unified tree (remark/micromark/mdast/unist/hast and their small helpers).
 const MARKDOWN_PACKAGES =
   /node_modules[\\/](react-markdown|remark-[^\\/]+|micromark[^\\/]*|mdast-[^\\/]+|unist-[^\\/]+|hast-[^\\/]+|unified|vfile[^\\/]*|bail|trough|devlop|ccount|character-[^\\/]+|comma-separated-tokens|space-separated-tokens|decode-named-character-reference|estree-util-[^\\/]+|html-url-attributes|is-(alphabetical|alphanumerical|decimal|hexadecimal|plain-obj)|longest-streak|parse-entities|property-information|stringify-entities|trim-lines|zwitch)[\\/]/;
-// Chart.js (+ its CoreUI wrapper and colour helper); Recharts and the packages only it pulls in until Task 16 removes it.
+// Chart.js with its CoreUI wrapper and colour helper (ADR-0022).
 const CHART_PACKAGES =
-  /node_modules[\\/](chart\.js|@kurkle[\\/]color|@coreui[\\/]react-chartjs|recharts|victory-vendor|d3-[^\\/]+|internmap|@reduxjs[\\/]toolkit|react-redux|redux|redux-thunk|reselect|immer|es-toolkit|decimal\.js-light|eventemitter3|tiny-invariant|clsx)[\\/]/;
+  /node_modules[\\/](chart\.js|@kurkle[\\/]color|@coreui[\\/]react-chartjs)[\\/]/;
 const apiProxy = { '/api': { target: API_TARGET, changeOrigin: false, headers: { [FORWARDED_PROTO_HEADER]: 'https' } } };
 
 export default defineConfig({

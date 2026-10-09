@@ -5,6 +5,9 @@ import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 import { INCIDENTS, REFERENCE_ROUTES, reportResult, TEAM_LOAD, VOLUME } from '../../test/reportData';
 
+/** An explicit range, so the default last-30-days period does not apply. */
+const RANGE = 'from=2026-09-01&to=2026-09-30';
+
 const reportCalls = (api: ReturnType<typeof mockApi>, report: string) =>
   api.calls.filter((c) => c.method === 'GET' && new URL(c.url).pathname === `/api/v1/reports/${report}`);
 
@@ -52,13 +55,13 @@ describe('ReportsPage', () => {
 
   it('writes the filter bar to the URL and restores it on reload', async () => {
     const api = mockApi(routes());
-    const { user, router } = renderRoute('/reports/incidents');
+    const { user, router } = renderRoute(`/reports/incidents?${RANGE}`);
 
     await user.selectOptions(await screen.findByLabelText('Öncelik'), 'P1 · Kritik');
     await user.selectOptions(screen.getByLabelText('Durum'), 'Açık');
 
     expect(new URLSearchParams(router.state.location.search).get('priority')).toBe('p1');
-    await waitFor(() => expect(reportCalls(api, 'incidents').some((c) => new URL(c.url).search === '?priority=p1&status=open')).toBe(true));
+    await waitFor(() => expect(reportCalls(api, 'incidents').some((c) => new URL(c.url).search === `?${RANGE}&priority=p1&status=open`)).toBe(true));
 
     await router.navigate('/reports/incidents?priority=p1&status=open&teamId=bad');
     expect(await screen.findByLabelText('Öncelik')).toHaveValue('p1');
@@ -89,25 +92,26 @@ describe('ReportsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Filtreleri temizle' }));
     await waitFor(() => expect(router.state.location.search).toBe(''));
-    expect(from).toHaveValue('');
+    // Cleared filters fall back to the default period, not to an empty day.
+    expect(from).not.toHaveValue('2026-05-10');
   });
 
   it('builds the drill-down URL of a card with the same filters', async () => {
     mockApi(routes());
-    const { user, router } = renderRoute('/reports/incidents?priority=p1');
+    const { user, router } = renderRoute(`/reports/incidents?${RANGE}&priority=p1`);
 
     await user.click(await screen.findByRole('link', { name: 'Açılan kayıt' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/reports/incidents/list'));
-    expect(router.state.location.search).toBe('?metric=volume&priority=p1');
+    expect(router.state.location.search).toBe(`?metric=volume&${RANGE}&priority=p1`);
   });
 
   it('links each bucket and a ratio denominator to its own drill-down', async () => {
     mockApi(routes());
-    renderRoute('/reports/incidents?priority=p1');
+    renderRoute(`/reports/incidents?${RANGE}&priority=p1`);
 
-    expect(await screen.findByRole('link', { name: '8 gün ve üzeri' })).toHaveAttribute('href', '/reports/incidents/list?metric=open_backlog&bucket=8%2B&priority=p1');
-    expect(screen.getByRole('link', { name: 'Tümünü listele (4)' })).toHaveAttribute('href', '/reports/incidents/list?metric=sla_compliance&part=denominator&priority=p1');
+    expect(await screen.findByRole('link', { name: '8 gün ve üzeri' })).toHaveAttribute('href', `/reports/incidents/list?metric=open_backlog&bucket=8%2B&${RANGE}&priority=p1`);
+    expect(screen.getByRole('link', { name: 'Tümünü listele (4)' })).toHaveAttribute('href', `/reports/incidents/list?metric=sla_compliance&part=denominator&${RANGE}&priority=p1`);
     expect(await screen.findAllByTestId('distribution-chart')).not.toHaveLength(0);
   });
 

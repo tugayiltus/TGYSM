@@ -53,3 +53,7 @@ Phase 5 adds reports (incidents, requests, operations, transfers, assets, warran
 - The API serves files the Worker writes, so both hosts must use one absolute file-store folder (ADR-0012): `Files:RootPath` is required outside Development (startup fails without it) and both hosts log the resolved root at startup (`FileStoreRootLog`). In Development an empty value means the user's local application data folder (`tgysm/files`), which both hosts resolve alike (commit 7e3cf77).
 - Cleanup expires ready exports in batches of 100 (`CleanupHandler.ExportExpiryBatchSize`); it deletes the file first, and a file that cannot be deleted keeps its job `ready` for a later run (commit 7e3cf77).
 - The chart is loaded lazily by the figure card (`DistributionChart`), not by a lazy route, so `vendor-charts` loads only with the first distribution card (commit 65d92e9).
+
+## Amendment 2026-10-09
+
+The chart library part of this decision (Recharts) is superseded by ADR-0022: report charts use Chart.js through `@coreui/react-chartjs`.

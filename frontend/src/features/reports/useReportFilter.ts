@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import type { components } from '../../shared/api/schema';
 
 import type { ReportName } from './api';
+import { companyToday, PERIODIC_REPORTS, presetPeriod, type Period } from './period';
 
 type Schemas = components['schemas'];
 
@@ -102,6 +104,20 @@ export function readReportFilter(params: URLSearchParams, report: ReportName): R
   return filter;
 }
 
+const DATE_KEYS: readonly ReportFilterKey[] = ['from', 'to'];
+
+/** Set filters other than the period (shown as chips and counted on the phone filter button). */
+export function activeFilterKeys(filter: ReportFilterValues): ReportFilterKey[] {
+  return (Object.keys(filter) as ReportFilterKey[]).filter((key) => !DATE_KEYS.includes(key) && filter[key] !== undefined);
+}
+
+/** True when the URL has both days and the range ends before it starts (dropped by readReportFilter, UX-12). */
+export function hasReversedRange(params: URLSearchParams): boolean {
+  const from = params.get('from');
+  const to = params.get('to');
+  return from !== null && to !== null && isValidFilterValue('from', from) && isValidFilterValue('to', to) && from > to;
+}
+
 /** The set filters as query parameters, in the server's key order. */
 export function filterQuery(filter: ReportFilterValues): URLSearchParams {
   const query = new URLSearchParams();
@@ -120,7 +136,12 @@ const PAGE_PARAM = 'page';
 /** Reads and writes the report filter in the URL, so a filtered view can be bookmarked, shared and restored. */
 export function useReportFilter(report: ReportName) {
   const [params, setParams] = useSearchParams();
-  const filter = readReportFilter(params, report);
+  // Read once per mount: "today" for the default period must not change mid-session on its own.
+  const [today] = useState(companyToday);
+  const read = readReportFilter(params, report);
+  const periodic = PERIODIC_REPORTS.includes(report);
+  // Period reports open on the last 30 days unless the URL names days (spec §6.2); the URL stays clean.
+  const filter = periodic && read.from === undefined && read.to === undefined ? { ...read, ...presetPeriod('last30', today) } : read;
 
   const setFilter = (key: ReportFilterKey, value: string) =>
     setParams(
@@ -150,5 +171,17 @@ export function useReportFilter(report: ReportName) {
       { replace: true },
     );
 
-  return { filter, setFilter, clear };
+  const setPeriod = (period: Period) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set('from', period.from);
+        next.set('to', period.to);
+        next.delete(PAGE_PARAM);
+        return next;
+      },
+      { replace: true },
+    );
+
+  return { filter, setFilter, setPeriod, clear, periodic, today, reversedRange: hasReversedRange(params) };
 }

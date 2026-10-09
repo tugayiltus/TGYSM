@@ -1,19 +1,22 @@
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, NavLink, useParams, useSearchParams } from 'react-router';
 
+import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTES, reportPath } from '../../shared/routes';
+import { FilterPanel } from '../../shared/ui/FilterPanel';
 import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
 
+import { ActiveFilterChips } from './ActiveFilterChips';
 import { DEFAULT_REPORT, isReportName, REPORT_NAMES, useReport, type ReportName } from './api';
 import { FigureCard } from './FigureCard';
+import { PeriodPicker } from './PeriodPicker';
 import { ReportFilterBar } from './ReportFilterBar';
-import { filterQuery, readReportFilter, useReportFilter } from './useReportFilter';
+import { activeFilterKeys, filterQuery, readReportFilter, useReportFilter } from './useReportFilter';
 
 /** Server ScopeLabel of IT staff (their teams only); admins get `all`. */
 const TEAMS_SCOPE = 'teams';
 
-const TAB_CLASS =
-  'block whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-900';
+const TAB_CLASS = 'nav-link text-nowrap';
 
 /** Tab link of another report, carrying only the filters that report understands. */
 function tabHref(target: ReportName, params: URLSearchParams): string {
@@ -25,10 +28,10 @@ function ReportTabs() {
   const { t } = useTranslation('reports');
   const [params] = useSearchParams();
   return (
-    <nav aria-label={t('page.tabs')} className="-mx-1 overflow-x-auto">
-      <ul className="flex gap-1 px-1">
+    <nav aria-label={t('page.tabs')} className="overflow-x-auto">
+      <ul className="nav nav-pills flex-nowrap gap-1">
         {REPORT_NAMES.map((name) => (
-          <li key={name}>
+          <li key={name} className="nav-item">
             <NavLink to={tabHref(name, params)} end className={TAB_CLASS}>
               {t(`tabs.${name}`)}
             </NavLink>
@@ -41,22 +44,32 @@ function ReportTabs() {
 
 function ReportView({ report }: { report: ReportName }) {
   const { t } = useTranslation('reports');
-  const { filter, setFilter, clear } = useReportFilter(report);
+  const { filter, setFilter, setPeriod, clear, periodic, today, reversedRange } = useReportFilter(report);
   const result = useReport(report, filter);
 
   return (
     <>
-      <ReportFilterBar report={report} filter={filter} onChange={setFilter} onClear={clear} />
+      {periodic && <PeriodPicker period={filter} today={today} onChange={setPeriod} />}
+      {reversedRange && <p className="alert alert-warning mb-0">{t('page.reversedRange')}</p>}
+      {/* Filters apply as they change; on phones the panel's Uygula only closes it. */}
+      <FilterPanel
+        title={t('filters.panel')}
+        activeCount={activeFilterKeys(filter).length}
+        primary={<ReportFilterBar report={report} filter={filter} onChange={setFilter} onClear={clear} />}
+        onApply={() => undefined}
+        onClear={clear}
+      />
+      <ActiveFilterChips filter={filter} onRemove={(key) => setFilter(key, '')} />
       {result.isPending && <LoadingState />}
       {result.isError && <ErrorState error={result.error} onRetry={() => void result.refetch()} />}
       {result.data !== undefined && (
         <>
-          <p className="text-sm text-slate-600">{t(result.data.scopeLabel === TEAMS_SCOPE ? 'scope.teams' : 'scope.all')}</p>
+          <p className="small text-body-secondary mb-0">{t(result.data.scopeLabel === TEAMS_SCOPE ? 'scope.teams' : 'scope.all')}</p>
           {result.data.figures.length === 0 ? (
             <EmptyState message={t('page.empty')} />
           ) : (
             <div
-              className={`grid gap-4 transition-opacity md:grid-cols-2 xl:grid-cols-3 ${result.isPlaceholderData ? 'opacity-60' : ''}`}
+              className={`tgysm-grid tgysm-grid-figures ${result.isPlaceholderData ? 'opacity-50' : ''}`}
               aria-busy={result.isPlaceholderData}
             >
               {result.data.figures.map((figure) => (
@@ -76,13 +89,15 @@ export function ReportsPage() {
   const { report = DEFAULT_REPORT } = useParams();
 
   return (
-    <section className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t('page.title')}</h1>
-        <Link to={ROUTES.reportExports} className="text-sm font-medium text-brand-900 underline">
-          {t('page.myExports')}
-        </Link>
-      </div>
+    <section className="d-flex flex-column gap-3">
+      <PageHeader
+        titleOverride={t('page.title')}
+        actions={
+          <Link to={ROUTES.reportExports} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+            {t('page.myExports')}
+          </Link>
+        }
+      />
       <ReportTabs />
       {isReportName(report) ? <ReportView key={report} report={report} /> : <EmptyState message={t('page.unknown')} />}
     </section>
