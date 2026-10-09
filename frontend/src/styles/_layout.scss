@@ -76,7 +76,8 @@ body {
 @media (min-width: 992px) {
   .tgysm-sticky-aside {
     position: sticky;
-    top: 4.5rem;
+    // Below both rows of the sticky header, with a gap.
+    top: calc(var(--tgysm-header-row-height) + var(--tgysm-header-crumbs-height) + 1rem);
   }
 }
 
@@ -234,12 +235,18 @@ body {
 }
 
 // Fixed header rows: the page below never moves when the header content changes (spec criterion 8).
+:root {
+  // The sticky header's two rows; sticky page parts (detail side column) are placed below their sum.
+  --tgysm-header-row-height: 3.5rem;
+  --tgysm-header-crumbs-height: 2.5rem;
+}
+
 .tgysm-header-row {
-  min-height: 3.5rem;
+  min-height: var(--tgysm-header-row-height);
 }
 
 .tgysm-header-crumbs {
-  min-height: 2.5rem;
+  min-height: var(--tgysm-header-crumbs-height);
   display: flex;
   align-items: center;
 }

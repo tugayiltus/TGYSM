@@ -28,6 +28,14 @@ describe('fields', () => {
     expect(container.querySelector('.input-group .invalid-feedback')).toHaveTextContent('Hatalı');
   });
 
+  it('keeps a hint below the input group, not inside it beside the control', () => {
+    const { container } = render(<TextField label="Şifre" type="password" startIcon={cilSearch} hint="5 hatalı denemede kilitlenir" error="Zorunlu" />);
+    expect(container.querySelector('.input-group > .form-text')).toBeNull();
+    expect(container.querySelector('.input-group + .form-text')).toHaveTextContent('5 hatalı denemede kilitlenir');
+    expect(container.querySelector('.input-group > .invalid-feedback')).toHaveTextContent('Zorunlu');
+    expect(screen.getByLabelText('Şifre')).toHaveAccessibleDescription('5 hatalı denemede kilitlenir Zorunlu');
+  });
+
   it('shows a unit after the control in the same input group', () => {
     const { container } = render(<TextField label="Hedef" type="number" endText="dk" />);
     const group = container.querySelector('.input-group');

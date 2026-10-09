@@ -26,6 +26,10 @@ export function TextField({ label, error, hint, id, className = '', ref, require
     <CFormInput id={fieldId} ref={ref} required={required} invalid={Boolean(error)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...inputProps} />
   );
   const messages = <FieldMessages hint={hint} hintId={hintId} error={error} errorId={errorId} />;
+  // In an input group only the error stays inside (Bootstrap shows it next to the invalid control); the hint goes below,
+  // so it neither sits beside the control nor squares the control's corners.
+  const groupError = <FieldMessages error={error} errorId={errorId} />;
+  const groupHint = <FieldMessages hint={hint} hintId={hintId} />;
   return (
     <div className={`d-flex flex-column ${className}`.trim()}>
       <FieldLabel htmlFor={fieldId} required={required}>
@@ -46,9 +50,10 @@ export function TextField({ label, error, hint, id, className = '', ref, require
           )}
           {control}
           {endText !== undefined && <CInputGroupText>{endText}</CInputGroupText>}
-          {messages}
+          {groupError}
         </CInputGroup>
       )}
+      {(startIcon !== undefined || endText !== undefined) && groupHint}
     </div>
   );
 }
