@@ -15,7 +15,7 @@ export function ThemeMenu() {
   // Items exist only while the menu is open, so a closed menu adds nothing to the page's accessibility tree.
   const [open, setOpen] = useState(false);
   return (
-    <CDropdown variant="nav-item" placement="bottom-end" visible={open} onShow={() => setOpen(true)} onHide={() => setOpen(false)}>
+    <CDropdown variant="dropdown" placement="bottom-end" visible={open} onShow={() => setOpen(true)} onHide={() => setOpen(false)}>
       <CDropdownToggle
         caret={false}
         className="btn btn-ghost-secondary tgysm-touch d-inline-flex align-items-center"

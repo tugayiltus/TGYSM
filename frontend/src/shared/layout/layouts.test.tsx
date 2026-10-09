@@ -185,6 +185,11 @@ describe('ThemeMenu', () => {
     stubSystemColorScheme(false);
   });
 
+  it('is not a stray list item in the header (no bullet)', () => {
+    const { container } = render(<ThemeMenu />);
+    expect(container.querySelector('li')).toBeNull();
+  });
+
   it('switches the color mode from the header menu', async () => {
     const user = userEvent.setup();
     render(<ThemeMenu />);
