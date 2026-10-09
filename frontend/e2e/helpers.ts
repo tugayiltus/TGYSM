@@ -32,3 +32,38 @@ export async function expectNoHorizontalScroll(page: Page): Promise<void> {
 export function visibleEntry(page: Page, text: string): Locator {
   return page.locator('li:visible, tr:visible').filter({ hasText: text });
 }
+
+/** Layout stability budget (spec criterion 8): cumulative layout shift and the longest main-thread task while a page loads. */
+export const MAX_CLS = 0.1;
+export const MAX_LONG_TASK_MS = 200;
+
+/** Records layout shifts and long tasks from the first byte of every document this page loads. */
+export async function recordStability(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const w = window as unknown as { tgysmCls: number; tgysmLongTasks: number[] };
+    w.tgysmCls = 0;
+    w.tgysmLongTasks = [];
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) {
+        if (!entry.hadRecentInput) {
+          w.tgysmCls += entry.value;
+        }
+      }
+    }).observe({ type: 'layout-shift', buffered: true });
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        w.tgysmLongTasks.push(entry.duration);
+      }
+    }).observe({ type: 'longtask', buffered: true });
+  });
+}
+
+/** The current document stayed within the layout-stability budget. */
+export async function expectStable(page: Page): Promise<void> {
+  const { cls, longTasks } = await page.evaluate(() => {
+    const w = window as unknown as { tgysmCls: number; tgysmLongTasks: number[] };
+    return { cls: w.tgysmCls, longTasks: w.tgysmLongTasks };
+  });
+  expect(cls).toBeLessThan(MAX_CLS);
+  expect(longTasks.filter((duration) => duration > MAX_LONG_TASK_MS)).toEqual([]);
+}

@@ -71,6 +71,11 @@ describe('UI cohesion guards (ADR-0026)', () => {
     expect(lineOffenders(outsidePalette, /['"`]#[0-9a-fA-F]{3,8}['"`]/)).toEqual([]);
   });
 
+  it('reserves the scrollbar space, so opening a dialog does not shift the page sideways', () => {
+    // Static check: headless Chromium draws overlay scrollbars (0 px), so an E2E cannot see this shift.
+    expect(layoutScss).toMatch(/html\s*\{\s*scrollbar-gutter:\s*stable;/);
+  });
+
   it('keeps styles mobile first: no new max-width media queries', () => {
     expect(layoutScss.match(/@media\s*\(max-width:[^)]*\)/g) ?? []).toEqual([ALLOWED_MAX_WIDTH_QUERY]);
   });
