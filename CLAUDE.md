@@ -1,11 +1,11 @@
 # TGYSM — ITSM web platform
 
-Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–5 done and merged to `master` (Phase 5: knowledge base, reports, sync + background Excel export, reports UI, E2E; plan `docs/superpowers/plans/2026-10-02-phase-5-knowledge-reports.md`). Next: Phase 6 (release). Requirements: `tgysm.md`.
+Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–5 done, plus the CoreUI UI/UX overhaul (left sidebar app + `/admin`, breadcrumbs/context return, device catalog, generated `DMR-` asset tags, Chart.js; plan `docs/superpowers/plans/2026-10-09-coreui-ui-ux.md`, ADR-0021–0023), all merged to `master`. Next: Phase 6 (release) after the owner's own testing. Requirements: `tgysm.md`.
 
 ## Stack & Architecture
 - **Backend:** .NET 10 modular monolith (ADR-0001) — `backend/src/Tgysm.Domain` (rules, no framework deps) → `Tgysm.Application` (handlers + FluentValidation, ports) → `Tgysm.Infrastructure` (EF Core + Npgsql, migrations) → `Tgysm.Api` (Minimal APIs, auth, CLI). `backend/src/Tgysm.Worker` (Generic Host, jobs `OutboxDispatcher`, `EmailSender`, `SlaMonitor`, `ExportRunner`, `Cleanup`, row leases; references Application + Infrastructure, never Api; ADR-0014/0015) runs next to the API. Solution: `backend/Tgysm.slnx`.
 - **Database:** PostgreSQL 17, local Homebrew (ADR-0002). snake_case, `uuid` v7, `xmin` concurrency.
-- **Frontend:** React 19 + Vite + TypeScript in `frontend/` (ADR-0008). Server state via TanStack Query; typed client `src/shared/api/client.ts` generated from OpenAPI. `react-markdown` (KB, no raw HTML), Recharts (reports); Rolldown chunk groups in `vite.config.ts` — new heavy dependency or feature folder gets its own group.
+- **Frontend:** React 19 + Vite + TypeScript in `frontend/` (ADR-0008). Server state via TanStack Query; typed client `src/shared/api/client.ts` generated from OpenAPI. UI on CoreUI 5 (`@coreui/react`, SCSS in `src/styles/`, shared wrappers in `src/shared/ui`, layout in `src/shared/layout`, breadcrumbs/route metadata in `src/shared/navigation`; ADR-0021), `react-markdown` (KB, no raw HTML), Chart.js via `@coreui/react-chartjs` (reports, ADR-0022); Rolldown chunk groups in `vite.config.ts` — new heavy dependency or feature folder gets its own group.
 - Out of scope unless asked: mobile app.
 
 ## Commands
@@ -22,6 +22,7 @@ Run through `tools/` scripts.
 - `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5080/4173 (stop the dev services first). Also starts the Worker (`Email:Mode=Pickup` into a per-run temp folder, 2 s job intervals; E2E-only env overrides). Tests seed their data through the admin API (`frontend/e2e/world.ts`).
 - `tools/gen-api-types.sh` — regenerate OpenAPI JSON and `schema.d.ts` after API contract changes.
 - `tools/build.sh` — lint + tests, then Release build + frontend build with chunk sizes.
+- `tools/with-db.sh <command>` — start local PostgreSQL for one command and stop it again (when the owner keeps the database stopped).
 - `tools/progress.sh [plan-file]` — plan task status from the SDD ledger (`.superpowers/sdd/<plan>/progress.md`) + branch, recent commits, uncommitted changes. Default: newest plan.
 
 ## Quality gates (must pass before commit)
@@ -34,7 +35,7 @@ Run through `tools/` scripts.
 ## Conventions
 - English code, identifiers, DB names, endpoints, URL paths; Turkish only in `frontend/src/shared/i18n/locales/tr/*.json` (ADR-0006).
 - New API error → add a constant to `ErrorCodes` and a Turkish text to `errors.json`.
-- Cross-row rules (last admin, location cycles, asset lifecycle, import commit, intake team) run inside `IAppDbContext.RunSerializedAsync` with a key from `SerializationLocks`.
+- Cross-row rules (last admin, location cycles, asset lifecycle, import commit, intake team, device catalog renames vs asset writes) run inside `IAppDbContext.RunSerializedAsync` with a key from `SerializationLocks`.
 - Ticket endpoints load through `TicketScope` (404 outside scope); work actions go through `TicketWork` (scope → version → change → one save). Comments/links touch `updated_at` without the version check.
 - Attachments: `AttachmentTypes` (Domain) decides allowed types; storage through `IFileStore`, scanning through `IFileScanner`. `Files:RootPath` must be one absolute folder shared by API and Worker outside Development (export files).
 - Substring search: `EF.Functions.Like` with `LikePattern.Containing` + `LikePattern.EscapeText`, never `string.Contains` (bypasses trigram indexes).
