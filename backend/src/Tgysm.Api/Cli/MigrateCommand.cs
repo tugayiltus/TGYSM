@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Infrastructure.Persistence;
+using Tgysm.Infrastructure.Persistence.PostMigration;
 
 namespace Tgysm.Api.Cli;
 
@@ -35,6 +36,10 @@ internal static class MigrateCommand
             await output.WriteLineAsync(pending.Count == 0
                 ? $"Database is up to date ({latest})."
                 : $"Applied {pending.Count} migration(s); latest {latest}.");
+            foreach (var step in await PostMigrationRunner.RunPendingAsync(db, CancellationToken.None))
+            {
+                await output.WriteLineAsync($"Post-migration step done: {step}.");
+            }
             return Success;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

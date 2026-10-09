@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Tgysm.Infrastructure.Persistence;
+using Tgysm.Infrastructure.Persistence.PostMigration;
 
 namespace Tgysm.Api.IntegrationTests.Infrastructure;
 
@@ -34,6 +35,8 @@ public sealed class PostgresDatabase : IAsyncLifetime
 
         await using var db = CreateDbContext();
         await db.Database.MigrateAsync();
+        // Same order as the migrate command: post-migration data steps right after the schema.
+        await PostMigrationRunner.RunPendingAsync(db, CancellationToken.None);
     }
 
     public AppDbContext CreateDbContext() =>
