@@ -50,7 +50,7 @@
 
 ### 2.2 Color modes
 
-- CoreUI 5 color modes through `data-coreui-theme` on `<html>`; `useColorModes` from `@coreui/react` stores the choice under one named storage key (`tgysm-theme`) with values `light`, `dark`, `auto`.
+- CoreUI 5 color modes through `data-coreui-theme` on `<html>`. The choice is stored under one named storage key (`tgysm-theme`) with values `light`, `dark`, `auto` by a small own store (`colorMode.ts`, same behavior as CoreUI's `useColorModes`): CoreUI's hook touches `localStorage` without a guard (throws when storage is blocked) and keeps its state per component, while the header menu and the charts need one shared state.
 - A small inline script in `index.html` applies the stored mode (or the system preference for `auto`/missing) before the bundle loads, so a dark page never flashes light. The script is the only inline script and contains no secrets; the storage key is shared with the TS code through one constant mirrored in a test.
 - Header `ThemeMenu`: `CDropdown` with three items (icon + Turkish label: Açık, Koyu, Otomatik); the toggle shows the active mode's icon and has an accessible name.
 - Charts: a `useChartTheme()` hook reads `--cui-body-color`, `--cui-border-color-translucent` and the series colors through `getStyle` and re-renders the chart when the mode changes (the `ColorModeChange` is observed through the `data-coreui-theme` attribute).
