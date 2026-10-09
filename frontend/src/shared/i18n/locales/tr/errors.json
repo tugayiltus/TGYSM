@@ -79,7 +79,8 @@
     "approval_required": "Onay gerektiren talep, onaylanmadan tamamlanamaz.",
     "cancel_reason_required": "İptal nedenini yazın.",
     "already_assigned": "Kayıt başka biri tarafından üstlenildi. Sayfayı yenileyin.",
-    "assignee_not_in_team": "Seçilen kişi hedef ekibin aktif bir üyesi değil."
+    "assignee_not_in_team": "Seçilen kişi hedef ekibin aktif bir üyesi değil.",
+    "asset_not_assigned_to_requester": "Seçilen cihaz size zimmetli değil."
   },
   "approvals": {
     "not_approver": "Bu onayı yalnızca atanmış onaylayıcı verebilir.",

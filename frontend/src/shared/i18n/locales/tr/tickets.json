@@ -85,7 +85,10 @@
     "files": "Dosya ekle (en fazla 5, her biri en fazla 10 MB)",
     "filesHint": "PDF, PNG, JPEG, TXT veya CSV.",
     "submit": "Gönder",
-    "filesFailed": "Kayıt oluşturuldu ancak dosyalar yüklenemedi: {{message}}"
+    "filesFailed": "Kayıt oluşturuldu ancak dosyalar yüklenemedi: {{message}}",
+    "asset": "İlgili cihaz",
+    "noAsset": "Cihaz seçmeyin",
+    "assetHint": "Sorun size zimmetli bir cihazdaysa seçin."
   },
   "list": {
     "title": "Kayıtlarım",

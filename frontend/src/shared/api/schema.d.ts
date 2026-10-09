@@ -6861,6 +6861,8 @@ export interface components {
             categoryId: null | string;
             /** Format: uuid */
             locationId: null | string;
+            /** Format: uuid */
+            assetId?: null | string;
         };
         CreateLocationCommand: {
             name: string;

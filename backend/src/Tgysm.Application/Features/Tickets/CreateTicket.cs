@@ -10,7 +10,8 @@ using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
 
-public sealed record CreateIncidentCommand(string Subject, string Description, Guid? CategoryId, Guid? LocationId);
+/// <param name="AssetId">Optional device the incident is about; must be assigned to the requester right now (UX-10).</param>
+public sealed record CreateIncidentCommand(string Subject, string Description, Guid? CategoryId, Guid? LocationId, Guid? AssetId = null);
 
 public sealed record CreateRequestCommand(string Subject, string Description, Guid RequestTypeId, Guid? CategoryId, Guid? LocationId);
 
@@ -85,13 +86,29 @@ public sealed class TicketFactory(
     }
 }
 
-public sealed class CreateIncidentHandler(IValidator<CreateIncidentCommand> validator, TicketFactory factory)
+public sealed class CreateIncidentHandler(IAppDbContext db, IValidator<CreateIncidentCommand> validator, TicketFactory factory)
 {
+    private const string NotAssignedMessage = "The device is not assigned to the requester.";
+
     public async Task<TicketDetail> HandleAsync(CreateIncidentCommand command, CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        return await factory.CreateAsync(TicketKind.Incident, command.CategoryId, command.LocationId, (number, requester, team, now) =>
-            Task.FromResult(Ticket.CreateIncident(number, command.Subject, command.Description, command.CategoryId, command.LocationId, requester, team, now)), cancellationToken);
+        return await factory.CreateAsync(TicketKind.Incident, command.CategoryId, command.LocationId, async (number, requester, team, now) =>
+        {
+            var ticket = Ticket.CreateIncident(number, command.Subject, command.Description, command.CategoryId, command.LocationId, requester, team, now);
+            if (command.AssetId is { } assetId)
+            {
+                // Checked inside the creating transaction: the link is saved with the ticket or not at all.
+                if (!await db.AssetAssignments.AnyAsync(a => a.AssetId == assetId && a.UserId == requester && a.ReturnedAt == null, cancellationToken))
+                {
+                    throw new DomainException(ErrorCodes.TicketAssetNotAssignedToRequester, NotAssignedMessage);
+                }
+
+                db.TicketAssets.Add(TicketAsset.Create(ticket.Id, assetId, now));
+            }
+
+            return ticket;
+        }, cancellationToken);
     }
 }
 

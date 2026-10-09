@@ -7870,6 +7870,13 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "assetId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

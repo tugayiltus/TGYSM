@@ -126,14 +126,16 @@ export interface NewTicketInput {
   categoryId: string | null;
   locationId: string | null;
   requestTypeId: string | null;
+  /** Incidents only: a device currently assigned to the requester. */
+  assetId: string | null;
 }
 
 export function useCreateTicket() {
   const invalidate = useInvalidateTickets();
   return useMutation({
-    mutationFn: ({ kind, requestTypeId, ...body }: NewTicketInput) =>
+    mutationFn: ({ kind, requestTypeId, assetId, ...body }: NewTicketInput) =>
       kind === 'incident'
-        ? unwrap(api.POST('/api/v1/tickets/incidents', { body }))
+        ? unwrap(api.POST('/api/v1/tickets/incidents', { body: { ...body, assetId } }))
         : unwrap(api.POST('/api/v1/tickets/requests', { body: { ...body, requestTypeId: requestTypeId ?? '' } })),
     onSuccess: invalidate,
   });

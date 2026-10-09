@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { LOCATIONS } from '../../test/assetData';
@@ -18,6 +18,36 @@ const referenceRoutes = {
     ],
   },
 };
+
+describe('incident device', () => {
+  it('offers only my assigned devices, optional, and sends the chosen one', async () => {
+    let posted: { assetId?: string | null } = {};
+    mockApi({
+      ...referenceRoutes,
+      'GET /api/v1/me/assets': { status: 200, body: [{ id: 'a-1', assetTag: 'DMR-000001', type: 'laptop', brand: 'Lenovo', model: 'T14', serialNumber: null, assignedAt: '2026-09-01T08:00:00Z' }] },
+      'POST /api/v1/tickets/incidents': async (request) => {
+        posted = (await request.json()) as { assetId?: string | null };
+        return { status: 201, body: INCIDENT };
+      },
+      [`GET /api/v1/tickets/${INCIDENT.number}`]: { status: 200, body: INCIDENT },
+    });
+    const { user } = renderRoute('/tickets/new/incident');
+    const device = await screen.findByLabelText('İlgili cihaz');
+    expect(await within(device).findByRole('option', { name: 'DMR-000001 · Lenovo T14' })).toBeInTheDocument();
+    await user.selectOptions(device, 'DMR-000001 · Lenovo T14');
+    await user.type(screen.getByLabelText('Konu'), 'Ekran kırık');
+    await user.type(screen.getByLabelText('Açıklama'), 'Açılmıyor, siyah ekran.');
+    await user.click(screen.getByRole('button', { name: 'Gönder' }));
+    await waitFor(() => expect(posted.assetId).toBe('a-1'));
+  });
+
+  it('does not offer a device on a request', async () => {
+    mockApi({ ...referenceRoutes, 'GET /api/v1/me/assets': { status: 200, body: [] } });
+    renderRoute('/tickets/new/request');
+    await screen.findByLabelText('Konu');
+    expect(screen.queryByLabelText('İlgili cihaz')).not.toBeInTheDocument();
+  });
+});
 
 describe('NewTicketPage', () => {
   it('validates, creates an incident, uploads the files and opens the ticket', async () => {
@@ -46,7 +76,7 @@ describe('NewTicketPage', () => {
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/tickets/${INCIDENT.number}`));
-    expect(posted).toEqual({ subject: 'Yazıcı çalışmıyor', description: 'Kağıt sıkışıyor', categoryId: 'c-1', locationId: null });
+    expect(posted).toEqual({ subject: 'Yazıcı çalışmıyor', description: 'Kağıt sıkışıyor', categoryId: 'c-1', locationId: null, assetId: null });
     expect(uploadType).toMatch(/^multipart\/form-data/);
   });
 

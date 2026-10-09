@@ -51,6 +51,7 @@ public static class ErrorCodes
     public const string AssetModelInactive = "assets.model_inactive";
     public const string ImportCatalogMissing = "assets.import_catalog_missing";
     public const string ImportReservedTag = "assets.import_reserved_tag";
+    public const string TicketAssetNotAssignedToRequester = "tickets.asset_not_assigned_to_requester";
 
     public const string ImportInvalidHeader = "imports.invalid_header";
     public const string ImportEncoding = "imports.encoding";

@@ -16,7 +16,7 @@ import { SelectField } from '../../shared/ui/SelectField';
 import { TextAreaField } from '../../shared/ui/TextAreaField';
 import { TextField } from '../../shared/ui/TextField';
 import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
-import { useReferenceLocations } from '../assets/api';
+import { useMyAssets, useReferenceLocations } from '../assets/api';
 
 import { useAddComment, useCreateTicket, useReferenceCategories, useReferenceRequestTypes, type TicketKind } from './api';
 import { AttachmentInput } from './AttachmentInput';
@@ -34,6 +34,7 @@ const ticketSchema = z.object({
   categoryId: z.string(),
   locationId: z.string(),
   requestTypeId: z.string(),
+  assetId: z.string(),
 });
 const requestSchema = ticketSchema.extend({ requestTypeId: z.string().min(1, ERROR_CODES.required) });
 
@@ -50,6 +51,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
   const categories = useReferenceCategories(kind);
   const locations = useReferenceLocations();
   const requestTypes = useReferenceRequestTypes();
+  const myAssets = useMyAssets(kind === 'incident');
   const create = useCreateTicket();
   const upload = useAddComment();
   const [files, setFiles] = useState<File[]>([]);
@@ -63,7 +65,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
     formState: { errors, isDirty },
   } = useForm<TicketFormValues>({
     resolver: zodResolver(isRequest ? requestSchema : ticketSchema),
-    defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION },
+    defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION, assetId: NO_SELECTION },
   });
   const hasChanges = isDirty || files.length > 0;
   const requestTypeId = useWatch({ control, name: 'requestTypeId' });
@@ -71,6 +73,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
 
   const categoryOptions = useMemo(() => (categories.data ?? []).map((c) => ({ value: c.id, label: c.path })), [categories.data]);
   const locationOptions = useMemo(() => (locations.data ?? []).map((l) => ({ value: l.id, label: l.path })), [locations.data]);
+  const assetOptions = useMemo(() => (myAssets.data ?? []).map((a) => ({ value: a.id, label: `${a.assetTag} · ${a.brand} ${a.model}` })), [myAssets.data]);
   const typeOptions = useMemo(() => (requestTypes.data ?? []).map((r) => ({ value: r.id, label: r.name })), [requestTypes.data]);
 
   const onSubmit = handleSubmit((values) => {
@@ -82,6 +85,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
         categoryId: nullIfEmpty(values.categoryId),
         locationId: nullIfEmpty(values.locationId),
         requestTypeId: isRequest ? values.requestTypeId : null,
+        assetId: isRequest ? null : nullIfEmpty(values.assetId),
       },
       {
         onError: (error) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS),
@@ -121,6 +125,9 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
         <TextField label={t('new.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
         <TextAreaField label={t('new.description')} error={fieldError(errors.description)} {...register('description')} />
         <SelectField label={t('new.category')} options={categoryOptions} placeholder={t('fields.select')} error={fieldError(errors.categoryId)} {...register('categoryId')} />
+        {!isRequest && (
+          <SelectField label={t('new.asset')} options={assetOptions} placeholder={t('new.noAsset')} hint={t('new.assetHint')} {...register('assetId')} />
+        )}
         <SelectField label={t('new.location')} options={locationOptions} placeholder={t('fields.select')} error={fieldError(errors.locationId)} {...register('locationId')} />
         <AttachmentInput label={t('new.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
         <Button type="submit" className="align-self-start" isLoading={create.isPending || upload.isPending}>
