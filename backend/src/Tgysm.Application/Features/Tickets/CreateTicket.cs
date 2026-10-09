@@ -41,9 +41,10 @@ public sealed class TicketFactory(
     private const string InactiveReferenceMessage = "A selected category, location or request type is inactive or does not apply.";
 
     /// <param name="requesterId">Requester when IT creates on someone's behalf (related request); default: the actor.</param>
+    /// <param name="afterCreated">Records that follow the "created" timeline event in the same save (actor id, ticket, time).</param>
     public async Task<TicketDetail> CreateAsync(
         TicketKind kind, Guid? categoryId, Guid? locationId, Func<string, Guid, Guid, DateTimeOffset, Task<Ticket>> build, CancellationToken cancellationToken,
-        Guid? requesterId = null)
+        Guid? requesterId = null, Action<Guid, Ticket, DateTimeOffset>? afterCreated = null)
     {
         var actorId = actor.UserId ?? throw new AuthenticationFailedException();
         var requester = requesterId ?? actorId;
@@ -61,6 +62,7 @@ public sealed class TicketFactory(
             await sla.OnCreatedAsync(ticket, ct);
             TicketTimeline.Record(db, ticket, TicketEventKind.Created, Visibility.Public, actorId, now);
             audit.Record(AuditActions.TicketCreated, AuditEntityTypes.Ticket, ticket.Id, newValues: new { ticket.Number, ticket.Kind, ticket.Status });
+            afterCreated?.Invoke(actorId, ticket, now);
             outbox.Add(NotificationEventTypes.TicketCreated, ticket.Id, userId: null);
             await db.SaveChangesAsync(ct);
         }, cancellationToken);
@@ -86,7 +88,7 @@ public sealed class TicketFactory(
     }
 }
 
-public sealed class CreateIncidentHandler(IAppDbContext db, IValidator<CreateIncidentCommand> validator, TicketFactory factory)
+public sealed class CreateIncidentHandler(IAppDbContext db, IValidator<CreateIncidentCommand> validator, TicketFactory factory, IAuditLog audit)
 {
     private const string NotAssignedMessage = "The device is not assigned to the requester.";
 
@@ -108,7 +110,15 @@ public sealed class CreateIncidentHandler(IAppDbContext db, IValidator<CreateInc
             }
 
             return ticket;
-        }, cancellationToken);
+        }, cancellationToken, afterCreated: (actorId, ticket, now) =>
+        {
+            // Same records as linking the device later (LinkTicketAssetHandler), so unlinking reads naturally.
+            if (command.AssetId is { } assetId)
+            {
+                TicketTimeline.Record(db, ticket, TicketEventKind.AssetLinked, Visibility.Public, actorId, now, new { AssetId = assetId });
+                audit.Record(AuditActions.TicketAssetLinked, AuditEntityTypes.Ticket, ticket.Id, newValues: new { AssetId = assetId });
+            }
+        });
     }
 }
 

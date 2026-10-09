@@ -3,7 +3,9 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Api.IntegrationTests.Assets;
 using Tgysm.Api.IntegrationTests.Infrastructure;
+using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
+using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
 
 namespace Tgysm.Api.IntegrationTests.Tickets;
@@ -44,6 +46,25 @@ public sealed class IncidentAssetTests(ApiFactory factory) : IAsyncLifetime
         var ticket = await world.Employee.ReadJsonAsync<JsonElement>(response);
         await using var db = factory.Database.CreateDbContext();
         Assert.True(await db.TicketAssets.AnyAsync(l => l.AssetId == assetId && l.TicketId == ticket.GetProperty("id").GetGuid(), Ct));
+    }
+
+    [Fact]
+    public async Task The_device_chosen_on_a_new_incident_appears_in_its_timeline_and_audit_like_a_later_link()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var assetId = (await AssetAsync(world, world.EmployeeUser.Id)).GetProperty("id").GetGuid();
+
+        using var response = await world.Employee.PostAsync(IncidentsPath, new { subject = "Ekran kırık", description = "Açılmıyor", assetId });
+        var ticketId = (await world.Employee.ReadJsonAsync<JsonElement>(response)).GetProperty("id").GetGuid();
+
+        await using var db = factory.Database.CreateDbContext();
+        var linked = await db.TicketEvents.SingleAsync(e => e.TicketId == ticketId && e.Kind == TicketEventKind.AssetLinked, Ct);
+        Assert.Equal(world.EmployeeUser.Id, linked.ActorUserId);
+        Assert.Contains(assetId.ToString(), linked.DataJson, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, await db.AuditEvents.CountAsync(a => a.Action == AuditActions.TicketAssetLinked && a.EntityId == ticketId, Ct));
+        // The timeline reads "created", then "device linked" (same instant; ordered like the timeline query).
+        var order = await db.TicketEvents.Where(e => e.TicketId == ticketId).OrderBy(e => e.OccurredAt).ThenBy(e => e.Id).Select(e => e.Kind).ToListAsync(Ct);
+        Assert.Equal([TicketEventKind.Created, TicketEventKind.AssetLinked], order.Take(2));
     }
 
     [Fact]
