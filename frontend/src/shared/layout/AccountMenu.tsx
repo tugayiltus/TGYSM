@@ -25,7 +25,9 @@ export function AccountMenu() {
   return (
     <div className="position-relative">
       <button type="button" className="btn btn-ghost-secondary d-flex align-items-center gap-2 tgysm-touch" aria-haspopup="menu" aria-expanded={open} aria-controls={menuId} onKeyDown={onKeyDown} onClick={() => setOpen((v) => !v)}>
-        <span className="text-truncate tgysm-account-name">{`${me.firstName} ${me.lastName}`}</span>
+        {/* Phones show initials only: the full name next to the menu button and area link would not fit 360 px. */}
+        <span className="d-sm-none fw-semibold" aria-hidden="true">{`${me.firstName.charAt(0)}${me.lastName.charAt(0)}`}</span>
+        <span className="d-none d-sm-inline text-truncate tgysm-account-name">{`${me.firstName} ${me.lastName}`}</span>
         <span className="visually-hidden">{t('layout.accountMenu')}</span>
       </button>
       {open && (

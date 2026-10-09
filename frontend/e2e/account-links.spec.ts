@@ -36,7 +36,8 @@ test('admin creates a user with an emailed link; the activation email lets them 
   await page.getByLabel('Yeni şifre (tekrar)').fill(NEW_PASSWORD);
   await expectNoHorizontalScroll(page);
   await page.getByRole('button', { name: 'Şifreyi kaydet' }).click();
-  await expect(page.getByRole('status')).toHaveText('Şifreniz belirlendi. Şimdi giriş yapabilirsiniz.');
+  // The app-wide toast region is also a status; this is the page's own message.
+  await expect(page.getByRole('status').filter({ hasText: 'Şifreniz belirlendi' })).toHaveText('Şifreniz belirlendi. Şimdi giriş yapabilirsiniz.');
 
   await login(page, email, NEW_PASSWORD);
   await expect(page.getByRole('heading', { name: 'Merhaba, Selin' })).toBeVisible();

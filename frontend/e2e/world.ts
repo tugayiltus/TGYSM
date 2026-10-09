@@ -61,6 +61,8 @@ export interface World {
   itPassword: string;
   requestTypeName: string;
   assetTag: string;
+  /** Brand and model as the UI shows them (the brand carries the run suffix). */
+  assetName: string;
   /** Unique per seed, so a report filtered by it counts only this world's tickets. */
   departmentName: string;
 }
@@ -95,6 +97,7 @@ export async function seedWorld(admin: Session): Promise<World> {
   // The server assigns the asset tag (ADR-0023).
   const asset = await send(request, 'POST', '/api/v1/assets', { modelId: model.id, locationId: location.id });
   const assetTag = String(asset.assetTag);
+  const assetName = `${String(brand.name)} T14`;
   return {
     employeeEmail,
     employeePassword: String(employee.temporaryPassword),
@@ -102,6 +105,7 @@ export async function seedWorld(admin: Session): Promise<World> {
     itPassword: String(it.temporaryPassword),
     requestTypeName,
     assetTag,
+    assetName,
     departmentName: String(department.name),
   };
 }

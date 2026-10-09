@@ -19,7 +19,10 @@ readonly TEMP_PASSWORD_PREFIX="Temporary password (shown once): "
 readonly E2E_JOB_INTERVAL_SECONDS=2
 # The suite signs in several users per spec from one address; the production limit (10 per minute) would answer 429.
 readonly E2E_LOGIN_PERMIT_LIMIT_PER_MINUTE=1000
-readonly PROJECTS=("mobile-360" "desktop")
+readonly ALL_PROJECTS=("mobile-360" "desktop")
+# Optional: E2E_PROJECTS="mobile-360" limits the viewports; arguments are passed to Playwright (spec files, --grep).
+read -r -a PROJECTS <<< "${E2E_PROJECTS:-${ALL_PROJECTS[*]}}"
+readonly PLAYWRIGHT_ARGS=("$@")
 
 api_pid=""
 worker_pid=""
@@ -109,7 +112,7 @@ for project in "${PROJECTS[@]}"; do
   wait_for "$PREVIEW_URL/login"
   wait_for "$PREVIEW_URL$READY_PATH"
 
-  (cd frontend && E2E_ADMIN_EMAIL="$ADMIN_EMAIL" E2E_ADMIN_TEMP_PASSWORD="$temp_password" npx playwright test --project="$project")
+  (cd frontend && E2E_ADMIN_EMAIL="$ADMIN_EMAIL" E2E_ADMIN_TEMP_PASSWORD="$temp_password" npx playwright test --project="$project" ${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"})
   stop_servers
 done
 

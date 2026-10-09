@@ -19,7 +19,7 @@ export function AppHeader({ title, onOpenMenu, areaSwitch }: AppHeaderProps) {
   const menuButton = useRef<HTMLButtonElement>(null);
   return (
     <header className="header sticky-top bg-body border-bottom px-2 px-sm-3">
-      <div className="d-flex align-items-center gap-2 w-100">
+      <div className="d-flex align-items-center gap-1 gap-sm-2 w-100 min-w-0">
         <Button ref={menuButton} variant="ghost" className="d-lg-none" aria-label={t('actions.openMenu')} onClick={() => onOpenMenu(menuButton.current)}>
           <span aria-hidden="true">☰</span>
         </Button>

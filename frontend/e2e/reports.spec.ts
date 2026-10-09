@@ -28,7 +28,16 @@ test('reports: admin drills into an incident figure, exports it and downloads a 
   await page.goto('/reports');
   await expect(page).toHaveURL(/\/reports\/incidents$/);
   // The department is unique to this world, so the figure counts exactly the incidents seeded above.
-  await page.getByLabel('Departman').selectOption({ label: world.departmentName });
+  // On phones the filters sit behind the "Filtreler (n)" button in a side panel.
+  const filtersButton = page.getByRole('button', { name: /^Filtreler \(\d+\)$/ });
+  if (await filtersButton.isVisible()) {
+    await filtersButton.click();
+    const panel = page.getByRole('dialog', { name: 'Filtreler' });
+    await panel.getByLabel('Departman').selectOption({ label: world.departmentName });
+    await panel.getByRole('button', { name: 'Uygula' }).click();
+  } else {
+    await page.getByLabel('Departman').selectOption({ label: world.departmentName });
+  }
   // The card is described by its headline value only, so other numbers on it cannot satisfy the check.
   const volume = page.getByRole('article', { name: 'Açılan kayıt', exact: true });
   await expect(volume).toHaveAccessibleDescription(String(subjects.length));

@@ -21,7 +21,8 @@ test('incident: IT claims, notes, replies and completes; employee sees the resol
 
   await it.page.goto(ticketUrl);
   await it.page.getByRole('button', { name: 'Üstlen' }).click();
-  await expect(it.page.getByText('Can Demir').first()).toBeVisible();
+  // Scoped to the page content: the header also holds the (phone-hidden) account name.
+  await expect(it.page.getByRole('main').getByText('Can Demir').first()).toBeVisible();
   const box = it.page.getByRole('form', { name: 'Yazışmalar' });
   await box.getByRole('tab', { name: 'İç not' }).click();
   await box.getByLabel('Mesajınız').fill('Tedarikçiden toner istendi');
@@ -84,7 +85,7 @@ test('request: admin approves, IT hands over a device, employee sees it under Zi
 
   await employee.page.goto('/assets/mine');
   await expect(employee.page.getByText(world.assetTag)).toBeVisible();
-  await expect(employee.page.getByText('Lenovo T14')).toBeVisible();
+  await expect(employee.page.getByText(world.assetName)).toBeVisible();
   await expectNoHorizontalScroll(employee.page);
 
   await Promise.all([admin.context.close(), employee.context.close(), it.context.close()]);

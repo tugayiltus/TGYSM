@@ -16,10 +16,11 @@ export function QueueCard({ queue }: { queue: TicketQueue }) {
   return (
     <CCard className="h-100">
       <CCardBody>
-        <Link to={queuePath(queue)} className="stretched-link text-decoration-none fw-semibold">
-          {t(`workspace.${queue}`)}
+        {/* The count is part of the link, so the link reads "SLA Riski 3 kayıt". */}
+        <Link to={queuePath(queue)} className="stretched-link text-decoration-none d-flex flex-column">
+          <span className="fw-semibold">{t(`workspace.${queue}`)}</span>
+          <span className="fs-4 fw-bold mt-1">{count.data ? t('workspace.count', { count: count.data.totalCount }) : '…'}</span>
         </Link>
-        <p className="fs-4 fw-bold mb-0 mt-1">{count.data ? t('workspace.count', { count: count.data.totalCount }) : '…'}</p>
       </CCardBody>
     </CCard>
   );
