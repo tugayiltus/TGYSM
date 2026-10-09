@@ -16,27 +16,31 @@ export interface FilterPanelProps {
   onOpen?: () => void;
   onApply: () => void;
   onClear: () => void;
+  /** Filters apply as they change: wide screens then show only Temizle, and the phone panel's Uygula just closes it. */
+  live?: boolean;
 }
 
 /**
  * Filters inline from 992 px; on phones a "Filtreler (n)" button opens a side panel with Uygula / Temizle / Vazgeç.
  * Vazgeç closes without applying (the caller's draft is reset on the next open), Temizle clears and applies.
  */
-export function FilterPanel({ title, activeCount, primary, more, onOpen, onApply, onClear }: FilterPanelProps) {
+export function FilterPanel({ title, activeCount, primary, more, onOpen, onApply, onClear, live = false }: FilterPanelProps) {
   const { t } = useTranslation();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const actions = (close: () => void) => (
+  const actions = (close: () => void, withApply: boolean) => (
     <div className="d-flex flex-wrap gap-2">
-      <Button
-        onClick={() => {
-          onApply();
-          close();
-        }}
-      >
-        {t('filters.apply')}
-      </Button>
+      {withApply && (
+        <Button
+          onClick={() => {
+            onApply();
+            close();
+          }}
+        >
+          {t('filters.apply')}
+        </Button>
+      )}
       <Button
         variant="secondary"
         onClick={() => {
@@ -66,7 +70,7 @@ export function FilterPanel({ title, activeCount, primary, more, onOpen, onApply
         <div className="d-flex flex-column gap-3">
           {primary}
           {more}
-          {actions(() => setSheetOpen(false))}
+          {actions(() => setSheetOpen(false), true)}
           <Button variant="ghost" onClick={() => setSheetOpen(false)}>
             {t('actions.cancel')}
           </Button>
@@ -84,7 +88,7 @@ export function FilterPanel({ title, activeCount, primary, more, onOpen, onApply
             </CCollapse>
           </>
         )}
-        {actions(() => undefined)}
+        {actions(() => undefined, !live)}
       </section>
     </>
   );

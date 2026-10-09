@@ -68,7 +68,7 @@ describe('ReportsPage', () => {
     expect(screen.getByLabelText('Durum')).toHaveValue('open');
     expect(screen.getByLabelText('Ekip')).toHaveValue('');
 
-    await user.click(screen.getByRole('button', { name: 'Filtreleri temizle' }));
+    await user.click(screen.getByRole('button', { name: 'Temizle' }));
     expect(router.state.location.search).toBe('');
   });
 
@@ -90,7 +90,7 @@ describe('ReportsPage', () => {
     expect(from).toHaveValue('0020-05-10');
     expect(fromParam()).toBe('2026-05-10');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Filtreleri temizle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Temizle' }));
     await waitFor(() => expect(router.state.location.search).toBe(''));
     // Cleared filters fall back to the default period, not to an empty day.
     expect(from).not.toHaveValue('2026-05-10');

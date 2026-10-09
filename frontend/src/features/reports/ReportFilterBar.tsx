@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
 import { translateOr } from '../../shared/i18n/dynamic';
-import { Button } from '../../shared/ui/Button';
 import { SelectField, type SelectOption } from '../../shared/ui/SelectField';
 
 import { useFilterChoices, type ReportName } from './api';
@@ -24,11 +23,10 @@ export interface ReportFilterBarProps {
   report: ReportName;
   filter: ReportFilterValues;
   onChange: (key: ReportFilterKey, value: string) => void;
-  onClear: () => void;
 }
 
 /** The report's filters; every change is written to the URL by the caller (useReportFilter). */
-export function ReportFilterBar({ report, filter, onChange, onClear }: ReportFilterBarProps) {
+export function ReportFilterBar({ report, filter, onChange }: ReportFilterBarProps) {
   const { t } = useTranslation('reports');
   const fields = REPORT_FILTER_FIELDS[report];
   const choices = useFilterChoices(fields);
@@ -62,9 +60,6 @@ export function ReportFilterBar({ report, filter, onChange, onClear }: ReportFil
           ),
         )}
       </div>
-      <Button variant="secondary" className="align-self-start" onClick={onClear} disabled={Object.keys(filter).length === 0}>
-        {t('filters.clear')}
-      </Button>
     </form>
   );
 }

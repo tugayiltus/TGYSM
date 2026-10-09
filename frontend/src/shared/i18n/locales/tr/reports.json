@@ -38,7 +38,6 @@
     "assetType": "Varlık türü",
     "assetStatus": "Varlık durumu",
     "all": "Tümü",
-    "clear": "Filtreleri temizle",
     "active": "Etkin filtreler",
     "remove": "{{name}} filtresini kaldır",
     "panel": "Filtreler"

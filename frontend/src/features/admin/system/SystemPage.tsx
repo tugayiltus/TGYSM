@@ -49,7 +49,7 @@ export function SystemPage() {
     <div className="d-flex flex-column gap-2">
       <div className="d-flex align-items-start justify-content-between gap-2">
         <p className="mb-0 fw-medium">{heartbeat.job}</p>
-        <span className="d-flex gap-1">
+        <span className="d-flex flex-wrap justify-content-end gap-1">
           <FreshnessBadge stale={heartbeat.stale} />
           <InstanceBadge silent={isSilent(heartbeat, fetchedAt)} />
         </span>

@@ -6,7 +6,7 @@ import { figureListHref, type ReportFigure, type ReportName } from './api';
 import { bucketLabel, describeFigure, formatNumber, metricLabel } from './formatMetric';
 import type { ReportFilterValues } from './useReportFilter';
 
-// Recharts stays out of the page chunk: it loads with the first distribution card (vendor-charts).
+// Chart.js stays out of the page chunk: it loads with the first distribution card (vendor-charts).
 const DistributionChart = lazy(async () => ({ default: (await import('./DistributionChart')).DistributionChart }));
 
 export interface FigureCardProps {
@@ -30,14 +30,14 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
       aria-describedby={view.headline !== null ? headlineId : undefined}
       className="d-flex min-w-0 flex-column gap-2 rounded-3 border bg-body p-3 shadow-sm"
     >
-      <h2 id={titleId} className="fw-medium">
-        <Link to={figureListHref(report, figure.metric, filter)} className="link-primary">
+      <h2 id={titleId} className="fs-6 fw-semibold mb-0">
+        <Link to={figureListHref(report, figure.metric, filter)} className="link-primary link-underline-opacity-0 link-underline-opacity-100-hover">
           {title}
         </Link>
       </h2>
-      {view.noData && <p className="fs-5 text-body-secondary">{t('figure.noData')}</p>}
+      {view.noData && <p className="fs-5 text-body-secondary mb-0">{t('figure.noData')}</p>}
       {view.headline !== null && (
-        <p id={headlineId} className="fs-2 fw-semibold link-primary">
+        <p id={headlineId} className="fs-2 fw-semibold link-primary mb-0">
           {view.headline}
         </p>
       )}
@@ -46,12 +46,12 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
           {view.lines.map((line) => (
             <div key={line.label} className="d-contents">
               <dt className="small text-body-secondary">{line.label}</dt>
-              <dd className="fw-semibold link-primary">{line.text}</dd>
+              <dd className="fw-semibold link-primary mb-0">{line.text}</dd>
             </div>
           ))}
         </dl>
       )}
-      {view.note !== null && <p className="small text-body-secondary">{view.note}</p>}
+      {view.note !== null && <p className="small text-body-secondary mb-0">{view.note}</p>}
       {figure.shape === 'ratio' && figure.denominator !== null && (
         <Link to={figureListHref(report, figure.metric, filter, '', 'denominator')} className="align-self-start small link-primary text-decoration-underline">
           {t('figure.openDenominator', { count: figure.denominator })}
@@ -62,7 +62,7 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
           <Suspense fallback={<p className="small text-body-secondary">{t('figure.chartLoading')}</p>}>
             <DistributionChart bars={bars} />
           </Suspense>
-          <ul aria-label={t('figure.buckets')} className="d-flex flex-column gap-1 small">
+          <ul aria-label={t('figure.buckets')} className="list-unstyled d-flex flex-column gap-1 small mb-0">
             {bars.map((bar) => (
               <li key={bar.key} className="d-flex align-items-baseline justify-content-between gap-2">
                 <Link to={figureListHref(report, figure.metric, filter, bar.key)} className="min-w-0 text-break link-primary text-decoration-underline">

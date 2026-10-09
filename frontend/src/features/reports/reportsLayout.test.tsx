@@ -54,6 +54,14 @@ describe('report period', () => {
 });
 
 describe('report filters', () => {
+  it('applies filters as they change, so wide screens get one clear button and no apply button', async () => {
+    mockApi(routes());
+    renderRoute('/reports/incidents?priority=p1');
+    const filters = await screen.findByRole('region', { name: 'Filtreler' });
+    expect(within(filters).getAllByRole('button', { name: /temizle/i })).toHaveLength(1);
+    expect(within(filters).queryByRole('button', { name: 'Uygula' })).not.toBeInTheDocument();
+  });
+
   it('puts the filters behind a counted button on phones and lists active ones as removable chips', async () => {
     mockApi(routes());
     const { user, router } = renderRoute('/reports/incidents?priority=p1');

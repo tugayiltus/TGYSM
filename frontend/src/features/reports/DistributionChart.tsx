@@ -19,8 +19,11 @@ const BAR_COLOR = '#1d4ed8';
 export function DistributionChart({ bars }: { bars: readonly ChartBar[] }) {
   const height = bars.length * BAR_ROW_PX + CHART_PADDING_PX;
   return (
-    <div aria-hidden="true" data-testid="distribution-chart" style={{ height }}>
+    // Chart.js sizes the canvas from its parent, which must be relatively positioned and sized; CChart's own wrapper div
+    // has no height, so the canvas would keep its default 150 px and spill over the bucket list below a short chart.
+    <div aria-hidden="true" data-testid="distribution-chart" className="position-relative" style={{ height }}>
       <CChartBar
+        wrapper={false}
         data={{ labels: bars.map((bar) => bar.label), datasets: [{ data: bars.map((bar) => bar.count), backgroundColor: BAR_COLOR, borderRadius: 4 }] }}
         options={{
           indexAxis: 'y',

@@ -38,4 +38,7 @@ test('admin adds a brand and model; IT registers a device with them and gets a g
   await form.getByLabel('Lokasyon').selectOption({ index: 1 });
   await form.getByRole('button', { name: 'Oluştur' }).click();
   await expect(it.page.getByRole('status', { name: 'Bildirimler' })).toHaveText(GENERATED_TAG);
+  // The inventory list with a device, its filters and paging stays inside a phone screen.
+  await expect(visibleEntry(it.page, world.assetTag)).toBeVisible();
+  await expectNoHorizontalScroll(it.page);
 });

@@ -114,46 +114,45 @@ export function AssetsPage() {
           </>
         }
       />
-      <div className="d-flex gap-2">
-      <div className="row g-3">
-        <TextField
-          className="col-12 col-md-4"
-          type="search"
-          label={t('list.searchLabel')}
-          value={search}
-          onChange={(event) => {
-            setSearchText(event.target.value);
-            setFilter(PARAM.search, event.target.value);
-          }}
-        />
-        <SelectField
-          label={t('list.typeFilter')}
-          placeholder={t('list.allTypes')}
-          options={ASSET_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))}
-          className="col-12 col-md-4"
-          value={type}
-          onChange={(event) => setFilter(PARAM.type, event.target.value)}
-        />
-        <SelectField
-          label={t('list.statusFilter')}
-          placeholder={t('list.allStatuses')}
-          options={ASSET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
-          className="col-12 col-md-4"
-          value={status}
-          onChange={(event) => setFilter(PARAM.status, event.target.value)}
-        />
-      </div>
+      <div className="d-flex flex-column gap-3">
+        <div className="row g-3">
+          <TextField
+            className="col-12 col-md-4"
+            type="search"
+            label={t('list.searchLabel')}
+            value={search}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+              setFilter(PARAM.search, event.target.value);
+            }}
+          />
+          <SelectField
+            label={t('list.typeFilter')}
+            placeholder={t('list.allTypes')}
+            options={ASSET_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))}
+            className="col-12 col-md-4"
+            value={type}
+            onChange={(event) => setFilter(PARAM.type, event.target.value)}
+          />
+          <SelectField
+            label={t('list.statusFilter')}
+            placeholder={t('list.allStatuses')}
+            options={ASSET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
+            className="col-12 col-md-4"
+            value={status}
+            onChange={(event) => setFilter(PARAM.status, event.target.value)}
+          />
+        </div>
 
-      {assets.isPending && <LoadingState />}
-      {assets.isError && <ErrorState error={assets.error} onRetry={() => void assets.refetch()} />}
-      {assets.data && assets.data.items.length === 0 && <EmptyState />}
-      {assets.data && assets.data.items.length > 0 && (
-        <>
-          <ResponsiveList items={assets.data.items} columns={columns} getKey={(a) => a.id} renderCard={renderCard} caption={t('list.caption')} />
-          <Pagination page={assets.data.page} pageSize={assets.data.pageSize} totalCount={assets.data.totalCount} onPageChange={setPage} />
-        </>
-      )}
-
+        {assets.isPending && <LoadingState />}
+        {assets.isError && <ErrorState error={assets.error} onRetry={() => void assets.refetch()} />}
+        {assets.data && assets.data.items.length === 0 && <EmptyState />}
+        {assets.data && assets.data.items.length > 0 && (
+          <>
+            <ResponsiveList items={assets.data.items} columns={columns} getKey={(a) => a.id} renderCard={renderCard} caption={t('list.caption')} />
+            <Pagination page={assets.data.page} pageSize={assets.data.pageSize} totalCount={assets.data.totalCount} onPageChange={setPage} />
+          </>
+        )}
       </div>
       {creating && <AssetFormDialog asset={null} onClose={() => setCreating(false)} />}
     </>

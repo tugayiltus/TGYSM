@@ -51,13 +51,13 @@ function ReportView({ report }: { report: ReportName }) {
     <>
       {periodic && <PeriodPicker period={filter} today={today} onChange={setPeriod} />}
       {reversedRange && <p className="alert alert-warning mb-0">{t('page.reversedRange')}</p>}
-      {/* Filters apply as they change; on phones the panel's Uygula only closes it. */}
       <FilterPanel
         title={t('filters.panel')}
         activeCount={activeFilterKeys(filter).length}
-        primary={<ReportFilterBar report={report} filter={filter} onChange={setFilter} onClear={clear} />}
+        primary={<ReportFilterBar report={report} filter={filter} onChange={setFilter} />}
         onApply={() => undefined}
         onClear={clear}
+        live
       />
       <ActiveFilterChips filter={filter} onRemove={(key) => setFilter(key, '')} />
       {result.isPending && <LoadingState />}
