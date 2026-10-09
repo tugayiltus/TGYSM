@@ -18,6 +18,11 @@ if (args is [SetupAdminCommand.Name, .. var commandArgs])
     return await SetupAdminCommand.RunAsync(app.Services, commandArgs, Console.Out, Console.Error);
 }
 
+if (args is [MigrateCommand.Name])
+{
+    return await MigrateCommand.RunAsync(app.Services, Console.Out, Console.Error);
+}
+
 if (args is [ResetPasswordCommand.Name, .. var resetArgs])
 {
     return await ResetPasswordCommand.RunAsync(app.Services, resetArgs, Console.Out, Console.Error);
