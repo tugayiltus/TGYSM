@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 using Tgysm.Api.Endpoints;
 using Tgysm.Api.Endpoints.Admin;
 using Tgysm.Api.Endpoints.Assets;
@@ -22,11 +23,14 @@ internal static class ApiApplicationExtensions
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment(TestingEnvironment))
         {
             // Local dev: the API runs on plain HTTP behind the Vite proxy, which sends X-Forwarded-Proto: https.
-            // Default ForwardedHeadersOptions trust loopback proxies only. Production hosting decides its own (Phase 6).
+            // Default ForwardedHeadersOptions trust loopback proxies only.
             app.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedProto });
         }
         else
         {
+            // Behind nginx (ADR-0024): client address and scheme come from the trusted proxy networks only.
+            var trust = app.Services.GetRequiredService<IOptions<ProxyTrustOptions>>().Value;
+            app.UseForwardedHeaders(ProxyTrust.CreateForwardedHeadersOptions(trust));
             app.UseHsts();
             app.UseHttpsRedirection();
         }

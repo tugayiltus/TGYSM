@@ -33,6 +33,16 @@ internal static class ApiServiceCollectionExtensions
             .Validate(o => AppOptionsValidation.IsValidPublicBaseUrl(o.PublicBaseUrl), AppOptionsValidation.PublicBaseUrlErrorMessage)
             .ValidateOnStart();
 
+        services.AddOptions<ProxyTrustOptions>()
+            .Bind(configuration.GetSection(ProxyTrustOptions.SectionName))
+            .Validate(o =>
+            {
+                // Throws with the invalid value, which the host reports at startup.
+                ProxyTrust.CreateForwardedHeadersOptions(o);
+                return true;
+            })
+            .ValidateOnStart();
+
         services.AddOptions<WorkerJobsOptions>().Bind(configuration.GetSection(WorkerJobsOptions.SectionName));
 
         services.AddHttpContextAccessor();
