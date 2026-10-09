@@ -247,3 +247,26 @@ body {
   display: flex;
   align-items: center;
 }
+
+// Page never shifts sideways when a dialog hides the scrollbar (spec criterion 8).
+html {
+  scrollbar-gutter: stable;
+}
+
+// List card bodies keep their height while loading, empty or failed, so the footer does not jump.
+.tgysm-card-body-min {
+  min-height: 12rem;
+}
+
+// Skeleton row: the height of one table row (align-middle, small badges).
+.tgysm-skeleton-row .placeholder {
+  height: 2.5rem;
+}
+
+.card .table > :not(caption) > * > :first-child {
+  padding-left: 1rem;
+}
+
+.card .table > :not(caption) > * > :last-child {
+  padding-right: 1rem;
+}

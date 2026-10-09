@@ -14,24 +14,24 @@ export interface ResponsiveListProps<T> {
   caption: string;
 }
 
-/** Cards below 768 px, a table above; the hidden variant is display:none, so screen readers see one list. */
+/** Inside a list card: list-group rows below 768 px, a borderless table above; the hidden variant is display:none, so screen readers see one list. */
 export function ResponsiveList<T>({ items, columns, getKey, renderCard, caption }: ResponsiveListProps<T>) {
   return (
     <>
-      <ul className="list-unstyled d-flex flex-column gap-3 mb-0 d-md-none">
+      <ul className="list-group list-group-flush d-md-none">
         {items.map((item) => (
-          <li key={getKey(item)} className="card card-body">
+          <li key={getKey(item)} className="list-group-item py-3">
             {renderCard(item)}
           </li>
         ))}
       </ul>
-      <div className="d-none d-md-block table-responsive border rounded bg-body">
-        <table className="table table-hover align-top mb-0">
+      <div className="d-none d-md-block table-responsive">
+        <table className="table table-hover align-middle mb-0">
           <caption className="visually-hidden">{caption}</caption>
-          <thead className="table-light">
+          <thead>
             <tr>
               {columns.map((column) => (
-                <th key={column.key} scope="col">
+                <th key={column.key} scope="col" className="text-body-secondary small text-uppercase fw-semibold">
                   {column.header}
                 </th>
               ))}
