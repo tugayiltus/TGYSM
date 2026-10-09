@@ -102,7 +102,9 @@
     "adminSlaCalendar": "SLA takvimi",
     "adminSlaPolicy": "SLA politikası",
     "adminSystem": "Sistem",
-    "adminAudit": "Denetim kayıtları"
+    "adminAudit": "Denetim kayıtları",
+    "adminBrands": "Markalar",
+    "adminModels": "Modeller"
   },
   "menuGroups": {
     "personal": "Kişisel",

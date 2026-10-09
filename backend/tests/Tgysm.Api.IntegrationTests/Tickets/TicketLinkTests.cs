@@ -16,7 +16,7 @@ public sealed class TicketLinkTests(ApiFactory factory) : IAsyncLifetime
     private static async Task<JsonElement> AssetAsync(TicketWorld world, string tag, Guid? assignTo = null)
     {
         var store = await TestData.LocationAsync(world.Factory, $"Depo {tag}");
-        var asset = await AssetCatalogueTests.CreateAsync(world.Desk, new { assetTag = tag, type = "laptop", brand = "Lenovo", model = "T14", locationId = store.Id });
+        var asset = await AssetCatalogueTests.CreateAsync(world.Desk, new { assetTag = tag, modelId = await TestData.ModelAsync(world.Factory), locationId = store.Id });
         if (assignTo is { } user)
         {
             using var assign = await world.Desk.PostAsync($"{AssetCatalogueTests.AssetsPath}/{asset.GetProperty("id").GetGuid()}/assign", new { version = asset.GetProperty("version").GetUInt32(), userId = user });

@@ -63,7 +63,11 @@
     "new": "Yeni cihaz",
     "edit": "Cihazı düzenle",
     "selectType": "Tür seçin",
-    "selectLocation": "Konum seçin"
+    "selectLocation": "Konum seçin",
+    "selectModel": "Seçiniz",
+    "brandEmpty": "Bu türde marka yok",
+    "catalogMissing": "Listede yoksa tanım eksik: yöneticiye bildirin.",
+    "editCatalog": "Kataloğu düzenle"
   },
   "detail": {
     "back": "Envantere dön",

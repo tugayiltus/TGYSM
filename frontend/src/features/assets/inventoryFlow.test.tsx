@@ -70,7 +70,7 @@ describe('leaving with unsaved work', () => {
     const { user, router } = renderRoute('/assets');
     await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByLabelText('Model'), 'X1');
+    await user.type(within(dialog).getByLabelText('Seri numarası'), 'X1');
     await router.navigate('/');
     expect(await screen.findByRole('dialog', { name: 'Kaydedilmemiş değişiklikler' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/assets');

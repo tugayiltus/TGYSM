@@ -11,6 +11,8 @@ public static class AuditEntityTypes
     public const string AssetImport = "asset_import";
     public const string Category = "category";
     public const string RequestType = "request_type";
+    public const string Brand = "brand";
+    public const string AssetModel = "asset_model";
     public const string Ticket = "ticket";
     public const string Approval = "approval";
     public const string Attachment = "attachment";

@@ -29,7 +29,7 @@ public sealed class AssetLifecycleTests(ApiFactory factory) : IAsyncLifetime
     private async Task<(ApiClient It, JsonElement Asset)> ItWithAssetAsync()
     {
         var (it, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.ItStaff, "it@example.com");
-        var asset = await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-1", type = "laptop", brand = "Lenovo", model = "T14", locationId = _storeId });
+        var asset = await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-1", modelId = await TestData.ModelAsync(factory), locationId = _storeId });
         return (it, asset);
     }
 
@@ -99,7 +99,7 @@ public sealed class AssetLifecycleTests(ApiFactory factory) : IAsyncLifetime
     {
         var (it, asset) = await ItWithAssetAsync();
         var (employee, me) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Employee, "me@example.com");
-        var other = await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-2", type = "phone", brand = "Apple", model = "iPhone", locationId = _storeId });
+        var other = await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-2", modelId = await TestData.ModelAsync(factory, "Apple", "iPhone", Domain.Assets.AssetType.Phone), locationId = _storeId });
         await OkAsync(it, await it.PostAsync(PathOf(asset, "assign"), new { version = VersionOf(asset), userId = me.Id }));
 
         using var mine = await employee.GetAsync(MyAssetsPath);

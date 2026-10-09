@@ -6,8 +6,6 @@ namespace Tgysm.Domain.Assets;
 public sealed class Asset : Entity
 {
     public const int TagMaxLength = 50;
-    public const int BrandMaxLength = 100;
-    public const int ModelMaxLength = 100;
     public const int SerialMaxLength = 100;
     public const int NotesMaxLength = 1000;
 
@@ -18,7 +16,14 @@ public sealed class Asset : Entity
     public string AssetTag { get; private set; } = string.Empty;
     public string NormalizedAssetTag { get; private set; } = string.Empty;
     public AssetType Type { get; private set; }
+
+    /// <summary>The catalog model (ADR-0023); <see cref="Type"/>, <see cref="Brand"/> and <see cref="Model"/> come from it.</summary>
+    public Guid ModelId { get; private set; }
+
+    /// <summary>Snapshot of the catalog brand name, kept in step on catalog renames; never typed by users.</summary>
     public string Brand { get; private set; } = string.Empty;
+
+    /// <summary>Snapshot of the catalog model name, kept in step on catalog renames; never typed by users.</summary>
     public string Model { get; private set; } = string.Empty;
     public string? SerialNumber { get; private set; }
     public string? NormalizedSerialNumber { get; private set; }
@@ -40,9 +45,7 @@ public sealed class Asset : Entity
 
     public static (Asset Asset, AssetMovement Movement) Create(
         string assetTag,
-        AssetType type,
-        string brand,
-        string model,
+        AssetCatalogEntry model,
         string? serialNumber,
         Guid locationId,
         Guid? departmentId,
@@ -59,7 +62,7 @@ public sealed class Asset : Entity
         }
 
         var asset = new Asset { Status = initialStatus, CreatedAt = now };
-        asset.UpdateCard(assetTag, type, brand, model, serialNumber, departmentId, warrantyEndsOn, purchasedOn, notes, now);
+        asset.UpdateCard(assetTag, model, serialNumber, departmentId, warrantyEndsOn, purchasedOn, notes, now);
         asset.LocationId = locationId;
         var movement = AssetMovement.Record(asset.Id, AssetMovementKind.Created, null, initialStatus, null, actorUserId, null, null, now);
         return (asset, movement);
@@ -67,9 +70,7 @@ public sealed class Asset : Entity
 
     private void UpdateCard(
         string assetTag,
-        AssetType type,
-        string brand,
-        string model,
+        AssetCatalogEntry model,
         string? serialNumber,
         Guid? departmentId,
         DateOnly? warrantyEndsOn,
@@ -79,9 +80,10 @@ public sealed class Asset : Entity
     {
         AssetTag = assetTag.Trim();
         NormalizedAssetTag = NormalizeTag(assetTag);
-        Type = type;
-        Brand = brand.Trim();
-        Model = model.Trim();
+        ModelId = model.ModelId;
+        Type = model.Type;
+        Brand = model.BrandName;
+        Model = model.ModelName;
         SerialNumber = string.IsNullOrWhiteSpace(serialNumber) ? null : serialNumber.Trim();
         NormalizedSerialNumber = NormalizeSerial(serialNumber);
         DepartmentId = departmentId;
@@ -94,9 +96,7 @@ public sealed class Asset : Entity
     /// <summary>Card edit (descriptive fields and location); status never changes here.</summary>
     public AssetMovement Update(
         string assetTag,
-        AssetType type,
-        string brand,
-        string model,
+        AssetCatalogEntry model,
         string? serialNumber,
         Guid locationId,
         Guid? departmentId,
@@ -106,7 +106,7 @@ public sealed class Asset : Entity
         Guid actorUserId,
         DateTimeOffset now)
     {
-        UpdateCard(assetTag, type, brand, model, serialNumber, departmentId, warrantyEndsOn, purchasedOn, notes, now);
+        UpdateCard(assetTag, model, serialNumber, departmentId, warrantyEndsOn, purchasedOn, notes, now);
         LocationId = locationId;
         return AssetMovement.Record(Id, AssetMovementKind.Updated, Status, Status, null, actorUserId, null, null, now);
     }

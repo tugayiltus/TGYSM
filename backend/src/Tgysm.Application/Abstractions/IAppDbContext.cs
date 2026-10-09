@@ -23,6 +23,8 @@ public interface IAppDbContext
     DbSet<TeamMembership> TeamMemberships { get; }
     DbSet<AuditEvent> AuditEvents { get; }
     DbSet<Asset> Assets { get; }
+    DbSet<Brand> Brands { get; }
+    DbSet<AssetModel> AssetModels { get; }
     DbSet<AssetAssignment> AssetAssignments { get; }
     DbSet<AssetMovement> AssetMovements { get; }
     DbSet<AssetImportJob> AssetImportJobs { get; }

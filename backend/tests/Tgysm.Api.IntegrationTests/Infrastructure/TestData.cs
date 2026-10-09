@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Tgysm.Domain.Assets;
 using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Organization;
 using Tgysm.Infrastructure.Persistence;
@@ -60,6 +62,37 @@ public static class TestData
 
         await SaveAsync(factory, db => db.Categories.Add(category));
         return category;
+    }
+
+    /// <summary>The catalog model for a brand, model name and device type, created on first use (ADR-0023).</summary>
+    public static async Task<Guid> ModelAsync(ApiFactory factory, string brandName = "Lenovo", string modelName = "T14", AssetType type = AssetType.Laptop, bool active = true)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var ct = TestContext.Current.CancellationToken;
+        var brandKey = CatalogName.Normalize(brandName);
+        var brand = await db.Brands.SingleOrDefaultAsync(b => b.NormalizedName == brandKey, ct);
+        if (brand is null)
+        {
+            brand = Brand.Create(brandName, DateTimeOffset.UtcNow);
+            db.Brands.Add(brand);
+        }
+
+        var modelKey = CatalogName.Normalize(modelName);
+        var model = await db.AssetModels.SingleOrDefaultAsync(m => m.BrandId == brand.Id && m.Type == type && m.NormalizedName == modelKey, ct);
+        if (model is null)
+        {
+            model = AssetModel.Create(brand.Id, type, modelName, DateTimeOffset.UtcNow);
+            db.AssetModels.Add(model);
+        }
+
+        if (!active)
+        {
+            model.Deactivate(DateTimeOffset.UtcNow);
+        }
+
+        await db.SaveChangesAsync(ct);
+        return model.Id;
     }
 
     public static async Task SaveAsync(ApiFactory factory, Action<AppDbContext> change)

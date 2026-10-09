@@ -27,6 +27,10 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await factory.ResetAsync();
+        // Catalog entries the CSV rows of these tests name (ADR-0023); rows with other names fail as "Tanım eksik".
+        await TestData.ModelAsync(factory, "Lenovo", "T14");
+        await TestData.ModelAsync(factory, "Lenovo", "ThinkPad T14");
+        await TestData.ModelAsync(factory, "Apple", "iPad, 10", Domain.Assets.AssetType.Tablet);
         var campus = await TestData.LocationAsync(factory, "Merkez Kampüs");
         await TestData.LocationAsync(factory, "A Blok", campus.Id);
         var branch = await TestData.LocationAsync(factory, "Şube");
@@ -151,7 +155,7 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
     {
         var it = await ItAsync();
         var store = (await TestData.LocationAsync(factory, "Depo")).Id;
-        await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-1", type = "laptop", brand = "Lenovo", model = "T14", serialNumber = "SN-9", locationId = store });
+        await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-1", modelId = await TestData.ModelAsync(factory), serialNumber = "SN-9", locationId = store });
 
         var job = await PreviewAsync(it, Csv(
             "dt-1,laptop,Lenovo,T14,,Depo,,in_stock,,,",
@@ -240,7 +244,7 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
         var it = await ItAsync();
         var store = (await TestData.LocationAsync(factory, "Depo")).Id;
         var job = await PreviewAsync(it, Csv("DT-1,laptop,Lenovo,T14,,Depo,,in_stock,,,", "DT-2,laptop,Lenovo,T14,,Depo,,in_stock,,,"));
-        await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-2", type = "laptop", brand = "Lenovo", model = "T14", locationId = store });
+        await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-2", modelId = await TestData.ModelAsync(factory), locationId = store });
 
         using var commit = await it.PostAsync(CommitPath(job));
 
@@ -294,6 +298,18 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains(ErrorCodes.ImportFileTooLarge, (await ApiClient.ReadFieldCodesAsync(response))["file"]);
+    }
+
+    [Fact]
+    public async Task A_brand_or_model_missing_from_the_catalog_is_a_row_error_and_blocks_the_commit()
+    {
+        var it = await ItAsync();
+
+        var job = await PreviewAsync(it, Csv("DT-1,laptop,Lenovo,T14,,Işık Binası,,in_stock,,,", "DT-2,laptop,Lenova,T14,,Işık Binası,,in_stock,,,", "DT-3,phone,Lenovo,T14,,Işık Binası,,in_stock,,,"));
+
+        var errors = job.GetProperty("errors").EnumerateArray().Select(e => (e.GetProperty("row").GetInt32(), e.GetProperty("field").GetString(), e.GetProperty("code").GetString())).ToList();
+        Assert.Equal([(3, "model", ErrorCodes.ImportCatalogMissing), (4, "model", ErrorCodes.ImportCatalogMissing)], errors);
+        Assert.Equal(1, job.GetProperty("validRows").GetInt32());
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Features.Assets.Catalog;
 using Tgysm.Application.Features.Organization;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Audit;
@@ -13,9 +14,7 @@ public sealed record UpdateAssetCommand(
     Guid Id,
     uint Version,
     string AssetTag,
-    AssetType Type,
-    string Brand,
-    string Model,
+    Guid ModelId,
     string? SerialNumber,
     Guid LocationId,
     Guid? DepartmentId,
@@ -26,7 +25,7 @@ public sealed record UpdateAssetCommand(
 internal sealed class UpdateAssetValidator : AbstractValidator<UpdateAssetCommand>
 {
     public UpdateAssetValidator() =>
-        this.CardRules(c => c.AssetTag, c => c.Brand, c => c.Model, c => c.SerialNumber, c => c.Notes, c => c.Type, c => c.LocationId);
+        this.CardRules(c => c.AssetTag, c => c.ModelId, c => c.SerialNumber, c => c.Notes, c => c.LocationId);
 }
 
 public sealed class UpdateAssetHandler(
@@ -51,9 +50,11 @@ public sealed class UpdateAssetHandler(
             command.LocationId == asset.LocationId ? null : command.LocationId,
             cancellationToken);
 
+        // A model deactivated after this asset was registered stays valid for the asset itself.
+        var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: asset.ModelId, cancellationToken);
         var before = new { asset.AssetTag, asset.Type, asset.Brand, asset.Model, asset.SerialNumber, asset.LocationId, asset.DepartmentId };
         var movement = asset.Update(
-            command.AssetTag, command.Type, command.Brand, command.Model, command.SerialNumber, command.LocationId,
+            command.AssetTag, model, command.SerialNumber, command.LocationId,
             command.DepartmentId, command.WarrantyEndsOn, command.PurchasedOn, command.Notes, actorId, clock.GetUtcNow());
         db.AssetMovements.Add(movement);
         audit.Record(AuditActions.AssetUpdated, AuditEntityTypes.Asset, asset.Id, before,

@@ -1,24 +1,29 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { z } from 'zod';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
+import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
+import { ComboboxField } from '../../shared/ui/ComboboxField';
 import { Dialog } from '../../shared/ui/Dialog';
 import { FormAlert } from '../../shared/ui/FormAlert';
 import { SelectField } from '../../shared/ui/SelectField';
 import { TextField } from '../../shared/ui/TextField';
 import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
 import { withCurrentOption } from '../admin/shared/referenceOptions';
+import { useSession } from '../auth/session';
 
-import { ASSET_TYPES, useCreateAsset, useReferenceDepartments, useReferenceLocations, useUpdateAsset, type AssetItem, type AssetType } from './api';
+import { ASSET_TYPES, useAssetCatalog, useCreateAsset, useReferenceDepartments, useReferenceLocations, useUpdateAsset, type AssetItem } from './api';
 
 /** Mirror backend Asset.*MaxLength. */
 const TAG_MAX_LENGTH = 50;
 const NAME_MAX_LENGTH = 100;
+const ADMIN_ROLE = 'admin';
 const NOTES_MAX_LENGTH = 1000;
 const NO_SELECTION = '';
 
@@ -27,9 +32,10 @@ const optional = (max: number) => z.string().trim().max(max, ERROR_CODES.tooLong
 
 const assetSchema = z.object({
   assetTag: required(TAG_MAX_LENGTH),
+  // Type and brand only narrow the model list; the model (from the admin catalog, ADR-0023) is what is saved.
   type: z.string().min(1, ERROR_CODES.required),
-  brand: required(NAME_MAX_LENGTH),
-  model: required(NAME_MAX_LENGTH),
+  brandId: z.string(),
+  modelId: z.string().min(1, ERROR_CODES.required),
   serialNumber: optional(NAME_MAX_LENGTH),
   locationId: z.string().min(1, ERROR_CODES.required),
   departmentId: z.string(),
@@ -40,11 +46,12 @@ const assetSchema = z.object({
 
 type AssetFormValues = z.infer<typeof assetSchema>;
 
-const FORM_FIELDS = ['assetTag', 'type', 'brand', 'model', 'serialNumber', 'locationId', 'departmentId', 'warrantyEndsOn', 'purchasedOn', 'notes'] as const;
+const FORM_FIELDS = ['assetTag', 'type', 'brandId', 'modelId', 'serialNumber', 'locationId', 'departmentId', 'warrantyEndsOn', 'purchasedOn', 'notes'] as const;
 const CODE_FIELDS = {
   [ERROR_CODES.assetTagTaken]: 'assetTag',
   [ERROR_CODES.assetSerialTaken]: 'serialNumber',
   [ERROR_CODES.referenceInactive]: 'locationId',
+  [ERROR_CODES.assetModelInactive]: 'modelId',
 } as const;
 
 const nullIfEmpty = (value: string) => (value === NO_SELECTION ? null : value);
@@ -58,6 +65,8 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
   const create = useCreateAsset();
   const update = useUpdateAsset();
   const mutation = asset === null ? create : update;
+  const catalog = useAssetCatalog();
+  const me = useSession();
 
   const typeOptions = ASSET_TYPES.map((type) => ({ value: type, label: t(`types.${type}`) }));
   const locationOptions = useMemo(
@@ -71,16 +80,18 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
       assetTag: asset?.assetTag ?? '',
       type: asset?.type ?? NO_SELECTION,
-      brand: asset?.brand ?? '',
-      model: asset?.model ?? '',
+      brandId: NO_SELECTION,
+      modelId: asset?.modelId ?? NO_SELECTION,
       serialNumber: asset?.serialNumber ?? '',
       locationId: asset?.locationId ?? NO_SELECTION,
       departmentId: asset?.departmentId ?? NO_SELECTION,
@@ -90,12 +101,25 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
     },
   });
 
+  const type = useWatch({ control, name: 'type' });
+  const brandIdValue = useWatch({ control, name: 'brandId' });
+  const brands = useMemo(() => (catalog.data ?? []).filter((b) => b.models.some((m) => m.type === type)), [catalog.data, type]);
+  // An edited asset starts on its own brand; its model may have left the active catalog and is then shown as is.
+  const brandId = brandIdValue !== NO_SELECTION ? brandIdValue : (catalog.data?.find((b) => b.models.some((m) => m.id === asset?.modelId))?.id ?? NO_SELECTION);
+  const modelOptions = useMemo(
+    () =>
+      withCurrentOption(
+        (catalog.data?.find((b) => b.id === brandId)?.models ?? []).filter((m) => m.type === type).map((m) => ({ value: m.id, label: m.name })),
+        asset?.modelId,
+        asset?.model,
+      ),
+    [catalog.data, brandId, type, asset],
+  );
+
   const onSubmit = handleSubmit((values) => {
     const body = {
       assetTag: values.assetTag,
-      type: values.type as AssetType,
-      brand: values.brand,
-      model: values.model,
+      modelId: values.modelId,
       serialNumber: nullIfEmpty(values.serialNumber),
       locationId: values.locationId,
       departmentId: nullIfEmpty(values.departmentId),
@@ -141,8 +165,30 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
         </div>
         <TextField className="col-12 col-sm-6" label={t('fields.assetTag')} autoComplete="off" error={fieldError(errors.assetTag)} {...register('assetTag')} />
         <SelectField className="col-12 col-sm-6" label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} error={fieldError(errors.type)} {...register('type')} />
-        <TextField className="col-12 col-sm-6" label={t('fields.brand')} autoComplete="off" error={fieldError(errors.brand)} {...register('brand')} />
-        <TextField className="col-12 col-sm-6" label={t('fields.model')} autoComplete="off" error={fieldError(errors.model)} {...register('model')} />
+        <div className="col-12 col-sm-6">
+          <Controller
+            control={control}
+            name="brandId"
+            render={({ field }) => (
+              <ComboboxField
+                label={t('fields.brand')}
+                options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                value={field.value === NO_SELECTION ? brandId : field.value}
+                emptyText={t('form.brandEmpty')}
+                error={fieldError(errors.brandId)}
+                onChange={(value) => {
+                  field.onChange(value);
+                  setValue('modelId', NO_SELECTION, { shouldDirty: true });
+                }}
+              />
+            )}
+          />
+        </div>
+        <SelectField className="col-12 col-sm-6" label={t('fields.model')} options={modelOptions} placeholder={t('form.selectModel')} error={fieldError(errors.modelId)} {...register('modelId')} />
+        <p className="col-12 small text-body-secondary mb-0">
+          {t('form.catalogMissing')}{' '}
+          {me.role === ADMIN_ROLE && <Link to={ROUTES.adminModels}>{t('form.editCatalog')}</Link>}
+        </p>
         <TextField className="col-12 col-sm-6" label={t('fields.serialNumber')} autoComplete="off" error={fieldError(errors.serialNumber)} {...register('serialNumber')} />
         <SelectField className="col-12 col-sm-6" label={t('fields.location')} options={locationOptions} placeholder={t('form.selectLocation')} error={fieldError(errors.locationId)} {...register('locationId')} />
         <SelectField className="col-12 col-sm-6" label={t('fields.department')} options={departmentOptions} placeholder={tc('none')} error={fieldError(errors.departmentId)} {...register('departmentId')} />

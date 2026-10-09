@@ -23,4 +23,7 @@ public static class SerializationLocks
 
     /// <summary>Queuing a background export: guards the per-user cap on pending and running export jobs.</summary>
     public const long ExportQueue = 7_007;
+
+    /// <summary>Renaming a brand or model: the catalog row and the asset name snapshots change in one transaction.</summary>
+    public const long AssetCatalog = 7_008;
 }

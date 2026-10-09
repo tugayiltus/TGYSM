@@ -19,8 +19,9 @@ internal sealed class AssetConfiguration : IEntityTypeConfiguration<Asset>
 
         builder.Property(a => a.AssetTag).HasMaxLength(Asset.TagMaxLength).IsRequired();
         builder.Property(a => a.NormalizedAssetTag).HasMaxLength(Asset.TagMaxLength).IsRequired();
-        builder.Property(a => a.Brand).HasMaxLength(Asset.BrandMaxLength).IsRequired();
-        builder.Property(a => a.Model).HasMaxLength(Asset.ModelMaxLength).IsRequired();
+        // Snapshots of the catalog names (ADR-0023), kept for search, reports and ticket links.
+        builder.Property(a => a.Brand).HasMaxLength(CatalogName.MaxLength).IsRequired();
+        builder.Property(a => a.Model).HasMaxLength(CatalogName.MaxLength).IsRequired();
         builder.Property(a => a.SerialNumber).HasMaxLength(Asset.SerialMaxLength);
         builder.Property(a => a.NormalizedSerialNumber).HasMaxLength(Asset.SerialMaxLength);
         builder.Property(a => a.Notes).HasMaxLength(Asset.NotesMaxLength);
@@ -39,5 +40,6 @@ internal sealed class AssetConfiguration : IEntityTypeConfiguration<Asset>
 
         builder.HasOne<Location>().WithMany().HasForeignKey(a => a.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Department>().WithMany().HasForeignKey(a => a.DepartmentId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<AssetModel>().WithMany().HasForeignKey(a => a.ModelId).OnDelete(DeleteBehavior.Restrict);
     }
 }

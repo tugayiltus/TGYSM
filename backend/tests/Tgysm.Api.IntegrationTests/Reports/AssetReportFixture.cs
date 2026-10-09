@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
+using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Application.Reports;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Reports;
@@ -29,8 +30,9 @@ internal sealed class AssetReportFixture(ReportWorld world)
         bool retainedInMaintenance = false)
     {
         var initial = status is AssetStatus.Retired ? AssetStatus.Retired : AssetStatus.InStock;
+        var model = new AssetCatalogEntry(await TestData.ModelAsync(World.Factory, "Marka", "Model", type), type, "Marka", "Model");
         var (asset, created) = Asset.Create(
-            $"AST-{++_counter:D4}", type, "Marka", "Model", null, locationId, departmentId, warrantyEndsOn, null, null, Now, initial, World.Admin.Id);
+            $"AST-{++_counter:D4}", model, null, locationId, departmentId, warrantyEndsOn, null, null, Now, initial, World.Admin.Id);
         var changes = new List<AssetChange>();
         switch (status)
         {

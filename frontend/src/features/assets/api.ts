@@ -80,6 +80,13 @@ function useInvalidateAssets() {
   return () => queryClient.invalidateQueries({ queryKey: assetKeys.all });
 }
 
+export type CatalogBrand = components['schemas']['CatalogBrand'];
+
+/** Active brands with their active models for asset forms (ADR-0023). */
+export function useAssetCatalog() {
+  return useQuery({ queryKey: [...assetKeys.reference, 'catalog'], queryFn: () => unwrap(api.GET('/api/v1/assets/catalog')) });
+}
+
 export function useCreateAsset() {
   const invalidate = useInvalidateAssets();
   return useMutation({ mutationFn: (body: CreateAssetInput) => unwrap(api.POST('/api/v1/assets', { body })), onSuccess: invalidate });

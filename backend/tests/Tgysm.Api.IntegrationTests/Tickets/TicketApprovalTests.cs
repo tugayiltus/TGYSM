@@ -119,7 +119,7 @@ public sealed class TicketApprovalTests(ApiFactory factory) : IAsyncLifetime
         var world = await TicketWorld.CreateAsync(factory);
         var request = await world.CreateRequestAsync(world.Employee, approval: true);
         var store = await TestData.LocationAsync(factory, "Depo");
-        var asset = await AssetCatalogueTests.CreateAsync(world.Desk, new { assetTag = "DT-1", type = "laptop", brand = "Lenovo", model = "T14", locationId = store.Id });
+        var asset = await AssetCatalogueTests.CreateAsync(world.Desk, new { assetTag = "DT-1", modelId = await TestData.ModelAsync(factory), locationId = store.Id });
 
         using var complete = await world.Desk.PostAsync(TicketWorld.PathOf(request, "complete"), new { version = TicketWorld.VersionOf(request), resolution = "Verildi" });
         using var handover = await world.Desk.PostAsync($"{AssetCatalogueTests.AssetsPath}/{asset.GetProperty("id").GetGuid()}/assign", new
@@ -155,7 +155,7 @@ public sealed class TicketApprovalTests(ApiFactory factory) : IAsyncLifetime
         var cancelled = await world.CreateRequestAsync(world.Employee, approval: false);
         using var _ = await world.Desk.PostAsync(TicketWorld.PathOf(cancelled, "cancel"), new { version = TicketWorld.VersionOf(cancelled), reason = "Vazgeçildi" });
         var store = await TestData.LocationAsync(factory, "Depo");
-        var asset = await AssetCatalogueTests.CreateAsync(world.Desk, new { assetTag = "DT-1", type = "laptop", brand = "Lenovo", model = "T14", locationId = store.Id });
+        var asset = await AssetCatalogueTests.CreateAsync(world.Desk, new { assetTag = "DT-1", modelId = await TestData.ModelAsync(factory), locationId = store.Id });
         var other = await TestUsers.CreateAsync(factory, UserRole.Employee, "baska@example.com");
         var assignPath = $"{AssetCatalogueTests.AssetsPath}/{asset.GetProperty("id").GetGuid()}/assign";
         var version = asset.GetProperty("version").GetUInt32();

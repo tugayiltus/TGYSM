@@ -32,6 +32,8 @@ export const ROUTES = {
   adminSlaPolicy: '/admin/sla/policy',
   adminCategories: '/admin/categories',
   adminRequestTypes: '/admin/request-types',
+  adminBrands: '/admin/brands',
+  adminModels: '/admin/models',
 } as const;
 
 export const assetPath = (id: string) => `${ROUTES.assets}/${id}`;

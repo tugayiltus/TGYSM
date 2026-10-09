@@ -57,6 +57,14 @@ public static class AuditActions
     public const string CategoryDeactivated = "categories.deactivated";
     public const string CategoryReactivated = "categories.reactivated";
 
+    public const string BrandCreated = "brands.created";
+    public const string BrandRenamed = "brands.renamed";
+    public const string BrandDeactivated = "brands.deactivated";
+    public const string BrandReactivated = "brands.reactivated";
+    public const string AssetModelCreated = "asset_models.created";
+    public const string AssetModelRenamed = "asset_models.renamed";
+    public const string AssetModelDeactivated = "asset_models.deactivated";
+    public const string AssetModelReactivated = "asset_models.reactivated";
     public const string RequestTypeCreated = "request_types.created";
     public const string RequestTypeUpdated = "request_types.updated";
     public const string RequestTypeDeactivated = "request_types.deactivated";

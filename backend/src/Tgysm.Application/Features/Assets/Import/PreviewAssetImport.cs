@@ -132,8 +132,8 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
         }
 
         var tag = Text(AssetCsvTemplate.AssetTag, Asset.TagMaxLength, required: true);
-        var brand = Text(AssetCsvTemplate.Brand, Asset.BrandMaxLength, required: true);
-        var model = Text(AssetCsvTemplate.Model, Asset.ModelMaxLength, required: true);
+        var brand = Text(AssetCsvTemplate.Brand, CatalogName.MaxLength, required: true);
+        var model = Text(AssetCsvTemplate.Model, CatalogName.MaxLength, required: true);
         var serial = Text(AssetCsvTemplate.SerialNumber, Asset.SerialMaxLength, required: false);
         var notes = Text(AssetCsvTemplate.Notes, Asset.NotesMaxLength, required: false);
         var warranty = Date(AssetCsvTemplate.WarrantyEndsOn);
@@ -148,14 +148,25 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             context.CheckTag(tag, Error);
         }
 
+        // Brand and model must already be in the catalog (ADR-0023): no free text, so no spelling variants.
+        AssetCatalogEntry? entry = null;
+        if (brand is not null && model is not null && type is not null)
+        {
+            entry = context.FindModel(brand, type.Value, model);
+            if (entry is null)
+            {
+                Error(AssetCsvTemplate.Model, ErrorCodes.ImportCatalogMissing);
+            }
+        }
+
         if (serial is not null)
         {
             context.CheckSerial(serial, Error);
         }
 
-        return tag is null || brand is null || model is null || type is null || status is null || location is null
+        return tag is null || entry is null || status is null || location is null
             ? null
-            : new AssetImportRow(row, tag, type.Value, brand, model, serial, location.Id, location.Path, department?.Id, department?.Name, status.Value, warranty, purchased, notes);
+            : new AssetImportRow(row, tag, entry.Type, entry.ModelId, entry.BrandName, entry.ModelName, serial, location.Id, location.Path, department?.Id, department?.Name, status.Value, warranty, purchased, notes);
     }
 
     private static AssetType? ParseType(string value, Action<string, string> error)
@@ -270,8 +281,16 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
         private readonly HashSet<string> _fileTags = [];
         private readonly HashSet<string> _fileSerials = [];
 
-        private RowContext(LocationPaths locations, Dictionary<string, (Guid Id, string Name, bool IsActive)> departments, HashSet<string> takenTags, HashSet<string> takenSerials)
+        private readonly Dictionary<(string Brand, AssetType Type, string Model), AssetCatalogEntry> _models;
+
+        private RowContext(
+            LocationPaths locations,
+            Dictionary<string, (Guid Id, string Name, bool IsActive)> departments,
+            HashSet<string> takenTags,
+            HashSet<string> takenSerials,
+            Dictionary<(string Brand, AssetType Type, string Model), AssetCatalogEntry> models)
         {
+            _models = models;
             Locations = locations;
             Departments = departments;
             _takenTags = takenTags;
@@ -289,12 +308,21 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             var takenTags = await db.Assets.AsNoTracking().Where(a => normalizedTags.Contains(a.NormalizedAssetTag)).Select(a => a.NormalizedAssetTag).ToListAsync(cancellationToken);
             var takenSerials = await db.Assets.AsNoTracking().Where(a => a.NormalizedSerialNumber != null && normalizedSerials.Contains(a.NormalizedSerialNumber)).Select(a => a.NormalizedSerialNumber!).ToListAsync(cancellationToken);
             var departments = await db.Departments.AsNoTracking().Select(d => new { d.Id, d.Name, d.NormalizedName, d.IsActive }).ToListAsync(cancellationToken);
+            var models = await (from m in db.AssetModels.AsNoTracking()
+                                join b in db.Brands.AsNoTracking() on m.BrandId equals b.Id
+                                where m.IsActive && b.IsActive
+                                select new { BrandKey = b.NormalizedName, ModelKey = m.NormalizedName, Entry = new AssetCatalogEntry(m.Id, m.Type, b.Name, m.Name) }).ToListAsync(cancellationToken);
             return new RowContext(
                 await LocationPaths.LoadAsync(db, cancellationToken),
                 departments.ToDictionary(d => d.NormalizedName, d => (d.Id, d.Name, d.IsActive), StringComparer.Ordinal),
                 [.. takenTags],
-                [.. takenSerials]);
+                [.. takenSerials],
+                models.ToDictionary(m => (m.BrandKey, m.Entry.Type, m.ModelKey), m => m.Entry));
         }
+
+        /// <summary>The active catalog model with this brand, type and model name (compared by <see cref="CatalogName"/> key).</summary>
+        public AssetCatalogEntry? FindModel(string brand, AssetType type, string model) =>
+            _models.GetValueOrDefault((CatalogName.Normalize(brand), type, CatalogName.Normalize(model)));
 
         public void CheckTag(string tag, Action<string, string> error)
         {

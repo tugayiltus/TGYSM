@@ -18,6 +18,8 @@ export const ERROR_CODES = {
   teamNameTaken: 'teams.name_taken',
   assetTagTaken: 'assets.tag_taken',
   assetSerialTaken: 'assets.serial_taken',
+  assetModelInactive: 'assets.model_inactive',
+  assetCatalogDuplicate: 'assets.catalog_duplicate',
   categoryNameTaken: 'categories.name_taken',
   categoryTooDeep: 'categories.too_deep',
   requestTypeNameTaken: 'request_types.name_taken',

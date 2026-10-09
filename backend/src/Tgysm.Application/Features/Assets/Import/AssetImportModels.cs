@@ -9,6 +9,7 @@ public sealed record AssetImportRow(
     int Row,
     string AssetTag,
     AssetType Type,
+    Guid ModelId,
     string Brand,
     string Model,
     string? SerialNumber,

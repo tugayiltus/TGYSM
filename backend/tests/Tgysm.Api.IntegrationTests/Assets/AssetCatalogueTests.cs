@@ -13,6 +13,7 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
 {
     public const string AssetsPath = "/api/v1/assets";
     private Guid _storeId;
+    private readonly Dictionary<string, Guid> _models = [];
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -20,6 +21,12 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
     {
         await factory.ResetAsync();
         _storeId = (await TestData.LocationAsync(factory, "Depo")).Id;
+        foreach (var name in new[] { "T14", "T14 Gen 5", "T14 Gen 6" })
+        {
+            _models[name] = await TestData.ModelAsync(factory, "Lenovo", name);
+        }
+
+        _models["iPad"] = await TestData.ModelAsync(factory, "Apple", "iPad", Domain.Assets.AssetType.Tablet);
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -27,8 +34,8 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
     private async Task<ApiClient> ItAsync() =>
         (await ApiClient.LoginAsNewUserAsync(factory, UserRole.ItStaff, "it@example.com")).Client;
 
-    private object NewAsset(string tag, string? serial = null, string model = "T14", string type = "laptop") =>
-        new { assetTag = tag, type, brand = "Lenovo", model, serialNumber = serial, locationId = _storeId };
+    private object NewAsset(string tag, string? serial = null, string model = "T14") =>
+        new { assetTag = tag, modelId = _models[model], serialNumber = serial, locationId = _storeId };
 
     public static async Task<JsonElement> CreateAsync(ApiClient client, object body)
     {
@@ -54,7 +61,7 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
     {
         var it = await ItAsync();
         var created = await CreateAsync(it, NewAsset("dt 0001", "sn-1"));
-        await CreateAsync(it, NewAsset("TB-1", model: "iPad", type: "tablet"));
+        await CreateAsync(it, NewAsset("TB-1", model: "iPad"));
 
         using var byType = await it.GetAsync($"{AssetsPath}?type=tablet");
         using var bySearch = await it.GetAsync($"{AssetsPath}?search=DT0001");
@@ -89,7 +96,7 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
         var it = await ItAsync();
         var closed = await TestData.LocationAsync(factory, "Kapalı", active: false);
 
-        using var response = await it.PostAsync(AssetsPath, new { assetTag = "DT-9", type = "laptop", brand = "Lenovo", model = "T14", locationId = closed.Id });
+        using var response = await it.PostAsync(AssetsPath, new { assetTag = "DT-9", modelId = _models["T14"], locationId = closed.Id });
 
         Assert.Equal(ErrorCodes.ReferenceInactive, await ApiClient.ReadCodeAsync(response));
     }
@@ -101,7 +108,7 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
         var created = await CreateAsync(it, NewAsset("DT-1"));
         var path = $"{AssetsPath}/{created.GetProperty("id").GetGuid()}";
         var version = created.GetProperty("version").GetUInt32();
-        object Body(string model) => new { version, assetTag = "DT-1", type = "laptop", brand = "Lenovo", model, locationId = _storeId, notes = "Yedek şarj aleti var" };
+        object Body(string model) => new { version, assetTag = "DT-1", modelId = _models[model], locationId = _storeId, notes = "Yedek şarj aleti var" };
 
         using var first = await it.PutAsync(path, Body("T14 Gen 5"));
         using var second = await it.PutAsync(path, Body("T14 Gen 6"));
@@ -115,7 +122,7 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
     {
         var it = await ItAsync();
 
-        using var response = await it.PostAsync(AssetsPath, new { assetTag = "", type = "toaster", brand = "", model = "", locationId = _storeId });
+        using var response = await it.PostAsync(AssetsPath, new { assetTag = "", modelId = Guid.Empty, locationId = _storeId });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

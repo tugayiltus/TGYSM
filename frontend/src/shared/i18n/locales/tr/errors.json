@@ -131,5 +131,8 @@
     "export_expired": "Dışa aktarım dosyasının süresi doldu. Raporu yeniden dışa aktarın.",
     "export_attempts_exhausted": "Dışa aktarım birkaç denemede tamamlanamadı. Filtreyi daraltıp yeniden deneyin.",
     "export_queue_full": "Aynı anda en fazla 3 dışa aktarım hazırlanabilir. Biri bitince tekrar deneyin."
-  }
+  },
+  "assets.catalog_duplicate": "Bu ad zaten kayıtlı. Mevcut tanımı kullanın.",
+  "assets.model_inactive": "Seçilen model kullanılamıyor. Etkin bir model seçin.",
+  "assets.import_catalog_missing": "Tanım eksik: marka veya model katalogda yok. Yöneticiye bildirin."
 }

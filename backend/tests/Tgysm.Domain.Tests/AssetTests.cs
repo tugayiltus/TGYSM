@@ -10,9 +10,10 @@ public sealed class AssetTests
     private static readonly Guid Employee = Guid.NewGuid();
     private static readonly Guid OtherEmployee = Guid.NewGuid();
     private static readonly Guid Store = Guid.NewGuid();
+    private static readonly AssetCatalogEntry Laptop = new(Guid.NewGuid(), AssetType.Laptop, "Lenovo", "T14");
 
     private static Asset NewAsset(string? serial = " sn-01 ") =>
-        Asset.Create(" dt 0001 ", AssetType.Laptop, "Lenovo", "T14", serial, Store, null, null, null, null, Now).Asset;
+        Asset.Create(" dt 0001 ", Laptop, serial, Store, null, null, null, null, Now).Asset;
 
     private static (Asset Asset, AssetAssignment Active) Assigned()
     {
@@ -24,7 +25,7 @@ public sealed class AssetTests
     [Fact]
     public void Create_normalizes_tag_and_serial_and_records_a_movement()
     {
-        var (asset, movement) = Asset.Create(" dt 0001 ", AssetType.Laptop, "Lenovo", "T14", "  ", Store, null, null, null, null, Now);
+        var (asset, movement) = Asset.Create(" dt 0001 ", Laptop, "  ", Store, null, null, null, null, Now);
 
         Assert.Equal("dt 0001", asset.AssetTag);
         Assert.Equal("DT0001", asset.NormalizedAssetTag);

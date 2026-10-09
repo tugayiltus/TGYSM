@@ -26,6 +26,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<TeamMembership> TeamMemberships => Set<TeamMembership>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<Brand> Brands => Set<Brand>();
+    public DbSet<AssetModel> AssetModels => Set<AssetModel>();
     public DbSet<AssetAssignment> AssetAssignments => Set<AssetAssignment>();
     public DbSet<AssetMovement> AssetMovements => Set<AssetMovement>();
     public DbSet<AssetImportJob> AssetImportJobs => Set<AssetImportJob>();

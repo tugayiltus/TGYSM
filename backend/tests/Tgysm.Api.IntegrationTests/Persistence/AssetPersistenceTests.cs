@@ -12,6 +12,7 @@ public sealed class AssetPersistenceTests(PostgresDatabase database) : IAsyncLif
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 26, 9, 0, 0, TimeSpan.Zero);
     private Location _store = null!;
+    private AssetCatalogEntry _laptop = null!;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -19,15 +20,20 @@ public sealed class AssetPersistenceTests(PostgresDatabase database) : IAsyncLif
     {
         await database.ResetAsync();
         _store = Location.Create("Depo", null);
+        var brand = Brand.Create("Lenovo", Now);
+        var model = AssetModel.Create(brand.Id, AssetType.Laptop, "T14", Now);
+        _laptop = new AssetCatalogEntry(model.Id, AssetType.Laptop, brand.Name, model.Name);
         await using var db = database.CreateDbContext();
         db.Locations.Add(_store);
+        db.Brands.Add(brand);
+        db.AssetModels.Add(model);
         await db.SaveChangesAsync(Ct);
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     private Asset NewAsset(string tag, string? serial) =>
-        Asset.Create(tag, AssetType.Laptop, "Lenovo", "T14", serial, _store.Id, null, null, null, null, Now).Asset;
+        Asset.Create(tag, _laptop, serial, _store.Id, null, null, null, null, Now).Asset;
 
     [Fact]
     public async Task Tag_differing_only_in_case_and_spaces_is_a_duplicate()

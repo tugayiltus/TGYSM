@@ -156,7 +156,9 @@
     "sla_policy": "SLA politikası",
     "knowledge_article": "Bilgi bankası makalesi",
     "report": "Rapor",
-    "export_job": "Rapor dışa aktarımı"
+    "export_job": "Rapor dışa aktarımı",
+    "brand": "Marka",
+    "asset_model": "Model"
   },
   "auditActions": {
     "setup": {
@@ -268,6 +270,18 @@
       "exported": "Rapor Excel olarak dışa aktarıldı",
       "export_requested": "Arka planda rapor dışa aktarımı istendi",
       "export_downloaded": "Dışa aktarılan rapor dosyası indirildi"
+    },
+    "brands": {
+      "created": "Marka eklendi",
+      "renamed": "Marka adı değiştirildi",
+      "deactivated": "Marka pasifleştirildi",
+      "reactivated": "Marka yeniden etkinleştirildi"
+    },
+    "asset_models": {
+      "created": "Model eklendi",
+      "renamed": "Model adı değiştirildi",
+      "deactivated": "Model pasifleştirildi",
+      "reactivated": "Model yeniden etkinleştirildi"
     }
   },
   "emailEvents": {
@@ -453,5 +467,34 @@
     "allGood": "Eksik kurulum tanımı bulunmadı.",
     "goToTeams": "Ekiplere git",
     "goToSystem": "Sistem durumuna git"
+  },
+  "deviceCatalog": {
+    "brands": {
+      "title": "Markalar",
+      "new": "Yeni marka",
+      "edit": "Markayı düzenle",
+      "listCaption": "Markalar listesi",
+      "confirmDeactivate": "{{name}} markası yeni cihazlarda seçilemeyecek. Mevcut cihazlar etkilenmez.",
+      "confirmReactivate": "{{name}} markası yeniden seçilebilecek."
+    },
+    "models": {
+      "title": "Modeller",
+      "new": "Yeni model",
+      "edit": "Modeli düzenle",
+      "listCaption": "Modeller listesi",
+      "brandFilter": "Marka filtresi",
+      "allBrands": "Tüm markalar",
+      "confirmDeactivate": "{{name}} modeli yeni cihazlarda seçilemeyecek. Mevcut cihazlar etkilenmez.",
+      "confirmReactivate": "{{name}} modeli yeniden seçilebilecek."
+    },
+    "fields": {
+      "name": "Ad",
+      "brand": "Marka",
+      "type": "Tür",
+      "status": "Durum",
+      "actions": "İşlemler",
+      "selectBrand": "Marka seçin",
+      "selectType": "Tür seçin"
+    }
   }
 }

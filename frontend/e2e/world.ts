@@ -90,7 +90,10 @@ export async function seedWorld(admin: Session): Promise<World> {
   const requestTypeName = `Yeni dizüstü ${suffix}`;
   await send(request, 'POST', '/api/v1/admin/request-types', { name: requestTypeName, requiresApproval: true });
   const assetTag = `DT-${suffix}`;
-  await send(request, 'POST', '/api/v1/assets', { assetTag, type: 'laptop', brand: 'Lenovo', model: 'T14', locationId: location.id });
+  // Brand and model come from the admin catalog (ADR-0023); names carry the run suffix so runs never collide.
+  const brand = await send(request, 'POST', '/api/v1/admin/brands', { name: `Lenovo ${suffix}` });
+  const model = await send(request, 'POST', '/api/v1/admin/models', { brandId: brand.id, type: 'laptop', name: 'T14' });
+  await send(request, 'POST', '/api/v1/assets', { assetTag, modelId: model.id, locationId: location.id });
   return {
     employeeEmail,
     employeePassword: String(employee.temporaryPassword),

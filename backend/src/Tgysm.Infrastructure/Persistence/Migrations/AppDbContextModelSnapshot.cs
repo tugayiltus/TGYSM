@@ -59,6 +59,10 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("model");
 
+                    b.Property<Guid>("ModelId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("model_id");
+
                     b.Property<string>("NormalizedAssetTag")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -118,6 +122,9 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("LocationId")
                         .HasDatabaseName("ix_assets_location_id");
+
+                    b.HasIndex("ModelId")
+                        .HasDatabaseName("ix_assets_model_id");
 
                     b.HasIndex("NormalizedAssetTag")
                         .IsUnique()
@@ -282,6 +289,65 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_asset_models");
+
+                    b.HasIndex("BrandId", "Type", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_asset_models_brand_id_type_normalized_name");
+
+                    b.ToTable("asset_models", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_asset_models_type", "type IN ('desktop', 'laptop', 'phone', 'tablet')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Assets.AssetMovement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -337,6 +403,52 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_asset_movements_asset_id_occurred_at");
 
                     b.ToTable("asset_movements", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.Brand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_brands");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_brands_normalized_name");
+
+                    b.ToTable("brands", (string)null);
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Audit.AuditEvent", b =>
@@ -2442,6 +2554,13 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_assets_locations_location_id");
+
+                    b.HasOne("Tgysm.Domain.Assets.AssetModel", null)
+                        .WithMany()
+                        .HasForeignKey("ModelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_assets_asset_models_model_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Assets.AssetAssignment", b =>
@@ -2475,6 +2594,16 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_import_jobs_users_created_by_user_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Assets.AssetModel", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Assets.Brand", null)
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_asset_models_brands_brand_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Assets.AssetMovement", b =>

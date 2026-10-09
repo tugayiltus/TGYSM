@@ -1,6 +1,7 @@
 using FluentValidation;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Features.Assets.Catalog;
 using Tgysm.Application.Features.Organization;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Audit;
@@ -10,9 +11,7 @@ namespace Tgysm.Application.Features.Assets;
 
 public sealed record CreateAssetCommand(
     string AssetTag,
-    AssetType Type,
-    string Brand,
-    string Model,
+    Guid ModelId,
     string? SerialNumber,
     Guid LocationId,
     Guid? DepartmentId,
@@ -23,7 +22,7 @@ public sealed record CreateAssetCommand(
 internal sealed class CreateAssetValidator : AbstractValidator<CreateAssetCommand>
 {
     public CreateAssetValidator() =>
-        this.CardRules(c => c.AssetTag, c => c.Brand, c => c.Model, c => c.SerialNumber, c => c.Notes, c => c.Type, c => c.LocationId);
+        this.CardRules(c => c.AssetTag, c => c.ModelId, c => c.SerialNumber, c => c.Notes, c => c.LocationId);
 }
 
 public sealed class CreateAssetHandler(
@@ -40,9 +39,10 @@ public sealed class CreateAssetHandler(
         var actorId = actor.UserId ?? throw new AuthenticationFailedException();
         await AssetRules.EnsureUniqueAsync(db, command.AssetTag, command.SerialNumber, exceptId: null, cancellationToken);
         await references.EnsureActiveAsync(command.DepartmentId, command.LocationId, cancellationToken);
+        var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: null, cancellationToken);
 
         var (asset, movement) = Asset.Create(
-            command.AssetTag, command.Type, command.Brand, command.Model, command.SerialNumber, command.LocationId,
+            command.AssetTag, model, command.SerialNumber, command.LocationId,
             command.DepartmentId, command.WarrantyEndsOn, command.PurchasedOn, command.Notes, clock.GetUtcNow(), actorUserId: actorId);
 
         db.Assets.Add(asset);

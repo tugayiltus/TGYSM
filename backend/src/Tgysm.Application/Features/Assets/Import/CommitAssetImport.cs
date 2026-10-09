@@ -37,7 +37,7 @@ public sealed class CommitAssetImportHandler(IAppDbContext db, ICurrentActor act
             foreach (var row in rows)
             {
                 var (asset, movement) = Asset.Create(
-                    row.AssetTag, row.Type, row.Brand, row.Model, row.SerialNumber, row.LocationId, row.DepartmentId,
+                    row.AssetTag, new AssetCatalogEntry(row.ModelId, row.Type, row.Brand, row.Model), row.SerialNumber, row.LocationId, row.DepartmentId,
                     row.WarrantyEndsOn, row.PurchasedOn, row.Notes, now, row.Status, actorId);
                 db.Assets.Add(asset);
                 db.AssetMovements.Add(movement);

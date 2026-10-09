@@ -1,11 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { DEPARTMENTS, LAPTOP, LOCATIONS, pageOf } from '../../test/assetData';
+import { DEPARTMENTS, LAPTOP, LOCATIONS, pageOf, CATALOG } from '../../test/assetData';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
 const referenceRoutes = {
+  'GET /api/v1/assets/catalog': { status: 200, body: CATALOG },
   'GET /api/v1/reference/locations': { status: 200, body: LOCATIONS },
   'GET /api/v1/reference/departments': { status: 200, body: DEPARTMENTS },
 };
@@ -42,8 +43,9 @@ describe('AssetsPage', () => {
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText('Demirbaş numarası'), 'DT-0001');
     await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Dizüstü');
-    await user.type(within(dialog).getByLabelText('Marka'), 'Lenovo');
-    await user.type(within(dialog).getByLabelText('Model'), 'T14');
+    await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
+    await user.keyboard('{ArrowDown}{Enter}');
+    await user.selectOptions(within(dialog).getByLabelText('Model'), 'T14');
     await user.selectOptions(within(dialog).getByLabelText('Konum'), await within(dialog).findByRole('option', { name: 'Merkez Kampüs / A Blok' }));
     await user.type(within(dialog).getByLabelText('Garanti bitiş tarihi'), '2027-12-31');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
@@ -51,9 +53,7 @@ describe('AssetsPage', () => {
     expect(await within(dialog).findByText('Bu demirbaş numarası başka bir cihazda kayıtlı.')).toBeInTheDocument();
     expect(posted).toEqual({
       assetTag: 'DT-0001',
-      type: 'laptop',
-      brand: 'Lenovo',
-      model: 'T14',
+      modelId: 'm-1',
       serialNumber: null,
       locationId: 'l-2',
       departmentId: null,

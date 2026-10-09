@@ -3,6 +3,7 @@ using Tgysm.Api.Http;
 using Tgysm.Api.Security;
 using Tgysm.Application.Common.Paging;
 using Tgysm.Application.Features.Assets;
+using Tgysm.Application.Features.Assets.Catalog;
 using Tgysm.Application.Features.Assets.Lifecycle;
 using Tgysm.Api.Contracts;
 using Tgysm.Domain.Assets;
@@ -24,9 +25,7 @@ public sealed record AssetLocationRequest(uint Version, Guid LocationId);
 public sealed record UpdateAssetRequest(
     uint Version,
     string AssetTag,
-    AssetType Type,
-    string Brand,
-    string Model,
+    Guid ModelId,
     string? SerialNumber,
     Guid LocationId,
     Guid? DepartmentId,
@@ -45,6 +44,8 @@ internal static class AssetEndpoints
         var assets = api.MapGroup(ApiRoutes.Assets).WithTags(Tag).RequireAuthorization(Policies.ItStaffOrAdmin);
 
         assets.MapGet("", ListAsync).ProducesProblem(StatusCodes.Status400BadRequest);
+        // Under /assets/catalog: static segment, so it never matches the {id:guid} routes.
+        assets.MapGet("/catalog", async (GetAssetCatalogHandler h, CancellationToken ct) => TypedResults.Ok(await h.HandleAsync(ct)));
         assets.MapGet("/{id:guid}", GetAsync).ProducesProblem(StatusCodes.Status404NotFound);
         assets.MapGet("/{id:guid}/history", GetHistoryAsync).ProducesProblem(StatusCodes.Status404NotFound);
         assets.MapGet("/{id:guid}/tickets", async (Guid id, Application.Features.Tickets.ListAssetTicketsHandler h, CancellationToken ct) =>
@@ -109,7 +110,7 @@ internal static class AssetEndpoints
 
     private static async Task<Ok<AssetItem>> UpdateAsync(Guid id, UpdateAssetRequest request, UpdateAssetHandler handler, CancellationToken cancellationToken) =>
         TypedResults.Ok(await handler.HandleAsync(
-            new UpdateAssetCommand(id, request.Version, request.AssetTag, request.Type, request.Brand, request.Model, request.SerialNumber,
+            new UpdateAssetCommand(id, request.Version, request.AssetTag, request.ModelId, request.SerialNumber,
                 request.LocationId, request.DepartmentId, request.WarrantyEndsOn, request.PurchasedOn, request.Notes),
             cancellationToken));
 }

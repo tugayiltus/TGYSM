@@ -47,6 +47,9 @@ public static class ErrorCodes
     public const string AssetSerialTaken = "assets.serial_taken";
     public const string AssetUserInactive = "assets.user_inactive";
     public const string AssetRequestMismatch = "assets.request_mismatch";
+    public const string AssetCatalogDuplicate = "assets.catalog_duplicate";
+    public const string AssetModelInactive = "assets.model_inactive";
+    public const string ImportCatalogMissing = "assets.import_catalog_missing";
 
     public const string ImportInvalidHeader = "imports.invalid_header";
     public const string ImportEncoding = "imports.encoding";
