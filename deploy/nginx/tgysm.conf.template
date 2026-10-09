@@ -1,0 +1,36 @@
+# TLS termination for TGYSM (ADR-0024). Certificate and key: deploy/certs/tgysm.crt and deploy/certs/tgysm.key.
+# The largest request is a ticket comment: 5 files of 10 MB plus 1 MB of form data; the API enforces the exact limit.
+
+server {
+    listen 80;
+    server_name _;
+    return 301 https://$host:${HTTPS_PORT}$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/certs/tgysm.crt;
+    ssl_certificate_key /etc/nginx/certs/tgysm.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:tgysm_tls:10m;
+
+    client_max_body_size 52m;
+
+    # Docker's DNS, re-read every 10 s: a recreated api container gets a new address.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $tgysm_api http://api:8080;
+
+    location / {
+        proxy_pass $tgysm_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        # Excel exports and CSV imports can take longer than the default minute.
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}

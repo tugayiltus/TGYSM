@@ -25,9 +25,9 @@ ENV APP_VERSION=$APP_VERSION \
     Files__RootPath=/data/files \
     DataProtection__KeysPath=/data/keys
 WORKDIR /app
-# Npgsql probes GSSAPI on connect and logs an error when the library is missing.
+# Npgsql probes GSSAPI on connect and logs an error when the library is missing; curl serves the compose health check.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+ && apt-get install -y --no-install-recommends libgssapi-krb5-2 curl \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /data/files /data/keys \
  && chown -R "$APP_UID" /data \
@@ -38,7 +38,8 @@ USER $APP_UID
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Tgysm.Api.dll"]
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0 AS worker
+# The Worker references Infrastructure, which uses ASP.NET Core Data Protection, so it needs the ASP.NET runtime too.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS worker
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION \
     Files__RootPath=/data/files \
