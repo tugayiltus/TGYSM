@@ -19,11 +19,22 @@ work="$(mktemp -d)"
 cleanup() { rm -rf "$work"; rm -f "$partial"; }
 trap cleanup EXIT
 
-pg_dump --format=custom --file="$work/db.dump"
-
-latest_migration="$(psql -XtAc 'SELECT migration_id FROM "__EFMigrationsHistory" ORDER BY migration_id DESC LIMIT 1')"
+readonly LATEST_MIGRATION_SQL='SELECT migration_id FROM "__EFMigrationsHistory" ORDER BY migration_id DESC LIMIT 1'
 # Exact row counts of every table, as one JSON object (restore checks them).
-tables="$(psql -XtAc "SELECT json_object_agg(table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint ORDER BY table_name) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")"
+readonly TABLE_COUNTS_SQL="SELECT json_object_agg(table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint ORDER BY table_name) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+
+# One snapshot for the dump, the counts and the migration id: the manifest describes exactly what the dump holds.
+coproc SNAPSHOT { psql -XtAq; }
+echo "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY; SELECT pg_export_snapshot();" >&"${SNAPSHOT[1]}"
+read -r snapshot <&"${SNAPSHOT[0]}"
+pg_dump --format=custom --snapshot="$snapshot" --file="$work/db.dump"
+echo "$LATEST_MIGRATION_SQL;" >&"${SNAPSHOT[1]}"
+read -r latest_migration <&"${SNAPSHOT[0]}"
+echo "$TABLE_COUNTS_SQL;" >&"${SNAPSHOT[1]}"
+read -r tables <&"${SNAPSHOT[0]}"
+echo "COMMIT;" >&"${SNAPSHOT[1]}"
+exec {SNAPSHOT[1]}>&-
+wait "$SNAPSHOT_PID"
 file_count="$(find "$DATA_DIR/files" -type f | wc -l | tr -d ' ')"
 
 cat > "$work/manifest.json" <<JSON

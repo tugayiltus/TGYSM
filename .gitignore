@@ -29,3 +29,4 @@ tmp/
 deploy/certs/*
 !deploy/certs/.gitkeep
 deploy/backups/
+deploy/restore-source/

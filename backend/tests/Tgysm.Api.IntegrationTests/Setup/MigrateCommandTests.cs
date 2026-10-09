@@ -48,8 +48,8 @@ public sealed class MigrateCommandTests(ApiFactory factory) : IAsyncLifetime
         var first = new StringWriter();
         var second = new StringWriter();
 
-        var firstExit = await MigrateCommand.RunAsync(services, first, TextWriter.Null);
-        var secondExit = await MigrateCommand.RunAsync(services, second, TextWriter.Null);
+        var firstExit = await MigrateCommand.RunAsync(services, [], first, TextWriter.Null);
+        var secondExit = await MigrateCommand.RunAsync(services, [], second, TextWriter.Null);
 
         await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(EmptyDatabaseConnection).UseSnakeCaseNamingConvention().Options);
         var applied = (await db.Database.GetAppliedMigrationsAsync(Ct)).ToList();
@@ -66,10 +66,24 @@ public sealed class MigrateCommandTests(ApiFactory factory) : IAsyncLifetime
         var unreachable = new NpgsqlConnectionStringBuilder(_adminConnectionString) { Host = UnreachableHost, Database = _databaseName, Timeout = 1 }.ConnectionString;
         var error = new StringWriter();
 
-        var exit = await MigrateCommand.RunAsync(ServicesFor(unreachable), TextWriter.Null, error);
+        var exit = await MigrateCommand.RunAsync(ServicesFor(unreachable), [], TextWriter.Null, error);
 
         Assert.Equal(CliFailure, exit);
         Assert.Contains("Migration failed", error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Prints_the_newest_migration_of_the_application_without_touching_the_database()
+    {
+        // Restore compares this with the archive's manifest (ADR-0025), before any database is reachable.
+        var unreachable = new NpgsqlConnectionStringBuilder(_adminConnectionString) { Host = UnreachableHost, Database = _databaseName, Timeout = 1 }.ConnectionString;
+        var output = new StringWriter();
+        await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(EmptyDatabaseConnection).UseSnakeCaseNamingConvention().Options);
+
+        var exit = await MigrateCommand.RunAsync(ServicesFor(unreachable), ["--print-latest"], output, TextWriter.Null);
+
+        Assert.Equal(CliSuccess, exit);
+        Assert.Equal(db.Database.GetMigrations().Last(), output.ToString().Trim());
     }
 
     private async Task ExecuteAdminAsync(string sql)

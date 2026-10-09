@@ -112,6 +112,26 @@ services:
       postgres:
         condition: service_healthy
 
+  # One-off restore (tools/restore.sh): writes the database and the file/key volumes from an archive in RESTORE_SOURCE_DIR.
+  restore:
+    image: postgres:17
+    profiles: ["restore"]
+    entrypoint: ["bash", "/backup/restore.sh"]
+    environment:
+      PGHOST: postgres
+      PGUSER: tgysm
+      PGDATABASE: tgysm
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      MAX_MIGRATION: ${MAX_MIGRATION:-}
+    volumes:
+      - ./backup:/backup:ro
+      - files:/data/files
+      - keys:/data/keys
+      - ${RESTORE_SOURCE_DIR:-./restore-source}:/restore:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   backups:
   pgdata:
