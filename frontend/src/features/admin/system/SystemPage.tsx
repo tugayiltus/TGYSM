@@ -2,8 +2,10 @@ import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../../shared/lib/format';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
+import { PageCard } from '../../../shared/ui/PageCard';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 
 import { useWorkerHeartbeats, type WorkerHeartbeatItem } from './api';
 
@@ -64,24 +66,23 @@ export function SystemPage() {
 
   return (
     <>
-      <PageHeader titleOverride={t('system.title')} />
-      <div className="d-flex flex-column gap-2">
-      <h2 className="h5 mb-0">{t('system.workersTitle')}</h2>
-      {workers.isPending && <LoadingState />}
-      {workers.isError && <ErrorState error={workers.error} onRetry={() => void workers.refetch()} />}
-      {workers.data && (
-        <>
-          <p role="status" className={`alert mb-0 ${workers.data.status === DEGRADED_STATUS ? 'alert-danger' : 'alert-success'}`}>
-            {workers.data.status === DEGRADED_STATUS ? t('system.overall.degraded') : t('system.overall.ok')}
-          </p>
-          {workers.data.jobs.length === 0 ? (
-            <EmptyState message={t('system.empty')} />
-          ) : (
-            <ResponsiveList items={workers.data.jobs} columns={columns} getKey={keyOf} renderCard={renderCard} caption={t('system.listCaption')} />
-          )}
-        </>
-      )}
-      </div>
+      <PageHeader icon={ROUTE_META.adminSystem.icon} titleOverride={t('system.title')} />
+      <PageCard title={t('system.workersTitle')} flush>
+        {workers.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {workers.isError && <ErrorState error={workers.error} onRetry={() => void workers.refetch()} />}
+        {workers.data && (
+          <>
+            <p role="status" className={`alert m-3 ${workers.data.status === DEGRADED_STATUS ? 'alert-danger' : 'alert-success'}`}>
+              {workers.data.status === DEGRADED_STATUS ? t('system.overall.degraded') : t('system.overall.ok')}
+            </p>
+            {workers.data.jobs.length === 0 ? (
+              <EmptyState message={t('system.empty')} />
+            ) : (
+              <ResponsiveList items={workers.data.jobs} columns={columns} getKey={keyOf} renderCard={renderCard} caption={t('system.listCaption')} />
+            )}
+          </>
+        )}
+      </PageCard>
     </>
   );
 }

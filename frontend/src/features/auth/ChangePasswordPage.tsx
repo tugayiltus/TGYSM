@@ -1,4 +1,3 @@
-import { CCard, CCardBody } from '@coreui/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +9,8 @@ import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { cilLockLocked } from '../../shared/ui/icons';
+import { PageCard } from '../../shared/ui/PageCard';
 import { TextField } from '../../shared/ui/TextField';
 
 import { useChangePassword, useLogout } from './api';
@@ -48,16 +49,17 @@ export function ChangePasswordPage() {
   const form = (
     <form className="d-flex flex-column gap-3" noValidate onSubmit={(event) => void onSubmit(event)}>
       <FormAlert message={alert} />
-      <TextField label={t('changePassword.current')} type="password" autoComplete="current-password" error={fieldError(errors.currentPassword)} {...register('currentPassword')} />
+      <TextField label={t('changePassword.current')} type="password" startIcon={cilLockLocked} autoComplete="current-password" error={fieldError(errors.currentPassword)} {...register('currentPassword')} />
       <TextField
         label={t('changePassword.new')}
         type="password"
+        startIcon={cilLockLocked}
         autoComplete="new-password"
         hint={t('changePassword.hint')}
         error={fieldError(errors.newPassword)}
         {...register('newPassword')}
       />
-      <TextField label={t('changePassword.confirm')} type="password" autoComplete="new-password" error={fieldError(errors.confirmPassword)} {...register('confirmPassword')} />
+      <TextField label={t('changePassword.confirm')} type="password" startIcon={cilLockLocked} autoComplete="new-password" error={fieldError(errors.confirmPassword)} {...register('confirmPassword')} />
       <Button type="submit" isLoading={changePassword.isPending}>
         {t('changePassword.submit')}
       </Button>
@@ -80,10 +82,8 @@ export function ChangePasswordPage() {
 
   return (
     <>
-      <PageHeader />
-      <CCard className="tgysm-form-card">
-        <CCardBody>{form}</CCardBody>
-      </CCard>
+      <PageHeader icon={cilLockLocked} />
+      <PageCard className="tgysm-form-card">{form}</PageCard>
     </>
   );
 }

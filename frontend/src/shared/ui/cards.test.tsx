@@ -5,6 +5,7 @@ import { DataCard } from './DataCard';
 import { FormSection } from './FormSection';
 import { PageCard } from './PageCard';
 import { ResponsiveList } from './ResponsiveList';
+import { StackTable } from './StackTable';
 import { LoadingState } from './States';
 
 describe('card building blocks', () => {
@@ -62,5 +63,18 @@ describe('card building blocks', () => {
     expect(container.querySelector('.table-responsive')).not.toHaveClass('border');
     expect(container.querySelector('thead')).not.toHaveClass('table-light');
     expect(container.querySelector('table')).toHaveClass('align-middle');
+  });
+
+  it('StackTable renders a captioned table that stacks into cards on phones', () => {
+    render(
+      <StackTable caption="Hedefler" head={<tr><th scope="col">Öncelik</th></tr>}>
+        <tr>
+          <td data-label="Öncelik">P1</td>
+        </tr>
+      </StackTable>,
+    );
+    const table = screen.getByRole('table', { name: 'Hedefler' });
+    expect(table).toHaveClass('tgysm-stack-table', 'align-middle');
+    expect(table.closest('.table-responsive')).not.toBeNull();
   });
 });

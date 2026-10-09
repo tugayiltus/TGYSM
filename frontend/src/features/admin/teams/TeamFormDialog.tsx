@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
 import { Button } from '../../../shared/ui/Button';
+import { CheckField } from '../../../shared/ui/CheckField';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { FormAlert } from '../../../shared/ui/FormAlert';
 import { TextField } from '../../../shared/ui/TextField';
@@ -77,13 +78,7 @@ export function TeamFormDialog({ team, onClose }: { team: TeamItem | null; onClo
         <FormAlert message={alert} />
         <TextField label={t('teams.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
         {team !== null && (
-          <label className="d-flex tgysm-touch align-items-center gap-2 small">
-            <input type="checkbox" className="form-check-input" {...register('isDefaultIntake')} />
-            <span>
-              {t('teams.fields.isDefaultIntake')}
-              <span className="d-block small text-body-secondary">{t('teams.intakeHint')}</span>
-            </span>
-          </label>
+          <CheckField type="switch" label={t('teams.fields.isDefaultIntake')} hint={t('teams.intakeHint')} {...register('isDefaultIntake')} />
         )}
       </form>
     </Dialog>

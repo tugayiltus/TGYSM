@@ -5,8 +5,12 @@ import { describeError, translateErrorCode } from '../../../shared/api/errorMess
 import { ApiError, ERROR_CODES } from '../../../shared/api/errors';
 import { formatDate } from '../../../shared/lib/format';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
+import { CheckField } from '../../../shared/ui/CheckField';
 import { FormAlert } from '../../../shared/ui/FormAlert';
+import { FormSection } from '../../../shared/ui/FormSection';
+import { PageCard } from '../../../shared/ui/PageCard';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { ErrorState, LoadingState } from '../../../shared/ui/States';
@@ -94,36 +98,49 @@ function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onRelo
   const alert = problem !== null ? translateErrorCode(problem) : update.error ? describeError(update.error) : null;
 
   return (
-    <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={onSubmit}>
-      <FormAlert message={alert} />
-      {problem === null && isConflict(update.error) && (
-        <div>
-          <Button variant="secondary" onClick={() => void reload()}>
-            {t('slaCalendar.reload')}
-          </Button>
+    <form id={formId} noValidate onSubmit={onSubmit}>
+      <FormSection
+        title={t('slaCalendar.hoursTitle')}
+        actions={
+          <>
+            {saved && (
+              <p role="status" className="mb-0 me-auto align-self-center text-success-emphasis">
+                {t('slaCalendar.saved')}
+              </p>
+            )}
+            <Button type="submit" isLoading={update.isPending}>
+              {t('slaCalendar.save')}
+            </Button>
+          </>
+        }
+      >
+        <div className="col-12">
+          <FormAlert message={alert} />
         </div>
-      )}
-      <TextField
-        label={t('slaCalendar.timeZone')}
-        hint={t('slaCalendar.timeZoneHint')}
-        autoComplete="off"
-        value={timeZone}
-        onChange={(event) => {
-          const value = event.target.value;
-          setDraft((current) => ({ ...current, timeZone: value }));
-          setSaved(false);
-        }}
-      />
-      <fieldset className="d-flex flex-column gap-2">
-        <legend className="small fw-medium">{t('slaCalendar.hoursTitle')}</legend>
+        {problem === null && isConflict(update.error) && (
+          <div className="col-12">
+            <Button variant="secondary" onClick={() => void reload()}>
+              {t('slaCalendar.reload')}
+            </Button>
+          </div>
+        )}
+        <TextField
+          className="col-12 col-md-6"
+          label={t('slaCalendar.timeZone')}
+          hint={t('slaCalendar.timeZoneHint')}
+          autoComplete="off"
+          value={timeZone}
+          onChange={(event) => {
+            const value = event.target.value;
+            setDraft((current) => ({ ...current, timeZone: value }));
+            setSaved(false);
+          }}
+        />
         {WEEKDAYS.map((day) => {
           const name = t(`slaCalendar.weekdays.${day}`);
           return (
-            <div key={day} className="tgysm-grid tgysm-grid-calendar-day align-items-end">
-              <label className="d-flex tgysm-touch align-items-center gap-2 small fw-medium">
-                <input type="checkbox" className="form-check-input" checked={week[day].open} onChange={(event) => setDay(day, { open: event.target.checked })} />
-                {`${name} · ${t('slaCalendar.open')}`}
-              </label>
+            <div key={day} className="col-12 tgysm-grid tgysm-grid-calendar-day align-items-end">
+              <CheckField type="switch" label={`${name} · ${t('slaCalendar.open')}`} checked={week[day].open} onChange={(event) => setDay(day, { open: event.target.checked })} />
               <TextField
                 type="time"
                 label={`${name} ${t('slaCalendar.starts')}`}
@@ -141,13 +158,7 @@ function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onRelo
             </div>
           );
         })}
-      </fieldset>
-      <div className="d-flex align-items-center gap-2">
-        <Button type="submit" isLoading={update.isPending}>
-          {t('slaCalendar.save')}
-        </Button>
-        {saved && <p role="status">{t('slaCalendar.saved')}</p>}
-      </div>
+      </FormSection>
     </form>
   );
 }
@@ -196,10 +207,7 @@ function HolidaysSection() {
   );
 
   return (
-    <section aria-labelledby="sla-holidays" className="d-flex flex-column gap-3">
-      <h2 id="sla-holidays" className="fs-5 fw-semibold">
-        {t('slaCalendar.holidays.title')}
-      </h2>
+    <PageCard title={t('slaCalendar.holidays.title')} bodyClassName="d-flex flex-column gap-3">
       <form noValidate className="tgysm-grid tgysm-grid-holiday align-items-end" onSubmit={onAdd}>
         <TextField type="date" label={t('slaCalendar.holidays.date')} value={date} onChange={(event) => setDate(event.target.value)} />
         <TextField label={t('slaCalendar.holidays.name')} autoComplete="off" value={name} onChange={(event) => setName(event.target.value)} />
@@ -214,7 +222,7 @@ function HolidaysSection() {
       {holidays.data && holidays.data.length > 0 && (
         <ResponsiveList items={holidays.data} columns={columns} getKey={(h) => h.id} renderCard={renderCard} caption={t('slaCalendar.holidays.caption')} />
       )}
-    </section>
+    </PageCard>
   );
 }
 
@@ -222,8 +230,8 @@ export function SlaCalendarPage() {
   const { t } = useTranslation('admin');
   const calendar = useSlaCalendar();
   return (
-    <section className="d-flex flex-column gap-4">
-      <PageHeader titleOverride={t('slaCalendar.title')} />
+    <section className="d-flex flex-column gap-3">
+      <PageHeader icon={ROUTE_META.adminSlaCalendar.icon} titleOverride={t('slaCalendar.title')} />
       {calendar.isPending && <LoadingState />}
       {calendar.isError && <ErrorState error={calendar.error} onRetry={() => void calendar.refetch()} />}
       {calendar.data && <CalendarForm calendar={calendar.data} onReload={async () => (await calendar.refetch()).data} />}

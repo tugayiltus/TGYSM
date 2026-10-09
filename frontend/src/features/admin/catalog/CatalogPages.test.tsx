@@ -48,7 +48,7 @@ describe('Catalog admin', () => {
     await user.click(await screen.findByRole('button', { name: 'Yeni talep tipi' }));
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText('Talep tipi adı'), 'Yeni cihaz');
-    await user.click(within(dialog).getByLabelText('Yönetici onayı gerekir'));
+    await user.click(within(dialog).getByRole('switch', { name: 'Yönetici onayı gerekir' }));
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
     await waitFor(() => expect(posted).toEqual({ name: 'Yeni cihaz', requiresApproval: true }));
@@ -69,7 +69,7 @@ describe('Catalog admin', () => {
 
     await user.click((await screen.findAllByRole('button', { name: 'Düzenle Servis Masası' }))[0]!);
     const dialog = await screen.findByRole('dialog');
-    await user.click(within(dialog).getByLabelText(/Yeni kayıtları bu ekip alsın/));
+    await user.click(within(dialog).getByRole('switch', { name: /Yeni kayıtları bu ekip alsın/ }));
     await user.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
 
     await waitFor(() => expect(posted).toEqual({ version: 3, name: 'Servis Masası', isDefaultIntake: true }));

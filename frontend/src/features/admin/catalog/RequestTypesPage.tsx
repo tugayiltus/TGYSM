@@ -9,6 +9,7 @@ import { ERROR_CODES } from '../../../shared/api/errors';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
+import { CheckField } from '../../../shared/ui/CheckField';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
 import { DataCard } from '../../../shared/ui/DataCard';
 import { Dialog } from '../../../shared/ui/Dialog';
@@ -76,10 +77,7 @@ function RequestTypeFormDialog({ type, onClose }: { type: RequestTypeItem | null
       <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('requestTypes.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
-        <label className="d-flex tgysm-touch align-items-center gap-2 small">
-          <input type="checkbox" className="form-check-input" {...register('requiresApproval')} />
-          {t('requestTypes.fields.requiresApproval')}
-        </label>
+        <CheckField type="switch" label={t('requestTypes.fields.requiresApproval')} {...register('requiresApproval')} />
       </form>
     </Dialog>
   );

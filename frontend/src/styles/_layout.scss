@@ -110,10 +110,6 @@ body {
   }
 }
 
-.tgysm-number-input {
-  max-width: 6rem;
-}
-
 // A data table that becomes one card per row below 992 px; each cell shows its column name from data-label.
 @media (max-width: 991.98px) {
   .tgysm-stack-table {
@@ -275,4 +271,26 @@ html {
 .tgysm-kpi-icon {
   width: 3rem;
   height: 3rem;
+}
+
+// Table cell inputs labelled by their column header: the label stays for screen readers only.
+.tgysm-label-hidden .form-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Number with its unit ("dk", "%") in an SLA target cell.
+.tgysm-number-field {
+  max-width: 9rem;
+}
+
+// Hold reason name in the pause list: one width so the checkboxes line up on wide screens.
+@media (min-width: 768px) {
+  .tgysm-pause-reason {
+    min-width: 15rem;
+  }
 }

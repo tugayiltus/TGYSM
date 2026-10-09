@@ -52,7 +52,7 @@ describe('SlaCalendarPage', () => {
 
     await screen.findByLabelText('Saat dilimi');
     for (const day of ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma']) {
-      await user.click(screen.getByRole('checkbox', { name: `${day} · Çalışılıyor` }));
+      await user.click(screen.getByRole('switch', { name: `${day} · Çalışılıyor` }));
     }
     await user.click(screen.getByRole('button', { name: 'Takvimi kaydet' }));
 

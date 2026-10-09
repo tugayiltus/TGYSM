@@ -1,4 +1,3 @@
-import { CCard, CCardBody } from '@coreui/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -9,9 +8,12 @@ import { z } from 'zod';
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
 import { PageHeader } from '../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ticketPath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { FormSection } from '../../shared/ui/FormSection';
+import { cilPlus, cilWarning } from '../../shared/ui/icons';
 import { SelectField } from '../../shared/ui/SelectField';
 import { TextAreaField } from '../../shared/ui/TextAreaField';
 import { TextField } from '../../shared/ui/TextField';
@@ -109,33 +111,38 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
 
   return (
     <>
-      <PageHeader titleOverride={isRequest ? t('new.requestTitle') : t('new.incidentTitle')} />
+      <PageHeader icon={ROUTE_META.myTickets.icon} titleOverride={isRequest ? t('new.requestTitle') : t('new.incidentTitle')} />
       <UnsavedChangesGuard when={({ nextLocation }) => hasChanges && (nextLocation.state as TicketDetailState | null)?.created !== true} />
-      <CCard className="tgysm-form-card">
-        <CCardBody className="d-flex flex-column gap-3">
-      <p className="mb-0">{isRequest ? t('new.requestIntro') : t('new.incidentIntro')}</p>
-      <form noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
-        <FormAlert message={alert} />
-        {isRequest && (
-          <>
-            <SelectField label={t('new.requestType')} options={typeOptions} placeholder={t('new.selectRequestType')} error={fieldError(errors.requestTypeId)} {...register('requestTypeId')} />
-            {needsApproval && <p className="alert alert-warning mb-0">{t('new.approvalHint')}</p>}
-          </>
-        )}
-        <TextField label={t('new.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
-        <TextAreaField label={t('new.description')} error={fieldError(errors.description)} {...register('description')} />
-        <SelectField label={t('new.category')} options={categoryOptions} placeholder={t('fields.select')} error={fieldError(errors.categoryId)} {...register('categoryId')} />
-        {!isRequest && (
-          <SelectField label={t('new.asset')} options={assetOptions} placeholder={t('new.noAsset')} hint={t('new.assetHint')} {...register('assetId')} />
-        )}
-        <SelectField label={t('new.location')} options={locationOptions} placeholder={t('fields.select')} error={fieldError(errors.locationId)} {...register('locationId')} />
-        <AttachmentInput label={t('new.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
-        <Button type="submit" className="align-self-start" isLoading={create.isPending || upload.isPending}>
-          {t('new.submit')}
-        </Button>
+      <form noValidate onSubmit={(event) => void onSubmit(event)}>
+        <FormSection
+          actions={
+            <Button type="submit" icon={isRequest ? cilPlus : cilWarning} isLoading={create.isPending || upload.isPending}>
+              {t('new.submit')}
+            </Button>
+          }
+        >
+          <p className="col-12 mb-0 text-body-secondary">{isRequest ? t('new.requestIntro') : t('new.incidentIntro')}</p>
+          <div className="col-12">
+            <FormAlert message={alert} />
+          </div>
+          {isRequest && (
+            <>
+              <SelectField className="col-12 col-md-6" label={t('new.requestType')} options={typeOptions} placeholder={t('new.selectRequestType')} error={fieldError(errors.requestTypeId)} {...register('requestTypeId')} />
+              {needsApproval && <p className="col-12 alert alert-warning mb-0">{t('new.approvalHint')}</p>}
+            </>
+          )}
+          <TextField className="col-12" label={t('new.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
+          <TextAreaField className="col-12" label={t('new.description')} error={fieldError(errors.description)} {...register('description')} />
+          <SelectField className="col-12 col-md-6" label={t('new.category')} options={categoryOptions} placeholder={t('fields.select')} error={fieldError(errors.categoryId)} {...register('categoryId')} />
+          {!isRequest && (
+            <SelectField className="col-12 col-md-6" label={t('new.asset')} options={assetOptions} placeholder={t('new.noAsset')} hint={t('new.assetHint')} {...register('assetId')} />
+          )}
+          <SelectField className="col-12 col-md-6" label={t('new.location')} options={locationOptions} placeholder={t('fields.select')} error={fieldError(errors.locationId)} {...register('locationId')} />
+          <div className="col-12">
+            <AttachmentInput label={t('new.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
+          </div>
+        </FormSection>
       </form>
-        </CCardBody>
-      </CCard>
     </>
   );
 }

@@ -6,9 +6,11 @@ import { describeError, translateErrorCode } from '../../shared/api/errorMessage
 import { ApiError, ERROR_CODES } from '../../shared/api/errors';
 import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
 import { PageHeader } from '../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { articlePath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { FormSection } from '../../shared/ui/FormSection';
 import { SelectField } from '../../shared/ui/SelectField';
 import { ErrorState, LoadingState } from '../../shared/ui/States';
 import { TextAreaField } from '../../shared/ui/TextAreaField';
@@ -143,21 +145,29 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
 
   return (
     <>
-    <PageHeader titleOverride={heading} />
+    <PageHeader icon={ROUTE_META.kbList.icon} titleOverride={heading} />
     {/* A saved article navigates with state.saved; only other ways out ask about unsaved changes. */}
     <UnsavedChangesGuard when={({ nextLocation }) => dirty && (nextLocation.state as { saved?: boolean } | null)?.saved !== true} />
-    <form noValidate className="card card-body d-flex flex-column gap-2 tgysm-editor" onSubmit={submit}>
-      <FormAlert message={alert} />
-      {isConflict(error) && onReload && (
-        <div>
-          <Button variant="secondary" onClick={() => void reload()}>
-            {t('editor.reload')}
+    <form noValidate className="tgysm-editor" onSubmit={submit}>
+      <FormSection
+        actions={
+          <Button type="submit" isLoading={isPending}>
+            {t('editor.save')}
           </Button>
+        }
+      >
+        <div className="col-12">
+          <FormAlert message={alert} />
         </div>
-      )}
-      <TextField label={t('editor.title')} autoComplete="off" value={draft.title} error={fieldMessage('title')} onChange={(event) => change({ title: event.target.value })} />
-      <TextAreaField label={t('editor.summary')} rows={SUMMARY_ROWS} value={draft.summary} error={fieldMessage('summary')} onChange={(event) => change({ summary: event.target.value })} />
-      <div className="row g-3">
+        {isConflict(error) && onReload && (
+          <div className="col-12">
+            <Button variant="secondary" onClick={() => void reload()}>
+              {t('editor.reload')}
+            </Button>
+          </div>
+        )}
+        <TextField className="col-12" label={t('editor.title')} autoComplete="off" value={draft.title} error={fieldMessage('title')} onChange={(event) => change({ title: event.target.value })} />
+        <TextAreaField className="col-12" label={t('editor.summary')} rows={SUMMARY_ROWS} value={draft.summary} error={fieldMessage('summary')} onChange={(event) => change({ summary: event.target.value })} />
         <SelectField
           className="col-12 col-sm-6"
           label={t('editor.category')}
@@ -173,40 +183,40 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
           value={draft.visibility}
           onChange={(event) => change({ visibility: event.target.value as ArticleVisibility })}
         />
-      </div>
-      {/* Two toggle buttons, not a tablist: a tab pattern would also need arrow-key focus and tabpanel wiring. */}
-      <div role="group" aria-label={t('editor.tabs')} className="btn-group align-self-start">
-        {(['write', 'preview'] as const).map((name) => (
-          <button
-            key={name}
-            type="button"
-            aria-pressed={tab === name}
-            className={`btn tgysm-touch ${tab === name ? 'btn-primary' : 'btn-outline-primary'}`}
-            onClick={() => setTab(name)}
-          >
-            {t(`editor.${name}`)}
-          </button>
-        ))}
-      </div>
-      {tab === 'write' ? (
-        <TextAreaField
-          label={t('editor.body')}
-          hint={t('editor.bodyHint')}
-          rows={BODY_ROWS}
-          value={draft.body}
-          error={fieldMessage('body')}
-          onChange={(event) => change({ body: event.target.value })}
-        />
-      ) : (
-        <div className="border rounded bg-body p-2 tgysm-preview">
-          {draft.body.trim() === '' ? <p className="mb-0 text-body-secondary">{t('editor.previewEmpty')}</p> : <ArticleMarkdown body={draft.body} />}
+        <div className="col-12">
+          {/* Two toggle buttons, not a tablist: a tab pattern would also need arrow-key focus and tabpanel wiring. */}
+          <div role="group" aria-label={t('editor.tabs')} className="btn-group">
+            {(['write', 'preview'] as const).map((name) => (
+              <button
+                key={name}
+                type="button"
+                aria-pressed={tab === name}
+                className={`btn tgysm-touch ${tab === name ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setTab(name)}
+              >
+                {t(`editor.${name}`)}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
-      <div className="d-flex flex-wrap align-items-center gap-2">
-        <Button type="submit" isLoading={isPending}>
-          {t('editor.save')}
-        </Button>
-      </div>
+        {tab === 'write' ? (
+          <TextAreaField
+            className="col-12"
+            label={t('editor.body')}
+            hint={t('editor.bodyHint')}
+            rows={BODY_ROWS}
+            value={draft.body}
+            error={fieldMessage('body')}
+            onChange={(event) => change({ body: event.target.value })}
+          />
+        ) : (
+          <div className="col-12">
+            <div className="border rounded bg-body-tertiary p-3 tgysm-preview">
+              {draft.body.trim() === '' ? <p className="mb-0 text-body-secondary">{t('editor.previewEmpty')}</p> : <ArticleMarkdown body={draft.body} />}
+            </div>
+          </div>
+        )}
+      </FormSection>
     </form>
     </>
   );

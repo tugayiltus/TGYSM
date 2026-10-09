@@ -1,9 +1,12 @@
-import { CCard, CListGroup, CListGroupItem } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { CAvatar, CListGroup, CListGroupItem } from '@coreui/react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTES } from '../../shared/routes';
+import { cilLockLocked, cilUser } from '../../shared/ui/icons';
+import { PageCard } from '../../shared/ui/PageCard';
 import { useSession } from '../auth/session';
 
 export function ProfilePage() {
@@ -21,13 +24,24 @@ export function ProfilePage() {
   return (
     <>
       <PageHeader
+        icon={cilUser}
         actions={
-          <Link to={ROUTES.changePassword} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+          <Link to={ROUTES.changePassword} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
+            <CIcon icon={cilLockLocked} aria-hidden="true" />
             {t('profile.changePassword')}
           </Link>
         }
       />
-      <CCard className="tgysm-form-card">
+      <PageCard flush className="tgysm-form-card">
+        <div className="d-flex align-items-center gap-3 p-3 border-bottom">
+          <CAvatar color="primary" textColor="white" size="xl" aria-hidden="true">
+            {`${me.firstName.charAt(0)}${me.lastName.charAt(0)}`}
+          </CAvatar>
+          <div className="min-w-0">
+            <p className="mb-0 fw-semibold text-break">{`${me.firstName} ${me.lastName}`}</p>
+            <p className="mb-0 small text-body-secondary text-break">{tc(`roles.${me.role}`)}</p>
+          </div>
+        </div>
         <CListGroup flush as="dl" className="mb-0">
           {rows.map((row) => (
             <CListGroupItem key={row.label} className="d-flex flex-column flex-sm-row justify-content-between gap-1">
@@ -36,7 +50,7 @@ export function ProfilePage() {
             </CListGroupItem>
           ))}
         </CListGroup>
-      </CCard>
+      </PageCard>
     </>
   );
 }

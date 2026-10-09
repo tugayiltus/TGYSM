@@ -8,6 +8,7 @@ import { describeError, fieldError } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
 import { Button } from '../../shared/ui/Button';
+import { CheckField } from '../../shared/ui/CheckField';
 import { Dialog } from '../../shared/ui/Dialog';
 import { FormAlert } from '../../shared/ui/FormAlert';
 import { SelectField } from '../../shared/ui/SelectField';
@@ -132,10 +133,7 @@ export function AssetOperationDialog({ asset, kind, onClose }: { asset: AssetIte
         )}
         {(kind === 'lost' || kind === 'retire') && <TextField label={t('actionFields.reason')} autoComplete="off" error={fieldError(errors.reason)} {...register('reason')} />}
         {kind === 'maintenanceStart' && asset.status === 'assigned' && (
-          <label className="d-flex tgysm-touch align-items-center gap-2 small">
-            <input type="checkbox" className="form-check-input" {...register('retainResponsibility')} />
-            {t('actionFields.retain')}
-          </label>
+          <CheckField label={t('actionFields.retain')} {...register('retainResponsibility')} />
         )}
         {kind === 'maintenanceEnd' && <p className="small text-body-secondary">{t('actionFields.maintenanceEndHint')}</p>}
       </form>

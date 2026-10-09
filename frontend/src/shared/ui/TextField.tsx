@@ -14,11 +14,13 @@ export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   hint?: string;
   /** Icon at the start of the control (search, e-mail, password …), shown in an input group. */
   startIcon?: string[];
+  /** Short unit after the control ("dk", "%"), shown in the same input group. */
+  endText?: string;
   ref?: Ref<HTMLInputElement>;
 }
 
 /** Label, hint and error are linked to the input for screen readers; 16 px text avoids iOS zoom. */
-export function TextField({ label, error, hint, id, className = '', ref, required, startIcon, ...inputProps }: TextFieldProps) {
+export function TextField({ label, error, hint, id, className = '', ref, required, startIcon, endText, ...inputProps }: TextFieldProps) {
   const { fieldId, hintId, errorId, describedBy } = useFieldIds(id, hint, error);
   const control = (
     <CFormInput id={fieldId} ref={ref} required={required} invalid={Boolean(error)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...inputProps} />
@@ -29,7 +31,7 @@ export function TextField({ label, error, hint, id, className = '', ref, require
       <FieldLabel htmlFor={fieldId} required={required}>
         {label}
       </FieldLabel>
-      {startIcon === undefined ? (
+      {startIcon === undefined && endText === undefined ? (
         <>
           {control}
           {messages}
@@ -37,10 +39,13 @@ export function TextField({ label, error, hint, id, className = '', ref, require
       ) : (
         // Feedback stays inside the group: Bootstrap shows it only as a sibling of the invalid control.
         <CInputGroup className={error ? 'has-validation' : undefined}>
-          <CInputGroupText aria-hidden="true">
-            <CIcon icon={startIcon} />
-          </CInputGroupText>
+          {startIcon !== undefined && (
+            <CInputGroupText aria-hidden="true">
+              <CIcon icon={startIcon} />
+            </CInputGroupText>
+          )}
           {control}
+          {endText !== undefined && <CInputGroupText>{endText}</CInputGroupText>}
           {messages}
         </CInputGroup>
       )}

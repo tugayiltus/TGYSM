@@ -28,6 +28,13 @@ describe('fields', () => {
     expect(container.querySelector('.input-group .invalid-feedback')).toHaveTextContent('Hatalı');
   });
 
+  it('shows a unit after the control in the same input group', () => {
+    const { container } = render(<TextField label="Hedef" type="number" endText="dk" />);
+    const group = container.querySelector('.input-group');
+    expect(group?.lastElementChild).toHaveTextContent('dk');
+    expect(screen.getByRole('spinbutton', { name: 'Hedef' })).toBeInTheDocument();
+  });
+
   it('uses the same label style for every field', () => {
     render(
       <>
