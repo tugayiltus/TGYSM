@@ -1,3 +1,4 @@
+import CIcon from '@coreui/icons-react';
 import { CButton, CSpinner } from '@coreui/react';
 import type { ButtonHTMLAttributes, Ref } from 'react';
 
@@ -14,11 +15,13 @@ const VARIANT_STYLE: Record<Variant, { color: string; variant?: 'outline' | 'gho
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   isLoading?: boolean;
+  /** Icon before the text; hidden from screen readers (the text names the button). */
+  icon?: string[];
   ref?: Ref<HTMLButtonElement>;
 }
 
 /** 44 px minimum touch target; disabled while loading so a double tap cannot submit twice. */
-export function Button({ variant = 'primary', isLoading = false, disabled, className = '', type = 'button', children, ...rest }: ButtonProps) {
+export function Button({ variant = 'primary', isLoading = false, icon, disabled, className = '', type = 'button', children, ...rest }: ButtonProps) {
   const style = VARIANT_STYLE[variant];
   return (
     <CButton
@@ -31,6 +34,7 @@ export function Button({ variant = 'primary', isLoading = false, disabled, class
       {...rest}
     >
       {isLoading && <CSpinner size="sm" aria-hidden="true" />}
+      {!isLoading && icon !== undefined && <CIcon icon={icon} aria-hidden="true" />}
       {children}
     </CButton>
   );

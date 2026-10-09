@@ -7,10 +7,12 @@ import { describe, expect, it } from 'vitest';
 import { routes as appRoutes } from '../../app/router';
 import { EMPLOYEE_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { cilDevices } from '../ui/icons';
 
 import { useBreadcrumbLabel } from './breadcrumbLabels';
 import { Breadcrumbs } from './Breadcrumbs';
 import { buildCrumbs, type Crumb } from './crumbs';
+import { PageHeader } from './PageHeader';
 import { linkState, parseReturn } from './returnTo';
 import { ROUTE_IDS, ROUTE_META, type RouteId } from './routeMeta';
 
@@ -200,5 +202,15 @@ describe('route icons', () => {
   it('gives every menu route an icon', () => {
     const missing = ROUTE_IDS.filter((id) => ROUTE_META[id].menu !== undefined && ROUTE_META[id].icon === undefined);
     expect(missing).toEqual([]);
+  });
+});
+
+describe('PageHeader look', () => {
+  it('shows an optional icon before the title and a description under it', () => {
+    const router = createMemoryRouter([{ path: '/', element: <PageHeader titleOverride="Envanter" icon={cilDevices} description="Tüm cihazlar" /> }]);
+    render(<RouterProvider router={router} />);
+    const heading = screen.getByRole('heading', { level: 1, name: 'Envanter' });
+    expect(heading.parentElement?.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('Tüm cihazlar')).toHaveClass('text-body-secondary');
   });
 });

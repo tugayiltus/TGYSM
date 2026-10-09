@@ -1,8 +1,9 @@
-import { CFormInput, CFormLabel } from '@coreui/react';
+import { CFormInput } from '@coreui/react';
 import { useId, useState, type KeyboardEvent } from 'react';
 
 import { toSearchKey } from '../lib/turkish';
 
+import { FieldLabel } from './FieldLabel';
 import { FieldMessages } from './FieldMessages';
 import type { SelectOption } from './SelectField';
 
@@ -83,7 +84,7 @@ export function ComboboxField({ label, options, value, onChange, emptyText, erro
 
   return (
     <div className="d-flex flex-column position-relative">
-      <CFormLabel htmlFor={inputId}>{label}</CFormLabel>
+      <FieldLabel htmlFor={inputId}>{label}</FieldLabel>
       <CFormInput
         id={inputId}
         role="combobox"
@@ -110,9 +111,9 @@ export function ComboboxField({ label, options, value, onChange, emptyText, erro
         onKeyDown={onKeyDown}
       />
       {open && (
-        <ul id={listId} role="listbox" aria-label={label} className="list-group position-absolute top-100 start-0 end-0 shadow z-3 overflow-auto tgysm-combobox-list">
+        <ul id={listId} role="listbox" aria-label={label} className="dropdown-menu show w-100 position-absolute top-100 start-0 end-0 shadow z-3 overflow-auto tgysm-combobox-list">
           {matches.length === 0 ? (
-            <li className="list-group-item text-body-secondary" role="presentation">
+            <li className="dropdown-item-text text-body-secondary" role="presentation">
               {emptyText}
             </li>
           ) : (
@@ -122,7 +123,7 @@ export function ComboboxField({ label, options, value, onChange, emptyText, erro
                 id={optionId(index)}
                 role="option"
                 aria-selected={index === active}
-                className={`list-group-item list-group-item-action ${index === active ? 'active' : ''}`}
+                className={`dropdown-item ${index === active ? 'active' : ''}`}
                 // mousedown, not click: picking must happen before the input's blur closes the list.
                 onMouseDown={(event) => {
                   event.preventDefault();

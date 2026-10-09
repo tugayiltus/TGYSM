@@ -270,3 +270,9 @@ html {
 .card .table > :not(caption) > * > :last-child {
   padding-right: 1rem;
 }
+
+// Stat widget icon box: fixed size so the number never moves when the icon loads.
+.tgysm-kpi-icon {
+  width: 3rem;
+  height: 3rem;
+}

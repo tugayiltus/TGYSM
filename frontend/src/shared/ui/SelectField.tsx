@@ -1,7 +1,8 @@
-import { CFormLabel, CFormSelect } from '@coreui/react';
+import { CFormSelect } from '@coreui/react';
 import type { Ref, SelectHTMLAttributes } from 'react';
 
 import { useFieldIds } from './fieldIds';
+import { FieldLabel } from './FieldLabel';
 import { FieldMessages } from './FieldMessages';
 
 export interface SelectOption {
@@ -20,12 +21,14 @@ export interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectEl
   ref?: Ref<HTMLSelectElement>;
 }
 
-export function SelectField({ label, options, error, hint, placeholder, id, className = '', ref, ...selectProps }: SelectFieldProps) {
+export function SelectField({ label, required, options, error, hint, placeholder, id, className = '', ref, ...selectProps }: SelectFieldProps) {
   const { fieldId, hintId, errorId, describedBy } = useFieldIds(id, hint, error);
   return (
     <div className={`d-flex flex-column ${className}`.trim()}>
-      <CFormLabel htmlFor={fieldId}>{label}</CFormLabel>
-      <CFormSelect id={fieldId} ref={ref} invalid={Boolean(error)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...selectProps}>
+      <FieldLabel htmlFor={fieldId} required={required}>
+        {label}
+      </FieldLabel>
+      <CFormSelect id={fieldId} ref={ref} required={required} invalid={Boolean(error)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...selectProps}>
         {placeholder !== undefined && <option value="">{placeholder}</option>}
         {options.map((option) => (
           <option key={option.value} value={option.value}>

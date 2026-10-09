@@ -134,5 +134,8 @@
       "dark": "Koyu",
       "auto": "Otomatik"
     }
+  },
+  "field": {
+    "required": "(zorunlu)"
   }
 }

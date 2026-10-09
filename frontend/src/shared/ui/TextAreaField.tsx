@@ -1,7 +1,8 @@
-import { CFormLabel, CFormTextarea } from '@coreui/react';
+import { CFormTextarea } from '@coreui/react';
 import type { Ref, TextareaHTMLAttributes } from 'react';
 
 import { useFieldIds } from './fieldIds';
+import { FieldLabel } from './FieldLabel';
 import { FieldMessages } from './FieldMessages';
 
 export interface TextAreaFieldProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value'> {
@@ -15,12 +16,14 @@ export interface TextAreaFieldProps extends Omit<TextareaHTMLAttributes<HTMLText
 const DEFAULT_ROWS = 4;
 
 /** Multi-line twin of TextField: label, hint and error linked for screen readers. */
-export function TextAreaField({ label, error, hint, id, className = '', ref, rows = DEFAULT_ROWS, ...props }: TextAreaFieldProps) {
+export function TextAreaField({ label, required, error, hint, id, className = '', ref, rows = DEFAULT_ROWS, ...props }: TextAreaFieldProps) {
   const { fieldId, hintId, errorId, describedBy } = useFieldIds(id, hint, error);
   return (
     <div className={`d-flex flex-column ${className}`.trim()}>
-      <CFormLabel htmlFor={fieldId}>{label}</CFormLabel>
-      <CFormTextarea id={fieldId} ref={ref} rows={rows} invalid={Boolean(error)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...props} />
+      <FieldLabel htmlFor={fieldId} required={required}>
+        {label}
+      </FieldLabel>
+      <CFormTextarea id={fieldId} ref={ref} required={required} rows={rows} invalid={Boolean(error)} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...props} />
       <FieldMessages hint={hint} hintId={hintId} error={error} errorId={errorId} />
     </div>
   );
