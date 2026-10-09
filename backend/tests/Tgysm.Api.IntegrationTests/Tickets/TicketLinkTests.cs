@@ -84,7 +84,7 @@ public sealed class TicketLinkTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.OK, link.StatusCode);
         Assert.Equal(ErrorCodes.Duplicate, await ApiClient.ReadCodeAsync(duplicate));
-        Assert.Equal("DT-1", ticketAssets[0].GetProperty("assetTag").GetString());
+        Assert.Equal(asset.GetProperty("assetTag").GetString(), ticketAssets[0].GetProperty("assetTag").GetString());
         Assert.Equal(TicketWorld.NumberOf(ticket), deskTickets[0].GetProperty("number").GetString());
         Assert.Equal(0, fieldTickets.GetArrayLength());
         Assert.Equal(HttpStatusCode.Forbidden, employeeAssetTickets.StatusCode);

@@ -7,7 +7,7 @@ namespace Tgysm.Application.Features.Assets.Import;
 /// <summary>A row that passed every check; the commit inserts exactly these values.</summary>
 public sealed record AssetImportRow(
     int Row,
-    string AssetTag,
+    string? AssetTag,
     AssetType Type,
     Guid ModelId,
     string Brand,

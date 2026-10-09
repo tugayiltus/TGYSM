@@ -24,7 +24,6 @@ public sealed record AssetLocationRequest(uint Version, Guid LocationId);
 
 public sealed record UpdateAssetRequest(
     uint Version,
-    string AssetTag,
     Guid ModelId,
     string? SerialNumber,
     Guid LocationId,
@@ -110,7 +109,7 @@ internal static class AssetEndpoints
 
     private static async Task<Ok<AssetItem>> UpdateAsync(Guid id, UpdateAssetRequest request, UpdateAssetHandler handler, CancellationToken cancellationToken) =>
         TypedResults.Ok(await handler.HandleAsync(
-            new UpdateAssetCommand(id, request.Version, request.AssetTag, request.ModelId, request.SerialNumber,
+            new UpdateAssetCommand(id, request.Version, request.ModelId, request.SerialNumber,
                 request.LocationId, request.DepartmentId, request.WarrantyEndsOn, request.PurchasedOn, request.Notes),
             cancellationToken));
 }

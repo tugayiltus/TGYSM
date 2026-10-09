@@ -60,17 +60,17 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
     public async Task It_staff_creates_lists_filters_and_reads_assets()
     {
         var it = await ItAsync();
-        var created = await CreateAsync(it, NewAsset("dt 0001", "sn-1"));
-        await CreateAsync(it, NewAsset("TB-1", model: "iPad"));
+        var created = await CreateAsync(it, NewAsset("ignored", "sn-1"));
+        await CreateAsync(it, NewAsset("ignored", model: "iPad"));
 
         using var byType = await it.GetAsync($"{AssetsPath}?type=tablet");
-        using var bySearch = await it.GetAsync($"{AssetsPath}?search=DT0001");
+        using var bySearch = await it.GetAsync($"{AssetsPath}?search=dmr-000001");
         using var detail = await it.GetAsync($"{AssetsPath}/{created.GetProperty("id").GetGuid()}");
 
         Assert.Equal("in_stock", created.GetProperty("status").GetString());
         Assert.Equal("Depo", created.GetProperty("locationName").GetString());
         Assert.Equal(1, (await it.ReadJsonAsync<JsonElement>(byType)).GetProperty("totalCount").GetInt32());
-        Assert.Equal("dt 0001", (await it.ReadJsonAsync<JsonElement>(bySearch)).GetProperty("items")[0].GetProperty("assetTag").GetString());
+        Assert.Equal("DMR-000001", (await it.ReadJsonAsync<JsonElement>(bySearch)).GetProperty("items")[0].GetProperty("assetTag").GetString());
         Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
         await using var db = factory.Database.CreateDbContext();
         Assert.True(await db.AuditEvents.AnyAsync(a => a.Action == AuditActions.AssetCreated, Ct));
@@ -78,15 +78,13 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Duplicate_tag_or_serial_is_refused()
+    public async Task Duplicate_serial_is_refused()
     {
         var it = await ItAsync();
         await CreateAsync(it, NewAsset("DT-1", "SN-1"));
 
-        using var tag = await it.PostAsync(AssetsPath, NewAsset(" dt-1 "));
         using var serial = await it.PostAsync(AssetsPath, NewAsset("DT-2", "sn-1"));
 
-        Assert.Equal(ErrorCodes.AssetTagTaken, await ApiClient.ReadCodeAsync(tag));
         Assert.Equal(ErrorCodes.AssetSerialTaken, await ApiClient.ReadCodeAsync(serial));
     }
 

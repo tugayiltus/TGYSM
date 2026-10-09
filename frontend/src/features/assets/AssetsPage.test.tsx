@@ -26,7 +26,7 @@ describe('AssetsPage', () => {
     await waitFor(() => expect(api.calls.some((c) => new URL(c.url).searchParams.get('type') === 'tablet')).toBe(true));
   });
 
-  it('creates an asset and shows a taken tag under the tag field', async () => {
+  it('creates an asset without a tag field and shows a taken serial under its field', async () => {
     let posted: unknown;
     mockApi({
       'GET /api/v1/auth/me': { status: 200, body: IT_ME },
@@ -34,14 +34,15 @@ describe('AssetsPage', () => {
       ...referenceRoutes,
       'POST /api/v1/assets': async (request) => {
         posted = await request.json();
-        return { status: 409, body: { code: 'assets.tag_taken' } };
+        return { status: 409, body: { code: 'assets.serial_taken' } };
       },
     });
     const { user } = renderRoute('/assets');
 
     await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByLabelText('Demirbaş numarası'), 'DT-0001');
+    expect(within(dialog).queryByLabelText('Demirbaş numarası')).not.toBeInTheDocument();
+    expect(within(dialog).getByText('Demirbaş numarası kaydedildiğinde otomatik atanır.')).toBeInTheDocument();
     await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Dizüstü');
     await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
     await user.keyboard('{ArrowDown}{Enter}');
@@ -50,9 +51,8 @@ describe('AssetsPage', () => {
     await user.type(within(dialog).getByLabelText('Garanti bitiş tarihi'), '2027-12-31');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
-    expect(await within(dialog).findByText('Bu demirbaş numarası başka bir cihazda kayıtlı.')).toBeInTheDocument();
+    expect(await within(dialog).findByText('Bu seri numarası başka bir cihazda kayıtlı.')).toBeInTheDocument();
     expect(posted).toEqual({
-      assetTag: 'DT-0001',
       modelId: 'm-1',
       serialNumber: null,
       locationId: 'l-2',

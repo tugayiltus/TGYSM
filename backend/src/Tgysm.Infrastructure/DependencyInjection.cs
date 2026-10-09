@@ -29,6 +29,7 @@ public static class DependencyInjection
         });
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
+        services.AddScoped<IAssetTagGenerator, AssetTagGenerator>();
         services.AddScoped<IOutboxClaimer, OutboxClaimer>();
         services.AddScoped<IEmailDeliveryClaimer, EmailDeliveryClaimer>();
         services.AddScoped<IExportJobClaimer, ExportJobClaimer>();

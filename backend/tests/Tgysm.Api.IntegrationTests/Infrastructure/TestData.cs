@@ -95,6 +95,18 @@ public static class TestData
         return model.Id;
     }
 
+    /// <summary>An asset carrying a legacy (imported) tag, which the API no longer accepts from clients.</summary>
+    public static async Task LegacyAssetAsync(ApiFactory factory, string tag, Guid locationId, string? serial = null)
+    {
+        var modelId = await ModelAsync(factory);
+        var (asset, movement) = Asset.Create(tag, new AssetCatalogEntry(modelId, AssetType.Laptop, "Lenovo", "T14"), serial, locationId, null, null, null, null, DateTimeOffset.UtcNow);
+        await SaveAsync(factory, db =>
+        {
+            db.Assets.Add(asset);
+            db.AssetMovements.Add(movement);
+        });
+    }
+
     public static async Task SaveAsync(ApiFactory factory, Action<AppDbContext> change)
     {
         await using var scope = factory.Services.CreateAsyncScope();

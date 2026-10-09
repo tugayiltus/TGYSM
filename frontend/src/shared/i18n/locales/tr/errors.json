@@ -134,5 +134,6 @@
   },
   "assets.catalog_duplicate": "Bu ad zaten kayıtlı. Mevcut tanımı kullanın.",
   "assets.model_inactive": "Seçilen model kullanılamıyor. Etkin bir model seçin.",
-  "assets.import_catalog_missing": "Tanım eksik: marka veya model katalogda yok. Yöneticiye bildirin."
+  "assets.import_catalog_missing": "Tanım eksik: marka veya model katalogda yok. Yöneticiye bildirin.",
+  "assets.import_reserved_tag": "DMR- öneki sistemin verdiği numaralar için ayrılmıştır. Bu sütunu boş bırakın."
 }

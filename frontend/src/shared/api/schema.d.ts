@@ -6608,7 +6608,7 @@ export interface components {
         AssetImportRow: {
             /** Format: int32 */
             row: number;
-            assetTag: string;
+            assetTag: null | string;
             type: components["schemas"]["AssetType"];
             /** Format: uuid */
             modelId: string;
@@ -6821,7 +6821,6 @@ export interface components {
             visibility: components["schemas"]["ArticleVisibility"];
         };
         CreateAssetCommand: {
-            assetTag: string;
             /** Format: uuid */
             modelId: string;
             serialNumber: null | string;
@@ -7565,7 +7564,6 @@ export interface components {
         UpdateAssetRequest: {
             /** Format: uint32 */
             version: number;
-            assetTag: string;
             /** Format: uuid */
             modelId: string;
             serialNumber: null | string;

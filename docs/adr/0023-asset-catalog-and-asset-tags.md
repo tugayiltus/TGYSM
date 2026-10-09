@@ -46,3 +46,10 @@ Assets stored brand and model as free text typed into the asset form and the CSV
 
 ### Risks
 - The SQL normalization in the migration only approximates `TurkishText` for unusual characters; existing dev/E2E data is plain ASCII, and the product was not live at migration time.
+
+## Amendment 2026-10-09: Server-generated asset tags
+
+- New assets get their tag from PostgreSQL sequence `asset_tag_seq`, formatted `DMR-` + six digits (`AssetTagFormat`; longer numbers are not truncated). Create requests carry no tag; edits never change it. Numbers are never reused; a rolled-back save leaves a gap.
+- Existing tags stay as they are. A CSV row may leave the tag empty (generated at commit, the preview consumes no number) or give a legacy tag; a legacy tag using the `DMR-` prefix is refused (`assets.import_reserved_tag`) because it would collide with a later generated tag.
+- A resent create of a device with a serial number is stopped by the serial uniqueness; a device without a serial number has no duplicate guard. No idempotency key was added: the form blocks double submission and the product serves one company, so the remaining risk is a rare duplicate an admin can retire.
+

@@ -68,7 +68,7 @@ function RowTable({ job }: { job: AssetImportJobItem }) {
         <tbody>
           {job.rows.map((r) => (
             <tr key={r.row}>
-              <td>{r.assetTag}</td>
+              <td>{r.assetTag ?? t('import.autoTag')}</td>
               <td>{`${t(`types.${r.type}`)} · ${r.brand} ${r.model}`}</td>
               <td>{r.locationPath}</td>
               <td>{t(`statuses.${r.status}`)}</td>

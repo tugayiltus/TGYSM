@@ -67,7 +67,9 @@
     "selectModel": "Seçiniz",
     "brandEmpty": "Bu türde marka yok",
     "catalogMissing": "Listede yoksa tanım eksik: yöneticiye bildirin.",
-    "editCatalog": "Kataloğu düzenle"
+    "editCatalog": "Kataloğu düzenle",
+    "tagGenerated": "Demirbaş numarası kaydedildiğinde otomatik atanır.",
+    "created": "Cihaz kaydedildi: {{tag}}"
   },
   "detail": {
     "back": "Envantere dön",
@@ -114,7 +116,8 @@
       "row": "Satır",
       "field": "Alan",
       "problem": "Sorun"
-    }
+    },
+    "autoTag": "Otomatik"
   },
   "mine": {
     "title": "Zimmetlerim",

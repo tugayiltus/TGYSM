@@ -100,5 +100,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     {
         modelBuilder.HasPostgresExtension(Configurations.TrigramIndex.Extension);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.HasSequence<long>(AssetTagGenerator.SequenceName);
     }
 }

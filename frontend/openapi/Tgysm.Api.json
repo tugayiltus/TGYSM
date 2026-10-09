@@ -6911,7 +6911,10 @@
             "format": "int32"
           },
           "assetTag": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "type": {
             "$ref": "#/components/schemas/AssetType"
@@ -7713,7 +7716,6 @@
       },
       "CreateAssetCommand": {
         "required": [
-          "assetTag",
           "modelId",
           "serialNumber",
           "locationId",
@@ -7724,9 +7726,6 @@
         ],
         "type": "object",
         "properties": {
-          "assetTag": {
-            "type": "string"
-          },
           "modelId": {
             "type": "string",
             "format": "uuid"
@@ -10498,7 +10497,6 @@
       "UpdateAssetRequest": {
         "required": [
           "version",
-          "assetTag",
           "modelId",
           "serialNumber",
           "locationId",
@@ -10512,9 +10510,6 @@
           "version": {
             "type": "integer",
             "format": "uint32"
-          },
-          "assetTag": {
-            "type": "string"
           },
           "modelId": {
             "type": "string",

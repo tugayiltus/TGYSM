@@ -131,7 +131,9 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             return null;
         }
 
-        var tag = Text(AssetCsvTemplate.AssetTag, Asset.TagMaxLength, required: true);
+        // Optional: an empty tag is generated at commit (the preview consumes no numbers); a filled one is a legacy tag.
+        var tag = Text(AssetCsvTemplate.AssetTag, Asset.TagMaxLength, required: false);
+        var tagRejected = false;
         var brand = Text(AssetCsvTemplate.Brand, CatalogName.MaxLength, required: true);
         var model = Text(AssetCsvTemplate.Model, CatalogName.MaxLength, required: true);
         var serial = Text(AssetCsvTemplate.SerialNumber, Asset.SerialMaxLength, required: false);
@@ -143,7 +145,13 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
         var location = ParseLocation(cell(AssetCsvTemplate.Location), context, Error);
         var department = ParseDepartment(cell(AssetCsvTemplate.Department), context, Error);
 
-        if (tag is not null)
+        if (tag is not null && AssetTagFormat.IsReserved(tag))
+        {
+            // DMR- numbers come from the sequence; an imported one would collide with a later generated tag.
+            Error(AssetCsvTemplate.AssetTag, ErrorCodes.ImportReservedTag);
+            tagRejected = true;
+        }
+        else if (tag is not null)
         {
             context.CheckTag(tag, Error);
         }
@@ -164,7 +172,7 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             context.CheckSerial(serial, Error);
         }
 
-        return tag is null || entry is null || status is null || location is null
+        return tagRejected || entry is null || status is null || location is null
             ? null
             : new AssetImportRow(row, tag, entry.Type, entry.ModelId, entry.BrandName, entry.ModelName, serial, location.Id, location.Path, department?.Id, department?.Name, status.Value, warranty, purchased, notes);
     }

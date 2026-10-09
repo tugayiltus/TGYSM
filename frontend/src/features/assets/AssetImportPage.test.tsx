@@ -14,6 +14,17 @@ const FAILED_JOB = { ...JOB, totalRows: 2, errorRows: 1, errors: [{ row: 3, fiel
 const csvFile = () => new File(['Demirbaş No,Tür\n'], 'cihazlar.csv', { type: 'text/csv' });
 
 describe('AssetImportPage', () => {
+  it('shows rows without a tag as getting one automatically', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: IT_ME },
+      'POST /api/v1/assets/import/preview': { status: 200, body: { ...JOB, rows: [{ ...ROW, assetTag: null }] } },
+    });
+    const { user } = renderRoute('/assets/import');
+    await user.upload(await screen.findByLabelText('CSV dosyası'), csvFile());
+    await user.click(screen.getByRole('button', { name: 'Önizle' }));
+    expect(await screen.findByText('Otomatik')).toBeInTheDocument();
+  });
+
   it('previews a file and lists row errors without allowing the commit', async () => {
     mockApi({
       'GET /api/v1/auth/me': { status: 200, body: IT_ME },

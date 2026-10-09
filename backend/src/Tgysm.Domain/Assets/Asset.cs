@@ -93,9 +93,8 @@ public sealed class Asset : Entity
         UpdatedAt = now;
     }
 
-    /// <summary>Card edit (descriptive fields and location); status never changes here.</summary>
+    /// <summary>Card edit (descriptive fields and location); status and the asset tag never change here.</summary>
     public AssetMovement Update(
-        string assetTag,
         AssetCatalogEntry model,
         string? serialNumber,
         Guid locationId,
@@ -106,7 +105,7 @@ public sealed class Asset : Entity
         Guid actorUserId,
         DateTimeOffset now)
     {
-        UpdateCard(assetTag, model, serialNumber, departmentId, warrantyEndsOn, purchasedOn, notes, now);
+        UpdateCard(AssetTag, model, serialNumber, departmentId, warrantyEndsOn, purchasedOn, notes, now);
         LocationId = locationId;
         return AssetMovement.Record(Id, AssetMovementKind.Updated, Status, Status, null, actorUserId, null, null, now);
     }

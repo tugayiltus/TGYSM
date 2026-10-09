@@ -13,7 +13,6 @@ namespace Tgysm.Application.Features.Assets;
 public sealed record UpdateAssetCommand(
     Guid Id,
     uint Version,
-    string AssetTag,
     Guid ModelId,
     string? SerialNumber,
     Guid LocationId,
@@ -25,7 +24,7 @@ public sealed record UpdateAssetCommand(
 internal sealed class UpdateAssetValidator : AbstractValidator<UpdateAssetCommand>
 {
     public UpdateAssetValidator() =>
-        this.CardRules(c => c.AssetTag, c => c.ModelId, c => c.SerialNumber, c => c.Notes, c => c.LocationId);
+        this.CardRules(c => c.ModelId, c => c.SerialNumber, c => c.Notes, c => c.LocationId);
 }
 
 public sealed class UpdateAssetHandler(
@@ -44,7 +43,7 @@ public sealed class UpdateAssetHandler(
             ?? throw new NotFoundException(AuditEntityTypes.Asset);
         db.SetExpectedVersion(asset, command.Version);
 
-        await AssetRules.EnsureUniqueAsync(db, command.AssetTag, command.SerialNumber, asset.Id, cancellationToken);
+        await AssetRules.EnsureUniqueAsync(db, asset.AssetTag, command.SerialNumber, asset.Id, cancellationToken);
         await references.EnsureActiveAsync(
             command.DepartmentId == asset.DepartmentId ? null : command.DepartmentId,
             command.LocationId == asset.LocationId ? null : command.LocationId,
@@ -54,7 +53,7 @@ public sealed class UpdateAssetHandler(
         var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: asset.ModelId, cancellationToken);
         var before = new { asset.AssetTag, asset.Type, asset.Brand, asset.Model, asset.SerialNumber, asset.LocationId, asset.DepartmentId };
         var movement = asset.Update(
-            command.AssetTag, model, command.SerialNumber, command.LocationId,
+            model, command.SerialNumber, command.LocationId,
             command.DepartmentId, command.WarrantyEndsOn, command.PurchasedOn, command.Notes, actorId, clock.GetUtcNow());
         db.AssetMovements.Add(movement);
         audit.Record(AuditActions.AssetUpdated, AuditEntityTypes.Asset, asset.Id, before,

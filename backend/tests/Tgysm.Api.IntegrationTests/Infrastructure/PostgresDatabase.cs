@@ -16,6 +16,7 @@ public sealed class PostgresDatabase : IAsyncLifetime
     private const string TruncateAllSql =
         "SET session_replication_role = replica; "
         + "TRUNCATE export_jobs, sla_events, sla_pauses, sla_instances, sla_pause_rules, sla_targets, sla_policy_versions, holidays, business_hours, business_calendar, worker_heartbeats, password_tokens, email_deliveries, notification_outbox, ticket_assets, ticket_relations, ticket_events, ticket_attachments, ticket_comments, ticket_assignments, approvals, tickets, ticket_counters, request_types, categories, import_jobs, asset_movements, asset_assignments, assets, asset_models, brands, team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE; "
+        + "ALTER SEQUENCE asset_tag_seq RESTART; "
         + "SET session_replication_role = origin;";
 
     private readonly string _databaseName = DatabaseNamePrefix + Guid.NewGuid().ToString("N");

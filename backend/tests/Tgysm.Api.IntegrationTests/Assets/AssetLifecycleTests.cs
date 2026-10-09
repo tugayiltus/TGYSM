@@ -107,7 +107,7 @@ public sealed class AssetLifecycleTests(ApiFactory factory) : IAsyncLifetime
 
         var items = await employee.ReadJsonAsync<JsonElement>(mine);
         Assert.Equal(1, items.GetArrayLength());
-        Assert.Equal("DT-1", items[0].GetProperty("assetTag").GetString());
+        Assert.Equal(asset.GetProperty("assetTag").GetString(), items[0].GetProperty("assetTag").GetString());
         Assert.Equal(HttpStatusCode.Forbidden, inventory.StatusCode);
         Assert.NotEqual(Guid.Empty, other.GetProperty("id").GetGuid());
     }

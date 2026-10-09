@@ -15,23 +15,21 @@ import { FormAlert } from '../../shared/ui/FormAlert';
 import { SelectField } from '../../shared/ui/SelectField';
 import { TextField } from '../../shared/ui/TextField';
 import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
+import { useToast } from '../../shared/ui/useToast';
 import { withCurrentOption } from '../admin/shared/referenceOptions';
 import { useSession } from '../auth/session';
 
 import { ASSET_TYPES, useAssetCatalog, useCreateAsset, useReferenceDepartments, useReferenceLocations, useUpdateAsset, type AssetItem } from './api';
 
 /** Mirror backend Asset.*MaxLength. */
-const TAG_MAX_LENGTH = 50;
 const NAME_MAX_LENGTH = 100;
 const ADMIN_ROLE = 'admin';
 const NOTES_MAX_LENGTH = 1000;
 const NO_SELECTION = '';
 
-const required = (max: number) => z.string().trim().min(1, ERROR_CODES.required).max(max, ERROR_CODES.tooLong);
 const optional = (max: number) => z.string().trim().max(max, ERROR_CODES.tooLong);
 
 const assetSchema = z.object({
-  assetTag: required(TAG_MAX_LENGTH),
   // Type and brand only narrow the model list; the model (from the admin catalog, ADR-0023) is what is saved.
   type: z.string().min(1, ERROR_CODES.required),
   brandId: z.string(),
@@ -46,9 +44,8 @@ const assetSchema = z.object({
 
 type AssetFormValues = z.infer<typeof assetSchema>;
 
-const FORM_FIELDS = ['assetTag', 'type', 'brandId', 'modelId', 'serialNumber', 'locationId', 'departmentId', 'warrantyEndsOn', 'purchasedOn', 'notes'] as const;
+const FORM_FIELDS = ['type', 'brandId', 'modelId', 'serialNumber', 'locationId', 'departmentId', 'warrantyEndsOn', 'purchasedOn', 'notes'] as const;
 const CODE_FIELDS = {
-  [ERROR_CODES.assetTagTaken]: 'assetTag',
   [ERROR_CODES.assetSerialTaken]: 'serialNumber',
   [ERROR_CODES.referenceInactive]: 'locationId',
   [ERROR_CODES.assetModelInactive]: 'modelId',
@@ -67,6 +64,7 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
   const mutation = asset === null ? create : update;
   const catalog = useAssetCatalog();
   const me = useSession();
+  const toast = useToast();
 
   const typeOptions = ASSET_TYPES.map((type) => ({ value: type, label: t(`types.${type}`) }));
   const locationOptions = useMemo(
@@ -88,7 +86,6 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
   } = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
-      assetTag: asset?.assetTag ?? '',
       type: asset?.type ?? NO_SELECTION,
       brandId: NO_SELECTION,
       modelId: asset?.modelId ?? NO_SELECTION,
@@ -118,7 +115,6 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
 
   const onSubmit = handleSubmit((values) => {
     const body = {
-      assetTag: values.assetTag,
       modelId: values.modelId,
       serialNumber: nullIfEmpty(values.serialNumber),
       locationId: values.locationId,
@@ -129,7 +125,11 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
     };
     const callbacks = { onSuccess: onClose, onError: (error: unknown) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS) };
     if (asset === null) {
-      create.mutate(body, callbacks);
+      // The server assigns the tag (ADR-0023); show the user which number the device got.
+      create.mutate(body, { ...callbacks, onSuccess: (created) => {
+        toast.show(t('form.created', { tag: created.assetTag }));
+        onClose();
+      } });
     } else {
       update.mutate({ id: asset.id, version: asset.version, ...body }, callbacks);
     }
@@ -163,7 +163,7 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
         <div className="col-12">
           <FormAlert message={alert} />
         </div>
-        <TextField className="col-12 col-sm-6" label={t('fields.assetTag')} autoComplete="off" error={fieldError(errors.assetTag)} {...register('assetTag')} />
+        {asset === null && <p className="col-12 small text-body-secondary mb-0">{t('form.tagGenerated')}</p>}
         <SelectField className="col-12 col-sm-6" label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} error={fieldError(errors.type)} {...register('type')} />
         <div className="col-12 col-sm-6">
           <Controller

@@ -155,7 +155,7 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
     {
         var it = await ItAsync();
         var store = (await TestData.LocationAsync(factory, "Depo")).Id;
-        await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-1", modelId = await TestData.ModelAsync(factory), serialNumber = "SN-9", locationId = store });
+        await TestData.LegacyAssetAsync(factory, "DT-1", store, "SN-9");
 
         var job = await PreviewAsync(it, Csv(
             "dt-1,laptop,Lenovo,T14,,Depo,,in_stock,,,",
@@ -244,7 +244,7 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
         var it = await ItAsync();
         var store = (await TestData.LocationAsync(factory, "Depo")).Id;
         var job = await PreviewAsync(it, Csv("DT-1,laptop,Lenovo,T14,,Depo,,in_stock,,,", "DT-2,laptop,Lenovo,T14,,Depo,,in_stock,,,"));
-        await AssetCatalogueTests.CreateAsync(it, new { assetTag = "DT-2", modelId = await TestData.ModelAsync(factory), locationId = store });
+        await TestData.LegacyAssetAsync(factory, "DT-2", store);
 
         using var commit = await it.PostAsync(CommitPath(job));
 

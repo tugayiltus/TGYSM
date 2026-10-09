@@ -11,9 +11,8 @@ internal static class AssetRules
     public const string TagTakenMessage = "Another asset uses this asset tag.";
     public const string SerialTakenMessage = "Another asset uses this serial number.";
 
-    public static void CardRules<T>(this AbstractValidator<T> validator, Func<T, string> tag, Func<T, Guid> model, Func<T, string?> serial, Func<T, string?> notes, Func<T, Guid> location)
+    public static void CardRules<T>(this AbstractValidator<T> validator, Func<T, Guid> model, Func<T, string?> serial, Func<T, string?> notes, Func<T, Guid> location)
     {
-        validator.RuleFor(c => tag(c)).NotEmpty().MaximumLength(Asset.TagMaxLength).OverridePropertyName("assetTag");
         validator.RuleFor(c => model(c)).NotEmpty().OverridePropertyName("modelId");
         validator.RuleFor(c => serial(c)).MaximumLength(Asset.SerialMaxLength).OverridePropertyName("serialNumber");
         validator.RuleFor(c => notes(c)).MaximumLength(Asset.NotesMaxLength).OverridePropertyName("notes");

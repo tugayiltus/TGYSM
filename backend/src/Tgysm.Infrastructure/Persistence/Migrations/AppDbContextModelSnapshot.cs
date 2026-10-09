@@ -23,6 +23,8 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("asset_tag_seq");
+
             modelBuilder.Entity("Tgysm.Domain.Assets.Asset", b =>
                 {
                     b.Property<Guid>("Id")

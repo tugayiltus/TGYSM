@@ -50,6 +50,7 @@ public static class ErrorCodes
     public const string AssetCatalogDuplicate = "assets.catalog_duplicate";
     public const string AssetModelInactive = "assets.model_inactive";
     public const string ImportCatalogMissing = "assets.import_catalog_missing";
+    public const string ImportReservedTag = "assets.import_reserved_tag";
 
     public const string ImportInvalidHeader = "imports.invalid_header";
     public const string ImportEncoding = "imports.encoding";
