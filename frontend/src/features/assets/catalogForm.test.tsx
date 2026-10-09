@@ -44,6 +44,33 @@ describe('asset form catalog', () => {
     expect(within(model).getAllByRole('option').map((o) => o.textContent)).toEqual(['Seçiniz', 'M70q']);
   });
 
+  it('clears the brand and model when the device type changes, so a model of the old type is never sent', async () => {
+    let posted = false;
+    mockApi(
+      routes(IT_ME, {
+        'POST /api/v1/assets': () => {
+          posted = true;
+          return { status: 201, body: LAPTOP };
+        },
+      }) as never,
+    );
+    const { user } = renderRoute('/assets');
+    await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Dizüstü');
+    await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
+    await user.keyboard('{ArrowDown}{Enter}');
+    await user.selectOptions(within(dialog).getByLabelText('Model'), 'T14');
+    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: LOCATIONS[0]?.path ?? '' }));
+
+    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Masaüstü');
+    expect(within(dialog).getByRole('combobox', { name: 'Marka' })).toHaveValue('');
+    await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
+
+    expect((await within(dialog).findAllByText('Bu alan zorunludur.')).length).toBeGreaterThan(0);
+    expect(posted).toBe(false);
+  });
+
   it('tells IT staff that a missing definition is for an admin, and gives admins a link to the catalog', async () => {
     mockApi(routes(IT_ME) as never);
     const { user } = renderRoute('/assets');

@@ -1,3 +1,4 @@
+import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -5,7 +6,7 @@ import { describeError } from '../../shared/api/errorMessage';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
 
-import { useTicketAction, type TicketDetail } from './api';
+import { ticketKeys, useTicketAction, type TicketDetail } from './api';
 import { TicketActionDialog, type DialogActionKind } from './TicketActionDialog';
 
 type DirectKind = 'claim' | 'start' | 'resume';
@@ -44,6 +45,10 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
   const direct = useTicketAction(ticket);
   const [dialog, setDialog] = useState<DialogActionKind | null>(null);
   const actions = availableActions(ticket);
+  // Every action sends the version shown here. A reply being sent changes it, and a refetch then brings the new one:
+  // wait for both, or the action (and a dialog, which keeps the version it opened with) would fail as a conflict.
+  const replying = useIsMutating({ mutationKey: ticketKeys.addComment }) > 0;
+  const refreshing = useIsFetching({ queryKey: ticketKeys.detail(ticket.number) }) > 0 || replying;
 
   if (actions.direct.length === 0 && actions.dialogs.length === 0) {
     return null;
@@ -57,7 +62,7 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
       <FormAlert message={direct.error ? describeError(direct.error) : null} />
       <div className="d-flex flex-wrap gap-2">
         {actions.direct.map((kind) => (
-          <Button key={kind} isLoading={direct.isPending && direct.variables?.kind === kind} onClick={() => direct.mutate({ kind })}>
+          <Button key={kind} disabled={refreshing} isLoading={direct.isPending && direct.variables?.kind === kind} onClick={() => direct.mutate({ kind })}>
             {t(`actions.${kind}`)}
           </Button>
         ))}
@@ -65,6 +70,7 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
           <Button
             key={kind}
             variant={kind === 'cancel' ? 'danger' : 'secondary'}
+            disabled={refreshing}
             onClick={() => {
               direct.reset();
               setDialog(kind);

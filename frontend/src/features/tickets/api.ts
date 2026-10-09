@@ -47,6 +47,8 @@ export const ticketKeys = {
   timeline: (number: string) => ['tickets', 'timeline', number],
   assets: (number: string) => ['tickets', 'assets', number],
   approvals: ['tickets', 'approvals'],
+  /** Mutation key of a comment being sent: it changes the ticket version, so work actions wait for it. */
+  addComment: ['tickets', 'add-comment'],
   reference: ['reference'],
 } as const;
 
@@ -151,6 +153,7 @@ export interface CommentInput {
 export function useAddComment() {
   const invalidate = useInvalidateTickets();
   return useMutation({
+    mutationKey: ticketKeys.addComment,
     mutationFn: ({ number, body, visibility, files }: CommentInput) => {
       const form = new FormData();
       form.append('body', body);

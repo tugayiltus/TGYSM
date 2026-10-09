@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Application.Features.Assets.Catalog;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
@@ -32,12 +33,20 @@ public sealed class CommitAssetImportHandler(IAppDbContext db, ICurrentActor act
                 return;
             }
 
+            await db.LockAsync(SerializationLocks.AssetCatalog, ct);
             var rows = JsonSerializer.Deserialize<List<AssetImportRow>>(job.RowsJson, AssetImportJson.Options) ?? [];
             await EnsureStillValidAsync(rows, ct);
+            // The catalog may have changed since the preview: a retired model refuses the commit, a renamed one is written with its current name.
+            var models = new Dictionary<Guid, AssetCatalogEntry>();
+            foreach (var modelId in rows.Select(r => r.ModelId).Distinct())
+            {
+                models[modelId] = await AssetModelResolver.ResolveAsync(db, modelId, keepInactiveId: null, ct);
+            }
+
             foreach (var row in rows)
             {
                 var (asset, movement) = Asset.Create(
-                    row.AssetTag ?? await tags.NextAsync(ct), new AssetCatalogEntry(row.ModelId, row.Type, row.Brand, row.Model), row.SerialNumber, row.LocationId, row.DepartmentId,
+                    row.AssetTag ?? await tags.NextAsync(ct), models[row.ModelId], row.SerialNumber, row.LocationId, row.DepartmentId,
                     row.WarrantyEndsOn, row.PurchasedOn, row.Notes, now, row.Status, actorId);
                 db.Assets.Add(asset);
                 db.AssetMovements.Add(movement);

@@ -24,6 +24,10 @@ public static class SerializationLocks
     /// <summary>Queuing a background export: guards the per-user cap on pending and running export jobs.</summary>
     public const long ExportQueue = 7_007;
 
-    /// <summary>Renaming a brand or model: the catalog row and the asset name snapshots change in one transaction.</summary>
+    /// <summary>
+    /// Renaming a brand or model: the catalog row and the asset name snapshots change in one transaction. Creating,
+    /// editing and importing assets take it too, so an asset never keeps a name read before a concurrent rename.
+    /// The import commit takes <see cref="AssetImport"/> first, then this one.
+    /// </summary>
     public const long AssetCatalog = 7_008;
 }

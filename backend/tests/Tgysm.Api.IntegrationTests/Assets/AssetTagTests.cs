@@ -44,6 +44,18 @@ public sealed class AssetTagTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_number_already_held_by_an_existing_tag_is_skipped()
+    {
+        // Data from before ADR-0023 may already use the generated format; the sequence starts at 1 regardless.
+        await TestData.LegacyAssetAsync(factory, "DMR-000001", _storeId);
+        var (it, _) = await ItAsync();
+
+        var created = await AssetCatalogueTests.CreateAsync(it, new { modelId = _modelId, locationId = _storeId });
+
+        Assert.Equal("DMR-000002", created.GetProperty("assetTag").GetString());
+    }
+
+    [Fact]
     public async Task Parallel_creates_get_distinct_tags()
     {
         var (it, _) = await ItAsync();

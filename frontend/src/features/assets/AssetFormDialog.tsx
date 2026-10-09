@@ -102,15 +102,18 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
   const brandIdValue = useWatch({ control, name: 'brandId' });
   const brands = useMemo(() => (catalog.data ?? []).filter((b) => b.models.some((m) => m.type === type)), [catalog.data, type]);
   // An edited asset starts on its own brand; its model may have left the active catalog and is then shown as is.
-  const brandId = brandIdValue !== NO_SELECTION ? brandIdValue : (catalog.data?.find((b) => b.models.some((m) => m.id === asset?.modelId))?.id ?? NO_SELECTION);
+  // Both apply only while the asset's own type is chosen: the type comes from the model.
+  const ownType = asset !== null && type === asset.type;
+  const brandId =
+    brandIdValue !== NO_SELECTION || !ownType ? brandIdValue : (catalog.data?.find((b) => b.models.some((m) => m.id === asset.modelId))?.id ?? NO_SELECTION);
   const modelOptions = useMemo(
     () =>
       withCurrentOption(
         (catalog.data?.find((b) => b.id === brandId)?.models ?? []).filter((m) => m.type === type).map((m) => ({ value: m.id, label: m.name })),
-        asset?.modelId,
-        asset?.model,
+        ownType ? asset.modelId : undefined,
+        ownType ? asset.model : undefined,
       ),
-    [catalog.data, brandId, type, asset],
+    [catalog.data, brandId, type, asset, ownType],
   );
 
   const onSubmit = handleSubmit((values) => {
@@ -164,7 +167,13 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
           <FormAlert message={alert} />
         </div>
         {asset === null && <p className="col-12 small text-body-secondary mb-0">{t('form.tagGenerated')}</p>}
-        <SelectField className="col-12 col-sm-6" label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} error={fieldError(errors.type)} {...register('type')} />
+        <SelectField className="col-12 col-sm-6" label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} error={fieldError(errors.type)} {...register('type', {
+            // Brands and models are listed per type, so a choice made for another type no longer applies.
+            onChange: () => {
+              setValue('brandId', NO_SELECTION, { shouldDirty: true });
+              setValue('modelId', NO_SELECTION, { shouldDirty: true });
+            },
+          })} />
         <div className="col-12 col-sm-6">
           <Controller
             control={control}

@@ -70,6 +70,71 @@ describe('TicketActions', () => {
     await waitFor(() => expect(posted).toEqual({ version: 11, resolution: 'Toner değişti', outcome: 'resolved', rootCause: null }));
   });
 
+  it('holds the work actions while the ticket refreshes, so a dialog never starts from an outdated version', async () => {
+    let release = () => undefined as void;
+    const refreshed = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let loads = 0;
+    let posted: unknown;
+    mockApi(
+      routes({
+        [`GET ${BASE}`]: async () => {
+          loads += 1;
+          if (loads === 1) {
+            return { status: 200, body: WORKABLE };
+          }
+          await refreshed;
+          return { status: 200, body: { ...WORKABLE, version: 12 } };
+        },
+        [`POST ${BASE}/complete`]: async (request: Request) => {
+          posted = await request.json();
+          return { status: 200, body: { ...WORKABLE, status: 'completed' } };
+        },
+      }) as never,
+    );
+    const { user, queryClient } = renderRoute(`/tickets/${INCIDENT.number}`);
+    const complete = await screen.findByRole('button', { name: 'Tamamla' });
+
+    // A reply or another action invalidates the ticket; its new version is still on the way.
+    void queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    await waitFor(() => expect(complete).toBeDisabled());
+    release();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tamamla' })).toBeEnabled());
+
+    await user.click(screen.getByRole('button', { name: 'Tamamla' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Çözüm (kullanıcı görür)'), 'Toner değişti');
+    await user.selectOptions(within(dialog).getByLabelText('Sonuç'), 'Çözüldü');
+    await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
+    await waitFor(() => expect(posted).toMatchObject({ version: 12 }));
+  });
+
+  it('holds the work actions while a reply is being sent, since the reply changes the ticket version', async () => {
+    let release = () => undefined as void;
+    const sent = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mockApi(
+      routes({
+        [`POST ${BASE}/comments`]: async () => {
+          await sent;
+          return { status: 201, body: {} };
+        },
+      }) as never,
+    );
+    const { user } = renderRoute(`/tickets/${INCIDENT.number}`);
+    const complete = await screen.findByRole('button', { name: 'Tamamla' });
+    const box = screen.getByRole('form', { name: 'Yazışmalar' });
+
+    await user.type(within(box).getByLabelText('Mesajınız'), 'Toneri değiştiriyoruz');
+    await user.click(within(box).getByRole('button', { name: 'Gönder' }));
+
+    await waitFor(() => expect(complete).toBeDisabled());
+    release();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tamamla' })).toBeEnabled());
+  });
+
   it('transfers to a member of another team with a reason, requiring a note for "other"', async () => {
     let posted: unknown;
     mockApi(

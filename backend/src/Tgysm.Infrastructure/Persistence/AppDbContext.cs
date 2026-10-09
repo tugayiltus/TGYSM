@@ -92,6 +92,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         await transaction.CommitAsync(cancellationToken);
     }
 
+    public async Task LockAsync(long lockKey, CancellationToken cancellationToken)
+    {
+        if (Database.CurrentTransaction is null)
+        {
+            throw new InvalidOperationException("LockAsync must run inside RunSerializedAsync.");
+        }
+
+        await Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({lockKey})", cancellationToken);
+    }
+
     public void SetExpectedVersion<TEntity>(TEntity entity, uint expectedVersion)
         where TEntity : Entity =>
         Entry(entity).Property(e => e.Version).OriginalValue = expectedVersion;

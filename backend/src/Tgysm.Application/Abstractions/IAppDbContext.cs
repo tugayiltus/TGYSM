@@ -75,4 +75,10 @@ public interface IAppDbContext
     /// so check-then-write rules that span rows (last admin, location cycles) cannot race.
     /// </summary>
     Task RunSerializedAsync(long lockKey, Func<CancellationToken, Task> work, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Takes a further advisory lock inside the transaction of <see cref="RunSerializedAsync"/>; it is held until that
+    /// transaction ends. Callers that need two locks take them in one fixed order.
+    /// </summary>
+    Task LockAsync(long lockKey, CancellationToken cancellationToken);
 }

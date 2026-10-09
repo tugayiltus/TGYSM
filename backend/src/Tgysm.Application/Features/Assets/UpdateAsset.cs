@@ -49,16 +49,20 @@ public sealed class UpdateAssetHandler(
             command.LocationId == asset.LocationId ? null : command.LocationId,
             cancellationToken);
 
-        // A model deactivated after this asset was registered stays valid for the asset itself.
-        var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: asset.ModelId, cancellationToken);
-        var before = new { asset.AssetTag, asset.Type, asset.Brand, asset.Model, asset.SerialNumber, asset.LocationId, asset.DepartmentId };
-        var movement = asset.Update(
-            model, command.SerialNumber, command.LocationId,
-            command.DepartmentId, command.WarrantyEndsOn, command.PurchasedOn, command.Notes, actorId, clock.GetUtcNow());
-        db.AssetMovements.Add(movement);
-        audit.Record(AuditActions.AssetUpdated, AuditEntityTypes.Asset, asset.Id, before,
-            new { asset.AssetTag, asset.Type, asset.Brand, asset.Model, asset.SerialNumber, asset.LocationId, asset.DepartmentId });
-        await db.SaveTranslatingDuplicateAsync(ErrorCodes.AssetTagTaken, AssetRules.TagTakenMessage, cancellationToken);
+        // Under the catalog lock, so the brand/model names written here cannot be overtaken by a concurrent rename.
+        await db.RunSerializedAsync(SerializationLocks.AssetCatalog, async ct =>
+        {
+            // A model deactivated after this asset was registered stays valid for the asset itself.
+            var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: asset.ModelId, ct);
+            var before = new { asset.AssetTag, asset.Type, asset.Brand, asset.Model, asset.SerialNumber, asset.LocationId, asset.DepartmentId };
+            var movement = asset.Update(
+                model, command.SerialNumber, command.LocationId,
+                command.DepartmentId, command.WarrantyEndsOn, command.PurchasedOn, command.Notes, actorId, clock.GetUtcNow());
+            db.AssetMovements.Add(movement);
+            audit.Record(AuditActions.AssetUpdated, AuditEntityTypes.Asset, asset.Id, before,
+                new { asset.AssetTag, asset.Type, asset.Brand, asset.Model, asset.SerialNumber, asset.LocationId, asset.DepartmentId });
+            await db.SaveTranslatingDuplicateAsync(ErrorCodes.AssetTagTaken, AssetRules.TagTakenMessage, ct);
+        }, cancellationToken);
         return await AssetQueries.LoadItemAsync(db, asset.Id, cancellationToken);
     }
 }

@@ -255,6 +255,41 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Model_deactivated_after_the_preview_makes_the_commit_fail_without_writing()
+    {
+        var it = await ItAsync();
+        var job = await PreviewAsync(it, Csv(",laptop,Lenovo,T14,,Işık Binası,,in_stock,,,"));
+        await ChangeModelAsync("T14", m => m.Deactivate(DateTimeOffset.UtcNow));
+
+        using var commit = await it.PostAsync(CommitPath(job));
+
+        Assert.Equal(ErrorCodes.AssetModelInactive, await ApiClient.ReadCodeAsync(commit));
+        await using var db = factory.Database.CreateDbContext();
+        Assert.Equal(0, await db.Assets.CountAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Model_renamed_after_the_preview_is_written_with_its_new_name()
+    {
+        var it = await ItAsync();
+        var job = await PreviewAsync(it, Csv(",laptop,Lenovo,T14,,Işık Binası,,in_stock,,,"));
+        await ChangeModelAsync("T14", m => m.Rename("T14 Gen 5", DateTimeOffset.UtcNow));
+
+        using var commit = await it.PostAsync(CommitPath(job));
+
+        Assert.Equal(HttpStatusCode.OK, commit.StatusCode);
+        await using var db = factory.Database.CreateDbContext();
+        Assert.Equal("T14 Gen 5", (await db.Assets.SingleAsync(Ct)).Model);
+    }
+
+    private async Task ChangeModelAsync(string name, Action<Domain.Assets.AssetModel> change)
+    {
+        await using var db = factory.Database.CreateDbContext();
+        change(await db.AssetModels.SingleAsync(m => m.Name == name, Ct));
+        await db.SaveChangesAsync(Ct);
+    }
+
+    [Fact]
     public async Task Unknown_job_is_not_found()
     {
         var it = await ItAsync();

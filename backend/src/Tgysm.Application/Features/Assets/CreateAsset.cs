@@ -38,19 +38,24 @@ public sealed class CreateAssetHandler(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
         var actorId = actor.UserId ?? throw new AuthenticationFailedException();
-        var assetTag = await tags.NextAsync(cancellationToken);
-        await AssetRules.EnsureUniqueAsync(db, assetTag, command.SerialNumber, exceptId: null, cancellationToken);
         await references.EnsureActiveAsync(command.DepartmentId, command.LocationId, cancellationToken);
-        var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: null, cancellationToken);
+        Asset? asset = null;
+        // Under the catalog lock, so the brand/model names written here cannot be overtaken by a concurrent rename.
+        await db.RunSerializedAsync(SerializationLocks.AssetCatalog, async ct =>
+        {
+            var assetTag = await tags.NextAsync(ct);
+            await AssetRules.EnsureUniqueAsync(db, assetTag, command.SerialNumber, exceptId: null, ct);
+            var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: null, ct);
 
-        var (asset, movement) = Asset.Create(
-            assetTag, model, command.SerialNumber, command.LocationId,
-            command.DepartmentId, command.WarrantyEndsOn, command.PurchasedOn, command.Notes, clock.GetUtcNow(), actorUserId: actorId);
+            (asset, var movement) = Asset.Create(
+                assetTag, model, command.SerialNumber, command.LocationId,
+                command.DepartmentId, command.WarrantyEndsOn, command.PurchasedOn, command.Notes, clock.GetUtcNow(), actorUserId: actorId);
 
-        db.Assets.Add(asset);
-        db.AssetMovements.Add(movement);
-        audit.Record(AuditActions.AssetCreated, AuditEntityTypes.Asset, asset.Id, newValues: new { asset.AssetTag, asset.Type, asset.Status });
-        await db.SaveTranslatingDuplicateAsync(ErrorCodes.AssetTagTaken, AssetRules.TagTakenMessage, cancellationToken);
-        return await AssetQueries.LoadItemAsync(db, asset.Id, cancellationToken);
+            db.Assets.Add(asset);
+            db.AssetMovements.Add(movement);
+            audit.Record(AuditActions.AssetCreated, AuditEntityTypes.Asset, asset.Id, newValues: new { asset.AssetTag, asset.Type, asset.Status });
+            await db.SaveTranslatingDuplicateAsync(ErrorCodes.AssetTagTaken, AssetRules.TagTakenMessage, ct);
+        }, cancellationToken);
+        return await AssetQueries.LoadItemAsync(db, asset!.Id, cancellationToken);
     }
 }
