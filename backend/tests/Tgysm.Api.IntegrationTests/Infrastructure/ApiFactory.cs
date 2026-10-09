@@ -19,6 +19,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>Attachment storage of this host; removed on dispose.</summary>
     public string FilesRoot { get; } = Path.Combine(Path.GetTempPath(), "tgysm-test-files-" + Guid.NewGuid().ToString("N"));
 
+    /// <summary>Data Protection key ring; required outside Development (ADR-0024), so the Testing host gets its own folder.</summary>
+    public string KeysRoot { get; } = Path.Combine(Path.GetTempPath(), "tgysm-test-keys-" + Guid.NewGuid().ToString("N"));
+
     /// <summary><c>Email:Mode=Pickup</c>'s <c>.eml</c> folder for this host; removed on dispose.</summary>
     public string EmailPickupFolder { get; } = Path.Combine(Path.GetTempPath(), "tgysm-test-email-" + Guid.NewGuid().ToString("N"));
 
@@ -51,6 +54,11 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             Directory.Delete(FilesRoot, recursive: true);
         }
 
+        if (Directory.Exists(KeysRoot))
+        {
+            Directory.Delete(KeysRoot, recursive: true);
+        }
+
         if (Directory.Exists(EmailPickupFolder))
         {
             Directory.Delete(EmailPickupFolder, recursive: true);
@@ -64,6 +72,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseEnvironment(TestingEnvironment);
         builder.UseSetting($"ConnectionStrings:{DependencyInjection.ConnectionStringName}", Database.ConnectionString);
         builder.UseSetting("Files:RootPath", FilesRoot);
+        builder.UseSetting("DataProtection:KeysPath", KeysRoot);
         builder.UseSetting("Security:LoginPermitLimitPerMinute", LoginPermitLimitPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
         builder.UseSetting("Security:ForgotPasswordPermitLimitPerMinute", ForgotPasswordPermitLimitPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
         builder.UseSetting("Security:SetPasswordPermitLimitPerMinute", SetPasswordPermitLimitPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));

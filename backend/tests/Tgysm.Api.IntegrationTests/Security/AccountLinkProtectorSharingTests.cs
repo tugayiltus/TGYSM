@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tgysm.Application.Abstractions;
@@ -35,8 +34,9 @@ public sealed class AccountLinkProtectorSharingTests : IDisposable
     {
         Directory.CreateDirectory(contentRoot);
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { ContentRootPath = contentRoot });
+        // The shared key folder now comes from configuration (ADR-0024), as it does on a server.
+        builder.Configuration["DataProtection:KeysPath"] = _keyFolder;
         builder.Services.AddInfrastructure();
-        builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(_keyFolder));
         return builder.Services.BuildServiceProvider();
     }
 

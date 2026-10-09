@@ -15,7 +15,6 @@ namespace Tgysm.Infrastructure;
 public static class DependencyInjection
 {
     public const string ConnectionStringName = "Default";
-    private const string DataProtectionApplicationName = "Tgysm";
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
@@ -40,11 +39,9 @@ public static class DependencyInjection
         services.AddSingleton<IFileScanner, DevelopmentFileScanner>();
         services.AddScoped<IReportFileWriter, ExcelReportWriter>();
 
-        // Account-link tokens (ADR-0015, ADR-0017); key ring persistence is unconfigured for now (flagged as a
-        // production risk in ADR-0004) and out of this task's scope.
-        // The API protects the token and the Worker unprotects it; Data Protection mixes the host's content root into
-        // the purpose by default, so without a shared application name the Worker cannot read the API's secrets.
-        services.AddDataProtection().SetApplicationName(DataProtectionApplicationName);
+        // Account-link tokens (ADR-0015, ADR-0017); the key ring is shared by the API and the Worker (ADR-0024).
+        services.AddOptions<KeyStorageOptions>().BindConfiguration(KeyStorageOptions.SectionName);
+        services.AddTgysmDataProtection();
         services.AddSingleton<IAccountLinkProtector, AccountLinkProtector>();
 
         // Email:Mode picks the transport (spec §3.5); resolving IEmailSender with a missing/unrecognized Mode
