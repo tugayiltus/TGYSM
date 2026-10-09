@@ -1,9 +1,13 @@
+import CIcon from '@coreui/icons-react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, NavLink, useParams, useSearchParams } from 'react-router';
 
 import { PageHeader } from '../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ROUTES, reportPath } from '../../shared/routes';
 import { FilterPanel } from '../../shared/ui/FilterPanel';
+import { cilCloudDownload } from '../../shared/ui/icons';
+import { PageCard } from '../../shared/ui/PageCard';
 import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
 
 import { ActiveFilterChips } from './ActiveFilterChips';
@@ -49,17 +53,19 @@ function ReportView({ report }: { report: ReportName }) {
 
   return (
     <>
-      {periodic && <PeriodPicker period={filter} today={today} onChange={setPeriod} />}
-      {reversedRange && <p className="alert alert-warning mb-0">{t('page.reversedRange')}</p>}
-      <FilterPanel
-        title={t('filters.panel')}
-        activeCount={activeFilterKeys(filter).length}
-        primary={<ReportFilterBar report={report} filter={filter} onChange={setFilter} />}
-        onApply={() => undefined}
-        onClear={clear}
-        live
-      />
-      <ActiveFilterChips filter={filter} onRemove={(key) => setFilter(key, '')} />
+      <PageCard bodyClassName="d-flex flex-column gap-3">
+        {periodic && <PeriodPicker period={filter} today={today} onChange={setPeriod} />}
+        {reversedRange && <p className="alert alert-warning mb-0">{t('page.reversedRange')}</p>}
+        <FilterPanel
+          title={t('filters.panel')}
+          activeCount={activeFilterKeys(filter).length}
+          primary={<ReportFilterBar report={report} filter={filter} onChange={setFilter} />}
+          onApply={() => undefined}
+          onClear={clear}
+          live
+        />
+        <ActiveFilterChips filter={filter} onRemove={(key) => setFilter(key, '')} />
+      </PageCard>
       {result.isPending && <LoadingState />}
       {result.isError && <ErrorState error={result.error} onRetry={() => void result.refetch()} />}
       {result.data !== undefined && (
@@ -91,9 +97,11 @@ export function ReportsPage() {
   return (
     <section className="d-flex flex-column gap-3">
       <PageHeader
+        icon={ROUTE_META.reports.icon}
         titleOverride={t('page.title')}
         actions={
-          <Link to={ROUTES.reportExports} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center">
+          <Link to={ROUTES.reportExports} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
+            <CIcon icon={cilCloudDownload} aria-hidden="true" />
             {t('page.myExports')}
           </Link>
         }

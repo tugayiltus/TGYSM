@@ -461,6 +461,7 @@
     "percentUnit": "%"
   },
   "overview": {
+    "checksTitle": "Kurulum kontrolleri",
     "missingApprovers": "Onaylayıcısı olmayan departmanlar",
     "noIntake": "Varsayılan karşılama ekibi seçilmemiş.",
     "workerIssue": "Arka plan işlerinden en az biri sorunlu.",

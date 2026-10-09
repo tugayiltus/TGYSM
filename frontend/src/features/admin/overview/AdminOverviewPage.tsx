@@ -1,9 +1,13 @@
-import { CCard, CCardBody } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { ROUTES } from '../../../shared/routes';
+import { cilCheckCircle, cilWarning } from '../../../shared/ui/icons';
+import { PageCard } from '../../../shared/ui/PageCard';
 import { LoadingState } from '../../../shared/ui/States';
 import { useDepartments } from '../departments/api';
 import { useWorkerHeartbeats } from '../system/api';
@@ -14,6 +18,22 @@ const OVERVIEW_PAGE_SIZE = 100;
 const HEALTHY_STATUS = 'ok';
 
 /** `/admin` landing page: setup gaps found through existing admin endpoints (no new API). */
+/** Number of setup checks: departments' approvers, the intake team and the background jobs. */
+const CHECK_COUNT = 3;
+
+/** One setup check: a warning (or, when everything is set up, a success) icon beside its text and link. */
+function CheckItem({ ok = false, children }: { ok?: boolean; children: ReactNode }) {
+  const color = ok ? 'success' : 'warning';
+  return (
+    <li className="list-group-item py-3 d-flex align-items-start gap-3">
+      <span className={`d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0 tgysm-kpi-icon bg-${color}-subtle text-${color}-emphasis`} aria-hidden="true">
+        <CIcon icon={ok ? cilCheckCircle : cilWarning} size="xl" />
+      </span>
+      <div className="d-flex flex-column flex-sm-row flex-wrap justify-content-between gap-2 flex-grow-1 min-w-0 align-self-center">{children}</div>
+    </li>
+  );
+}
+
 export function AdminOverviewPage() {
   const { t } = useTranslation('admin');
   const departments = useDepartments({ search: '', isActive: true, page: 1, pageSize: OVERVIEW_PAGE_SIZE });
@@ -23,8 +43,10 @@ export function AdminOverviewPage() {
   if (departments.isPending || teams.isPending || workers.isPending) {
     return (
       <>
-        <PageHeader />
-        <LoadingState />
+        <PageHeader icon={ROUTE_META.adminOverview.icon} />
+        <PageCard title={t('overview.checksTitle')} flush>
+          <LoadingState rows={CHECK_COUNT} />
+        </PageCard>
       </>
     );
   }
@@ -35,40 +57,40 @@ export function AdminOverviewPage() {
 
   return (
     <>
-      <PageHeader />
-      <div className="d-flex flex-column gap-2">
-        {allGood && <p className="mb-0">{t('overview.allGood')}</p>}
-        {withoutApprover.length > 0 && (
-          <CCard>
-            <CCardBody>
-              <h2 className="h6">{t('overview.missingApprovers')}</h2>
-              <ul className="list-unstyled mb-0 mb-0">
+      <PageHeader icon={ROUTE_META.adminOverview.icon} />
+      <PageCard title={t('overview.checksTitle')} flush>
+        <ul className="list-group list-group-flush">
+          {allGood && (
+            <CheckItem ok>
+              <p className="mb-0">{t('overview.allGood')}</p>
+            </CheckItem>
+          )}
+          {withoutApprover.length > 0 && (
+            <CheckItem>
+              <p className="mb-1 fw-semibold">{t('overview.missingApprovers')}</p>
+              <ul className="list-unstyled mb-0 d-flex flex-wrap gap-3">
                 {withoutApprover.map((department) => (
                   <li key={department.id}>
                     <Link to={ROUTES.adminDepartments}>{department.name}</Link>
                   </li>
                 ))}
               </ul>
-            </CCardBody>
-          </CCard>
-        )}
-        {noIntake && (
-          <CCard>
-            <CCardBody className="d-flex flex-wrap justify-content-between gap-2">
+            </CheckItem>
+          )}
+          {noIntake && (
+            <CheckItem>
               <p className="mb-0">{t('overview.noIntake')}</p>
               <Link to={ROUTES.adminTeams}>{t('overview.goToTeams')}</Link>
-            </CCardBody>
-          </CCard>
-        )}
-        {workerIssue && (
-          <CCard>
-            <CCardBody className="d-flex flex-wrap justify-content-between gap-2">
+            </CheckItem>
+          )}
+          {workerIssue && (
+            <CheckItem>
               <p className="mb-0">{t('overview.workerIssue')}</p>
               <Link to={ROUTES.adminSystem}>{t('overview.goToSystem')}</Link>
-            </CCardBody>
-          </CCard>
-        )}
-      </div>
+            </CheckItem>
+          )}
+        </ul>
+      </PageCard>
     </>
   );
 }

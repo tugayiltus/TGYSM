@@ -1,8 +1,10 @@
+import { CCard } from '@coreui/react';
 import { lazy, Suspense, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { figureListHref, type ReportFigure, type ReportName } from './api';
+import { chartHeight } from './chartSize';
 import { bucketLabel, describeFigure, formatNumber, metricLabel } from './formatMetric';
 import type { ReportFilterValues } from './useReportFilter';
 
@@ -25,10 +27,11 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
 
   return (
     // Named by its title and described by its headline, so the value can be read (and found) apart from the card's other numbers.
+    <CCard className="shadow-sm min-w-0">
     <article
       aria-labelledby={titleId}
       aria-describedby={view.headline !== null ? headlineId : undefined}
-      className="d-flex min-w-0 flex-column gap-2 rounded-3 border bg-body p-3 shadow-sm"
+      className="card-body d-flex min-w-0 flex-column gap-2"
     >
       <h2 id={titleId} className="fs-6 fw-semibold mb-0">
         <Link to={figureListHref(report, figure.metric, filter)} className="link-primary link-underline-opacity-0 link-underline-opacity-100-hover">
@@ -59,7 +62,13 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
       )}
       {bars.length > 0 && (
         <>
-          <Suspense fallback={<p className="small text-body-secondary">{t('figure.chartLoading')}</p>}>
+          <Suspense
+            fallback={
+              <p role="status" className="small text-body-secondary mb-0" style={{ height: chartHeight(bars.length) }}>
+                {t('figure.chartLoading')}
+              </p>
+            }
+          >
             <DistributionChart bars={bars} />
           </Suspense>
           <ul aria-label={t('figure.buckets')} className="list-unstyled d-flex flex-column gap-1 small mb-0">
@@ -75,5 +84,6 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
         </>
       )}
     </article>
+    </CCard>
   );
 }
