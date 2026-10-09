@@ -89,11 +89,12 @@ export async function seedWorld(admin: Session): Promise<World> {
   await send(request, 'PUT', `/api/v1/admin/teams/${String(team.id)}`, { version: team.version, name: team.name, isDefaultIntake: true });
   const requestTypeName = `Yeni dizüstü ${suffix}`;
   await send(request, 'POST', '/api/v1/admin/request-types', { name: requestTypeName, requiresApproval: true });
-  const assetTag = `DT-${suffix}`;
   // Brand and model come from the admin catalog (ADR-0023); names carry the run suffix so runs never collide.
   const brand = await send(request, 'POST', '/api/v1/admin/brands', { name: `Lenovo ${suffix}` });
   const model = await send(request, 'POST', '/api/v1/admin/models', { brandId: brand.id, type: 'laptop', name: 'T14' });
-  await send(request, 'POST', '/api/v1/assets', { assetTag, modelId: model.id, locationId: location.id });
+  // The server assigns the asset tag (ADR-0023).
+  const asset = await send(request, 'POST', '/api/v1/assets', { modelId: model.id, locationId: location.id });
+  const assetTag = String(asset.assetTag);
   return {
     employeeEmail,
     employeePassword: String(employee.temporaryPassword),
