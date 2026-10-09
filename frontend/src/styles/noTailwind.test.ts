@@ -10,6 +10,8 @@ const TAILWIND_ONLY = [
   /(^|\s)rounded-(lg|xl|2xl)(\s|$)/,
   /(^|\s)(flex-col|items-center|items-start|items-end|justify-between|font-medium|font-semibold|text-sm|text-xs|text-lg|text-xl|text-2xl|w-full|break-words|whitespace-nowrap|min-h-11|space-y-\d|gap-x-\d|gap-y-\d|grid-cols-\d|shrink-0)(\s|$)/,
   /(^|\s)aria-\[/,
+  // Left over after ADR-0021 and found in the UI cohesion work (ADR-0026): Bootstrap uses border-start, ps-*, ms-*, rounded.
+  /(^|\s)(border-[lrtb]-\d|p[lr]-\d|m[lr]-\d|rounded-md)(\s|$)/,
 ];
 
 /** Class strings: className="…" plus the string parts of className={`…`} and class constants ending in _CLASS. */

@@ -62,6 +62,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Vitest empties stylesheets by default; the mobile-first guard (styles.test.ts) reads this one as text.
+    css: { include: [/_layout\.scss/] },
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
