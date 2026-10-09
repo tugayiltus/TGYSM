@@ -77,7 +77,7 @@ export function EmailTemplateEditor({ template, onClose }: EmailTemplateEditorPr
         </>
       }
     >
-      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('emailTemplates.fields.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
         <TextAreaField label={t('emailTemplates.fields.body')} rows={BODY_ROWS} error={fieldError(errors.body)} {...register('body')} />

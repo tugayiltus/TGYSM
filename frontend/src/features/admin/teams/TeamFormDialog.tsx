@@ -74,7 +74,7 @@ export function TeamFormDialog({ team, onClose }: { team: TeamItem | null; onClo
         </>
       }
     >
-      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <TextField label={t('teams.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
         {team !== null && (

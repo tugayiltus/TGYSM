@@ -10,6 +10,7 @@ import { AuthCard } from '../../shared/layout/AuthCard';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { cilLockLocked } from '../../shared/ui/icons';
 import { TextField } from '../../shared/ui/TextField';
 
 import { useSetPassword } from './api';
@@ -81,12 +82,13 @@ export function SetPasswordPage() {
               <TextField
                 label={t('setPassword.new')}
                 type="password"
+                startIcon={cilLockLocked}
                 autoComplete="new-password"
                 hint={t('setPassword.hint')}
                 error={fieldError(errors.newPassword)}
                 {...register('newPassword')}
               />
-              <TextField label={t('setPassword.confirm')} type="password" autoComplete="new-password" error={fieldError(errors.confirmPassword)} {...register('confirmPassword')} />
+              <TextField label={t('setPassword.confirm')} type="password" startIcon={cilLockLocked} autoComplete="new-password" error={fieldError(errors.confirmPassword)} {...register('confirmPassword')} />
               <Button type="submit" isLoading={setPassword.isPending} disabled={tokenMissing}>
                 {t('setPassword.submit')}
               </Button>

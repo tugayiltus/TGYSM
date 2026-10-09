@@ -10,6 +10,7 @@ import { AuthCard } from '../../shared/layout/AuthCard';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { cilEnvelopeOpen } from '../../shared/ui/icons';
 import { TextField } from '../../shared/ui/TextField';
 
 import { useForgotPassword } from './api';
@@ -44,7 +45,7 @@ export function ForgotPasswordPage() {
             <p className="text-body-secondary mb-0">{t('forgotPassword.description')}</p>
             <form className="d-flex flex-column gap-3" noValidate onSubmit={(event) => void onSubmit(event)}>
               <FormAlert message={forgot.error ? describeError(forgot.error) : null} />
-              <TextField label={t('forgotPassword.email')} type="email" autoComplete="username" error={fieldError(errors.email)} {...register('email')} />
+              <TextField label={t('forgotPassword.email')} type="email" startIcon={cilEnvelopeOpen} autoComplete="username" error={fieldError(errors.email)} {...register('email')} />
               <Button type="submit" isLoading={forgot.isPending}>
                 {t('forgotPassword.submit')}
               </Button>

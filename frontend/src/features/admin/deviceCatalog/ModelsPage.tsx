@@ -79,7 +79,7 @@ function ModelFormDialog({ model, onClose }: { model: AssetModelItem | null; onC
         </>
       }
     >
-      <form id={formId} noValidate className="d-flex flex-column gap-3" onSubmit={(event) => void onSubmit(event)}>
+      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
         <FormAlert message={alert} />
         <SelectField
           label={t('deviceCatalog.fields.brand')}

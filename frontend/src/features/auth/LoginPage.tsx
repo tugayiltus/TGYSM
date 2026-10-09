@@ -10,6 +10,7 @@ import { AuthCard } from '../../shared/layout/AuthCard';
 import { ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { cilEnvelopeOpen, cilLockLocked } from '../../shared/ui/icons';
 import { TextField } from '../../shared/ui/TextField';
 
 import { useLogin, useMe } from './api';
@@ -61,16 +62,17 @@ export function LoginPage() {
       </div>
       <form className="d-flex flex-column gap-3" noValidate onSubmit={(event) => void onSubmit(event)}>
           <FormAlert message={login.error ? describeError(login.error) : null} />
-          <TextField label={t('login.email')} type="email" autoComplete="username" error={fieldError(errors.email)} {...register('email')} />
+          <TextField label={t('login.email')} type="email" startIcon={cilEnvelopeOpen} autoComplete="username" error={fieldError(errors.email)} {...register('email')} />
           <TextField
             label={t('login.password')}
             type="password"
+            startIcon={cilLockLocked}
             autoComplete="current-password"
             hint={t('login.lockoutHint')}
             error={fieldError(errors.password)}
             {...register('password')}
           />
-          <Button type="submit" isLoading={login.isPending}>
+          <Button type="submit" className="w-100" isLoading={login.isPending}>
             {t('login.submit')}
           </Button>
           <Link to={ROUTES.forgotPassword} className="text-center">
