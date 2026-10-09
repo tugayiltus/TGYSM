@@ -89,7 +89,31 @@ services:
       api:
         condition: service_healthy
 
+  backup:
+    image: postgres:17
+    restart: unless-stopped
+    entrypoint: ["bash", "/backup/scheduler.sh"]
+    environment:
+      TZ: ${TZ:-Europe/Istanbul}
+      PGHOST: postgres
+      PGUSER: tgysm
+      PGDATABASE: tgysm
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      APP_VERSION: ${TGYSM_VERSION:-latest}
+      BACKUP_TIME: ${BACKUP_TIME:-02:30}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./backup:/backup:ro
+      - files:/data/files:ro
+      - keys:/data/keys:ro
+      # A host folder (absolute path in BACKUP_HOST_DIR) or the named volume "backups".
+      - ${BACKUP_HOST_DIR:-backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
+  backups:
   pgdata:
   files:
   keys:
