@@ -29,6 +29,8 @@ check_next "scheduler: exactly 02:30 runs the next night" "2026-10-09 23:30" "20
 in_backup "touch -d @\$((\$(date +%s) - $OLD_ARCHIVE_DAYS * $SECONDS_PER_DAY)) $BACKUP_DIR/tgysm-20000101-000000.tar.gz; touch $BACKUP_DIR/tgysm-29990101-000000.tar.gz"
 if tools/backup.sh >/dev/null; then pass "backup: exit 0"; else fail "backup: exit 0"; fi
 latest="$(in_backup "ls -t $BACKUP_DIR/tgysm-2[0-8]*.tar.gz | head -1")"
+mode="$(in_backup "stat -c '%a' $latest")"
+if [[ "$mode" == "600" ]]; then pass "archive readable by its owner only (600)"; else fail "archive mode is $mode, expected 600"; fi
 contents="$(in_backup "tar -tzf $latest")"
 for part in db.dump manifest.json files/ keys/; do
   if grep -q "^$part" <<<"$contents"; then pass "archive has $part"; else fail "archive has $part"; fi

@@ -3,6 +3,8 @@
 # tgysm-YYYYMMDD-HHMMSS.tar.gz (UTC). Written under a temporary name and renamed when complete; expired archives
 # are deleted only after a successful run. Any failure exits non-zero and leaves earlier archives untouched.
 set -euo pipefail
+# Archives hold the database and the Data Protection keys: owner-only files (security review, ADR-0025).
+umask 077
 
 readonly BACKUP_DIR="${BACKUP_DIR:-/backups}"
 readonly DATA_DIR="${DATA_DIR:-/data}"
