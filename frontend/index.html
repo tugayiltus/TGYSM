@@ -3,8 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="theme-color" content="#5856d6" />
     <title>TGYSM</title>
+    <script>
+      // Applies the stored color mode before the first paint (no light flash in dark mode). Key mirrors COLOR_MODE_STORAGE_KEY.
+      (function () {
+        var mode = 'auto';
+        try {
+          var stored = localStorage.getItem('tgysm-theme');
+          if (stored === 'light' || stored === 'dark' || stored === 'auto') mode = stored;
+        } catch (e) {}
+        if (mode === 'auto') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-coreui-theme', mode);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

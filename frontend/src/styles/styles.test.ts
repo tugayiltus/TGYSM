@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import indexHtml from '../../index.html?raw';
 import packageJson from '../../package.json';
-import { applyTheme, THEME } from '../shared/ui/theme';
+import { COLOR_MODE_STORAGE_KEY } from '../shared/ui/colorMode';
 
 const allDependencies: Record<string, string> = { ...packageJson.dependencies, ...packageJson.devDependencies };
 
@@ -16,10 +17,13 @@ describe('styling stack', () => {
     expect(allDependencies['chart.js']).toMatch(/^[~^]?4\.5(\.|$)/);
   });
 
-  it('marks the document with the light CoreUI theme', () => {
-    document.documentElement.removeAttribute('data-coreui-theme');
-    applyTheme();
-    expect(THEME).toBe('light');
-    expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('light');
+  it('ships the CoreUI icon packages', () => {
+    expect(allDependencies['@coreui/icons']).toMatch(/^[~^]?3\.0(\.|$)/);
+    expect(allDependencies['@coreui/icons-react']).toMatch(/^[~^]?2\.3(\.|$)/);
+  });
+
+  it('applies the stored color mode before the first paint with the shared storage key', () => {
+    expect(indexHtml).toContain(`localStorage.getItem('${COLOR_MODE_STORAGE_KEY}')`);
+    expect(indexHtml).toContain('data-coreui-theme');
   });
 });

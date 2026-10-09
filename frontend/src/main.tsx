@@ -4,9 +4,9 @@ import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import './styles/app.scss';
 import './shared/i18n';
-import { applyTheme } from './shared/ui/theme';
+import { initColorMode } from './shared/ui/colorMode';
 
-applyTheme();
+initColorMode();
 
 const rootElement = document.getElementById('root');
 if (rootElement === null) {

@@ -1,8 +1,13 @@
-import { screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { stubSystemColorScheme } from '../../test/colorMode';
 import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { resetColorModeForTests } from '../ui/colorMode';
+
+import { ThemeMenu } from './ThemeMenu';
 
 const PAGE = { items: [], totalCount: 0, page: 1, pageSize: 100 };
 const ADMIN_DATA = {
@@ -147,5 +152,23 @@ describe('AdminLayout', () => {
     const { router } = renderRoute('/admin/users');
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
     expect(screen.queryByRole('navigation', { name: 'Yönetim menüsü' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ThemeMenu', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    resetColorModeForTests();
+    stubSystemColorScheme(false);
+  });
+
+  it('switches the color mode from the header menu', async () => {
+    const user = userEvent.setup();
+    render(<ThemeMenu />);
+    await user.click(screen.getByRole('button', { name: /Görünüm/ }));
+    await user.click(screen.getByRole('button', { name: 'Koyu' }));
+    expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('dark');
+    expect(window.localStorage.getItem('tgysm-theme')).toBe('dark');
+    expect(screen.getByRole('button', { name: /Görünüm: Koyu/ })).toBeInTheDocument();
   });
 });

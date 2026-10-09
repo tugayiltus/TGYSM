@@ -127,6 +127,12 @@
     "skipToContent": "İçeriğe atla",
     "collapseSidebar": "Menüyü daralt",
     "expandSidebar": "Menüyü genişlet",
-    "accountMenu": "Hesap menüsü"
+    "accountMenu": "Hesap menüsü",
+    "theme": {
+      "label": "Görünüm",
+      "light": "Açık",
+      "dark": "Koyu",
+      "auto": "Otomatik"
+    }
   }
 }
