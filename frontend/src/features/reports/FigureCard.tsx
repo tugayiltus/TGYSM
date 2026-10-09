@@ -28,47 +28,47 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
     <article
       aria-labelledby={titleId}
       aria-describedby={view.headline !== null ? headlineId : undefined}
-      className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="d-flex min-w-0 flex-column gap-2 rounded-3 border bg-body p-3 shadow-sm"
     >
-      <h2 id={titleId} className="font-medium">
-        <Link to={figureListHref(report, figure.metric, filter)} className="text-brand-900 underline-offset-2 hover:underline">
+      <h2 id={titleId} className="fw-medium">
+        <Link to={figureListHref(report, figure.metric, filter)} className="link-primary">
           {title}
         </Link>
       </h2>
-      {view.noData && <p className="text-lg text-slate-500">{t('figure.noData')}</p>}
+      {view.noData && <p className="fs-5 text-body-secondary">{t('figure.noData')}</p>}
       {view.headline !== null && (
-        <p id={headlineId} className="text-3xl font-semibold text-brand-900">
+        <p id={headlineId} className="fs-2 fw-semibold link-primary">
           {view.headline}
         </p>
       )}
       {view.lines.length > 0 && (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+        <dl className="tgysm-pairs column-gap-2 row-gap-1 mb-0">
           {view.lines.map((line) => (
-            <div key={line.label} className="contents">
-              <dt className="text-sm text-slate-600">{line.label}</dt>
-              <dd className="font-semibold text-brand-900">{line.text}</dd>
+            <div key={line.label} className="d-contents">
+              <dt className="small text-body-secondary">{line.label}</dt>
+              <dd className="fw-semibold link-primary">{line.text}</dd>
             </div>
           ))}
         </dl>
       )}
-      {view.note !== null && <p className="text-sm text-slate-600">{view.note}</p>}
+      {view.note !== null && <p className="small text-body-secondary">{view.note}</p>}
       {figure.shape === 'ratio' && figure.denominator !== null && (
-        <Link to={figureListHref(report, figure.metric, filter, '', 'denominator')} className="self-start text-sm text-brand-900 underline">
+        <Link to={figureListHref(report, figure.metric, filter, '', 'denominator')} className="align-self-start small link-primary text-decoration-underline">
           {t('figure.openDenominator', { count: figure.denominator })}
         </Link>
       )}
       {bars.length > 0 && (
         <>
-          <Suspense fallback={<p className="text-sm text-slate-500">{t('figure.chartLoading')}</p>}>
+          <Suspense fallback={<p className="small text-body-secondary">{t('figure.chartLoading')}</p>}>
             <DistributionChart bars={bars} />
           </Suspense>
-          <ul aria-label={t('figure.buckets')} className="flex flex-col gap-1 text-sm">
+          <ul aria-label={t('figure.buckets')} className="d-flex flex-column gap-1 small">
             {bars.map((bar) => (
-              <li key={bar.key} className="flex items-baseline justify-between gap-3">
-                <Link to={figureListHref(report, figure.metric, filter, bar.key)} className="min-w-0 break-words text-brand-900 underline">
+              <li key={bar.key} className="d-flex align-items-baseline justify-content-between gap-2">
+                <Link to={figureListHref(report, figure.metric, filter, bar.key)} className="min-w-0 text-break link-primary text-decoration-underline">
                   {bar.label}
                 </Link>
-                <span className="font-medium tabular-nums">{formatNumber(bar.count)}</span>
+                <span className="fw-medium font-monospace">{formatNumber(bar.count)}</span>
               </li>
             ))}
           </ul>

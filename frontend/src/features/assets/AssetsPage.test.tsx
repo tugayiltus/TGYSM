@@ -47,7 +47,7 @@ describe('AssetsPage', () => {
     await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
     await user.keyboard('{ArrowDown}{Enter}');
     await user.selectOptions(within(dialog).getByLabelText('Model'), 'T14');
-    await user.selectOptions(within(dialog).getByLabelText('Konum'), await within(dialog).findByRole('option', { name: 'Merkez Kampüs / A Blok' }));
+    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: 'Merkez Kampüs / A Blok' }));
     await user.type(within(dialog).getByLabelText('Garanti bitiş tarihi'), '2027-12-31');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 

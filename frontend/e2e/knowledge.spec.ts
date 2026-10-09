@@ -38,7 +38,7 @@ test('knowledge: IT publishes an employee and an internal article; the employee 
   const internalTitle = `Sunucu yeniden başlatma ${token}`;
 
   await writeAndPublish(it.page, publicTitle, '## Adımlar\n\n1. Ayarlar\n2. **Yazıcı ekle**', 'Tüm çalışanlar');
-  const internalUrl = await writeAndPublish(it.page, internalTitle, 'Yalnızca BT için iç not.', 'Yalnızca BT personeli');
+  const internalUrl = await writeAndPublish(it.page, internalTitle, 'Yalnızca BT için iç not.', 'Yalnızca IT personeli');
 
   await employee.page.getByRole('link', { name: /Nasıl Yapılır\?/ }).click();
   // The list is debounced: wait for the searched result, or the "internal title absent" check below would pass on the unfiltered list.

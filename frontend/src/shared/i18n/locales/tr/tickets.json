@@ -43,7 +43,7 @@
     "authorization_needed": "Yetki gerekiyor",
     "workload": "İş yükü",
     "escalation": "Üst seviyeye aktarım",
-    "location": "Konum",
+    "location": "Lokasyon",
     "other": "Diğer"
   },
   "approvalStatuses": {
@@ -78,7 +78,7 @@
     "subject": "Konu",
     "description": "Açıklama",
     "category": "Kategori",
-    "location": "Konum",
+    "location": "Lokasyon",
     "requestType": "Talep tipi",
     "selectRequestType": "Talep tipi seçin",
     "approvalHint": "Bu talep yöneticinizin onayından sonra işleme alınır.",
@@ -119,7 +119,7 @@
     "assignee": "Atanan kişi",
     "priority": "Öncelik",
     "category": "Kategori",
-    "location": "Konum",
+    "location": "Lokasyon",
     "requestType": "Talep tipi",
     "createdAt": "Oluşturulma",
     "description": "Açıklama",

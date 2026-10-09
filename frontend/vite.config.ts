@@ -43,9 +43,9 @@ export default defineConfig({
             // swallow shared code and leftover packages, and the entry chunk would import (and preload) that feature chunk.
             { name: 'vendor-other', test: /node_modules/, priority: 60 },
             { name: 'app-shared', test: /[\\/]src[\\/]shared[\\/]/, priority: 50 },
-            // Feature modules other features import (article picker, admin reference options): kept apart so a ticket page
+            // Feature modules other features import (article picker, asset queries, admin reference options): kept apart so a ticket page
             // does not load the knowledge base's Markdown renderer or the admin screens.
-            { name: 'feature-common', test: /[\\/]src[\\/]features[\\/](kb[\\/]api\.ts|admin[\\/]shared[\\/])/, priority: 45 },
+            { name: 'feature-common', test: /[\\/]src[\\/]features[\\/](kb[\\/]api\.ts|assets[\\/]api\.ts|admin[\\/]shared[\\/])/, priority: 45 },
             // App code; everything else falls to the entry chunk.
             { name: 'feature-admin', test: /[\\/]src[\\/]features[\\/]admin[\\/]/, priority: 40 },
             { name: 'feature-assets', test: /[\\/]src[\\/]features[\\/]assets[\\/]/, priority: 40 },

@@ -58,7 +58,7 @@ describe('ArticleEditorPage', () => {
     await user.type(await screen.findByLabelText('Başlık'), 'Yeni makale');
     await user.type(screen.getByLabelText('Özet'), 'Kısa');
     await user.type(screen.getByLabelText('İçerik (Markdown)'), 'Metin');
-    await user.selectOptions(screen.getByLabelText('Görünürlük'), 'Yalnızca BT personeli');
+    await user.selectOptions(screen.getByLabelText('Görünürlük'), 'Yalnızca IT personeli');
     await user.click(screen.getByRole('button', { name: 'Kaydet' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/kb/${ARTICLE_ID}`));

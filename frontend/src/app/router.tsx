@@ -6,13 +6,13 @@ import { RequireRole, RequireSession } from '../features/auth/guards';
 import { LoginPage } from '../features/auth/LoginPage';
 import { ADMIN_ONLY, IT_STAFF_OR_ADMIN } from '../features/auth/session';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
-import { HomePage } from '../features/home/HomePage';
 import { ProfilePage } from '../features/profile/ProfilePage';
 import { AppLayout } from '../shared/layout/AppLayout';
 import { ROUTES } from '../shared/routes';
 import { NotFoundPage } from '../shared/ui/NotFoundPage';
+import { LoadingState } from '../shared/ui/States';
 
-export const routes: RouteObject[] = [
+const appRoutes: RouteObject[] = [
   { path: ROUTES.login, element: <LoginPage /> },
   { path: ROUTES.setPassword, element: <SetPasswordPage /> },
   { path: ROUTES.forgotPassword, element: <ForgotPasswordPage /> },
@@ -26,7 +26,7 @@ export const routes: RouteObject[] = [
       {
         element: <AppLayout />,
         children: [
-          { id: 'home', index: true, element: <HomePage /> },
+          { id: 'home', index: true, lazy: async () => ({ Component: (await import('../features/home/HomePage')).HomePage }) },
           { id: 'profile', path: ROUTES.profile, element: <ProfilePage /> },
           { id: 'changePassword', path: ROUTES.changePassword, element: <ChangePasswordPage /> },
           { id: 'myTickets', path: ROUTES.tickets, lazy: async () => ({ Component: (await import('../features/tickets/MyTicketsPage')).MyTicketsPage }) },
@@ -120,3 +120,9 @@ export const routes: RouteObject[] = [
   },
   { path: '*', element: <NotFoundPage /> },
 ];
+
+/**
+ * A pathless root gives every route a hydration fallback: the first load of a lazy page renders the loading state
+ * instead of nothing (and React Router's HydrateFallback warning, UX-16).
+ */
+export const routes: RouteObject[] = [{ id: 'root', HydrateFallback: LoadingState, children: appRoutes }];

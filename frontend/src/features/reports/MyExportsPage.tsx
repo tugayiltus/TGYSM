@@ -12,16 +12,16 @@ import { EXPORTS_PAGE_SIZE, exportDownloadUrl, FIRST_PAGE, useMyExports, type Ex
 import { formatNumber, metricLabel } from './formatMetric';
 
 const STATUS_CLASSES: Record<ExportJobItem['status'], string> = {
-  pending: 'bg-slate-100 text-slate-700',
-  running: 'bg-sky-50 text-sky-800',
-  ready: 'bg-emerald-50 text-emerald-800',
-  failed: 'bg-red-50 text-red-800',
-  expired: 'bg-amber-50 text-amber-900',
+  pending: 'bg-secondary-subtle text-secondary-emphasis',
+  running: 'bg-info-subtle text-info-emphasis',
+  ready: 'bg-success-subtle text-success-emphasis',
+  failed: 'bg-danger-subtle text-danger-emphasis',
+  expired: 'bg-warning-subtle text-warning-emphasis',
 };
 
 function JobStatus({ job }: { job: ExportJobItem }) {
   const { t } = useTranslation('reports');
-  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[job.status]}`}>{t(`exports.statuses.${job.status}`)}</span>;
+  return <span className={`badge rounded-pill fw-medium ${STATUS_CLASSES[job.status]}`}>{t(`exports.statuses.${job.status}`)}</span>;
 }
 
 /** Only a ready file can be downloaded; the API re-checks the creator's role and scope on every download. */
@@ -31,7 +31,7 @@ function DownloadLink({ job }: { job: ExportJobItem }) {
     return null;
   }
   return (
-    <a href={exportDownloadUrl(job.id)} download className="font-medium text-brand-900 underline">
+    <a href={exportDownloadUrl(job.id)} download className="fw-medium link-primary text-decoration-underline">
       {t('exports.download')}
     </a>
   );
@@ -55,16 +55,16 @@ function useColumns(): Column<ExportJobItem>[] {
 function JobCard({ job }: { job: ExportJobItem }) {
   const { t } = useTranslation('reports');
   return (
-    <div className="flex flex-col gap-1 text-sm">
-      <p className="font-medium">
+    <div className="d-flex flex-column gap-1 small">
+      <p className="fw-medium">
         {t(`tabs.${job.report}`)} · {metricLabel(job.metric)}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="d-flex flex-wrap align-items-center gap-2">
         <JobStatus job={job} />
         {job.rowCount !== null && <span>{t('exports.rows', { count: job.rowCount })}</span>}
       </div>
-      <p className="text-slate-600">{formatDateTime(job.createdAt)}</p>
-      {job.status === 'ready' && job.expiresAt !== null && <p className="text-slate-600">{t('exports.expiresAt', { date: formatDateTime(job.expiresAt) })}</p>}
+      <p className="text-body-secondary">{formatDateTime(job.createdAt)}</p>
+      {job.status === 'ready' && job.expiresAt !== null && <p className="text-body-secondary">{t('exports.expiresAt', { date: formatDateTime(job.expiresAt) })}</p>}
       <DownloadLink job={job} />
     </div>
   );
@@ -78,11 +78,11 @@ export function MyExportsPage() {
   const columns = useColumns();
 
   return (
-    <section className="flex flex-col gap-5">
-      <Link to={ROUTES.reports} className="self-start text-sm text-brand-900 underline">
+    <section className="d-flex flex-column gap-3">
+      <Link to={ROUTES.reports} className="align-self-start small link-primary text-decoration-underline">
         {t('exports.back')}
       </Link>
-      <h1 className="text-2xl font-semibold">{t('exports.title')}</h1>
+      <h1 className="fs-3 fw-semibold">{t('exports.title')}</h1>
       {jobs.isPending && <LoadingState />}
       {jobs.isError && <ErrorState error={jobs.error} onRetry={() => void jobs.refetch()} />}
       {jobs.data !== undefined &&

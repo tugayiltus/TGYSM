@@ -93,7 +93,7 @@ describe('AssetDetailPage', () => {
     expect(await screen.findByText('Ayşe Kaya')).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'İade al' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Konum'), await within(dialog).findByRole('option', { name: 'Merkez Kampüs / A Blok' }));
+    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: 'Merkez Kampüs / A Blok' }));
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     await screen.findByRole('heading', { name: 'DT-0001' });

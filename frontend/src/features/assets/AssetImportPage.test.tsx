@@ -40,7 +40,7 @@ describe('AssetImportPage', () => {
     expect(within(errors).getAllByText('3')).toHaveLength(2);
     expect(within(errors).getByText('Marka')).toBeInTheDocument();
     expect(within(errors).getByText('Bu alan zorunludur.')).toBeInTheDocument();
-    expect(within(errors).getByText(/Bu adla birden fazla konum var/)).toBeInTheDocument();
+    expect(within(errors).getByText(/Bu adla birden fazla lokasyon var/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'İçe aktar' })).toBeDisabled();
   });
 

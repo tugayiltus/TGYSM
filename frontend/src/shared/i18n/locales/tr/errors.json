@@ -63,8 +63,8 @@
     "has_errors": "Hatalı satırlar düzeltilmeden içe aktarma yapılamaz.",
     "duplicate_in_file": "Bu değer dosyada birden fazla satırda var.",
     "status_not_allowed": "Durum yalnızca stokta, bakımda ya da hurda olabilir. Teslim için zimmet işlemini kullanın.",
-    "location_not_found": "Konum bulunamadı. Tam yolu yazın (ör. Kampüs / Bina).",
-    "location_ambiguous": "Bu adla birden fazla konum var. Tam yolu yazın (ör. Kampüs / Bina).",
+    "location_not_found": "Lokasyon bulunamadı. Tam yolu yazın (ör. Kampüs / Bina).",
+    "location_ambiguous": "Bu adla birden fazla lokasyon var. Tam yolu yazın (ör. Kampüs / Bina).",
     "department_not_found": "Departman bulunamadı.",
     "encoding": "Dosya UTF-8 değil. Excel'de \"CSV UTF-8 (virgülle ayrılmış)\" olarak kaydedin ya da şablonu kullanın."
   },
@@ -120,7 +120,7 @@
   },
   "knowledge": {
     "invalid_transition": "Makalenin mevcut durumunda bu işlem yapılamaz.",
-    "internal_article_in_public_reply": "Yalnızca BT personeline açık bir makale, çalışanın göreceği yanıta eklenemez.",
+    "internal_article_in_public_reply": "Yalnızca IT personeline açık bir makale, çalışanın göreceği yanıta eklenemez.",
     "article_already_linked": "Bu makale kayda zaten bağlı."
   },
   "reports": {

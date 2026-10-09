@@ -16,8 +16,6 @@
   },
   "dependencies": {
     "@coreui/coreui": "~5.9",
-    "@coreui/icons": "~3.1",
-    "@coreui/icons-react": "~2.3",
     "@coreui/react": "~5.13",
     "@coreui/react-chartjs": "~3.0",
     "@hookform/resolvers": "^5.9.1",

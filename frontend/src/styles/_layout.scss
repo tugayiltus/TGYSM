@@ -185,3 +185,21 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+// Label/value pairs on one line each (report figure details).
+.tgysm-pairs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+@media (min-width: 576px) {
+  .tgysm-grid-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) {
+  .tgysm-grid-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

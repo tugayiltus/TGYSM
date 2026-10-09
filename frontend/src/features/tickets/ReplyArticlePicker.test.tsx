@@ -68,6 +68,6 @@ describe('reply article picker', () => {
     await user.type(await screen.findByLabelText('Mesajınız'), `Bakın /kb/${ARTICLE_ID}`);
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
 
-    expect(await screen.findByText(/Yalnızca BT personeline açık bir makale/)).toBeInTheDocument();
+    expect(await screen.findByText(/Yalnızca IT personeline açık bir makale/)).toBeInTheDocument();
   });
 });

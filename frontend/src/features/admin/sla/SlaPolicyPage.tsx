@@ -100,7 +100,7 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
   const alert = invalid ? t('slaPolicy.invalid') : create.error ? describeError(create.error) : null;
 
   return (
-    <form noValidate className="d-flex flex-column gap-4" onSubmit={onSubmit}>
+    <form noValidate className="d-flex flex-column gap-3" onSubmit={onSubmit}>
       <FormAlert message={alert} />
       <section aria-labelledby="sla-targets" className="d-flex flex-column gap-2">
         <h2 id="sla-targets" className="fs-5 fw-semibold">
@@ -171,7 +171,7 @@ function PolicyForm({ policy }: { policy: PolicyDetail }) {
         <p className="mb-0 small text-body-secondary">{t('slaPolicy.pauseHint')}</p>
         <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
           {SLA_HOLD_REASONS.map((reason) => (
-            <li key={reason} className="d-flex flex-wrap align-items-center gap-x-6 gap-y-1">
+            <li key={reason} className="d-flex flex-wrap align-items-center column-gap-4 row-gap-1">
               <span className="min-w-60 small fw-medium">{tt(`holdReasons.${reason}`)}</span>
               {SLA_METRICS.map((metric) => (
                 <label key={metric} className="d-flex tgysm-touch align-items-center gap-2 small">
@@ -201,7 +201,7 @@ export function SlaPolicyPage() {
   const { t } = useTranslation('admin');
   const policy = useSlaPolicy();
   return (
-    <section className="d-flex flex-column gap-3">
+    <section className="d-flex flex-column gap-2">
       <PageHeader titleOverride={t('slaPolicy.title')} />
       {policy.isPending && <LoadingState />}
       {policy.isError && <ErrorState error={policy.error} onRetry={() => void policy.refetch()} />}

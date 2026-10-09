@@ -16,7 +16,7 @@ describe('ArticleRevisionTable', () => {
 
     expect(screen.getAllByText('İkinci').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Deniz Yıldız').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Yalnızca BT personeli').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Yalnızca IT personeli').length).toBeGreaterThan(0);
   });
 
   it('says so when there are no revisions', () => {

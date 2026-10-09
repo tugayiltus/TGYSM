@@ -24,7 +24,7 @@ describe('generated asset tag', () => {
     await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
     await user.keyboard('{ArrowDown}{Enter}');
     await user.selectOptions(within(dialog).getByLabelText('Model'), 'T14');
-    await user.selectOptions(within(dialog).getByLabelText('Konum'), await within(dialog).findByRole('option', { name: LOCATIONS[0]?.path ?? '' }));
+    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: LOCATIONS[0]?.path ?? '' }));
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
     expect(await screen.findByText('Cihaz kaydedildi: DMR-000007')).toBeInTheDocument();
   });

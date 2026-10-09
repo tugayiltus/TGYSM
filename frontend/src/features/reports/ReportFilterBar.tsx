@@ -37,8 +37,8 @@ export function ReportFilterBar({ report, filter, onChange, onClear }: ReportFil
     isEnumKey(key) ? ENUM_FILTERS[key].map((value) => ({ value, label: translateOr(`${ENUM_LABELS[key]}.${value}`, value) })) : choices[key];
 
   return (
-    <form aria-label={t('filters.label')} className="flex flex-col gap-3" onSubmit={(event) => event.preventDefault()}>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
+    <form aria-label={t('filters.label')} className="d-flex flex-column gap-2" onSubmit={(event) => event.preventDefault()}>
+      <div className="tgysm-grid tgysm-grid-filters">
         {fields.map((key) =>
           key === 'from' || key === 'to' ? (
             <DayField
@@ -62,7 +62,7 @@ export function ReportFilterBar({ report, filter, onChange, onClear }: ReportFil
           ),
         )}
       </div>
-      <Button variant="secondary" className="self-start" onClick={onClear} disabled={Object.keys(filter).length === 0}>
+      <Button variant="secondary" className="align-self-start" onClick={onClear} disabled={Object.keys(filter).length === 0}>
         {t('filters.clear')}
       </Button>
     </form>

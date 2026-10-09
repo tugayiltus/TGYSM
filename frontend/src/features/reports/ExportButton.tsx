@@ -34,13 +34,13 @@ export function ExportButton({ report, selection, filter }: ExportButtonProps) {
   };
 
   return (
-    <div className="flex flex-col items-start gap-3">
+    <div className="d-flex flex-column align-items-start gap-2">
       <Button variant="secondary" isLoading={sync.isPending} onClick={exportNow}>
         {t('export.button')}
       </Button>
       {sync.isError && !isTooLarge(sync.error) && <FormAlert message={describeError(sync.error)} />}
       {offerBackground && (
-        <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="d-flex flex-column align-items-start gap-2 rounded border border-warning-subtle bg-warning-subtle p-2 small text-warning-emphasis">
           <p>{t('export.tooLarge')}</p>
           <Button isLoading={background.isPending} onClick={() => background.mutate({ selection, filter })}>
             {t('export.background')}
@@ -49,9 +49,9 @@ export function ExportButton({ report, selection, filter }: ExportButtonProps) {
       )}
       {background.isError && <FormAlert message={describeError(background.error)} />}
       {background.isSuccess && (
-        <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+        <p role="status" className="rounded border border-success-subtle bg-success-subtle p-2 small text-success-emphasis">
           {t('export.queued')}{' '}
-          <Link to={ROUTES.reportExports} className="font-medium underline">
+          <Link to={ROUTES.reportExports} className="fw-medium text-decoration-underline">
             {t('export.queuedLink')}
           </Link>
         </p>

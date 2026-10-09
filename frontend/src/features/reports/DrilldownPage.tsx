@@ -62,7 +62,7 @@ function useAssetColumns(): Column<DrilldownAssetRow>[] {
 
 function TicketLink({ row }: { row: DrilldownTicketRow }) {
   return (
-    <Link to={ticketPath(row.number)} className="font-medium text-brand-900 underline">
+    <Link to={ticketPath(row.number)} className="fw-medium link-primary text-decoration-underline">
       {row.number}
     </Link>
   );
@@ -70,7 +70,7 @@ function TicketLink({ row }: { row: DrilldownTicketRow }) {
 
 function AssetLink({ row }: { row: DrilldownAssetRow }) {
   return (
-    <Link to={assetPath(row.id)} className="font-medium text-brand-900 underline">
+    <Link to={assetPath(row.id)} className="fw-medium link-primary text-decoration-underline">
       {row.assetTag}
     </Link>
   );
@@ -79,26 +79,26 @@ function AssetLink({ row }: { row: DrilldownAssetRow }) {
 function TicketCard({ row }: { row: DrilldownTicketRow }) {
   const { t } = useTranslation('reports');
   return (
-    <div className="flex flex-col gap-1 text-sm">
+    <div className="d-flex flex-column gap-1 small">
       <TicketLink row={row} />
-      <p className="break-words">{row.subject}</p>
-      <p className="text-slate-600">
+      <p className="text-break">{row.subject}</p>
+      <p className="text-body-secondary">
         {translateOr(`tickets:statuses.${row.status}`, row.status)} · {translateOr(`tickets:priorities.${row.priority}`, row.priority)} · {row.teamName} ·{' '}
         {row.assigneeName ?? t('buckets.unassigned')}
       </p>
-      <p className="text-slate-500">{formatDateTime(row.createdAt)}</p>
+      <p className="text-body-secondary">{formatDateTime(row.createdAt)}</p>
     </div>
   );
 }
 
 function AssetCard({ row }: { row: DrilldownAssetRow }) {
   return (
-    <div className="flex flex-col gap-1 text-sm">
+    <div className="d-flex flex-column gap-1 small">
       <AssetLink row={row} />
       <p>
         {translateOr(`assets:types.${row.type}`, row.type)} · {row.brand} {row.model}
       </p>
-      <p className="text-slate-600">
+      <p className="text-body-secondary">
         {translateOr(`assets:statuses.${row.status}`, row.status)} · {row.locationName}
         {row.warrantyEndsOn !== null && ` · ${formatDate(row.warrantyEndsOn)}`}
       </p>
@@ -179,15 +179,15 @@ function Drilldown({ report, metric }: { report: ReportName; metric: string }) {
     });
 
   return (
-    <section className="flex flex-col gap-5">
-      <Link to={backQuery === '' ? reportPath(report) : `${reportPath(report)}?${backQuery}`} className="self-start text-sm text-brand-900 underline">
+    <section className="d-flex flex-column gap-3">
+      <Link to={backQuery === '' ? reportPath(report) : `${reportPath(report)}?${backQuery}`} className="align-self-start small link-primary text-decoration-underline">
         {t('drilldown.back')}
       </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="d-flex flex-wrap align-items-start justify-content-between gap-2">
         <div className="min-w-0">
-          <h1 className="break-words text-2xl font-semibold">{metricLabel(metric)}</h1>
+          <h1 className="text-break fs-3 fw-semibold">{metricLabel(metric)}</h1>
           {(bucketName !== null || selection.part !== DEFAULT_PART) && (
-            <p className="flex flex-wrap gap-2 text-slate-600">
+            <p className="d-flex flex-wrap gap-2 text-body-secondary">
               {bucketName !== null && <span>{bucketName}</span>}
               {selection.part !== DEFAULT_PART && <span>{t('drilldown.denominator')}</span>}
             </p>

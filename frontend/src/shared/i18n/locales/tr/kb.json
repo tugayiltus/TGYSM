@@ -1,13 +1,13 @@
 {
   "nav": {
-    "kb": "Bilgi Bankası"
+    "kb": "Bilgi bankası"
   },
   "home": {
     "card": "Nasıl Yapılır?",
     "cardDescription": "Sık karşılaşılan sorunların çözümlerini okuyun."
   },
   "list": {
-    "title": "Nasıl Yapılır?",
+    "title": "Bilgi bankası",
     "search": "Makalelerde ara",
     "category": "Kategori",
     "allCategories": "Tüm kategoriler",
@@ -26,7 +26,7 @@
   },
   "visibility": {
     "employees": "Tüm çalışanlar",
-    "internal": "Yalnızca BT personeli"
+    "internal": "Yalnızca IT personeli"
   },
   "article": {
     "back": "Makalelere dön",
