@@ -2,7 +2,6 @@ import { useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router';
 
-import { Breadcrumbs } from '../navigation/Breadcrumbs';
 import type { MenuArea } from '../navigation/routeMeta';
 import { Sheet } from '../ui/Sheet';
 
@@ -30,7 +29,9 @@ export function ShellFrame({ area, title, navLabel, areaSwitch }: ShellFrameProp
     <div className="d-flex min-vh-100 bg-body-tertiary">
       <AppSidebar area={area} label={navLabel} title={title} narrow={sidebar.narrow} onToggleNarrow={sidebar.toggleNarrow} />
       <Sheet open={sidebar.mobileOpen} onOpenChange={(open) => (open ? sidebar.setMobileOpen(true) : closePanel())} title={navLabel}>
-        <SidebarNav area={area} label={navLabel} onNavigate={closePanel} />
+        <div className="sidebar sidebar-dark w-100 border-0 position-static">
+          <SidebarNav area={area} label={navLabel} onNavigate={closePanel} />
+        </div>
       </Sheet>
       <div className="wrapper d-flex flex-column flex-grow-1 min-w-0">
         <a className="visually-hidden-focusable" href="#main">
@@ -44,9 +45,8 @@ export function ShellFrame({ area, title, navLabel, areaSwitch }: ShellFrameProp
             sidebar.setMobileOpen(true);
           }}
         />
-        <main id="main" className="body flex-grow-1 px-3 py-3 min-w-0">
+        <main id="main" className="body flex-grow-1 px-3 py-3 py-lg-4 min-w-0">
           <div className="container-lg px-0">
-            <Breadcrumbs />
             <Outlet />
           </div>
         </main>

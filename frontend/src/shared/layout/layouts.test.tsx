@@ -104,8 +104,10 @@ describe('account menu', () => {
   it('holds profile, password change and logout; logout goes to login', async () => {
     const mock = mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME }, 'POST /api/v1/auth/logout': { status: 204, body: null } });
     const { user, router } = renderRoute('/profile');
-    await user.click(await screen.findByRole('button', { name: /Hesap menüsü/ }));
-    const menu = screen.getByRole('menu');
+    const accountButton = await screen.findByRole('button', { name: /Hesap menüsü/ });
+    await user.click(accountButton);
+    // The closed theme menu is also a role=menu in jsdom (no CSS); the account menu is the one this button controls.
+    const menu = document.getElementById(accountButton.getAttribute('aria-controls') ?? '') as HTMLElement;
     expect(within(menu).getByRole('menuitem', { name: 'Profilim' })).toHaveAttribute('href', '/profile');
     expect(within(menu).getByRole('menuitem', { name: 'Şifre değiştir' })).toHaveAttribute('href', '/change-password');
     mock.set('GET /api/v1/auth/me', () => ({ status: 401, body: { code: 'auth.unauthenticated' } }));
@@ -119,6 +121,27 @@ describe('account menu', () => {
     const header = await screen.findByRole('banner');
     const name = within(header).getByText(new RegExp(`^${'Ayşe'.repeat(30)}`));
     expect(name).toHaveClass('text-truncate');
+  });
+});
+
+describe('shell look', () => {
+  it('shows an icon beside every sidebar item and keeps the labels for screen readers when narrow', async () => {
+    window.localStorage.clear();
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME } });
+    const { user } = renderRoute('/profile');
+    const nav = await mainNav();
+    for (const link of within(nav).getAllByRole('link')) {
+      expect(link.querySelector('svg')).not.toBeNull();
+    }
+    await user.click(screen.getByRole('button', { name: 'Menüyü daralt' }));
+    expect(within(nav).getByRole('link', { name: 'Envanter' })).toBeInTheDocument();
+  });
+
+  it('puts the breadcrumb in the header', async () => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME } });
+    renderRoute('/profile');
+    const header = await screen.findByRole('banner');
+    expect(within(header).getByRole('navigation', { name: 'Sayfa yolu' })).toBeInTheDocument();
   });
 });
 

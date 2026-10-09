@@ -1,3 +1,4 @@
+import { CAvatar } from '@coreui/react';
 import { useId, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
@@ -16,6 +17,7 @@ export function AccountMenu() {
   const menuId = useId();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const initials = `${me.firstName.charAt(0)}${me.lastName.charAt(0)}`;
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       close();
@@ -25,9 +27,11 @@ export function AccountMenu() {
   return (
     <div className="position-relative">
       <button type="button" className="btn btn-ghost-secondary d-flex align-items-center gap-2 tgysm-touch" aria-haspopup="menu" aria-expanded={open} aria-controls={menuId} onKeyDown={onKeyDown} onClick={() => setOpen((v) => !v)}>
-        {/* Phones show initials only: the full name next to the menu button and area link would not fit 360 px. */}
-        <span className="d-sm-none fw-semibold" aria-hidden="true">{`${me.firstName.charAt(0)}${me.lastName.charAt(0)}`}</span>
-        <span className="d-none d-sm-inline text-truncate tgysm-account-name">{`${me.firstName} ${me.lastName}`}</span>
+        <CAvatar color="primary" textColor="white" size="md" aria-hidden="true">
+          {initials}
+        </CAvatar>
+        {/* Phones and tablets show the avatar only: the full name beside the area and theme menus would not fit. */}
+        <span className="d-none d-md-inline text-truncate tgysm-account-name">{`${me.firstName} ${me.lastName}`}</span>
         <span className="visually-hidden">{t('layout.accountMenu')}</span>
       </button>
       {open && (

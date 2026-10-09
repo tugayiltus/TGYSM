@@ -195,3 +195,10 @@ describe('RequireSession', () => {
     signedIn = true;
   });
 });
+
+describe('route icons', () => {
+  it('gives every menu route an icon', () => {
+    const missing = ROUTE_IDS.filter((id) => ROUTE_META[id].menu !== undefined && ROUTE_META[id].icon === undefined);
+    expect(missing).toEqual([]);
+  });
+});
