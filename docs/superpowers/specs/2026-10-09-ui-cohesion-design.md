@@ -37,6 +37,10 @@
 4. Light, dark and auto modes work on every page; the choice survives a reload with no light flash; charts follow the mode.
 5. No hard-coded colors in `features/` or `shared/` (`bg-white`, `bg-light`, `text-dark`, `text-black`, hex values in TSX); a test enforces it.
 6. All existing unit tests and E2E pass at 360 px and 1280 px; no horizontal scroll at 360 px in either mode; frontend coverage ≥ 80%.
+7. **Mobile first.** Base styles target 360 px; wider layouts are added with `min-width` breakpoints only (`-sm-`, `-md-`, `-lg-` utilities, `@media (min-width: …)`). The guard test fails on new `max-width` media queries outside the existing `tgysm-stack-table` rule.
+8. **No layout shift and no freeze, phone and desktop.** On the inventory list, ticket detail, home and reports pages at 360 px and 1280 px: cumulative layout shift < 0.1 from navigation until the data is shown (measured in E2E with a `PerformanceObserver` on `layout-shift`); no long task over 200 ms while navigating between them (`longtask` observer); switching theme or opening the sidebar/filter panel does not move the page content. Means: loading states reserve the space of the content they replace (card bodies keep a minimum height, tables show skeleton rows of the final row height), `scrollbar-gutter: stable` on the page so opening a dialog does not shift it, fixed-size icons and avatars, the sticky header has a fixed height.
+
+**Owner's aim (2026-10-09).** Visual and graphic unity is the main goal: the interface must look good and consistent everywhere.
 
 ## 2. Theme and shell
 
@@ -129,7 +133,7 @@ Each step ends green (`tools/lint.sh`, `tools/test.sh`) and is committed separat
 ## 7. Testing
 
 - **Unit:** each new or changed building block; `ThemeMenu` (choice written to storage, `data-coreui-theme` updated, `auto` follows `prefers-color-scheme`); sidebar renders an icon per item and hides labels in narrow mode; menu-route-has-icon test; guard tests in `styles.test.ts`; existing page tests keep passing (role/label selectors).
-- **E2E:** existing suites at 360 px and 1280 px; a new spec switches to dark mode, reloads and checks the mode is kept with no horizontal scroll on the inventory, ticket detail and reports pages. Selectors broken only by markup changes are updated; no behavior assertions are weakened.
+- **E2E:** existing suites at 360 px and 1280 px; a new spec switches to dark mode, reloads and checks the mode is kept with no horizontal scroll on the inventory, ticket detail and reports pages; a layout-stability spec measures criterion 8 (CLS and long tasks) at both viewports. Selectors broken only by markup changes are updated; no behavior assertions are weakened.
 - **Coverage:** frontend line coverage ≥ 80% (`tools/test.sh`).
 
 ## 8. Documentation
