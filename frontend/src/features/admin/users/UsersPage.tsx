@@ -3,13 +3,16 @@ import { useTranslation } from 'react-i18next';
 
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
+import { cilPlus, cilSearch } from '../../../shared/ui/icons';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TemporaryPasswordDialog } from '../../../shared/ui/TemporaryPasswordDialog';
 import { TextField } from '../../../shared/ui/TextField';
@@ -148,49 +151,53 @@ export function UsersPage() {
   );
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('users.title')} actions={<Button onClick={() => setForm({ mode: 'create' })}>{t('users.new')}</Button>} />
-
-      <div className="tgysm-grid tgysm-grid-3">
-        <TextField
-          type="search"
-          label={t('users.searchLabel')}
-          placeholder={t('users.searchPlaceholder')}
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(FIRST_PAGE);
-          }}
-        />
-        <SelectField
-          label={t('users.statusFilter')}
-          value={status}
-          options={STATUS_FILTERS.map((value) => ({ value, label: tc(`status.${value}`) }))}
-          onChange={(event) => {
-            setStatus(event.target.value as StatusFilter);
-            setPage(FIRST_PAGE);
-          }}
-        />
-        <SelectField
-          label={t('users.roleFilter')}
-          value={role}
-          options={[{ value: ALL_ROLES, label: tc('roles.all') }, ...USER_ROLES.map((value) => ({ value, label: tc(`roles.${value}`) }))]}
-          onChange={(event) => {
-            setRole(event.target.value as UserRole | typeof ALL_ROLES);
-            setPage(FIRST_PAGE);
-          }}
-        />
-      </div>
-
-      {users.isPending && <LoadingState />}
-      {users.isError && <ErrorState error={users.error} onRetry={() => void users.refetch()} />}
-      {users.data && users.data.items.length === 0 && <EmptyState />}
-      {users.data && users.data.items.length > 0 && (
-        <>
+    <section>
+      <PageHeader icon={ROUTE_META.adminUsers.icon} titleOverride={t('users.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ mode: 'create' })}>{t('users.new')}</Button>} />
+      <DataCard
+        filters={
+          <>
+            <div className="tgysm-grid tgysm-grid-3">
+              <TextField
+                type="search"
+                startIcon={cilSearch}
+                label={t('users.searchLabel')}
+                placeholder={t('users.searchPlaceholder')}
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(FIRST_PAGE);
+                }}
+              />
+              <SelectField
+                label={t('users.statusFilter')}
+                value={status}
+                options={STATUS_FILTERS.map((value) => ({ value, label: tc(`status.${value}`) }))}
+                onChange={(event) => {
+                  setStatus(event.target.value as StatusFilter);
+                  setPage(FIRST_PAGE);
+                }}
+              />
+              <SelectField
+                label={t('users.roleFilter')}
+                value={role}
+                options={[{ value: ALL_ROLES, label: tc('roles.all') }, ...USER_ROLES.map((value) => ({ value, label: tc(`roles.${value}`) }))]}
+                onChange={(event) => {
+                  setRole(event.target.value as UserRole | typeof ALL_ROLES);
+                  setPage(FIRST_PAGE);
+                }}
+              />
+            </div>
+          </>
+        }
+        footer={users.data && users.data.items.length > 0 ? <Pagination page={users.data.page} pageSize={users.data.pageSize} totalCount={users.data.totalCount} onPageChange={setPage} /> : undefined}
+      >
+        {users.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {users.isError && <ErrorState error={users.error} onRetry={() => void users.refetch()} />}
+        {users.data && users.data.items.length === 0 && <EmptyState />}
+        {users.data && users.data.items.length > 0 && (
           <ResponsiveList items={users.data.items} columns={columns} getKey={(user) => user.id} renderCard={renderCard} caption={t('users.listCaption')} />
-          <Pagination page={users.data.page} pageSize={users.data.pageSize} totalCount={users.data.totalCount} onPageChange={setPage} />
-        </>
-      )}
+        )}
+      </DataCard>
 
       {form !== null && (
         <UserFormDialog

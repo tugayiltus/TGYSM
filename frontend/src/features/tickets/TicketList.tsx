@@ -7,11 +7,13 @@ import { readPageParam } from '../../shared/lib/pageParam';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
 import { linkState } from '../../shared/navigation/returnTo';
 import { ticketPath } from '../../shared/routes';
+import { DataCard } from '../../shared/ui/DataCard';
+import { cilSearch } from '../../shared/ui/icons';
 import { Pagination } from '../../shared/ui/Pagination';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
 import { SelectField } from '../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
 import { TextField } from '../../shared/ui/TextField';
 
 import { PRIORITIES, TICKET_STATUSES, useTickets, type TicketListItem, type TicketQueue } from './api';
@@ -119,46 +121,52 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
   );
 
   return (
-    <div className="d-flex flex-column gap-3">
-      <div className="row g-3">
-        <TextField
-          className={showWorkColumns ? 'col-12 col-md-4' : 'col-12 col-md-6'}
-          type="search"
-          label={t('list.search')}
-          value={search}
-          onChange={(event) => {
-            setSearchText(event.target.value);
-            setFilter(PARAM.search, event.target.value);
-          }}
-        />
-        <SelectField
-          label={t('list.statusFilter')}
-          placeholder={t('list.all')}
-          options={TICKET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
-          className={showWorkColumns ? 'col-12 col-md-4' : 'col-12 col-md-6'}
-          value={status}
-          onChange={(event) => setFilter(PARAM.status, event.target.value)}
-        />
-        {showWorkColumns && (
-          <SelectField
-            label={t('list.priorityFilter')}
-            placeholder={t('list.all')}
-            options={PRIORITIES.map((value) => ({ value, label: t(`priorities.${value}`) }))}
-            className="col-12 col-md-4"
-            value={priority}
-            onChange={(event) => setFilter(PARAM.priority, event.target.value)}
+    <DataCard
+      filters={
+        <div className="row g-3">
+          <TextField
+            className={showWorkColumns ? 'col-12 col-md-4' : 'col-12 col-md-6'}
+            type="search"
+            startIcon={cilSearch}
+            label={t('list.search')}
+            value={search}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+              setFilter(PARAM.search, event.target.value);
+            }}
           />
-        )}
-      </div>
-      {tickets.isPending && <LoadingState />}
+          <SelectField
+            label={t('list.statusFilter')}
+            placeholder={t('list.all')}
+            options={TICKET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
+            className={showWorkColumns ? 'col-12 col-md-4' : 'col-12 col-md-6'}
+            value={status}
+            onChange={(event) => setFilter(PARAM.status, event.target.value)}
+          />
+          {showWorkColumns && (
+            <SelectField
+              label={t('list.priorityFilter')}
+              placeholder={t('list.all')}
+              options={PRIORITIES.map((value) => ({ value, label: t(`priorities.${value}`) }))}
+              className="col-12 col-md-4"
+              value={priority}
+              onChange={(event) => setFilter(PARAM.priority, event.target.value)}
+            />
+          )}
+        </div>
+      }
+      footer={
+        tickets.data && tickets.data.items.length > 0 ? (
+          <Pagination page={tickets.data.page} pageSize={tickets.data.pageSize} totalCount={tickets.data.totalCount} onPageChange={setPage} />
+        ) : undefined
+      }
+    >
+      {tickets.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
       {tickets.isError && <ErrorState error={tickets.error} onRetry={() => void tickets.refetch()} />}
       {tickets.data && tickets.data.items.length === 0 && <EmptyState message={t('list.empty')} />}
       {tickets.data && tickets.data.items.length > 0 && (
-        <>
-          <ResponsiveList items={tickets.data.items} columns={columns} getKey={(x) => x.number} renderCard={renderCard} caption={t('list.caption')} />
-          <Pagination page={tickets.data.page} pageSize={tickets.data.pageSize} totalCount={tickets.data.totalCount} onPageChange={setPage} />
-        </>
+        <ResponsiveList items={tickets.data.items} columns={columns} getKey={(x) => x.number} renderCard={renderCard} caption={t('list.caption')} />
       )}
-    </div>
+    </DataCard>
   );
 }

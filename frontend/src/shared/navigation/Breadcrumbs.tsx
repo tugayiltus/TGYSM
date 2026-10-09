@@ -71,7 +71,7 @@ export function Breadcrumbs() {
   const middle = collapse ? crumbs.slice(1, crumbs.length - ALWAYS_SHOWN_TAIL) : [];
   return (
     // Own <nav>: CoreUI's CBreadcrumb hard-codes an English aria-label.
-    <nav aria-label={t('breadcrumb.label')}>
+    <nav aria-label={t('breadcrumb.label')} className="min-w-0 flex-grow-1">
       <ol className="breadcrumb my-0 small flex-nowrap min-w-0">
       {crumbs.map((crumb, index) => {
         const isMiddle = collapse && index >= 1 && index < crumbs.length - ALWAYS_SHOWN_TAIL;

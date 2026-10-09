@@ -2,10 +2,13 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
+import { cilPlus } from '../../../shared/ui/icons';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 
 import { useLocations, useSetLocationActive, type LocationItem } from './api';
@@ -46,7 +49,7 @@ function LocationTreeList({ nodes, onEdit, onAddChild, onToggle }: TreeListProps
             </div>
           </div>
           {node.children.length > 0 && (
-            <div className="mt-2 border-l-2 pl-3">
+            <div className="mt-2 ms-2 ps-3 border-start">
               <LocationTreeList nodes={node.children} onEdit={onEdit} onAddChild={onAddChild} onToggle={onToggle} />
             </div>
           )}
@@ -72,19 +75,22 @@ export function LocationsPage() {
 
   return (
     <section className="d-flex flex-column gap-3" aria-label={t('locations.treeLabel')}>
-      <PageHeader titleOverride={t('locations.title')} actions={<Button onClick={() => setTarget({ kind: 'create', parentId: null })}>{t('locations.new')}</Button>} />
-
-      {locations.isPending && <LoadingState />}
-      {locations.isError && <ErrorState error={locations.error} onRetry={() => void locations.refetch()} />}
-      {locations.data && roots.length === 0 && <EmptyState />}
-      {roots.length > 0 && (
-        <LocationTreeList
-          nodes={roots}
-          onEdit={(node) => setTarget({ kind: 'edit', node })}
-          onAddChild={(parentId) => setTarget({ kind: 'create', parentId })}
-          onToggle={openToggle}
-        />
-      )}
+      <PageHeader icon={ROUTE_META.adminLocations.icon} titleOverride={t('locations.title')} actions={<Button icon={cilPlus} onClick={() => setTarget({ kind: 'create', parentId: null })}>{t('locations.new')}</Button>} />
+      <DataCard>
+        {locations.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {locations.isError && <ErrorState error={locations.error} onRetry={() => void locations.refetch()} />}
+        {locations.data && roots.length === 0 && <EmptyState />}
+        {roots.length > 0 && (
+          <div className="p-3">
+          <LocationTreeList
+            nodes={roots}
+            onEdit={(node) => setTarget({ kind: 'edit', node })}
+            onAddChild={(parentId) => setTarget({ kind: 'create', parentId })}
+            onToggle={openToggle}
+          />
+          </div>
+        )}
+      </DataCard>
 
       {target !== null && (
         <LocationFormDialog

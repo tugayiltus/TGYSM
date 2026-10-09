@@ -15,7 +15,7 @@ export interface PageHeaderProps {
   /** The page's icon (usually its menu icon), before the title. */
   icon?: string[];
   /** One line under the title. */
-  description?: string;
+  description?: ReactNode;
 }
 
 /** Page H1 and primary actions (spec §4.1); the layout renders the breadcrumb above it. The H1 takes focus after in-app navigation. */
@@ -43,7 +43,7 @@ export function PageHeader({ actions, titleOverride, icon, description }: PageHe
         </div>
         {actions !== undefined && <div className="d-flex flex-wrap gap-2">{actions}</div>}
       </div>
-      {description !== undefined && <p className="text-body-secondary small mb-0 mt-1">{description}</p>}
+      {description !== undefined && <div className="d-flex flex-wrap gap-2 text-body-secondary small mt-1">{description}</div>}
     </div>
   );
 }

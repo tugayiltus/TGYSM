@@ -5,12 +5,15 @@ import { useTranslation } from 'react-i18next';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { FormAlert } from '../../../shared/ui/FormAlert';
+import { cilPlus } from '../../../shared/ui/icons';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TextField } from '../../../shared/ui/TextField';
 
@@ -91,28 +94,30 @@ export function BrandsPage() {
   ];
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader actions={<Button onClick={() => setForm({ brand: null })}>{t('deviceCatalog.brands.new')}</Button>} />
-      {brands.isPending && <LoadingState />}
-      {brands.isError && <ErrorState error={brands.error} onRetry={() => void brands.refetch()} />}
-      {brands.data?.length === 0 && <EmptyState />}
-      {brands.data !== undefined && brands.data.length > 0 && (
-        <ResponsiveList
-          items={brands.data}
-          columns={columns}
-          getKey={(b) => b.id}
-          caption={t('deviceCatalog.brands.listCaption')}
-          renderCard={(b) => (
-            <div className="d-flex flex-column gap-2">
-              <div className="d-flex justify-content-between gap-2">
-                <span className="fw-medium text-break">{b.name}</span>
-                <StatusBadge isActive={b.isActive} />
+    <section>
+      <PageHeader icon={ROUTE_META.adminBrands.icon} actions={<Button icon={cilPlus} onClick={() => setForm({ brand: null })}>{t('deviceCatalog.brands.new')}</Button>} />
+      <DataCard>
+        {brands.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {brands.isError && <ErrorState error={brands.error} onRetry={() => void brands.refetch()} />}
+        {brands.data?.length === 0 && <EmptyState />}
+        {brands.data !== undefined && brands.data.length > 0 && (
+          <ResponsiveList
+            items={brands.data}
+            columns={columns}
+            getKey={(b) => b.id}
+            caption={t('deviceCatalog.brands.listCaption')}
+            renderCard={(b) => (
+              <div className="d-flex flex-column gap-2">
+                <div className="d-flex justify-content-between gap-2">
+                  <span className="fw-medium text-break">{b.name}</span>
+                  <StatusBadge isActive={b.isActive} />
+                </div>
+                {actions(b)}
               </div>
-              {actions(b)}
-            </div>
-          )}
-        />
-      )}
+            )}
+          />
+        )}
+      </DataCard>
       {form !== null && <BrandFormDialog key={form.brand?.id ?? 'new'} brand={form.brand} onClose={() => setForm(null)} />}
       {toggling !== null && (
         <ConfirmDialog

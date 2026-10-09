@@ -1,13 +1,18 @@
+import CIcon from '@coreui/icons-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useSearchParams } from 'react-router';
 
 import { translateOr } from '../../shared/i18n/dynamic';
 import { formatDate, formatDateTime } from '../../shared/lib/format';
 import { readPageParam } from '../../shared/lib/pageParam';
+import { PageHeader } from '../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { assetPath, reportPath, ticketPath } from '../../shared/routes';
+import { DataCard } from '../../shared/ui/DataCard';
+import { cilArrowLeft } from '../../shared/ui/icons';
 import { Pagination } from '../../shared/ui/Pagination';
 import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
 
 import {
   DRILL_PARAM,
@@ -121,17 +126,29 @@ function DrilldownRows({ report, selection, filter, page, onPageChange }: RowsPr
   const rows = useDrilldown(report, selection, filter, page);
 
   if (rows.isPending) {
-    return <LoadingState />;
+    return (
+      <DataCard>
+        <LoadingState rows={TABLE_SKELETON_ROWS} />
+      </DataCard>
+    );
   }
   if (rows.isError) {
-    return <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />;
+    return (
+      <DataCard>
+        <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />
+      </DataCard>
+    );
   }
   const paged = rows.data.tickets ?? rows.data.assets;
   if (paged === null || paged.totalCount === 0) {
-    return <EmptyState message={t('drilldown.empty')} />;
+    return (
+      <DataCard>
+        <EmptyState message={t('drilldown.empty')} />
+      </DataCard>
+    );
   }
   return (
-    <>
+    <DataCard footer={<Pagination page={paged.page} pageSize={DRILLDOWN_PAGE_SIZE} totalCount={paged.totalCount} onPageChange={onPageChange} />}>
       {rows.data.tickets !== null ? (
         <ResponsiveList
           items={rows.data.tickets.items}
@@ -149,8 +166,7 @@ function DrilldownRows({ report, selection, filter, page, onPageChange }: RowsPr
           caption={t('drilldown.caption')}
         />
       )}
-      <Pagination page={paged.page} pageSize={DRILLDOWN_PAGE_SIZE} totalCount={paged.totalCount} onPageChange={onPageChange} />
-    </>
+    </DataCard>
   );
 }
 
@@ -179,24 +195,30 @@ function Drilldown({ report, metric }: { report: ReportName; metric: string }) {
     });
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <Link to={backQuery === '' ? reportPath(report) : `${reportPath(report)}?${backQuery}`} className="align-self-start small link-primary text-decoration-underline">
-        {t('drilldown.back')}
-      </Link>
-      <div className="d-flex flex-wrap align-items-start justify-content-between gap-2">
-        <div className="min-w-0">
-          <h1 className="text-break fs-3 fw-semibold">{metricLabel(metric)}</h1>
-          {(bucketName !== null || selection.part !== DEFAULT_PART) && (
-            <p className="d-flex flex-wrap gap-2 text-body-secondary">
+    <>
+      <PageHeader
+        icon={ROUTE_META.reports.icon}
+        titleOverride={metricLabel(metric)}
+        description={
+          bucketName !== null || selection.part !== DEFAULT_PART ? (
+            <>
               {bucketName !== null && <span>{bucketName}</span>}
               {selection.part !== DEFAULT_PART && <span>{t('drilldown.denominator')}</span>}
-            </p>
-          )}
-        </div>
-        <ExportButton report={report} selection={selection} filter={filter} />
-      </div>
+            </>
+          ) : undefined
+        }
+        actions={
+          <>
+            <Link to={backQuery === '' ? reportPath(report) : `${reportPath(report)}?${backQuery}`} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
+              <CIcon icon={cilArrowLeft} aria-hidden="true" />
+              {t('drilldown.back')}
+            </Link>
+            <ExportButton report={report} selection={selection} filter={filter} />
+          </>
+        }
+      />
       <DrilldownRows report={report} selection={selection} filter={filter} page={page} onPageChange={changePage} />
-    </section>
+    </>
   );
 }
 

@@ -3,12 +3,15 @@ import { useTranslation } from 'react-i18next';
 
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
+import { cilPlus, cilSearch } from '../../../shared/ui/icons';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TextField } from '../../../shared/ui/TextField';
 
@@ -95,28 +98,32 @@ export function TeamsPage() {
   );
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('teams.title')} actions={<Button onClick={() => setForm({ team: null })}>{t('teams.new')}</Button>} />
-      <TextField
-        type="search"
-       
-        label={t('teams.searchLabel')}
-        value={search}
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setPage(FIRST_PAGE);
-        }}
-      />
-
-      {teams.isPending && <LoadingState />}
-      {teams.isError && <ErrorState error={teams.error} onRetry={() => void teams.refetch()} />}
-      {teams.data && teams.data.items.length === 0 && <EmptyState />}
-      {teams.data && teams.data.items.length > 0 && (
-        <>
+    <section>
+      <PageHeader icon={ROUTE_META.adminTeams.icon} titleOverride={t('teams.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ team: null })}>{t('teams.new')}</Button>} />
+      <DataCard
+        filters={
+          <>
+            <TextField
+              type="search"
+              startIcon={cilSearch}
+              label={t('teams.searchLabel')}
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(FIRST_PAGE);
+              }}
+            />
+          </>
+        }
+        footer={teams.data && teams.data.items.length > 0 ? <Pagination page={teams.data.page} pageSize={teams.data.pageSize} totalCount={teams.data.totalCount} onPageChange={setPage} /> : undefined}
+      >
+        {teams.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {teams.isError && <ErrorState error={teams.error} onRetry={() => void teams.refetch()} />}
+        {teams.data && teams.data.items.length === 0 && <EmptyState />}
+        {teams.data && teams.data.items.length > 0 && (
           <ResponsiveList items={teams.data.items} columns={columns} getKey={(team) => team.id} renderCard={renderCard} caption={t('teams.listCaption')} />
-          <Pagination page={teams.data.page} pageSize={teams.data.pageSize} totalCount={teams.data.totalCount} onPageChange={setPage} />
-        </>
-      )}
+        )}
+      </DataCard>
 
       {form !== null && <TeamFormDialog key={form.team?.id ?? 'new'} team={form.team} onClose={() => setForm(null)} />}
       {membersOf !== null && <TeamMembersDialog key={membersOf.id} teamId={membersOf.id} teamName={membersOf.name} onClose={() => setMembersOf(null)} />}

@@ -5,13 +5,16 @@ import { describeError } from '../../../shared/api/errorMessage';
 import { formatDateTime } from '../../../shared/lib/format';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
+import { DataCard } from '../../../shared/ui/DataCard';
 import { FormAlert } from '../../../shared/ui/FormAlert';
+import { cilSearch } from '../../../shared/ui/icons';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { TextField } from '../../../shared/ui/TextField';
 
 import { useEmailDeliveries, useRetryEmailDelivery, type DeliveryStatus, type EmailDeliveryItem } from './api';
@@ -96,51 +99,55 @@ export function EmailDeliveriesPage() {
   const resetPage = () => setPage(FIRST_PAGE);
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('emailDeliveries.title')} />
-
-      <div className="tgysm-grid tgysm-grid-3">
-        <SelectField
-          label={t('emailDeliveries.filters.status')}
-          value={status}
-          options={DELIVERY_STATUSES.map((value) => ({ value, label: t(`emailDeliveries.statuses.${value}`) }))}
-          placeholder={t('emailDeliveries.statuses.all')}
-          onChange={(event) => {
-            setStatus(event.target.value as DeliveryStatus | typeof ALL);
-            resetPage();
-          }}
-        />
-        <SelectField
-          label={t('emailDeliveries.filters.event')}
-          value={eventType}
-          options={EMAIL_EVENT_TYPES.map((value) => ({ value, label: t(`emailEvents.${value}`) }))}
-          placeholder={t('emailDeliveries.allEvents')}
-          onChange={(event) => {
-            setEventType(event.target.value);
-            resetPage();
-          }}
-        />
-        <TextField
-          type="search"
-          label={t('emailDeliveries.filters.recipient')}
-          value={recipient}
-          onChange={(event) => {
-            setRecipient(event.target.value);
-            resetPage();
-          }}
-        />
-      </div>
-
-      <FormAlert message={retry.error ? describeError(retry.error) : null} />
-      {deliveries.isPending && <LoadingState />}
-      {deliveries.isError && <ErrorState error={deliveries.error} onRetry={() => void deliveries.refetch()} />}
-      {deliveries.data && deliveries.data.items.length === 0 && <EmptyState />}
-      {deliveries.data && deliveries.data.items.length > 0 && (
-        <>
+    <section>
+      <PageHeader icon={ROUTE_META.adminEmailDeliveries.icon} titleOverride={t('emailDeliveries.title')} />
+      <DataCard
+        filters={
+          <>
+            <div className="tgysm-grid tgysm-grid-3">
+              <SelectField
+                label={t('emailDeliveries.filters.status')}
+                value={status}
+                options={DELIVERY_STATUSES.map((value) => ({ value, label: t(`emailDeliveries.statuses.${value}`) }))}
+                placeholder={t('emailDeliveries.statuses.all')}
+                onChange={(event) => {
+                  setStatus(event.target.value as DeliveryStatus | typeof ALL);
+                  resetPage();
+                }}
+              />
+              <SelectField
+                label={t('emailDeliveries.filters.event')}
+                value={eventType}
+                options={EMAIL_EVENT_TYPES.map((value) => ({ value, label: t(`emailEvents.${value}`) }))}
+                placeholder={t('emailDeliveries.allEvents')}
+                onChange={(event) => {
+                  setEventType(event.target.value);
+                  resetPage();
+                }}
+              />
+              <TextField
+                type="search"
+                startIcon={cilSearch}
+                label={t('emailDeliveries.filters.recipient')}
+                value={recipient}
+                onChange={(event) => {
+                  setRecipient(event.target.value);
+                  resetPage();
+                }}
+              />
+            </div>
+          </>
+        }
+        footer={deliveries.data && deliveries.data.items.length > 0 ? <Pagination page={deliveries.data.page} pageSize={deliveries.data.pageSize} totalCount={deliveries.data.totalCount} onPageChange={setPage} /> : undefined}
+      >
+        <FormAlert message={retry.error ? describeError(retry.error) : null} />
+        {deliveries.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {deliveries.isError && <ErrorState error={deliveries.error} onRetry={() => void deliveries.refetch()} />}
+        {deliveries.data && deliveries.data.items.length === 0 && <EmptyState />}
+        {deliveries.data && deliveries.data.items.length > 0 && (
           <ResponsiveList items={deliveries.data.items} columns={columns} getKey={(delivery) => delivery.id} renderCard={renderCard} caption={t('emailDeliveries.listCaption')} />
-          <Pagination page={deliveries.data.page} pageSize={deliveries.data.pageSize} totalCount={deliveries.data.totalCount} onPageChange={setPage} />
-        </>
-      )}
+        )}
+      </DataCard>
     </section>
   );
 }

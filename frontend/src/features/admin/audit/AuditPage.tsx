@@ -5,10 +5,12 @@ import { translateOr } from '../../../shared/i18n/dynamic';
 import adminTexts from '../../../shared/i18n/locales/tr/admin.json';
 import { formatDateTime } from '../../../shared/lib/format';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
+import { DataCard } from '../../../shared/ui/DataCard';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 
 import { useAuditEvents, type AuditEventItem } from './api';
 
@@ -88,28 +90,31 @@ export function AuditPage() {
   );
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('audit.title')} />
-      <SelectField
-       
-        label={t('audit.entityFilter')}
-        value={entityType}
-        options={[{ value: ALL_ENTITIES, label: t('audit.allEntities') }, ...ENTITY_TYPES.map((type) => ({ value: type, label: entityLabel(type) }))]}
-        onChange={(event) => {
-          setEntityType(event.target.value);
-          setPage(FIRST_PAGE);
-        }}
-      />
-
-      {events.isPending && <LoadingState />}
-      {events.isError && <ErrorState error={events.error} onRetry={() => void events.refetch()} />}
-      {events.data && events.data.items.length === 0 && <EmptyState />}
-      {events.data && events.data.items.length > 0 && (
-        <>
+    <section>
+      <PageHeader icon={ROUTE_META.adminAudit.icon} titleOverride={t('audit.title')} />
+      <DataCard
+        filters={
+          <>
+            <SelectField
+              label={t('audit.entityFilter')}
+              value={entityType}
+              options={[{ value: ALL_ENTITIES, label: t('audit.allEntities') }, ...ENTITY_TYPES.map((type) => ({ value: type, label: entityLabel(type) }))]}
+              onChange={(event) => {
+                setEntityType(event.target.value);
+                setPage(FIRST_PAGE);
+              }}
+            />
+          </>
+        }
+        footer={events.data && events.data.items.length > 0 ? <Pagination page={events.data.page} pageSize={events.data.pageSize} totalCount={events.data.totalCount} onPageChange={setPage} /> : undefined}
+      >
+        {events.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {events.isError && <ErrorState error={events.error} onRetry={() => void events.refetch()} />}
+        {events.data && events.data.items.length === 0 && <EmptyState />}
+        {events.data && events.data.items.length > 0 && (
           <ResponsiveList items={events.data.items} columns={columns} getKey={(event) => event.id} renderCard={renderCard} caption={t('audit.listCaption')} />
-          <Pagination page={events.data.page} pageSize={events.data.pageSize} totalCount={events.data.totalCount} onPageChange={setPage} />
-        </>
-      )}
+        )}
+      </DataCard>
     </section>
   );
 }

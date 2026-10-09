@@ -3,12 +3,15 @@ import { useTranslation } from 'react-i18next';
 
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
+import { cilPlus, cilSearch } from '../../../shared/ui/icons';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TextField } from '../../../shared/ui/TextField';
 
@@ -79,28 +82,32 @@ export function DepartmentsPage() {
   );
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('departments.title')} actions={<Button onClick={() => setForm({ department: null })}>{t('departments.new')}</Button>} />
-      <TextField
-        type="search"
-       
-        label={t('departments.searchLabel')}
-        value={search}
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setPage(FIRST_PAGE);
-        }}
-      />
-
-      {departments.isPending && <LoadingState />}
-      {departments.isError && <ErrorState error={departments.error} onRetry={() => void departments.refetch()} />}
-      {departments.data && departments.data.items.length === 0 && <EmptyState />}
-      {departments.data && departments.data.items.length > 0 && (
-        <>
+    <section>
+      <PageHeader icon={ROUTE_META.adminDepartments.icon} titleOverride={t('departments.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ department: null })}>{t('departments.new')}</Button>} />
+      <DataCard
+        filters={
+          <>
+            <TextField
+              type="search"
+              startIcon={cilSearch}
+              label={t('departments.searchLabel')}
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(FIRST_PAGE);
+              }}
+            />
+          </>
+        }
+        footer={departments.data && departments.data.items.length > 0 ? <Pagination page={departments.data.page} pageSize={departments.data.pageSize} totalCount={departments.data.totalCount} onPageChange={setPage} /> : undefined}
+      >
+        {departments.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {departments.isError && <ErrorState error={departments.error} onRetry={() => void departments.refetch()} />}
+        {departments.data && departments.data.items.length === 0 && <EmptyState />}
+        {departments.data && departments.data.items.length > 0 && (
           <ResponsiveList items={departments.data.items} columns={columns} getKey={(d) => d.id} renderCard={renderCard} caption={t('departments.listCaption')} />
-          <Pagination page={departments.data.page} pageSize={departments.data.pageSize} totalCount={departments.data.totalCount} onPageChange={setPage} />
-        </>
-      )}
+        )}
+      </DataCard>
 
       {form !== null && <DepartmentFormDialog key={form.department?.id ?? 'new'} department={form.department} onClose={() => setForm(null)} />}
       {toggling !== null && (

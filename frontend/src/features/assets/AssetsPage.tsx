@@ -1,3 +1,4 @@
+import CIcon from '@coreui/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useSearchParams } from 'react-router';
@@ -6,13 +7,16 @@ import { readPageParam } from '../../shared/lib/pageParam';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { linkState } from '../../shared/navigation/returnTo';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { assetPath, ROUTES } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
+import { DataCard } from '../../shared/ui/DataCard';
+import { cilCloudUpload, cilPlus, cilSearch } from '../../shared/ui/icons';
 import { Pagination } from '../../shared/ui/Pagination';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
 import { SelectField } from '../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
 import { TextField } from '../../shared/ui/TextField';
 
 import { ASSET_STATUSES, ASSET_TYPES, useAssets, type AssetItem } from './api';
@@ -24,7 +28,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 const ALL = '';
 /** Filters live in the URL so an asset opened from the list can return to the same filtered view. */
 const PARAM = { search: 'q', type: 'type', status: 'status', page: 'page' } as const;
-const LINK_BUTTON_CLASS = 'btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center';
+const LINK_BUTTON_CLASS = 'btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2';
 
 function OpenLink({ asset }: { asset: AssetItem }) {
   const { t } = useTranslation('assets');
@@ -104,56 +108,65 @@ export function AssetsPage() {
   return (
     <>
       <PageHeader
+        icon={ROUTE_META.assets.icon}
         titleOverride={t('list.title')}
         actions={
           <>
             <Link to={ROUTES.assetImport} className={LINK_BUTTON_CLASS}>
+              <CIcon icon={cilCloudUpload} aria-hidden="true" />
               {t('list.import')}
             </Link>
-            <Button onClick={() => setCreating(true)}>{t('list.new')}</Button>
+            <Button icon={cilPlus} onClick={() => setCreating(true)}>
+              {t('list.new')}
+            </Button>
           </>
         }
       />
-      <div className="d-flex flex-column gap-3">
-        <div className="row g-3">
-          <TextField
-            className="col-12 col-md-4"
-            type="search"
-            label={t('list.searchLabel')}
-            value={search}
-            onChange={(event) => {
-              setSearchText(event.target.value);
-              setFilter(PARAM.search, event.target.value);
-            }}
-          />
-          <SelectField
-            label={t('list.typeFilter')}
-            placeholder={t('list.allTypes')}
-            options={ASSET_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))}
-            className="col-12 col-md-4"
-            value={type}
-            onChange={(event) => setFilter(PARAM.type, event.target.value)}
-          />
-          <SelectField
-            label={t('list.statusFilter')}
-            placeholder={t('list.allStatuses')}
-            options={ASSET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
-            className="col-12 col-md-4"
-            value={status}
-            onChange={(event) => setFilter(PARAM.status, event.target.value)}
-          />
-        </div>
-
-        {assets.isPending && <LoadingState />}
+      <DataCard
+        filters={
+          <div className="row g-3">
+            <TextField
+              className="col-12 col-md-4"
+              type="search"
+              startIcon={cilSearch}
+              label={t('list.searchLabel')}
+              value={search}
+              onChange={(event) => {
+                setSearchText(event.target.value);
+                setFilter(PARAM.search, event.target.value);
+              }}
+            />
+            <SelectField
+              label={t('list.typeFilter')}
+              placeholder={t('list.allTypes')}
+              options={ASSET_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))}
+              className="col-12 col-md-4"
+              value={type}
+              onChange={(event) => setFilter(PARAM.type, event.target.value)}
+            />
+            <SelectField
+              label={t('list.statusFilter')}
+              placeholder={t('list.allStatuses')}
+              options={ASSET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
+              className="col-12 col-md-4"
+              value={status}
+              onChange={(event) => setFilter(PARAM.status, event.target.value)}
+            />
+          </div>
+        }
+        footer={
+          assets.data && assets.data.items.length > 0 ? (
+            <Pagination page={assets.data.page} pageSize={assets.data.pageSize} totalCount={assets.data.totalCount} onPageChange={setPage} />
+          ) : undefined
+        }
+      >
+        {assets.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
         {assets.isError && <ErrorState error={assets.error} onRetry={() => void assets.refetch()} />}
         {assets.data && assets.data.items.length === 0 && <EmptyState />}
         {assets.data && assets.data.items.length > 0 && (
-          <>
-            <ResponsiveList items={assets.data.items} columns={columns} getKey={(a) => a.id} renderCard={renderCard} caption={t('list.caption')} />
-            <Pagination page={assets.data.page} pageSize={assets.data.pageSize} totalCount={assets.data.totalCount} onPageChange={setPage} />
-          </>
+          <ResponsiveList items={assets.data.items} columns={columns} getKey={(a) => a.id} renderCard={renderCard} caption={t('list.caption')} />
         )}
-      </div>
+      </DataCard>
       {creating && <AssetFormDialog asset={null} onClose={() => setCreating(false)} />}
     </>
   );

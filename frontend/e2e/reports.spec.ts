@@ -62,7 +62,8 @@ test('reports: admin drills into an incident figure, exports it and downloads a 
   query.set(REPORT_PARAM, REPORT);
   await requestBackgroundExport(admin, query);
   await page.goto('/reports');
-  await page.getByRole('link', { name: 'Dışa aktarımlarım' }).click();
+  // The sidebar has the same link; the page's own action is the one under test.
+  await page.locator('#main').getByRole('link', { name: 'Dışa aktarımlarım' }).click();
   await expect(page.getByRole('heading', { name: 'Dışa aktarımlarım' })).toBeVisible();
   const job = visibleEntry(page, 'Açılan kayıt');
   await expect(job.getByText('Hazır')).toBeVisible({ timeout: EXPORT_READY_TIMEOUT_MS });

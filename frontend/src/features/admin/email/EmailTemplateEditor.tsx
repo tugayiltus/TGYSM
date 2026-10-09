@@ -88,7 +88,7 @@ export function EmailTemplateEditor({ template, onClose }: EmailTemplateEditorPr
           <p className="mb-0 mt-1 small text-body-secondary">{t('emailTemplates.variables.hint')}</p>
           <ul className="list-unstyled mb-0 mt-2 d-flex flex-wrap gap-2">
             {template.allowedVariables.map((name) => (
-              <li key={name} className="rounded-md bg-body-secondary px-2 py-1 font-monospace small">
+              <li key={name} className="rounded bg-body-secondary px-2 py-1 font-monospace small">
                 {`${VARIABLE_OPEN}${name}${VARIABLE_CLOSE}`}
               </li>
             ))}

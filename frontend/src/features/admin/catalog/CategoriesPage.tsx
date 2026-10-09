@@ -7,14 +7,17 @@ import { z } from 'zod';
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { FormAlert } from '../../../shared/ui/FormAlert';
+import { cilPlus } from '../../../shared/ui/icons';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TextField } from '../../../shared/ui/TextField';
 
@@ -142,7 +145,7 @@ export function CategoriesPage() {
     </div>
   );
   const columns: Column<Row>[] = [
-    { key: 'name', header: t('categories.columns.name'), renderCell: (r) => <span className={r.item.parentId ? 'pl-4' : 'font-medium'}>{r.path}</span> },
+    { key: 'name', header: t('categories.columns.name'), renderCell: (r) => <span className={r.item.parentId ? 'ps-4' : 'fw-medium'}>{r.path}</span> },
     { key: 'scope', header: t('categories.columns.scope'), renderCell: (r) => t(`categories.scopes.${r.item.scope}`) },
     { key: 'status', header: t('categories.columns.status'), renderCell: (r) => <StatusBadge isActive={r.item.isActive} /> },
     { key: 'actions', header: t('categories.columns.actions'), renderCell: actions },
@@ -161,12 +164,14 @@ export function CategoriesPage() {
   );
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('categories.title')} actions={<Button onClick={() => setForm({ category: null })}>{t('categories.new')}</Button>} />
-      {categories.isPending && <LoadingState />}
-      {categories.isError && <ErrorState error={categories.error} onRetry={() => void categories.refetch()} />}
-      {categories.data && rows.length === 0 && <EmptyState />}
-      {rows.length > 0 && <ResponsiveList items={rows} columns={columns} getKey={(r) => r.item.id} renderCard={renderCard} caption={t('categories.listCaption')} />}
+    <section>
+      <PageHeader icon={ROUTE_META.adminCategories.icon} titleOverride={t('categories.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ category: null })}>{t('categories.new')}</Button>} />
+      <DataCard>
+        {categories.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {categories.isError && <ErrorState error={categories.error} onRetry={() => void categories.refetch()} />}
+        {categories.data && rows.length === 0 && <EmptyState />}
+        {rows.length > 0 && <ResponsiveList items={rows} columns={columns} getKey={(r) => r.item.id} renderCard={renderCard} caption={t('categories.listCaption')} />}
+      </DataCard>
       {form !== null && <CategoryFormDialog key={form.category?.id ?? 'new'} category={form.category} all={categories.data ?? []} onClose={() => setForm(null)} />}
       {toggling !== null && (
         <ConfirmDialog

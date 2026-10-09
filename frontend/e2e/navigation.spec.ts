@@ -59,3 +59,10 @@ test('breadcrumbs lead back from an article edit and from a ticket to its filter
   await trail(it.page).getByRole('link', { name: 'Kuyruk' }).click();
   await expect(it.page).toHaveURL(/\/workspace\/queue\?queue=team&status=open$/);
 });
+
+test('header controls and breadcrumb fit the screen', async ({ browser }) => {
+  const admin = await adminSession(browser);
+  await admin.page.goto('/assets/import');
+  await expect(admin.page.getByRole('banner').getByRole('navigation')).toBeVisible();
+  await expectNoHorizontalScroll(admin.page);
+});

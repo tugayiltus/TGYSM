@@ -1,12 +1,17 @@
+import CIcon from '@coreui/icons-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { formatDateTime } from '../../shared/lib/format';
+import { PageHeader } from '../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ROUTES } from '../../shared/routes';
+import { DataCard } from '../../shared/ui/DataCard';
+import { cilArrowLeft } from '../../shared/ui/icons';
 import { Pagination } from '../../shared/ui/Pagination';
 import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
 
 import { EXPORTS_PAGE_SIZE, exportDownloadUrl, FIRST_PAGE, useMyExports, type ExportJobItem } from './api';
 import { formatNumber, metricLabel } from './formatMetric';
@@ -78,22 +83,33 @@ export function MyExportsPage() {
   const columns = useColumns();
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <Link to={ROUTES.reports} className="align-self-start small link-primary text-decoration-underline">
-        {t('exports.back')}
-      </Link>
-      <h1 className="fs-3 fw-semibold">{t('exports.title')}</h1>
-      {jobs.isPending && <LoadingState />}
-      {jobs.isError && <ErrorState error={jobs.error} onRetry={() => void jobs.refetch()} />}
-      {jobs.data !== undefined &&
-        (jobs.data.totalCount === 0 ? (
-          <EmptyState message={t('exports.empty')} />
-        ) : (
-          <>
-            <ResponsiveList items={jobs.data.items} columns={columns} getKey={(job) => job.id} renderCard={(job) => <JobCard job={job} />} caption={t('exports.caption')} />
+    <>
+      <PageHeader
+        icon={ROUTE_META.reportExports.icon}
+        titleOverride={t('exports.title')}
+        actions={
+          <Link to={ROUTES.reports} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
+            <CIcon icon={cilArrowLeft} aria-hidden="true" />
+            {t('exports.back')}
+          </Link>
+        }
+      />
+      <DataCard
+        footer={
+          jobs.data !== undefined && jobs.data.totalCount > 0 ? (
             <Pagination page={jobs.data.page} pageSize={EXPORTS_PAGE_SIZE} totalCount={jobs.data.totalCount} onPageChange={setPage} />
-          </>
-        ))}
-    </section>
+          ) : undefined
+        }
+      >
+        {jobs.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {jobs.isError && <ErrorState error={jobs.error} onRetry={() => void jobs.refetch()} />}
+        {jobs.data !== undefined &&
+          (jobs.data.totalCount === 0 ? (
+            <EmptyState message={t('exports.empty')} />
+          ) : (
+            <ResponsiveList items={jobs.data.items} columns={columns} getKey={(job) => job.id} renderCard={(job) => <JobCard job={job} />} caption={t('exports.caption')} />
+          ))}
+      </DataCard>
+    </>
   );
 }

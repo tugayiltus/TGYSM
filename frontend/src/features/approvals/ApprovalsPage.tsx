@@ -5,13 +5,16 @@ import { Link } from 'react-router';
 import { describeError } from '../../shared/api/errorMessage';
 import { formatDateTime } from '../../shared/lib/format';
 import { PageHeader } from '../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ticketPath } from '../../shared/routes';
 import { Button } from '../../shared/ui/Button';
+import { DataCard } from '../../shared/ui/DataCard';
 import { Dialog } from '../../shared/ui/Dialog';
 import { FormAlert } from '../../shared/ui/FormAlert';
+import { cilCheckAlt, cilX } from '../../shared/ui/icons';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 import { SelectField } from '../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
 import { TextField } from '../../shared/ui/TextField';
 import { useAdminOptions } from '../admin/shared/referenceOptions';
 import { useDecideApproval, useMyApprovals, useReassignApprover, type MyApprovalItem } from '../tickets/api';
@@ -85,43 +88,45 @@ export function ApprovalsPage() {
 
   return (
     <>
-      <PageHeader titleOverride={t('approvals.title')} />
-      {approvals.isPending && <LoadingState />}
-      {approvals.isError && <ErrorState error={approvals.error} onRetry={() => void approvals.refetch()} />}
-      {approvals.data && approvals.data.length === 0 && <EmptyState message={t('approvals.empty')} />}
-      {approvals.data && approvals.data.length > 0 && (
-        <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
-          {approvals.data.map((item) => (
-            <li key={item.id} className="card card-body d-flex flex-column gap-2">
-              <div>
-                <Link to={ticketPath(item.ticketNumber)} className="small link-primary text-decoration-underline">
-                  {item.ticketNumber}
-                </Link>
-                <p className="mb-0 fw-medium text-break">{item.subject}</p>
-                <p className="mb-0 small text-body-secondary">{t('approvals.requestedBy', { name: item.requesterName })}</p>
-                {item.requestTypeName && <p className="mb-0 small text-body-secondary">{item.requestTypeName}</p>}
-                <p className="mb-0 small text-body-secondary">{formatDateTime(item.createdAt)}</p>
-              </div>
-              <div className="d-flex flex-wrap gap-2">
-                {item.approverId === null ? (
-                  <Button variant="secondary" aria-label={recordActionLabel(t('approvals.reassign'), item.ticketNumber)} onClick={() => setPending({ item, kind: 'reassign' })}>
-                    {t('approvals.reassign')}
-                  </Button>
-                ) : (
-                  <>
-                    <Button aria-label={recordActionLabel(t('approvals.approve'), item.ticketNumber)} onClick={() => setPending({ item, kind: 'approve' })}>
-                      {t('approvals.approve')}
+      <PageHeader icon={ROUTE_META.approvals.icon} titleOverride={t('approvals.title')} />
+      <DataCard>
+        {approvals.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {approvals.isError && <ErrorState error={approvals.error} onRetry={() => void approvals.refetch()} />}
+        {approvals.data && approvals.data.length === 0 && <EmptyState message={t('approvals.empty')} />}
+        {approvals.data && approvals.data.length > 0 && (
+          <ul className="list-group list-group-flush">
+            {approvals.data.map((item) => (
+              <li key={item.id} className="list-group-item py-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div className="min-w-0">
+                  <Link to={ticketPath(item.ticketNumber)} className="small link-primary text-decoration-underline">
+                    {item.ticketNumber}
+                  </Link>
+                  <p className="mb-0 fw-medium text-break">{item.subject}</p>
+                  <p className="mb-0 small text-body-secondary">{t('approvals.requestedBy', { name: item.requesterName })}</p>
+                  {item.requestTypeName && <p className="mb-0 small text-body-secondary">{item.requestTypeName}</p>}
+                  <p className="mb-0 small text-body-secondary">{formatDateTime(item.createdAt)}</p>
+                </div>
+                <div className="d-flex flex-wrap gap-2 flex-shrink-0">
+                  {item.approverId === null ? (
+                    <Button variant="secondary" aria-label={recordActionLabel(t('approvals.reassign'), item.ticketNumber)} onClick={() => setPending({ item, kind: 'reassign' })}>
+                      {t('approvals.reassign')}
                     </Button>
-                    <Button variant="danger" aria-label={recordActionLabel(t('approvals.reject'), item.ticketNumber)} onClick={() => setPending({ item, kind: 'reject' })}>
-                      {t('approvals.reject')}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                  ) : (
+                    <>
+                      <Button icon={cilCheckAlt} aria-label={recordActionLabel(t('approvals.approve'), item.ticketNumber)} onClick={() => setPending({ item, kind: 'approve' })}>
+                        {t('approvals.approve')}
+                      </Button>
+                      <Button variant="danger" icon={cilX} aria-label={recordActionLabel(t('approvals.reject'), item.ticketNumber)} onClick={() => setPending({ item, kind: 'reject' })}>
+                        {t('approvals.reject')}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DataCard>
       {pending !== null && <DecisionDialog key={`${pending.item.id}-${pending.kind}`} pending={pending} onClose={() => setPending(null)} />}
     </>
   );

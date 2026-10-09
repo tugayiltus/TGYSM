@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../../shared/lib/format';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
+import { DataCard } from '../../../shared/ui/DataCard';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { ErrorState, LoadingState } from '../../../shared/ui/States';
+import { ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 
 import { useEmailTemplates, type EmailTemplateItem } from './api';
 import { EmailTemplateEditor } from './EmailTemplateEditor';
@@ -48,11 +50,13 @@ export function EmailTemplatesPage() {
   );
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('emailTemplates.title')} />
-      {templates.isPending && <LoadingState />}
-      {templates.isError && <ErrorState error={templates.error} onRetry={() => void templates.refetch()} />}
-      {templates.data && <ResponsiveList items={templates.data} columns={columns} getKey={(template) => template.id} renderCard={renderCard} caption={t('emailTemplates.listCaption')} />}
+    <section>
+      <PageHeader icon={ROUTE_META.adminEmailTemplates.icon} titleOverride={t('emailTemplates.title')} />
+      <DataCard>
+        {templates.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {templates.isError && <ErrorState error={templates.error} onRetry={() => void templates.refetch()} />}
+        {templates.data && <ResponsiveList items={templates.data} columns={columns} getKey={(template) => template.id} renderCard={renderCard} caption={t('emailTemplates.listCaption')} />}
+      </DataCard>
       {editing !== null && <EmailTemplateEditor key={`${editing.eventType}-${editing.version}`} template={editing} onClose={() => setEditingEventType(null)} />}
     </section>
   );

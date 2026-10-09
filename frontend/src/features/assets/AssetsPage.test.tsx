@@ -26,6 +26,19 @@ describe('AssetsPage', () => {
     await waitFor(() => expect(api.calls.some((c) => new URL(c.url).searchParams.get('type') === 'tablet')).toBe(true));
   });
 
+  it('shows the inventory inside one list card with the filters on top and paging below', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: IT_ME },
+      'GET /api/v1/assets': { status: 200, body: pageOf([LAPTOP]) },
+    });
+    renderRoute('/assets');
+    await screen.findAllByText('DT-0001');
+    const card = document.querySelector('main .card');
+    expect(card?.querySelector('.card-header')).toHaveTextContent('Durum');
+    expect(card?.querySelector('.card-body table')).not.toBeNull();
+    expect(card?.querySelector('.card-footer nav')).not.toBeNull();
+  });
+
   it('creates an asset without a tag field and shows a taken serial under its field', async () => {
     let posted: unknown;
     mockApi({

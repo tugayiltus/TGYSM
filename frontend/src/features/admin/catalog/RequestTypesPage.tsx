@@ -7,13 +7,16 @@ import { z } from 'zod';
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { FormAlert } from '../../../shared/ui/FormAlert';
+import { cilPlus } from '../../../shared/ui/icons';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TextField } from '../../../shared/ui/TextField';
 
@@ -128,12 +131,14 @@ export function RequestTypesPage() {
   );
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader titleOverride={t('requestTypes.title')} actions={<Button onClick={() => setForm({ type: null })}>{t('requestTypes.new')}</Button>} />
-      {types.isPending && <LoadingState />}
-      {types.isError && <ErrorState error={types.error} onRetry={() => void types.refetch()} />}
-      {types.data && types.data.length === 0 && <EmptyState />}
-      {types.data && types.data.length > 0 && <ResponsiveList items={types.data} columns={columns} getKey={(r) => r.id} renderCard={renderCard} caption={t('requestTypes.listCaption')} />}
+    <section>
+      <PageHeader icon={ROUTE_META.adminRequestTypes.icon} titleOverride={t('requestTypes.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ type: null })}>{t('requestTypes.new')}</Button>} />
+      <DataCard>
+        {types.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {types.isError && <ErrorState error={types.error} onRetry={() => void types.refetch()} />}
+        {types.data && types.data.length === 0 && <EmptyState />}
+        {types.data && types.data.length > 0 && <ResponsiveList items={types.data} columns={columns} getKey={(r) => r.id} renderCard={renderCard} caption={t('requestTypes.listCaption')} />}
+      </DataCard>
       {form !== null && <RequestTypeFormDialog key={form.type?.id ?? 'new'} type={form.type} onClose={() => setForm(null)} />}
       {toggling !== null && (
         <ConfirmDialog

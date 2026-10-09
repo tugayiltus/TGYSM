@@ -7,13 +7,16 @@ import { z } from 'zod';
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
+import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
+import { DataCard } from '../../../shared/ui/DataCard';
 import { Dialog } from '../../../shared/ui/Dialog';
 import { FormAlert } from '../../../shared/ui/FormAlert';
+import { cilPlus } from '../../../shared/ui/icons';
 import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
 import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState } from '../../../shared/ui/States';
+import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { TextField } from '../../../shared/ui/TextField';
 import { ASSET_TYPES } from '../../assets/api';
@@ -132,39 +135,46 @@ export function ModelsPage() {
   ];
 
   return (
-    <section className="d-flex flex-column gap-3">
-      <PageHeader actions={<Button onClick={() => setForm({ model: null })}>{t('deviceCatalog.models.new')}</Button>} />
-      <SelectField
-        className="tgysm-filter-field"
-        label={t('deviceCatalog.models.brandFilter')}
-        placeholder={t('deviceCatalog.models.allBrands')}
-        options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
-        value={brandId}
-        onChange={(event) => setBrandId(event.target.value)}
-      />
-      {models.isPending && <LoadingState />}
-      {models.isError && <ErrorState error={models.error} onRetry={() => void models.refetch()} />}
-      {models.data?.length === 0 && <EmptyState />}
-      {models.data !== undefined && models.data.length > 0 && (
-        <ResponsiveList
-          items={models.data}
-          columns={columns}
-          getKey={(m) => m.id}
-          caption={t('deviceCatalog.models.listCaption')}
-          renderCard={(m) => (
-            <div className="d-flex flex-column gap-2">
-              <div className="d-flex justify-content-between gap-2">
-                <div className="min-w-0">
-                  <p className="mb-0 fw-medium text-break">{`${m.brandName} ${m.name}`}</p>
-                  <p className="mb-0 small text-body-secondary">{ta(`types.${m.type}`)}</p>
+    <section>
+      <PageHeader icon={ROUTE_META.adminModels.icon} actions={<Button icon={cilPlus} onClick={() => setForm({ model: null })}>{t('deviceCatalog.models.new')}</Button>} />
+      <DataCard
+        filters={
+          <>
+            <SelectField
+              className="tgysm-filter-field"
+              label={t('deviceCatalog.models.brandFilter')}
+              placeholder={t('deviceCatalog.models.allBrands')}
+              options={(brands.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
+              value={brandId}
+              onChange={(event) => setBrandId(event.target.value)}
+            />
+          </>
+        }
+      >
+        {models.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+        {models.isError && <ErrorState error={models.error} onRetry={() => void models.refetch()} />}
+        {models.data?.length === 0 && <EmptyState />}
+        {models.data !== undefined && models.data.length > 0 && (
+          <ResponsiveList
+            items={models.data}
+            columns={columns}
+            getKey={(m) => m.id}
+            caption={t('deviceCatalog.models.listCaption')}
+            renderCard={(m) => (
+              <div className="d-flex flex-column gap-2">
+                <div className="d-flex justify-content-between gap-2">
+                  <div className="min-w-0">
+                    <p className="mb-0 fw-medium text-break">{`${m.brandName} ${m.name}`}</p>
+                    <p className="mb-0 small text-body-secondary">{ta(`types.${m.type}`)}</p>
+                  </div>
+                  <StatusBadge isActive={m.isActive} />
                 </div>
-                <StatusBadge isActive={m.isActive} />
+                {actions(m)}
               </div>
-              {actions(m)}
-            </div>
-          )}
-        />
-      )}
+            )}
+          />
+        )}
+      </DataCard>
       {form !== null && <ModelFormDialog key={form.model?.id ?? 'new'} model={form.model} onClose={() => setForm(null)} />}
       {toggling !== null && (
         <ConfirmDialog
