@@ -30,3 +30,5 @@ deploy/certs/*
 !deploy/certs/.gitkeep
 deploy/backups/
 deploy/restore-source/
+# Image tag of the running stack, written by tools/deploy.sh
+deploy/.version

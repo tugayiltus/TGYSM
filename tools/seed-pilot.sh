@@ -8,7 +8,9 @@
 #   tools/seed-pilot.sh --compose [--scale <factor>]  deployed stack: one-off api container in the Pilot environment
 #
 # The command refuses outside Development/Pilot and once the database has a ticket. --fresh and --drop only touch
-# databases whose name starts with tgysm_pilot.
+# databases whose name starts with tgysm_pilot. --compose sets the Pilot environment itself, so it is guarded by the
+# host's env file instead: it refuses unless deploy/.env (TGYSM_ENV_FILE) has TGYSM_DEPLOYMENT=pilot. A seeded host is
+# never promoted to production.
 #
 # Mail: the notifications the seed queues are closed (never sent), but the Worker's SLA monitor later raises breach
 # notifications for open seeded tickets, addressed to @pilot.example.com. While only seed data exists, run the pilot
@@ -27,6 +29,10 @@ readonly PILOT_DB_PREFIX="tgysm_pilot"
 readonly COMMAND="seed-pilot"
 readonly PILOT_ENVIRONMENT="Pilot"
 readonly PILOT_EMAIL_DOMAIN="pilot.example.com"
+readonly ENV_FILE="${TGYSM_ENV_FILE:-deploy/.env}"
+readonly DEPLOYMENT_KEY="TGYSM_DEPLOYMENT"
+readonly PILOT_DEPLOYMENT="pilot"
+source tools/lib/env-file.sh
 
 usage() {
   echo "Usage: tools/seed-pilot.sh [--compose | --fresh | --drop] [--scale <factor>]" >&2
@@ -50,6 +56,12 @@ done
 echo "Note: SLA breach notifications for open seeded tickets will go to @$PILOT_EMAIL_DOMAIN; use a relay that drops it or EMAIL_MODE=Pickup while only seed data exists." >&2
 
 if [[ "$mode" == "compose" ]]; then
+  deployment="$(env_value "$ENV_FILE" "$DEPLOYMENT_KEY")"
+  if [[ "$deployment" != "$PILOT_DEPLOYMENT" ]]; then
+    echo "Refused: --compose seeds only a pilot host, and $ENV_FILE has ${DEPLOYMENT_KEY}=${deployment:-<unset>}." >&2
+    echo "On a pilot host set ${DEPLOYMENT_KEY}=${PILOT_DEPLOYMENT} in $ENV_FILE; never on a production host." >&2
+    exit 1
+  fi
   exec tools/compose.sh run --rm -e ASPNETCORE_ENVIRONMENT="$PILOT_ENVIRONMENT" api "$COMMAND" "${seed_args[@]+"${seed_args[@]}"}"
 fi
 

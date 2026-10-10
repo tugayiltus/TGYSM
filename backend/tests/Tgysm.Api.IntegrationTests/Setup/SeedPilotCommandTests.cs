@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Tgysm.Api.Cli;
 using Tgysm.Api.IntegrationTests.Infrastructure;
+using Tgysm.Application;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Features.Pilot;
@@ -11,6 +14,7 @@ using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
+using Tgysm.Infrastructure;
 using Tgysm.Infrastructure.Persistence;
 
 namespace Tgysm.Api.IntegrationTests.Setup;
@@ -26,6 +30,7 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
     private const double SmallScaleFactor = 0.02;
     private const string ScaleOption = "--scale";
     private const string PasswordMarker = "(shown once): ";
+    private const int TicketsBeforeFailure = 1;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -160,6 +165,20 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_failed_seed_still_closes_the_notifications_it_queued()
+    {
+        // The second ticket fails after the first one committed its notifications; those must not reach the Worker.
+        await using var services = SeedServicesWith(new FailingTicketAuditLog(TicketsBeforeFailure));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => services.GetRequiredService<PilotSeed>().RunAsync(SmallScaleFactor, Ct));
+
+        await using var db = factory.Database.CreateDbContext();
+        Assert.Equal(TicketsBeforeFailure, await db.Tickets.CountAsync(Ct));
+        Assert.True(await db.OutboxEvents.AnyAsync(Ct));
+        Assert.False(await db.OutboxEvents.AnyAsync(e => e.Status == OutboxStatus.Pending, Ct));
+    }
+
+    [Fact]
     public async Task Prints_the_breach_mail_warning()
     {
         var output = new StringWriter();
@@ -187,6 +206,24 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
     }
 
     private static int Scaled(int volume) => PilotSeedVolumes.Scaled(volume, SmallScaleFactor);
+
+    /// <summary>The seed command's composition (Application + Infrastructure, seed actor and clock) with another audit log.</summary>
+    private ServiceProvider SeedServicesWith(IAuditLog audit)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(factory.Services.GetRequiredService<IConfiguration>());
+        services.AddSingleton(factory.Services.GetRequiredService<IHostEnvironment>());
+        services.AddLogging();
+        services.AddSingleton<PilotSeedClock>();
+        services.AddSingleton<TimeProvider>(provider => provider.GetRequiredService<PilotSeedClock>());
+        services.AddSingleton<PilotSeedActor>();
+        services.AddSingleton<ICurrentActor>(provider => provider.GetRequiredService<PilotSeedActor>());
+        services.AddApplication();
+        services.AddInfrastructure();
+        services.AddSingleton(audit);
+        services.AddSingleton<PilotSeed>();
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = false });
+    }
 
     private static string PrintedPassword(string output)
     {
@@ -224,5 +261,19 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
             .ToListAsync(Ct);
         var comments = await db.TicketComments.CountAsync(Ct);
         return [.. tickets, .. assets, $"comments={comments}"];
+    }
+
+    /// <summary>Records nothing and throws on the ticket creation after <paramref name="allowedTickets"/>.</summary>
+    private sealed class FailingTicketAuditLog(int allowedTickets) : IAuditLog
+    {
+        private int _ticketsCreated;
+
+        public void Record(string action, string entityType, Guid? entityId, object? oldValues = null, object? newValues = null, string? reason = null, Guid? actorUserId = null)
+        {
+            if (action == AuditActions.TicketCreated && Interlocked.Increment(ref _ticketsCreated) > allowedTickets)
+            {
+                throw new InvalidOperationException("Simulated failure while seeding tickets.");
+            }
+        }
     }
 }

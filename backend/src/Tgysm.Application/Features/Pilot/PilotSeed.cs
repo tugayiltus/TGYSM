@@ -66,8 +66,18 @@ public sealed class PilotSeed(IServiceScopeFactory scopes, PilotSeedActor actor,
     {
         var password = passwords.Generate();
         var session = new PilotSeedSession(scopes, actor, clock, scale, password, PilotSeedClock.RealUtcNow, cancellationToken);
-        var (adminEmail, adminCreated) = await session.RunAsync();
-        await CloseSeededNotificationsAsync(session.TicketIds, cancellationToken);
+        string adminEmail;
+        bool adminCreated;
+        try
+        {
+            (adminEmail, adminCreated) = await session.RunAsync();
+        }
+        finally
+        {
+            // A failed run keeps the tickets it committed; their notifications must not reach the Worker either.
+            await CloseSeededNotificationsAsync(session.TicketIds, cancellationToken);
+        }
+
         return await SummarizeAsync(adminEmail, adminCreated, password, cancellationToken);
     }
 
