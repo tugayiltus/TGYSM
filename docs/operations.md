@@ -43,7 +43,7 @@ Volumes: `pgdata` (database), `files` (attachments, export files, pickup mail; `
 
    | Key | Meaning |
    |---|---|
-   | `TGYSM_VERSION` | Image tag used by `tools/compose.sh` (`latest` or a Git short hash). `tools/deploy.sh` overrides it with the current hash for its own `up`. |
+   | `TGYSM_DEPLOYMENT` | Unset on a production host. `pilot` only on a pilot or test host: it allows `tools/seed-pilot.sh --compose` (see Pilot data). |
    | `POSTGRES_PASSWORD` | Password of the `tgysm` database user. Long random value. |
    | `PUBLIC_BASE_URL` | Absolute `https://` address users open; used for links in email (`App:PublicBaseUrl`). |
    | `HTTP_PORT`, `HTTPS_PORT` | Host ports of nginx (80, 443). |
@@ -71,7 +71,9 @@ Volumes: `pgdata` (database), `files` (attachments, export files, pickup mail; `
    tools/deploy.sh --skip-gates   # or tools/deploy.sh to run tools/lint.sh and tools/test.sh first
    ```
 
-   It refuses when `deploy/certs/tgysm.crt`, `deploy/certs/tgysm.key` or `deploy/.env` is missing, builds both images (`tools/docker-build.sh`, tags `<git short hash>` and `latest`), runs `tools/compose.sh up -d --remove-orphans` and waits up to 180 s for `https://localhost:<HTTPS_PORT>/api/v1/health` through nginx. Exit 0 prints `TGYSM is up on …`.
+   It refuses when `deploy/certs/tgysm.crt`, `deploy/certs/tgysm.key` or `deploy/.env` is missing, or when the working tree has uncommitted changes (the image tag must name the code it holds). It builds both images on fresh base images (`tools/docker-build.sh`, tags `<git short hash>` and `latest`), records the hash in `deploy/.version` (git-ignored), pulls `postgres` and `nginx`, runs `tools/compose.sh up -d --remove-orphans` and waits up to 180 s for `https://localhost:<HTTPS_PORT>/api/v1/health` through nginx. Exit 0 prints `TGYSM is up on …`.
+
+   Image tag: every `tools/compose.sh` call (and so `tools/backup.sh`, `tools/restore.sh`) uses the tag in `deploy/.version`; a `TGYSM_VERSION` set in the shell overrides it. Without the file the tag is `latest`. Container logs rotate (`json-file`, 5 files of 10 MB per container).
 5. Create the first admin (works once; refused when any user exists, ADR-0007). The temporary password is printed once and must be changed at the first sign-in:
 
    ```bash
@@ -89,15 +91,16 @@ tools/compose.sh run --rm api reset-password --email <email>
 
 ### Pilot data (pilot hosts only)
 
-`tools/seed-pilot.sh --compose [--scale <factor>]` runs the `seed-pilot` command in a one-off `api` container with `ASPNETCORE_ENVIRONMENT=Pilot`. It refuses outside `Development`/`Pilot` and once the database has a ticket, and writes about 50 employees, 8 IT staff, 500 assets and 2,000 tickets over the past 90 days through the application handlers (`--scale` multiplies the volumes, at most 10). Accounts use the domain `pilot.example.com`; the pilot password is printed once.
+`tools/seed-pilot.sh --compose [--scale <factor>]` runs the `seed-pilot` command in a one-off `api` container with `ASPNETCORE_ENVIRONMENT=Pilot`. Because it sets that environment itself, the command's environment check does not protect a deployed host; the marker does: `--compose` refuses unless `deploy/.env` has `TGYSM_DEPLOYMENT=pilot`. Set it only on a pilot host. The command refuses once the database has a ticket, and writes about 50 employees, 8 IT staff, 500 assets and 2,000 tickets over the past 90 days through the application handlers (`--scale` multiplies the volumes, at most 10). Accounts use the domain `pilot.example.com`; the pilot password is printed once.
 
 - The seed closes the notification outbox rows it wrote, so those are never sent. The Worker's SLA monitor still raises breach notifications later for the open seeded tickets, addressed to `@pilot.example.com`. While only seed data exists, run the pilot host with `EMAIL_MODE=Pickup` or with a relay that drops that domain.
-- A failed seed keeps what it wrote. Take a backup before seeding; to start over, restore that backup (`tools/restore.sh <archive> --force`).
+- A failed seed keeps what it wrote (its queued notifications are still closed). Take a backup before seeding; to start over, restore that backup (`tools/restore.sh <archive> --force`).
+- A seeded host is never promoted to production: the seeded accounts share one printed password. To go live, reinstall with empty volumes (recommended), or at least create a real admin, deactivate every seeded `@pilot.example.com` account and remove `TGYSM_DEPLOYMENT` from `deploy/.env`.
 
 ## Updates
 
 1. Back up first: `tools/backup.sh`. Copy the archive off the host. This archive is the way back if the update must be undone (below).
-2. Note the running image tag: `docker image ls tgysm-api` (tags are Git short hashes).
+2. Note the running image tag: `cat deploy/.version` (all built tags: `docker image ls tgysm-api`).
 3. Get the new release: `git pull` (or check out the release tag/commit).
 4. `tools/deploy.sh --skip-gates`. The `migrate` service runs before `api` and `worker`; when a migration fails, `api` and `worker` do not start and `tools/compose.sh logs migrate` names the failing migration (`Migration failed: …`).
 5. Check health (below) and `/admin/system`.
@@ -106,14 +109,14 @@ tools/compose.sh run --rm api reset-password --email <email>
 
 Images of earlier builds stay on the host under their Git short hash until removed.
 
-- **No new migration in the update** (`tools/compose.sh logs migrate` shows `Database is up to date (…)`): pin the previous tag and start it.
+- **No new migration in the update** (`tools/compose.sh logs migrate` shows `Database is up to date (…)`): pin the previous tag and start it. `tools/deploy.sh` printed it (`Deploying <new> (previous: <old>)`).
 
   ```bash
-  # deploy/.env: TGYSM_VERSION=<previous short hash>
+  echo <previous short hash> > deploy/.version
   tools/compose.sh up -d
   ```
 
-- **The update applied migrations** (`Applied N migration(s); latest …`): the older image does not know the new schema, and migrations are never rolled back. Pin the previous tag as above, then restore the archive taken in step 1:
+- **The update applied migrations** (`Applied N migration(s); latest …`): the older image does not know the new schema, and migrations are never rolled back. Pin the previous tag in `deploy/.version` as above, then restore the archive taken in step 1:
 
   ```bash
   tools/restore.sh <path/to/pre-update-archive.tar.gz> --force
@@ -121,14 +124,14 @@ Images of earlier builds stay on the host under their Git short hash until remov
 
   Everything written after that backup is lost. `tools/restore.sh` asks the pinned image for its newest migration (`migrate --print-latest`), so pin the tag before restoring; an archive from a newer build is refused (exit 3).
 
-When the next release is deployed, set `TGYSM_VERSION` back to `latest` (or the new hash), so `tools/compose.sh` and `tools/restore.sh` use the images that run.
+The next `tools/deploy.sh` overwrites `deploy/.version` with its own hash, so `tools/compose.sh` and `tools/restore.sh` always use the images that run. Do not set `TGYSM_VERSION` in `deploy/.env`: `deploy/.version` overrides it.
 
 ## Backups
 
-- **What:** one archive `tgysm-YYYYMMDD-HHMMSS.tar.gz` (UTC time) per run with `db.dump` (`pg_dump -Fc`), `files/` (file store), `keys/` (Data Protection key ring) and `manifest.json` (app version, newest migration, creation time, file count, row count of every table). Dump, counts and migration id come from one database snapshot.
+- **What:** one archive `tgysm-YYYYMMDD-HHMMSS.tar.gz` (UTC time) per run with `db.dump` (`pg_dump -Fc`), `files/` (file store), `keys/` (Data Protection key ring) and `manifest.json` (app version, newest migration, creation time, SHA-256 of `db.dump`, number of files in the archive, row count of every table). Dump, counts and migration id come from one database snapshot. A file that changes while the file store is archived is tolerated (GNU tar exit 1); `fileCount` is what the archive holds.
 - **When:** every night at `BACKUP_TIME` in `TZ` (service `backup`, `deploy/backup/scheduler.sh`). On demand: `tools/backup.sh` prints `Backup written: /backups/<archive>`.
 - **Where:** the `backups` volume, mounted at `/backups` in the `backup` service, or the host folder `BACKUP_HOST_DIR` when set. Archives are written with mode 600 under a temporary name and renamed when complete.
-- **Retention:** archives older than `BACKUP_RETENTION_DAYS` (default 14) are deleted after a successful run only. A failed run exits non-zero, logs `Backup FAILED …` in `tools/compose.sh logs backup` and leaves every earlier archive.
+- **Retention:** archives older than `BACKUP_RETENTION_DAYS` (default 14), and `.partial-*` leftovers of interrupted runs older than a day, are deleted after a successful run only. A failed run exits non-zero, logs `Backup FAILED …` in `tools/compose.sh logs backup` and leaves every earlier archive.
 - **List:** `tools/compose.sh exec backup ls -l /backups`.
 - **Copy off the host:** a backup on the same disk does not survive a lost host. Copy archives regularly to access-restricted storage elsewhere. From the volume:
 
@@ -140,19 +143,20 @@ When the next release is deployed, set `TGYSM_VERSION` back to `latest` (or the 
 
 ## Restore
 
-`tools/restore.sh <archive.tar.gz> [--force]` restores into the stack of this checkout:
+`tools/restore.sh <archive.tar.gz> [--force] [--no-safety-backup]` restores into the stack of this checkout:
 
 1. Asks the image for its newest migration, notes the running services, stops `api`, `worker`, `backup` and `nginx`, starts `postgres`.
-2. Runs the `restore` service (`deploy/backup/restore.sh`). Before writing anything it refuses:
-   - exit 2: not a readable TGYSM archive;
+2. With `--force` on a database that has tables: takes a safety backup of the current state first (`deploy/backup/backup.sh` in a one-off `backup` container, into the `backups` volume or `BACKUP_HOST_DIR`; `Backup written: …` names it). If it fails, nothing is restored and the services are started again. `--no-safety-backup` skips it (only when a current backup exists elsewhere).
+3. Runs the `restore` service (`deploy/backup/restore.sh`). It prints the archive's `createdAt`, `appVersion`, `latestMigration` and file count, then, before writing anything, refuses:
+   - exit 2: not a usable TGYSM archive: unreadable, a part missing, `latestMigration` empty or malformed, no `dbSha256` (archives from before checksums: take a new backup), `db.dump` not matching its SHA-256, or a file count different from `fileCount`;
    - exit 3: the archive is from a newer build than the image;
    - exit 4: the database already has tables and `--force` was not given.
 
    After a refusal the services that were running before are started again, unchanged.
-3. Writes the database (`pg_restore`; with `--force` the `public` schema is dropped first), replaces the `files` and `keys` volumes, then compares the row counts with the manifest (exit 5 on a difference).
-4. Starts the stack (`migrate` brings an older archive up to the image's schema) and waits up to 180 s for a healthy `api`.
+4. Writes the database (`pg_restore --single-transaction`, so a failed restore leaves no half-written schema; with `--force` the `public` schema is dropped first), replaces the `files` and `keys` volumes, then compares the row counts with the manifest (exit 5 on a difference).
+5. Starts the stack (`migrate` brings an older archive up to the image's schema) and waits up to 180 s for a healthy `api`.
 
-A failure while writing (any other non-zero exit) leaves the application stopped: fix the cause, then run again with `--force`.
+A failure while writing (any other non-zero exit) leaves the application stopped: fix the cause, then run again with `--force`. The safety backup from step 2 is the way back to the state before the restore.
 
 The archive path is on the host. An archive inside the `backups` volume must first be copied out with `tools/compose.sh cp` (see Backups).
 
@@ -160,7 +164,7 @@ Sessions issued before the backup stay valid after a restore, because the key ri
 
 ### Restore drill
 
-`tools/restore-drill.sh` proves backup and restore end to end without touching the production stack or its volumes. It needs the images (`tools/docker-build.sh`) and a certificate pair in `deploy/certs/`. It starts two throw-away compose projects (`tgysm-drill-source` on ports 9080/9443, `tgysm-drill-target` on 9081/9444, subnets `172.29.1.0/24` and `172.29.2.0/24`), creates data on the source (attachment, finished background export, deactivated user, a signed-in session), backs it up, checks both refusals (newer build, non-empty database), restores into the empty target, and checks health, row counts, the attachment and export downloads, the pre-backup session and the deactivated user's refused sign-in. It removes both projects and writes `docs/release/restore-drill.md` (pass/fail table). Last result: `docs/release/restore-drill.md`.
+`tools/restore-drill.sh` proves backup and restore end to end without touching the production stack or its volumes. It needs the images (`tools/docker-build.sh`) and a certificate pair in `deploy/certs/`. It starts two throw-away compose projects (`tgysm-drill-source` on ports 9080/9443, `tgysm-drill-target` on 9081/9444, subnets `172.29.1.0/24` and `172.29.2.0/24`), creates data on the source (attachment, finished background export, deactivated user, a signed-in session), backs it up, checks the refusals (newer build, `db.dump` not matching its checksum, non-empty database without `--force`), restores into the empty target, restores again with `--force` (which must take a safety backup first), and checks health, row counts, the attachment and export downloads, the pre-backup session and the deactivated user's refused sign-in (`401 auth.invalid_credentials`). An unreachable target is a failed check: the drill also fails when the check script exits non-zero or reports fewer rows than it should. It tests the images tagged `latest`, not the tag in `deploy/.version`. It removes both projects and writes `docs/release/restore-drill.md` (pass/fail table). Last result: `docs/release/restore-drill.md`.
 
 Run it after an update that changes the images or the backup scripts, and periodically to prove the archives restore.
 
@@ -202,16 +206,16 @@ Replace `deploy/certs/tgysm.crt` and `deploy/certs/tgysm.key`, then `tools/compo
 | Task | Command |
 |---|---|
 | Deploy or update | `tools/deploy.sh [--skip-gates]` |
-| Build images only | `tools/docker-build.sh` |
+| Build images only | `tools/docker-build.sh [--allow-dirty]` (refuses uncommitted changes; `--allow-dirty` tags `<hash>-dirty`) |
 | Any compose command | `tools/compose.sh <args>` |
 | First admin | `tools/compose.sh run --rm api setup-admin --email … --first-name … --last-name …` |
 | Temporary password | `tools/compose.sh run --rm api reset-password --email …` |
 | Apply migrations by hand | `tools/compose.sh run --rm api migrate` |
 | Backup now | `tools/backup.sh` |
-| Restore | `tools/restore.sh <archive.tar.gz> [--force]` |
+| Restore | `tools/restore.sh <archive.tar.gz> [--force] [--no-safety-backup]` |
 | Restore drill | `tools/restore-drill.sh` |
 | Test certificate | `tools/gen-self-signed-cert.sh [host-name]` |
-| Pilot seed | `tools/seed-pilot.sh --compose [--scale <factor>]` |
+| Pilot seed | `tools/seed-pilot.sh --compose [--scale <factor>]` (needs `TGYSM_DEPLOYMENT=pilot`) |
 | Performance run against a host | `PERF_BASE_URL=https://<host> PERF_PASSWORD=… tools/perf-measure.sh` (writes 5,000 assets into that database on every run; pilot hosts only) |
 
 `tools/compose.sh`, `tools/backup.sh` and `tools/restore.sh` honor `TGYSM_ENV_FILE` (another env file) and `COMPOSE_PROJECT_NAME`.
