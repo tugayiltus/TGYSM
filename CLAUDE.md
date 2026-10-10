@@ -1,11 +1,13 @@
 # TGYSM — ITSM web platform
 
-Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–5 done, plus the CoreUI UI/UX overhaul (left sidebar app + `/admin`, breadcrumbs/context return, device catalog, generated `DMR-` asset tags, Chart.js; plan `docs/superpowers/plans/2026-10-09-coreui-ui-ux.md`, ADR-0021–0023), all merged to `master`. Next: Phase 6 (release) after the owner's own testing. Requirements: `tgysm.md`.
+Single-company ITSM: incident and request management, IT inventory and asset management, SLA, email, knowledge base and reports. Current state: Phases 1–5 done, plus the CoreUI UI/UX overhaul (left sidebar app + `/admin`, breadcrumbs/context return, device catalog, generated `DMR-` asset tags, Chart.js; plan `docs/superpowers/plans/2026-10-09-coreui-ui-ux.md`, ADR-0021–0023), all merged to `master`, plus the UI cohesion work (ADR-0026). Phase 6 (release) on branch `phase-6-release`: Docker Compose deployment (ADR-0024), backup/restore + drill (ADR-0025), acceptance evidence, pilot seed, perf, CI, user guide, operator manual `docs/operations.md`; merge to `master` only with owner approval. Requirements: `tgysm.md`.
 
 ## Stack & Architecture
 - **Backend:** .NET 10 modular monolith (ADR-0001) — `backend/src/Tgysm.Domain` (rules, no framework deps) → `Tgysm.Application` (handlers + FluentValidation, ports) → `Tgysm.Infrastructure` (EF Core + Npgsql, migrations) → `Tgysm.Api` (Minimal APIs, auth, CLI). `backend/src/Tgysm.Worker` (Generic Host, jobs `OutboxDispatcher`, `EmailSender`, `SlaMonitor`, `ExportRunner`, `Cleanup`, row leases; references Application + Infrastructure, never Api; ADR-0014/0015) runs next to the API. Solution: `backend/Tgysm.slnx`.
 - **Database:** PostgreSQL 17, local Homebrew (ADR-0002). snake_case, `uuid` v7, `xmin` concurrency.
 - **Frontend:** React 19 + Vite + TypeScript in `frontend/` (ADR-0008). Server state via TanStack Query; typed client `src/shared/api/client.ts` generated from OpenAPI. UI on CoreUI 5 (`@coreui/react`, SCSS in `src/styles/`, shared wrappers in `src/shared/ui`, layout in `src/shared/layout`, breadcrumbs/route metadata in `src/shared/navigation`; ADR-0021), `react-markdown` (KB, no raw HTML), Chart.js via `@coreui/react-chartjs` (reports, ADR-0022); Rolldown chunk groups in `vite.config.ts` — new heavy dependency or feature folder gets its own group.
+- **Deployment:** `Dockerfile` (images `tgysm-api`, `tgysm-worker`, non-root), `deploy/compose.yaml` + `deploy/.env` (git-ignored; template `deploy/.env.example`), nginx TLS (`deploy/nginx/`, certs in git-ignored `deploy/certs/`), backup scripts in `deploy/backup/`. API CLI commands in `backend/src/Tgysm.Api/Cli/`: `setup-admin`, `reset-password`, `migrate`, `seed-pilot`. Docker on macOS = Colima: start only for a Docker step, stop afterwards.
+- **CI:** `.github/workflows/ci.yml` (lint, test, E2E, image builds), `.github/dependabot.yml`.
 - Out of scope unless asked: mobile app.
 
 ## Commands
@@ -22,6 +24,16 @@ Run through `tools/` scripts.
 - `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5080/4173 (stop the dev services first). Also starts the Worker (`Email:Mode=Pickup` into a per-run temp folder, 2 s job intervals; E2E-only env overrides). Tests seed their data through the admin API (`frontend/e2e/world.ts`).
 - `tools/gen-api-types.sh` — regenerate OpenAPI JSON and `schema.d.ts` after API contract changes.
 - `tools/build.sh` — lint + tests, then Release build + frontend build with chunk sizes.
+- `tools/docker-build.sh` — build `tgysm-api`/`tgysm-worker` images (tags: Git short hash, `latest`).
+- `tools/deploy.sh [--skip-gates]` — gates, images, compose up, wait for health through nginx.
+- `tools/compose.sh <args>` — `docker compose` with `deploy/compose.yaml` + `deploy/.env`.
+- `tools/gen-self-signed-cert.sh [host]` — test certificate in `deploy/certs/`.
+- `tools/backup.sh`, `tools/restore.sh <archive> [--force]`, `tools/restore-drill.sh` — backup now, restore, drill on throw-away stacks (writes `docs/release/restore-drill.md`).
+- `tools/seed-pilot.sh [--fresh|--drop|--compose] [--scale <f>]` — pilot data (local `tgysm_pilot*` DB or deployed stack).
+- `tools/perf-measure.sh` (`PERF_PASSWORD`) — perf run, writes `docs/release/performance.md`.
+- `tools/guide-screenshots.sh` (`GUIDE_PASSWORD`), `tools/build-user-guide.sh` — guide screenshots; `combined.md` + A4 `combined.pdf`.
+- `tools/ci-lint.sh` — actionlint on the workflows.
+- `tools/check-doc-paths.sh [file ...]` — every `tools/`/`deploy/` path named in the docs exists; run after doc edits.
 - `tools/with-db.sh <command>` — start local PostgreSQL for one command and stop it again (when the owner keeps the database stopped).
 - `tools/progress.sh [plan-file]` — plan task status from the SDD ledger (`.superpowers/sdd/<plan>/progress.md`) + branch, recent commits, uncommitted changes. Default: newest plan.
 
@@ -29,6 +41,7 @@ Run through `tools/` scripts.
 - **C#:** `TreatWarningsAsErrors=true`, `Nullable=enable` — zero warnings.
 - **C# tests gate builds:** `tools/build.sh` runs `tools/test.sh` first; Domain + Application line coverage ≥ 80%.
 - **TS/React:** ESLint errors only, `--max-warnings=0`, no `eslint-disable`; frontend line coverage ≥ 80%.
+- **CI:** green run of `.github/workflows/ci.yml` on the commit to merge.
 - **Contracts:** after changing an endpoint, run `tools/gen-api-types.sh`; `TranslationCoverageTests` must pass (every error code and audit action has Turkish text).
 - No magic numbers/strings — named constants.
 
@@ -53,7 +66,8 @@ Run through `tools/` scripts.
 - Docs change only on request (`~/.claude/guides/docs-updates.md`); after a code change, name the doc that needs a line and stop.
 - `capabilities.md` — authoritative feature + tech-stack reference; ends with the `DOC-BASELINE` marker.
 - `SECURITY.md` — security policy and posture.
-- User guide in `docs/user-guides/`. When asked to edit: update `PROGRESS.md`, regenerate `combined.md` / `combined.pdf` via `tools/build-user-guide.sh` (PDF only if a guide page changed; always A4). The script is created with the first real guide page.
+- `docs/operations.md` — operator manual (install, update/rollback, backup, restore, keys). `docs/release/` — acceptance, performance, restore-drill evidence.
+- User guide in `docs/user-guides/`. When asked to edit: update `PROGRESS.md`, regenerate `combined.md` / `combined.pdf` via `tools/build-user-guide.sh` (PDF only if a guide page changed; always A4).
 
 ## Session continuity & memory
 - **Plans/specs:** `docs/superpowers/specs/`, `docs/superpowers/plans/`. Read the latest on resume.
