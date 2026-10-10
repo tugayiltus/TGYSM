@@ -1,3 +1,5 @@
+using Tgysm.Domain.Common;
+
 namespace Tgysm.Domain.Tickets;
 
 /// <summary>Append-only timeline row. <see cref="DataJson"/> holds kind-specific details (no secrets).</summary>
@@ -7,7 +9,8 @@ public sealed class TicketEvent
     {
     }
 
-    public Guid Id { get; private init; } = Guid.CreateVersion7();
+    // Sequential: the timeline orders by time, then id, and several events share one instant.
+    public Guid Id { get; private init; } = SequentialId.Next();
     public Guid TicketId { get; private init; }
     public TicketEventKind Kind { get; private init; }
     public Visibility Visibility { get; private init; }
