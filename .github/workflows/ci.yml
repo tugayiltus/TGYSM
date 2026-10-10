@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TGYSM_DB_HOST: localhost
+  TGYSM_DB_USER: tgysm
+  # Throw-away CI database password; the service container is not reachable from outside the runner.
+  PGPASSWORD: tgysm-ci
+  TGYSM_TEST_ADMIN_CONNECTION: Host=localhost;Database=postgres;Username=tgysm;Password=tgysm-ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: tgysm
+          POSTGRES_PASSWORD: tgysm-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tgysm"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: 10.0.x
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj', 'backend/**/Directory.*.props', 'backend/dotnet-tools.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Restore backend tools and packages
+        run: dotnet tool restore --tool-manifest backend/dotnet-tools.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint
+        run: tools/lint.sh
+
+      - name: Test
+        run: tools/test.sh
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: End-to-end tests
+        run: tools/e2e.sh
+
+      - name: Build API image
+        run: docker build --target api -t tgysm-api:ci .
+
+      - name: Build Worker image
+        run: docker build --target worker -t tgysm-worker:ci .
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            frontend/test-results
+            frontend/e2e-logs
+          if-no-files-found: ignore

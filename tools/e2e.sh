@@ -56,6 +56,11 @@ wait_for() {
   return 1
 }
 
+# CI: PostgreSQL is a service container whose superuser is the configured role (password: PGPASSWORD), not the OS user.
+if [[ "${CI:-}" == "true" ]]; then
+  export PGUSER="$DB_USER"
+fi
+
 # A running dev server (tools/run.sh) on these ports would answer instead of the E2E servers.
 for port in "${API_URL##*:}" "${PREVIEW_URL##*:}"; do
   if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
