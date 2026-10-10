@@ -28,6 +28,11 @@ if (args is [ResetPasswordCommand.Name, .. var resetArgs])
     return await ResetPasswordCommand.RunAsync(app.Services, resetArgs, Console.Out, Console.Error);
 }
 
+if (args is [SeedPilotCommand.Name, .. var seedArgs])
+{
+    return await SeedPilotCommand.RunAsync(app.Services, seedArgs, Console.Out, Console.Error);
+}
+
 app.UseApiPipeline();
 app.MapApi();
 await app.RunAsync();
