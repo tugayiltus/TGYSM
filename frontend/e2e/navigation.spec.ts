@@ -106,3 +106,43 @@ test('the breadcrumb overflow menu stays inside narrow screens and wraps long cr
     await more.click();
   }
 });
+
+test('the phone menu shows every link inside the screen and its links navigate', async ({ browser }, info) => {
+  test.skip(info.project.name !== 'mobile-360', 'The menu sits behind "Menüyü aç" below 992 px only.');
+  const admin = await adminSession(browser);
+  const world = await seedWorld(admin);
+  const employee = await userSession(browser, world.employeeEmail, world.employeePassword);
+  const page = employee.page;
+
+  for (const width of NARROW_WIDTHS) {
+    await page.setViewportSize({ width, height: PHONE_HEIGHT });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Menüyü aç' }).click();
+    const menu = page.getByRole('dialog', { name: MAIN_MENU }).getByRole('navigation', { name: MAIN_MENU });
+    const links = menu.getByRole('link');
+    await expect(links.first()).toBeVisible();
+    // Wait for the panel's slide-in to end, then measure: toBeVisible ignores links pushed outside the panel.
+    await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== 'running'));
+    const count = await links.count();
+    expect(count).toBeGreaterThan(0);
+    for (let index = 0; index < count; index += 1) {
+      const link = links.nth(index);
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width);
+      expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
+      expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(PHONE_HEIGHT);
+      // The link itself is what a tap at its centre hits (nothing covers or clips it).
+      const hit = await link.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        return top !== null && element.contains(top);
+      });
+      expect(hit).toBe(true);
+    }
+    await menu.getByRole('link', { name: 'Kayıtlarım' }).click();
+    await expect(page).toHaveURL(/\/tickets$/);
+    await expect(page.getByRole('dialog', { name: MAIN_MENU })).toHaveCount(0);
+  }
+});

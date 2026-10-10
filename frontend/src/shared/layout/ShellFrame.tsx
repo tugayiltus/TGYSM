@@ -29,7 +29,8 @@ export function ShellFrame({ area, title, navLabel, areaSwitch }: ShellFrameProp
     <div className="d-flex min-vh-100 bg-body-tertiary">
       <AppSidebar area={area} label={navLabel} title={title} narrow={sidebar.narrow} onToggleNarrow={sidebar.toggleNarrow} />
       <Sheet open={sidebar.mobileOpen} onOpenChange={(open) => (open ? sidebar.setMobileOpen(true) : closePanel())} title={navLabel}>
-        <div className="sidebar sidebar-dark w-100 border-0 position-static">
+        {/* `show`: below 992 px CoreUI slides a `.sidebar` without it off-screen (negative margin), even inside the sheet. */}
+        <div className="sidebar sidebar-dark show w-100 border-0 position-static">
           <SidebarNav area={area} label={navLabel} onNavigate={closePanel} />
         </div>
       </Sheet>
