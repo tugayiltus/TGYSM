@@ -4,8 +4,12 @@ seed  <base-url> <state.json> <admin-email> <admin-temporary-password>
       Creates data on the source stack: an admin password, an intake team, an employee whose incident carries an
       attachment, a ready background export and a deactivated user. Saves what the checks need, including the
       employee's session cookies.
+check-count
+      Prints CHECK_COUNT, the number of rows "check" prints.
 check <base-url> <state.json>
-      Runs the checks against a restored stack and prints one JSON line per check.
+      Runs the checks against a restored stack and prints one JSON line per check as soon as it is known (CHECK_COUNT
+      lines in all). An unreachable stack is a failed check (status UNREACHABLE), never an aborted run. Exits 1 when any
+      check failed.
 """
 
 import http.cookiejar
@@ -29,6 +33,13 @@ EXPORT_WAIT_SECONDS = 180
 EXPORT_POLL_SECONDS = 3
 HTTP_TIMEOUT_SECONDS = 30
 TEMPORARY_PASSWORD = "temporary_password"
+# Status recorded when no HTTP answer arrived (connection refused, TLS or DNS failure, timeout).
+UNREACHABLE = 0
+HTTP_UNAUTHORIZED = 401
+PROBLEM_CODE_KEY = "code"
+INVALID_CREDENTIALS = "auth.invalid_credentials"
+# Number of rows check() prints; tools/restore-drill.sh asserts it.
+CHECK_COUNT = 5
 
 
 class Client:
@@ -43,20 +54,24 @@ class Client:
             urllib.request.HTTPCookieProcessor(self.jar), urllib.request.HTTPSHandler(context=context))
 
     def request(self, method, path, body=None, raw=None, content_type="application/json"):
-        headers = {}
-        if method != "GET":
-            headers[CSRF_HEADER] = self.csrf()
-        data = raw
-        if body is not None:
-            data = json.dumps(body).encode()
-        if data is not None:
-            headers["Content-Type"] = content_type
-        req = urllib.request.Request(self.base + path, data=data, headers=headers, method=method)
+        """Returns (status, body); (UNREACHABLE, error text) when no HTTP answer arrived."""
         try:
+            headers = {}
+            if method != "GET":
+                headers[CSRF_HEADER] = self.csrf()
+            data = raw
+            if body is not None:
+                data = json.dumps(body).encode()
+            if data is not None:
+                headers["Content-Type"] = content_type
+            req = urllib.request.Request(self.base + path, data=data, headers=headers, method=method)
             with self.opener.open(req, timeout=HTTP_TIMEOUT_SECONDS) as resp:
                 return resp.status, resp.read()
         except urllib.error.HTTPError as error:
             return error.code, error.read()
+        except OSError as error:
+            # URLError, connection resets, TLS errors and timeouts are all OSError.
+            return UNREACHABLE, str(error).encode()
 
     def csrf(self):
         req = urllib.request.Request(self.base + "/auth/csrf")
@@ -164,13 +179,28 @@ def jar_from(cookies):
     return jar
 
 
+def problem_code(body):
+    try:
+        return json.loads(body).get(PROBLEM_CODE_KEY)
+    except (ValueError, AttributeError):
+        return None
+
+
 def check(base, state_path):
     with open(state_path, encoding="utf-8") as handle:
         state = json.load(handle)
-    results = []
+    failed = 0
 
     def record(name, expected, actual):
-        results.append({"check": name, "expected": expected, "actual": actual, "ok": expected == actual})
+        nonlocal failed
+        ok = expected == actual
+        if not ok:
+            failed += 1
+        # One line per check, printed at once: a later crash cannot hide the rows already known.
+        print(json.dumps({"check": name, "expected": expected, "actual": actual, "ok": ok}, ensure_ascii=False), flush=True)
+
+    def size_or_status(status, body):
+        return len(body) if status == 200 else f"HTTP {status}"
 
     status, _ = Client(base).request("GET", "/health")
     record("health", 200, status)
@@ -178,16 +208,14 @@ def check(base, state_path):
     status, _ = employee.request("GET", "/auth/me")
     record("session from before the backup is still valid", 200, status)
     status, body = employee.request("GET", state["attachmentPath"])
-    record("attachment downloads with the same size", state["attachmentSize"], len(body) if status == 200 else f"HTTP {status}")
+    record("attachment downloads with the same size", state["attachmentSize"], size_or_status(status, body))
     admin = Client(base, jar_from(state["adminCookies"]))
     status, body = admin.request("GET", state["exportPath"])
-    record("export file downloads with the same size", state["exportSize"], len(body) if status == 200 else f"HTTP {status}")
-    status, _ = Client(base).request("POST", "/auth/login", {"email": state["goneEmail"], "password": state["gonePassword"]})
-    record("deactivated user cannot sign in", "refused", "refused" if status >= 400 else f"HTTP {status}")
+    record("export file downloads with the same size", state["exportSize"], size_or_status(status, body))
+    status, body = Client(base).request("POST", "/auth/login", {"email": state["goneEmail"], "password": state["gonePassword"]})
+    record("deactivated user cannot sign in", f"HTTP {HTTP_UNAUTHORIZED} {INVALID_CREDENTIALS}", f"HTTP {status} {problem_code(body)}")
 
-    for result in results:
-        print(json.dumps(result, ensure_ascii=False))
-    return 0 if all(r["ok"] for r in results) else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":
@@ -196,6 +224,8 @@ if __name__ == "__main__":
         seed(*sys.argv[2:6])
     elif command == "check" and len(sys.argv) == 4:
         sys.exit(check(sys.argv[2], sys.argv[3]))
+    elif command == "check-count" and len(sys.argv) == 2:
+        print(CHECK_COUNT)
     else:
         print(__doc__, file=sys.stderr)
         sys.exit(2)

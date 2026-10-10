@@ -20,8 +20,11 @@ readonly REPORT="docs/release/restore-drill.md"
 readonly FUTURE_MIGRATION="99999999999999_FutureMigration"
 readonly TEMP_PASSWORD_PREFIX="Temporary password (shown once): "
 # Exit codes of deploy/backup/restore.sh.
+readonly EXIT_NOT_ARCHIVE=2
 readonly EXIT_NEWER_ARCHIVE=3
 readonly EXIT_NOT_EMPTY=4
+# The drill tests the images tools/docker-build.sh tagged "latest", not the tag a deployment recorded in deploy/.version.
+export TGYSM_VERSION="${TGYSM_VERSION:-latest}"
 
 # Under the repository (git-ignored tmp/): Docker on macOS (Colima) shares only the home folder with containers.
 mkdir -p tmp
@@ -102,12 +105,20 @@ tar -xzf "$archive" -C "$work/future"
 sed -i.bak "s/\"latestMigration\": \"[^\"]*\"/\"latestMigration\": \"$FUTURE_MIGRATION\"/" "$work/future/manifest.json"
 rm -f "$work/future/manifest.json.bak"
 mkdir -p "$work/future-archive"
-tar -czf "$work/future-archive/future.tar.gz" -C "$work/future" db.dump manifest.json files keys
+# COPYFILE_DISABLE: macOS tar must not add ._ metadata entries (they would change the archive's file count).
+COPYFILE_DISABLE=1 tar -czf "$work/future-archive/future.tar.gz" -C "$work/future" db.dump manifest.json files keys
+mkdir -p "$work/tampered" "$work/tampered-archive"
+tar -xzf "$archive" -C "$work/tampered"
+printf 'x' >> "$work/tampered/db.dump"
+COPYFILE_DISABLE=1 tar -czf "$work/tampered-archive/tampered.tar.gz" -C "$work/tampered" db.dump manifest.json files keys
 target_compose up -d postgres >/dev/null
 code=0
 TGYSM_ENV_FILE="$work/target.env" COMPOSE_PROJECT_NAME="$TARGET_PROJECT" tools/restore.sh "$work/future-archive/future.tar.gz" >/dev/null 2>&1 || code=$?
 record "archive from a newer build is refused (exit code)" "$EXIT_NEWER_ARCHIVE" "$code"
-record "refused restore wrote no table" "0" "$(table_count | tr -d '[:space:]')"
+code=0
+TGYSM_ENV_FILE="$work/target.env" COMPOSE_PROJECT_NAME="$TARGET_PROJECT" tools/restore.sh "$work/tampered-archive/tampered.tar.gz" >/dev/null 2>&1 || code=$?
+record "archive whose db.dump differs from the manifest checksum is refused (exit code)" "$EXIT_NOT_ARCHIVE" "$code"
+record "refused restores wrote no table" "0" "$(table_count | tr -d '[:space:]')"
 
 echo "== Restore"
 if TGYSM_ENV_FILE="$work/target.env" COMPOSE_PROJECT_NAME="$TARGET_PROJECT" tools/restore.sh "$archive"; then
@@ -118,21 +129,34 @@ fi
 code=0
 TGYSM_ENV_FILE="$work/target.env" COMPOSE_PROJECT_NAME="$TARGET_PROJECT" tools/restore.sh "$archive" >/dev/null 2>&1 || code=$?
 record "restore into a non-empty database without --force is refused (exit code)" "$EXIT_NOT_EMPTY" "$code"
+code=0
+TGYSM_ENV_FILE="$work/target.env" COMPOSE_PROJECT_NAME="$TARGET_PROJECT" tools/restore.sh "$archive" --force >/dev/null 2>&1 || code=$?
+record "forced restore over a non-empty database (exit code)" "0" "$code"
+record "forced restore took a safety backup first (archives in the target's backups volume)" "1" \
+  "$(target_compose run --rm --no-deps -T --entrypoint bash backup -c 'ls /backups/tgysm-*.tar.gz | wc -l' 2>/dev/null | tr -d '[:space:]')"
 wait_healthy target_compose
 
 echo "== Checks on the restored stack"
+# The check script prints one JSON row per check as it goes; its exit code and the number of rows are checks too, so
+# an unreachable stack or a crash can never pass with fewer rows.
+check_code=0
+python3 tools/lib/tgysm_drill.py check "https://localhost:$TARGET_HTTPS_PORT" "$work/state.json" > "$work/checks.jsonl" || check_code=$?
+rows=0
 while IFS= read -r line; do
+  rows=$((rows + 1))
   check="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["check"])' "$line")"
   expected="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["expected"])' "$line")"
   actual="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["actual"])' "$line")"
   record "$check" "$expected" "$actual"
-done < <(python3 tools/lib/tgysm_drill.py check "https://localhost:$TARGET_HTTPS_PORT" "$work/state.json" || true)
+done < "$work/checks.jsonl"
+record "post-restore checks reported" "$(python3 tools/lib/tgysm_drill.py check-count)" "$rows"
+record "post-restore check script (exit code)" "0" "$check_code"
 
 mkdir -p "$(dirname "$REPORT")"
 {
   echo "# Restore drill"
   echo
-  echo "Run by \`tools/restore-drill.sh\` on $(date -u +%Y-%m-%dT%H:%M:%SZ) at commit \`$(git rev-parse --short HEAD)\` (images \`$(docker image inspect tgysm-api:latest --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^APP_VERSION=//p')\`)."
+  echo "Run by \`tools/restore-drill.sh\` on $(date -u +%Y-%m-%dT%H:%M:%SZ) at commit \`$(git rev-parse --short HEAD)\` (images \`$(docker image inspect "tgysm-api:$TGYSM_VERSION" --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^APP_VERSION=//p')\`)."
   echo "Archive: \`$(basename "$archive")\` ($(du -h "$archive" | cut -f1 | tr -d ' ')). Acceptance criterion 19 of \`tgysm.md\` §20; ADR-0025."
   echo
   echo "| Check | Expected | Actual | Result |"
