@@ -368,5 +368,5 @@ Relationships: all foreign keys are `RESTRICT`; records are deactivated or close
 - **Acceptance evidence:** `docs/release/acceptance.md` maps each `tgysm.md` §20 criterion to tests, scripts or documents.
 - **User guide:** `tools/guide-screenshots.sh` shoots the pages in `frontend/guide/manifest.ts` at 390×844 and 1280×800 from the seeded pilot database; `tools/build-user-guide.sh` builds `docs/user-guides/combined.md` and the A4 `combined.pdf` and checks anchors and images.
 
-<!-- DOC-BASELINE: dfdae77 -->
-_Documentation baseline: current as of commit dfdae77 (2026-10-10). Refresh with `git log --oneline dfdae77..HEAD`._
+<!-- DOC-BASELINE: b1412b7 -->
+_Documentation baseline: current as of commit b1412b7 (2026-10-10). Refresh with `git log --oneline b1412b7..HEAD`._

@@ -1,7 +1,7 @@
 # Restore drill
 
-Run by `tools/restore-drill.sh` on 2026-10-10T16:45:10Z at commit `9190068` (images `9190068`).
-Archive: `tgysm-20261010-164342.tar.gz` (32K). Acceptance criterion 19 of `tgysm.md` §20; ADR-0025.
+Run by `tools/restore-drill.sh` on 2026-10-10T17:20:46Z at commit `b1412b7` (images `b1412b7`).
+Archive: `tgysm-20261010-171919.tar.gz` (32K). Acceptance criterion 19 of `tgysm.md` §20; ADR-0025.
 
 | Check | Expected | Actual | Result |
 |---|---|---|---|
