@@ -47,6 +47,16 @@ export const ENUM_FILTERS = {
   assetStatus: ASSET_STATUSES,
 } as const satisfies Partial<Record<ReportFilterKey, readonly string[]>>;
 
+/** Where each enum filter finds its value names (`<namespace>:<object>.<value>`); shared by the filter bar and the chips. */
+export const ENUM_FILTER_LABELS: Readonly<Record<keyof typeof ENUM_FILTERS, string>> = {
+  kind: 'tickets:kinds',
+  priority: 'tickets:priorities',
+  status: 'tickets:statuses',
+  slaState: 'reports:slaStates',
+  assetType: 'assets:types',
+  assetStatus: 'assets:statuses',
+};
+
 const TICKET_FIELDS: readonly ReportFilterKey[] = ['from', 'to', 'priority', 'categoryId', 'teamId', 'assigneeId', 'departmentId', 'locationId', 'status', 'slaState'];
 const ASSET_FIELDS: readonly ReportFilterKey[] = ['assetType', 'assetStatus', 'departmentId', 'locationId'];
 

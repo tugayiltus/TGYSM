@@ -34,11 +34,11 @@ internal sealed class ReportFixture(ReportWorld world)
         return await SaveAsync(ticket, change);
     }
 
-    public async Task<Ticket> RequestAsync(DateTimeOffset created, bool requiresApproval = false, Action<Ticket>? change = null)
+    public async Task<Ticket> RequestAsync(DateTimeOffset created, bool requiresApproval = false, Action<Ticket>? change = null, Guid? teamId = null)
     {
         var type = await TestDataRequestTypeAsync(requiresApproval);
         var ticket = Ticket.CreateRequest(
-            $"REQ-2026-{++_counter:D6}", "Konu", "Aciklama", null, null, World.Employee.Id, World.DeskTeam.Id, type, requiresApproval, created);
+            $"REQ-2026-{++_counter:D6}", "Konu", "Aciklama", null, null, World.Employee.Id, teamId ?? World.DeskTeam.Id, type, requiresApproval, created);
         return await SaveAsync(ticket, change);
     }
 

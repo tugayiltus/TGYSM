@@ -5,17 +5,7 @@ import { SelectField, type SelectOption } from '../../shared/ui/SelectField';
 
 import { useFilterChoices, type ReportName } from './api';
 import { DayField } from './DayField';
-import { DAY_BOUNDS, ENUM_FILTERS, isValidFilterValue, REPORT_FILTER_FIELDS, type ReportFilterKey, type ReportFilterValues } from './useReportFilter';
-
-/** Where each enum filter finds its value names. */
-const ENUM_LABELS: Record<keyof typeof ENUM_FILTERS, string> = {
-  kind: 'tickets:kinds',
-  priority: 'tickets:priorities',
-  status: 'tickets:statuses',
-  slaState: 'reports:slaStates',
-  assetType: 'assets:types',
-  assetStatus: 'assets:statuses',
-};
+import { DAY_BOUNDS, ENUM_FILTER_LABELS, ENUM_FILTERS, isValidFilterValue, REPORT_FILTER_FIELDS, type ReportFilterKey, type ReportFilterValues } from './useReportFilter';
 
 const isEnumKey = (key: ReportFilterKey): key is keyof typeof ENUM_FILTERS => key in ENUM_FILTERS;
 
@@ -32,7 +22,7 @@ export function ReportFilterBar({ report, filter, onChange }: ReportFilterBarPro
   const choices = useFilterChoices(fields);
 
   const optionsOf = (key: Exclude<ReportFilterKey, 'from' | 'to'>): SelectOption[] =>
-    isEnumKey(key) ? ENUM_FILTERS[key].map((value) => ({ value, label: translateOr(`${ENUM_LABELS[key]}.${value}`, value) })) : choices[key];
+    isEnumKey(key) ? ENUM_FILTERS[key].map((value) => ({ value, label: translateOr(`${ENUM_FILTER_LABELS[key]}.${value}`, value) })) : choices[key];
 
   return (
     <form aria-label={t('filters.label')} className="d-flex flex-column gap-2" onSubmit={(event) => event.preventDefault()}>
