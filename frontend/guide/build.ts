@@ -35,6 +35,8 @@ const LOCALE_DIR = resolve(process.env.GUIDE_LOCALE_DIR ?? 'src/shared/i18n/loca
 const LOCALE_EXTENSION = '.json';
 const INTERPOLATION = /\{\{\s*\w+\s*\}\}/;
 const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
+/** What a placeholder may stand for in a bold label: a number ("Filtreler (2)", "1.250 kayıt"), never words. */
+const PLACEHOLDER_VALUE = String.raw`\d[\d.,]*`;
 const MOBILE_IMAGE_WIDTH = '62mm';
 const PRINT_CSS = `
 @page { size: A4; margin: ${PAGE_MARGIN}; }
@@ -181,7 +183,7 @@ async function checkImages(markdown: string): Promise<void> {
   if (unused.length > 0) fail(`images not referenced by any page: ${unused.join(', ')}`);
 }
 
-/** Every string value of the locale files; a value with `{{name}}` placeholders also matches any filled-in text. */
+/** Every string value of the locale files; a value with `{{name}}` placeholders also matches it with numbers filled in. */
 async function localeLabels(): Promise<{ exact: Set<string>; patterns: RegExp[] }> {
   const exact = new Set<string>();
   const patterns: RegExp[] = [];
@@ -191,7 +193,7 @@ async function localeLabels(): Promise<{ exact: Set<string>; patterns: RegExp[] 
       // A value that is only placeholders (e.g. "{{name}}") has no label text and would match anything.
       if (INTERPOLATION.test(value) && value.split(INTERPOLATION).join('').trim() !== '') {
         const parts = value.split(INTERPOLATION).map((part) => part.replace(REGEX_SPECIAL, '\\$&'));
-        patterns.push(new RegExp(`^${parts.join('.+')}$`));
+        patterns.push(new RegExp(`^${parts.join(PLACEHOLDER_VALUE)}$`));
       }
     } else if (value !== null && typeof value === 'object') {
       Object.values(value).forEach(collect);

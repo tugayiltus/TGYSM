@@ -6,7 +6,7 @@ against the seeded pilot database (`tools/seed-pilot.sh --fresh`); the shot list
 
 | Page | Status | Screenshots |
 |---|---|---|
-| `getting-started.md` | Done | `home-desktop.png`, `home-mobile.png` |
+| `getting-started.md` | Done | `home-desktop.png`, `home-menu-mobile.png`, `home-mobile.png` |
 | `incidents-and-requests.md` | Done | `tickets-new-incident-desktop.png`, `tickets-new-request-mobile.png` |
 | `my-tickets.md` | Done | `tickets-list-desktop.png`, `ticket-detail-desktop.png` |
 | `my-assets.md` | Done | `my-assets-mobile.png` |
@@ -28,9 +28,3 @@ against the seeded pilot database (`tools/seed-pilot.sh --fresh`); the shot list
 
 Done: every image in `images/` is referenced by a page and was taken from the pilot data. Retake all with
 `GUIDE_PASSWORD=<pilot password> tools/guide-screenshots.sh`, or single shots by id.
-
-## Known gaps
-
-- No screenshot of the phone menu: on phones the menu panel opens with its links shifted out of view (reported to the
-  owner as a UI defect). The page describes the menu in text only; add `home-menu` to the manifest once it is fixed.
-- `admin-system-desktop.png` shows an empty job table because the screenshot stack runs without the Worker.

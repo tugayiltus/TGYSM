@@ -73,12 +73,12 @@ Teslim edilen cihaz kişinin **Zimmetlerim** sayfasında görünür. Bir talep i
 
 Dosya kuralları:
 
-- Sütunlar: Demirbaş No, Tür, Marka, Model, Seri No, Konum, Departman, Durum, Garanti Bitiş, Satın Alma, Notlar.
+- Sütunlar: Demirbaş No, Tür, Marka, Model, Seri No, Konum, Departman, Durum, Garanti Bitiş, Satın Alma, Notlar. Demirbaş No, Tür, Marka, Model ve Konum sütunları dosyada mutlaka bulunmalıdır (şablonda hepsi vardır); Tür, Marka, Model ve Konum hücreleri her satırda dolu olmalıdır.
 - Tür: `desktop`, `laptop`, `phone`, `tablet`. Durum: `in_stock` (boş bırakılabilir), `maintenance`, `retired`. Zimmetli veya kayıp cihaz içe aktarılamaz; onları içe aktardıktan sonra **Teslim et** ile zimmetleyin.
 - Tarihler: `2025-01-31` ya da `31.01.2025`.
 - Konum: lokasyonun tam yolu, örneğin `Merkez Ofis / Zemin Kat`. Adı tek olan bir alt lokasyon kendi adıyla da yazılabilir.
 - Marka, tür ve model cihaz kataloğunda tanımlı olmalıdır; yoksa satırda "Tanım eksik" hatası çıkar.
-- Demirbaş No boş bırakılırsa numara içe aktarma sırasında otomatik verilir (önizlemede **Otomatik** yazar). Eski bir etiket numarası yazabilirsiniz, ama `DMR-` ile başlayan numaralar sisteme ayrılmıştır.
+- Demirbaş No sütunu silinmemeli, ama hücresi boş bırakılabilir: boş hücreye numara içe aktarma sırasında otomatik verilir (önizlemede **Otomatik** yazar). Eski bir etiket numarası yazabilirsiniz, ama `DMR-` ile başlayan numaralar sisteme ayrılmıştır.
 - Dosya en fazla 10 MB ve 5.000 satır olabilir. Ayraç virgül veya noktalı virgül olabilir.
 
 ## İpuçları

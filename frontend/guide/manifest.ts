@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 /**
  * Screenshots of the user guide (docs/user-guides/images/<id>-<view>.png), driven by guide/screenshots.ts against the
- * seeded pilot database (tools/seed-pilot.sh). The ids follow the pages Task 16 writes.
+ * seeded pilot database (tools/seed-pilot.sh). Ids are grouped by the guide page that shows them.
  */
 
 export type GuideRole = 'employee' | 'it' | 'approver' | 'admin';
@@ -70,6 +70,13 @@ const openWorkActions = async (page: Page): Promise<void> => {
   await page.getByRole('heading', { name: 'İşlemler' }).scrollIntoViewIfNeeded();
 };
 
+/** Opens the phone menu and waits until its slide-in animation is over. */
+const openMobileMenu = async (page: Page): Promise<void> => {
+  await page.getByRole('button', { name: 'Menüyü aç' }).click();
+  await page.getByRole('dialog').getByRole('link', { name: 'Kayıtlarım' }).waitFor();
+  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== 'running'));
+};
+
 /** Seed names the guide shows in its examples (backend Features/Pilot). */
 const PILOT_CATEGORY = 'TGYSM Pilot';
 const APPROVAL_REQUEST_TYPE = 'Yeni bilgisayar';
@@ -77,6 +84,7 @@ const APPROVAL_REQUEST_TYPE = 'Yeni bilgisayar';
 export const MANIFEST: readonly GuideShot[] = [
   // getting-started
   { id: 'home', role: 'employee', path: '/', views: ALL_VIEWS },
+  { id: 'home-menu', role: 'employee', path: '/', setup: openMobileMenu, views: MOBILE },
   // incidents-and-requests, feedback
   { id: 'tickets-new-incident', role: 'employee', path: '/tickets/new/incident', views: DESKTOP },
   {

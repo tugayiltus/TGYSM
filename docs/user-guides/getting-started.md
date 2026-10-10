@@ -78,6 +78,8 @@ Menünün altındaki düğmeyle (**Menüyü daralt**) menüyü yalnızca simgele
 
 Telefonda menü gizlidir. Sol üstteki **Menüyü aç** düğmesine basın; menü soldan açılır. Bir sayfa seçince menü kendiliğinden kapanır.
 
+![Telefonda açılan menü](images/home-menu-mobile.png)
+
 ![Telefonda ana sayfa](images/home-mobile.png)
 
 Yöneticiler üst çubukta **Yönetim** bağlantısını görür. Yönetim ekranlarından uygulamaya **Uygulamaya dön** bağlantısıyla geri dönülür.
