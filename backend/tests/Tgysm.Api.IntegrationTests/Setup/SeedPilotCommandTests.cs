@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Tgysm.Api.Cli;
 using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Features.Pilot;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Catalog;
@@ -130,6 +131,19 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
         var employee = await db.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Employee, Ct);
         Assert.True(passwords.Verify(employee.PasswordHash, password));
         Assert.False(employee.MustChangePassword);
+    }
+
+    [Fact]
+    public async Task Seeds_location_names_the_csv_importer_can_address()
+    {
+        var exit = await SeedPilotCommand.RunAsync(ServicesIn(SeedPilotCommand.PilotEnvironment), [ScaleOption, SmallScale], TextWriter.Null, TextWriter.Null);
+
+        Assert.Equal(CliSuccess, exit);
+        await using var db = factory.Database.CreateDbContext();
+        var names = await db.Locations.AsNoTracking().Select(l => l.Name).ToListAsync(Ct);
+        Assert.NotEmpty(names);
+        Assert.All(names, name => Assert.DoesNotContain(LocationPaths.SegmentSeparator, name));
+        Assert.Contains(await db.Locations.AsNoTracking().ToListAsync(Ct), l => l.ParentId is not null);
     }
 
     [Fact]

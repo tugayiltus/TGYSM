@@ -43,12 +43,12 @@ internal static class PilotSeedData
     public static readonly PilotLocation[] Locations =
     [
         new("Merkez Ofis", null),
-        new("Merkez Ofis / Zemin Kat", "Merkez Ofis"),
-        new("Merkez Ofis / 1. Kat", "Merkez Ofis"),
-        new("Merkez Ofis / 2. Kat", "Merkez Ofis"),
+        new("Zemin Kat", "Merkez Ofis"),
+        new("1. Kat", "Merkez Ofis"),
+        new("2. Kat", "Merkez Ofis"),
         new("Fabrika", null),
-        new("Fabrika / Üretim Hattı", "Fabrika"),
-        new("Fabrika / Depo", "Fabrika"),
+        new("Üretim Hattı", "Fabrika"),
+        new("Depo", "Fabrika"),
         new("Ankara Bölge Ofisi", null),
     ];
 

@@ -31,8 +31,9 @@ const IMPORT_MIME = 'text/csv';
 const REPORTS = ['incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty'] as const;
 const DRILLDOWN_REPORT = 'incidents';
 const MS_DIGITS = 0;
-/** The CSV matches a location by its trailing path segments split on this; a name that itself holds it cannot be addressed. */
-const LOCATION_SEPARATOR = '/';
+/** The API lists a location path with this (backend `LocationPaths.Separator`); the CSV importer splits typed paths on '/'. */
+const API_LOCATION_SEPARATOR = ' / ';
+const CSV_LOCATION_SEPARATOR = '/';
 
 interface Sample {
   label: string;
@@ -98,6 +99,7 @@ async function timedGet(context: APIRequestContext, path: string): Promise<numbe
 }
 
 async function measureGet(context: APIRequestContext, label: string, path: string, runs: number): Promise<Sample> {
+  await timedGet(context, path); // unrecorded warm-up
   const durations: number[] = [];
   for (let run = 0; run < runs; run++) {
     durations.push(await timedGet(context, path));
@@ -185,8 +187,7 @@ async function main(): Promise<void> {
   const firstAssets = await getJson<{ totalCount: number }>(it, `/api/v1/assets?pageSize=${LIST_PAGE_SIZE}`);
   const catalog = await getJson<CatalogBrand[]>(it, '/api/v1/assets/catalog');
   const locations = (await getJson<{ path: string }[]>(it, '/api/v1/reference/locations'))
-    .map((location) => location.path)
-    .filter((path) => !path.includes(LOCATION_SEPARATOR));
+    .map((location) => location.path.split(API_LOCATION_SEPARATOR).join(CSV_LOCATION_SEPARATOR));
   const ticketTerm = encodeURIComponent(searchTerm(firstTickets.items[0]?.subject ?? ''));
   const assetTerm = encodeURIComponent(catalog[0]?.name ?? '');
 
@@ -212,6 +213,7 @@ async function main(): Promise<void> {
   const csvPath = join(env('PERF_TEMP_DIR'), IMPORT_FILE_NAME);
   await writeFile(csvPath, buildImportCsv(catalog, locations), 'utf8');
   const csv = await readFile(csvPath);
+  await postPreview(admin, csv); // unrecorded warm-up; the commit writes data and gets none
   const previews: number[] = [];
   let jobId = '';
   for (let run = 0; run < runs; run++) {

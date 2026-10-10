@@ -11,6 +11,8 @@
 # Environment: PERF_PASSWORD (required; never stored), PERF_RUNS (default 5; calls per operation), PERF_BASE_URL,
 # PERF_IT_EMAIL / PERF_ADMIN_EMAIL (seed accounts by default), TGYSM_DB_HOST / TGYSM_DB_NAME / TGYSM_DB_USER.
 #
+# WARNING: the CSV import commit writes 5,000 assets into the target database on every run, also in PERF_BASE_URL mode.
+# PERF_BASE_URL pointing at the dev API port (5080) is refused so the development database is never grown by accident.
 # The CSV import commit writes 5,000 assets, so the seeded database grows by that much on every run: the commit is timed
 # once per run (one sample) while the preview is timed PERF_RUNS times. Re-seed with tools/seed-pilot.sh --fresh to reset.
 set -euo pipefail
@@ -21,6 +23,7 @@ readonly DB_NAME="${TGYSM_DB_NAME:-tgysm_pilot}"
 readonly DB_USER="${TGYSM_DB_USER:-tgysm}"
 readonly PILOT_DB_PREFIX="tgysm_pilot"
 readonly API_PORT=5090
+readonly DEV_API_PORT=5080
 readonly API_URL="http://localhost:$API_PORT"
 readonly READY_PATH="/api/v1/auth/csrf"
 readonly READY_TIMEOUT_SECONDS=60
@@ -57,6 +60,13 @@ wait_for() {
 }
 
 base_url="${PERF_BASE_URL:-}"
+if [[ -n "$base_url" ]]; then
+  if [[ "$base_url" =~ :$DEV_API_PORT(/|$) ]]; then
+    echo "Refusing to measure $base_url: port $DEV_API_PORT is the development API and the CSV commit would write 5,000 assets into its database." >&2
+    exit 1
+  fi
+  echo "WARNING: the CSV import commit writes 5,000 assets into the database behind $base_url." >&2
+fi
 target="$base_url"
 if [[ -z "$base_url" ]]; then
   if [[ "$DB_NAME" != "$PILOT_DB_PREFIX"* ]]; then

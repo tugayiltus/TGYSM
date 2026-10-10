@@ -1,6 +1,6 @@
 # Performance measurement
 
-Run by `tools/perf-measure.sh` on 2026-10-10T08:08:22Z at commit `cc2b2a6`. Spec 5.2; acceptance criterion 18 of `tgysm.md` section 20.
+Run by `tools/perf-measure.sh` on 2026-10-10T11:31:33Z at commit `1af26f5`. Spec 5.2; acceptance criterion 18 of `tgysm.md` section 20.
 
 - Target: local Release API on http://localhost:5090, database tgysm_pilot.
 - Machine: Apple M1, 8 logical cores, 16 GiB RAM, macOS 26.7.
@@ -11,18 +11,18 @@ Run by `tools/perf-measure.sh` on 2026-10-10T08:08:22Z at commit `cc2b2a6`. Spec
 
 | Operation | Runs | Median (ms) | p95 (ms) |
 |---|---:|---:|---:|
-| Ticket list (page of 50) | 5 | 10 | 12 |
-| Ticket search | 5 | 14 | 25 |
-| Workspace queue (unassigned) | 5 | 11 | 26 |
-| Asset list (page of 50) | 5 | 8 | 8 |
-| Asset search (brand name) | 5 | 11 | 25 |
-| Report: incidents | 5 | 56 | 147 |
-| Report: requests | 5 | 33 | 79 |
-| Report: operations | 5 | 26 | 130 |
-| Report: transfers | 5 | 9 | 25 |
-| Report: assets | 5 | 6 | 35 |
-| Report: warranty | 5 | 4 | 8 |
-| Drill-down page (incidents, mttr) | 5 | 8 | 24 |
-| Synchronous Excel export (incidents, mttr) | 5 | 86 | 396 |
-| CSV import preview (5000 rows) | 5 | 127 | 197 |
-| CSV import commit (5000 rows, once per run) | 1 | 3153 | 3153 |
+| Ticket list (page of 50) | 5 | 8 | 11 |
+| Ticket search | 5 | 11 | 12 |
+| Workspace queue (unassigned) | 5 | 9 | 14 |
+| Asset list (page of 50) | 5 | 7 | 15 |
+| Asset search (brand name) | 5 | 10 | 15 |
+| Report: incidents | 5 | 57 | 61 |
+| Report: requests | 5 | 26 | 28 |
+| Report: operations | 5 | 17 | 27 |
+| Report: transfers | 5 | 8 | 11 |
+| Report: assets | 5 | 6 | 13 |
+| Report: warranty | 5 | 4 | 4 |
+| Drill-down page (incidents, mttr) | 5 | 9 | 10 |
+| Synchronous Excel export (incidents, mttr) | 5 | 78 | 120 |
+| CSV import preview (5000 rows) | 5 | 132 | 138 |
+| CSV import commit (5000 rows, once per run) | 1 | 3102 | 3102 |

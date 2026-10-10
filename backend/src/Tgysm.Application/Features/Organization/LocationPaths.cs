@@ -8,7 +8,8 @@ namespace Tgysm.Application.Features.Organization;
 internal sealed class LocationPaths
 {
     public const string Separator = " / ";
-    private const char SegmentSeparator = '/';
+    /// <summary>The CSV importer splits a typed location path on this; a location name holding it cannot be addressed.</summary>
+    public const char SegmentSeparator = '/';
 
     private readonly List<Entry> _entries;
 
