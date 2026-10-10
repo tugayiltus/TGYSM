@@ -49,7 +49,7 @@ describe('inventory list', () => {
     await user.click((await screen.findAllByRole('link', { name: new RegExp(LAPTOP.assetTag) }))[0] as HTMLElement);
     await waitFor(() => expect(router.state.location.pathname).toBe(`/assets/${LAPTOP.id}`));
     const nav = await trailNav();
-    expect(within(nav).getByRole('link', { name: 'Envanter' })).toHaveAttribute('href', '/assets?status=assigned');
+    expect(await within(nav).findByRole('link', { name: 'Envanter' })).toHaveAttribute('href', '/assets?status=assigned');
   });
 });
 
