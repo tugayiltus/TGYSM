@@ -131,7 +131,7 @@ The next `tools/deploy.sh` overwrites `deploy/.version` with its own hash, so `t
 - **What:** one archive `tgysm-YYYYMMDD-HHMMSS.tar.gz` (UTC time) per run with `db.dump` (`pg_dump -Fc`), `files/` (file store), `keys/` (Data Protection key ring) and `manifest.json` (app version, newest migration, creation time, SHA-256 of `db.dump`, number of files in the archive, row count of every table). Dump, counts and migration id come from one database snapshot. A file that changes while the file store is archived is tolerated (GNU tar exit 1); `fileCount` is what the archive holds.
 - **When:** every night at `BACKUP_TIME` in `TZ` (service `backup`, `deploy/backup/scheduler.sh`). On demand: `tools/backup.sh` prints `Backup written: /backups/<archive>`.
 - **Where:** the `backups` volume, mounted at `/backups` in the `backup` service, or the host folder `BACKUP_HOST_DIR` when set. Archives are written with mode 600 under a temporary name and renamed when complete.
-- **Retention:** archives older than `BACKUP_RETENTION_DAYS` (default 14), and `.partial-*` leftovers of interrupted runs older than a day, are deleted after a successful run only. A failed run exits non-zero, logs `Backup FAILED …` in `tools/compose.sh logs backup` and leaves every earlier archive.
+- **Retention:** archives older than `BACKUP_RETENTION_DAYS` (default 14), and `.partial-*` leftovers of interrupted runs older than a day, are deleted after a successful run only. The safety backup `tools/restore.sh --force` takes (`tools/backup.sh --safety`) sets `BACKUP_SKIP_RETENTION=true` and deletes no archive, so an expired archive that is being restored from the backup folder is never removed first. A failed run exits non-zero, logs `Backup FAILED …` in `tools/compose.sh logs backup` and leaves every earlier archive.
 - **List:** `tools/compose.sh exec backup ls -l /backups`.
 - **Copy off the host:** a backup on the same disk does not survive a lost host. Copy archives regularly to access-restricted storage elsewhere. From the volume:
 
@@ -146,7 +146,7 @@ The next `tools/deploy.sh` overwrites `deploy/.version` with its own hash, so `t
 `tools/restore.sh <archive.tar.gz> [--force] [--no-safety-backup]` restores into the stack of this checkout:
 
 1. Asks the image for its newest migration, notes the running services, stops `api`, `worker`, `backup` and `nginx`, starts `postgres`.
-2. With `--force` on a database that has tables: takes a safety backup of the current state first (`deploy/backup/backup.sh` in a one-off `backup` container, into the `backups` volume or `BACKUP_HOST_DIR`; `Backup written: …` names it). If it fails, nothing is restored and the services are started again. `--no-safety-backup` skips it (only when a current backup exists elsewhere).
+2. With `--force` on a database that has tables: takes a safety backup of the current state first (`tools/backup.sh --safety`: `deploy/backup/backup.sh` in a one-off `backup` container, into the `backups` volume or `BACKUP_HOST_DIR`; `Backup written: …` names it). It skips retention, so the archive being restored survives even when it is older than `BACKUP_RETENTION_DAYS`. If it fails, nothing is restored and the services are started again. `--no-safety-backup` skips it (only when a current backup exists elsewhere).
 3. Runs the `restore` service (`deploy/backup/restore.sh`). It prints the archive's `createdAt`, `appVersion`, `latestMigration` and file count, then, before writing anything, refuses:
    - exit 2: not a usable TGYSM archive: unreadable, a part missing, `latestMigration` empty or malformed, no `dbSha256` (archives from before checksums: take a new backup), `db.dump` not matching its SHA-256, or a file count different from `fileCount`;
    - exit 3: the archive is from a newer build than the image;
@@ -206,7 +206,7 @@ Replace `deploy/certs/tgysm.crt` and `deploy/certs/tgysm.key`, then `tools/compo
 | Task | Command |
 |---|---|
 | Deploy or update | `tools/deploy.sh [--skip-gates]` |
-| Build images only | `tools/docker-build.sh [--allow-dirty]` (refuses uncommitted changes; `--allow-dirty` tags `<hash>-dirty`) |
+| Build images only | `tools/docker-build.sh [--allow-dirty]` (refuses uncommitted changes; `--allow-dirty` tags only `<hash>-dirty`, never `latest`) |
 | Any compose command | `tools/compose.sh <args>` |
 | First admin | `tools/compose.sh run --rm api setup-admin --email … --first-name … --last-name …` |
 | Temporary password | `tools/compose.sh run --rm api reset-password --email …` |

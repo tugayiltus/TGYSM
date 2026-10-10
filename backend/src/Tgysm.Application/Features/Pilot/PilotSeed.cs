@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
@@ -45,7 +46,7 @@ public sealed record PilotSeedResult(
 /// data spreads over the past <see cref="PilotSeedVolumes.DaysBack"/> days. Draws come from
 /// <c>Random(<see cref="RandomSeed"/>)</c>: the same scale gives the same data.
 /// </summary>
-public sealed class PilotSeed(IServiceScopeFactory scopes, PilotSeedActor actor, PilotSeedClock clock, ITemporaryPasswordGenerator passwords)
+public sealed class PilotSeed(IServiceScopeFactory scopes, PilotSeedActor actor, PilotSeedClock clock, ITemporaryPasswordGenerator passwords, ILogger<PilotSeed> logger)
 {
     public const int RandomSeed = 20_261_009;
 
@@ -72,11 +73,23 @@ public sealed class PilotSeed(IServiceScopeFactory scopes, PilotSeedActor actor,
         {
             (adminEmail, adminCreated) = await session.RunAsync();
         }
-        finally
+        catch (Exception seedFailure)
         {
-            // A failed run keeps the tickets it committed; their notifications must not reach the Worker either.
-            await CloseSeededNotificationsAsync(session.TicketIds, cancellationToken);
+            // A failed run keeps the tickets it committed; their notifications must not reach the Worker either. The
+            // close runs even when the run was cancelled, and its own failure is logged so it never hides the seed's.
+            try
+            {
+                await CloseSeededNotificationsAsync(session.TicketIds, CancellationToken.None);
+            }
+            catch (Exception closeFailure)
+            {
+                logger.LogError(closeFailure, "Closing the notifications of a failed pilot seed failed; seed failure: {SeedFailure}", seedFailure.Message);
+            }
+
+            throw;
         }
+
+        await CloseSeededNotificationsAsync(session.TicketIds, cancellationToken);
 
         return await SummarizeAsync(adminEmail, adminCreated, password, cancellationToken);
     }

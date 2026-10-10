@@ -2,8 +2,9 @@
 # One TGYSM backup (ADR-0025): pg_dump (custom format) + file store + Data Protection keys + manifest.json in
 # tgysm-YYYYMMDD-HHMMSS.tar.gz (UTC). The manifest carries the SHA-256 of db.dump and the number of files the archive
 # holds; restore checks both before writing. Written under a temporary name and renamed when complete; expired archives
-# and day-old temporary leftovers are deleted only after a successful run. Any failure exits non-zero and leaves
-# earlier archives untouched.
+# and day-old temporary leftovers are deleted only after a successful run. BACKUP_SKIP_RETENTION=true keeps expired
+# archives (the safety backup tools/restore.sh takes before --force: the archive being restored may be an expired one in
+# this folder). Any failure exits non-zero and leaves earlier archives untouched.
 set -euo pipefail
 # Archives hold the database and the Data Protection keys: owner-only files (security review, ADR-0025).
 umask 077
@@ -11,6 +12,7 @@ umask 077
 readonly BACKUP_DIR="${BACKUP_DIR:-/backups}"
 readonly DATA_DIR="${DATA_DIR:-/data}"
 readonly RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+readonly SKIP_RETENTION="${BACKUP_SKIP_RETENTION:-false}"
 readonly MINUTES_PER_DAY=1440
 readonly ARCHIVE_PREFIX="tgysm-"
 readonly PARTIAL_PREFIX=".partial-"
@@ -67,6 +69,10 @@ gzip "$partial_tar"
 mv "$partial" "$archive"
 echo "Backup written: $archive"
 
-find "$BACKUP_DIR" -maxdepth 1 -name "$ARCHIVE_PREFIX*.tar.gz" -mmin "+$((RETENTION_DAYS * MINUTES_PER_DAY))" -print -delete
+if [[ "$SKIP_RETENTION" == true ]]; then
+  echo "Retention skipped (BACKUP_SKIP_RETENTION=true): expired archives are kept."
+else
+  find "$BACKUP_DIR" -maxdepth 1 -name "$ARCHIVE_PREFIX*.tar.gz" -mmin "+$((RETENTION_DAYS * MINUTES_PER_DAY))" -print -delete
+fi
 # Leftovers of runs killed before their cleanup (power loss, OOM); a day old, so never a run in progress.
 find "$BACKUP_DIR" -maxdepth 1 -name "$PARTIAL_PREFIX*" -mmin "+$MINUTES_PER_DAY" -print -delete

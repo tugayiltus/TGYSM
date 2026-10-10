@@ -2,8 +2,9 @@
 # Restores a TGYSM backup archive into this stack (ADR-0025): stops the application, restores database, files and keys
 # (refused when the database is not empty unless --force, or when the archive is from a newer build or fails its
 # checksum/manifest checks), runs migrate, starts the stack and waits until the API is healthy. With --force on a
-# database that has tables, it first takes a safety backup of the current state through the backup service (as
-# tools/backup.sh does) and stops if that fails; --no-safety-backup skips it. Honors TGYSM_ENV_FILE and
+# database that has tables, it first takes a safety backup of the current state (tools/backup.sh --safety, which skips
+# retention so an expired archive being restored from the backup folder survives) and stops if that fails;
+# --no-safety-backup skips it. Honors TGYSM_ENV_FILE and
 # COMPOSE_PROJECT_NAME like tools/compose.sh.
 #
 #   tools/restore.sh <archive.tar.gz> [--force] [--no-safety-backup]
@@ -60,7 +61,7 @@ fi
 existing="$(tr -d '[:space:]' <<<"$existing")"
 if [[ -n "$force" && "$safety_backup" == true ]] && (( existing > 0 )); then
   echo "Taking a safety backup of the current database before replacing it (--no-safety-backup skips this)."
-  if ! tools/compose.sh run --rm --no-deps -T --entrypoint bash backup /backup/backup.sh; then
+  if ! tools/backup.sh --safety; then
     echo "Safety backup failed; nothing was restored." >&2
     restart_previous
     exit 1

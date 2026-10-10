@@ -179,6 +179,21 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_seed_failure_is_not_masked_when_the_run_is_also_cancelled()
+    {
+        // The run is cancelled as the seed fails (Ctrl+C): the seed's own exception reaches the caller, and the
+        // notifications it queued are still closed.
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+        await using var services = SeedServicesWith(new FailingTicketAuditLog(TicketsBeforeFailure, cancellation));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => services.GetRequiredService<PilotSeed>().RunAsync(SmallScaleFactor, cancellation.Token));
+
+        await using var db = factory.Database.CreateDbContext();
+        Assert.True(await db.OutboxEvents.AnyAsync(Ct));
+        Assert.False(await db.OutboxEvents.AnyAsync(e => e.Status == OutboxStatus.Pending, Ct));
+    }
+
+    [Fact]
     public async Task Prints_the_breach_mail_warning()
     {
         var output = new StringWriter();
@@ -263,8 +278,11 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
         return [.. tickets, .. assets, $"comments={comments}"];
     }
 
-    /// <summary>Records nothing and throws on the ticket creation after <paramref name="allowedTickets"/>.</summary>
-    private sealed class FailingTicketAuditLog(int allowedTickets) : IAuditLog
+    /// <summary>
+    /// Records nothing and throws on the ticket creation after <paramref name="allowedTickets"/>, first cancelling
+    /// <paramref name="cancelOnFailure"/> when given.
+    /// </summary>
+    private sealed class FailingTicketAuditLog(int allowedTickets, CancellationTokenSource? cancelOnFailure = null) : IAuditLog
     {
         private int _ticketsCreated;
 
@@ -272,6 +290,7 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
         {
             if (action == AuditActions.TicketCreated && Interlocked.Increment(ref _ticketsCreated) > allowedTickets)
             {
+                cancelOnFailure?.Cancel();
                 throw new InvalidOperationException("Simulated failure while seeding tickets.");
             }
         }
