@@ -36,12 +36,12 @@ function CollapsedItems({ crumbs }: { crumbs: Crumb[] }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <CBreadcrumbItem className="d-md-none position-relative">
+    <CBreadcrumbItem className="d-md-none">
       <button type="button" className="btn btn-link p-0 align-baseline" aria-haspopup="menu" aria-expanded={open} aria-label={t('breadcrumb.more')} onClick={() => setOpen((v) => !v)}>
         …
       </button>
       {open && (
-        <ul role="menu" className="dropdown-menu show position-absolute">
+        <ul role="menu" className="dropdown-menu show position-absolute tgysm-crumb-menu">
           {crumbs.map((crumb) => (
             <li key={crumb.label} role="none">
               {crumb.href === undefined ? (
@@ -70,8 +70,9 @@ export function Breadcrumbs() {
   const collapse = crumbs.length >= COLLAPSE_FROM;
   const middle = collapse ? crumbs.slice(1, crumbs.length - ALWAYS_SHOWN_TAIL) : [];
   return (
+    // The nav anchors the overflow menu, so it can span the screen from the trail start.
     // Own <nav>: CoreUI's CBreadcrumb hard-codes an English aria-label.
-    <nav aria-label={t('breadcrumb.label')} className="min-w-0 flex-grow-1">
+    <nav aria-label={t('breadcrumb.label')} className="min-w-0 flex-grow-1 position-relative">
       <ol className="breadcrumb my-0 small flex-nowrap min-w-0">
       {crumbs.map((crumb, index) => {
         const isMiddle = collapse && index >= 1 && index < crumbs.length - ALWAYS_SHOWN_TAIL;

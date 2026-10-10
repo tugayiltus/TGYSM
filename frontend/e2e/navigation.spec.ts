@@ -66,3 +66,43 @@ test('header controls and breadcrumb fit the screen', async ({ browser }) => {
   await expect(admin.page.getByRole('banner').getByRole('navigation')).toBeVisible();
   await expectNoHorizontalScroll(admin.page);
 });
+
+const NARROW_WIDTHS = [360, 320] as const;
+const PHONE_HEIGHT = 720;
+/** A report segment of 120 characters becomes a 120-character crumb in the collapsed middle. */
+const LONG_CRUMB_LENGTH = 120;
+
+test('the breadcrumb overflow menu stays inside narrow screens and wraps long crumbs', async ({ browser }, info) => {
+  test.skip(info.project.name !== 'mobile-360', 'The middle crumbs collapse below 768 px only.');
+  const admin = await adminSession(browser);
+  const world = await seedWorld(admin);
+  const employee = await userSession(browser, world.employeeEmail, world.employeePassword);
+  const [number] = await seedIncidents(employee, [`Ekran donuyor ${Date.now().toString()}`]);
+  const longSegment = 'x'.repeat(LONG_CRUMB_LENGTH);
+  const page = employee.page;
+
+  await page.goto(`/tickets/${number ?? ''}`);
+  // As if the ticket had been opened from a drill-down list whose report segment is very long (router state `from`).
+  await page.evaluate((from) => {
+    const current = window.history.state as { key?: string; idx?: number } | null;
+    window.history.replaceState({ usr: { from }, key: current?.key, idx: current?.idx }, '');
+    window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+  }, `/reports/${longSegment}/list`);
+
+  for (const width of NARROW_WIDTHS) {
+    await page.setViewportSize({ width, height: PHONE_HEIGHT });
+    const more = trail(page).getByRole('button', { name: 'Diğer üst sayfalar' });
+    await more.click();
+    const menu = trail(page).getByRole('menu');
+    const longItem = menu.getByText(longSegment, { exact: false });
+    await expect(longItem).toBeVisible();
+    const box = await menu.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width);
+    const clipped = await longItem.evaluate((element) => element.scrollWidth - element.clientWidth);
+    expect(clipped).toBeLessThanOrEqual(0);
+    await expectNoHorizontalScroll(page);
+    await more.click();
+  }
+});

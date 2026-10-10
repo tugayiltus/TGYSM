@@ -221,6 +221,30 @@ body {
   max-width: 100%;
 }
 
+// Overflow menu of the collapsed middle crumbs: never wider than the screen, long crumbs wrap.
+:root {
+  --tgysm-gutter: 0.5rem;
+}
+
+@media (min-width: 576px) {
+  :root {
+    --tgysm-gutter: 1rem;
+  }
+}
+
+.tgysm-crumb-menu {
+  top: 100%;
+  left: 0;
+  max-width: calc(100vw - 2 * var(--tgysm-gutter));
+  width: max-content;
+}
+
+.tgysm-crumb-menu .dropdown-item,
+.tgysm-crumb-menu .dropdown-item-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 // Narrow sidebar: icons only; labels stay in the accessibility tree (the link also has a title tooltip).
 .sidebar-narrow {
   .nav-label,
