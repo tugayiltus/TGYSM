@@ -13,7 +13,7 @@ import { Marked, marked, type Token, type Tokens, type TokensList } from 'marked
  * 1. Page order: the numbered links of README.md. PROGRESS.md is a work log and is not part of the guide.
  * 2. combined.md: the pages concatenated; links between pages and links to http://localhost... become in-document anchors.
  * 3. Checks (exit 1 on failure): every `](#...)` link has a rendered `id`; every referenced image exists; every file in
- *    images/ is referenced.
+ *    images/ is referenced; every bold `**…**` text is a UI label, i.e. a value in the Turkish locale files.
  * 4. combined.pdf: Chromium print of the rendered HTML, A4 through `@page { size: A4; margin: ${PAGE_MARGIN}; }`; other options stay default.
  */
 
@@ -31,10 +31,16 @@ const PAGE_MARGIN = '10mm';
 const LOCALHOST_URL = /^https?:\/\/localhost(?::\d+)?(?:[/?#]|$)/;
 const PAGE_LINK = /^([\w.-]+\.md)(#.*)?$/;
 const EXTERNAL_URL = /^[a-z][a-z0-9+.-]*:/i;
+const LOCALE_DIR = resolve(process.env.GUIDE_LOCALE_DIR ?? 'src/shared/i18n/locales/tr');
+const LOCALE_EXTENSION = '.json';
+const INTERPOLATION = /\{\{\s*\w+\s*\}\}/;
+const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
+const MOBILE_IMAGE_WIDTH = '62mm';
 const PRINT_CSS = `
 @page { size: A4; margin: ${PAGE_MARGIN}; }
 body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1b1b1b; }
 img { max-width: 100%; }
+img[src$="-mobile.png"] { width: ${MOBILE_IMAGE_WIDTH}; border: 1px solid #ccc; }
 pre, code { font-family: Menlo, monospace; font-size: 9.5pt; }
 pre { background: #f4f4f4; padding: 8px; white-space: pre-wrap; }
 table { border-collapse: collapse; }
@@ -127,6 +133,7 @@ async function main(): Promise<void> {
   const html = await render(combined);
   checkAnchors(combined, html);
   await checkImages(combined);
+  checkLabels(combined, await localeLabels());
   await writeFile(join(GUIDE_DIR, COMBINED_MD), combined);
   await writePdf(html);
   console.log(`Built ${COMBINED_MD} and ${COMBINED_PDF} from ${pages.length} pages: ${pages.join(', ')}`);
@@ -172,6 +179,39 @@ async function checkImages(markdown: string): Promise<void> {
   const files = await readdir(join(GUIDE_DIR, IMAGES_DIR)).catch(() => [] as string[]);
   const unused = files.filter((file) => !file.startsWith('.') && !referenced.has(`${IMAGES_DIR}/${file}`));
   if (unused.length > 0) fail(`images not referenced by any page: ${unused.join(', ')}`);
+}
+
+/** Every string value of the locale files; a value with `{{name}}` placeholders also matches any filled-in text. */
+async function localeLabels(): Promise<{ exact: Set<string>; patterns: RegExp[] }> {
+  const exact = new Set<string>();
+  const patterns: RegExp[] = [];
+  const collect = (value: unknown): void => {
+    if (typeof value === 'string') {
+      exact.add(value);
+      // A value that is only placeholders (e.g. "{{name}}") has no label text and would match anything.
+      if (INTERPOLATION.test(value) && value.split(INTERPOLATION).join('').trim() !== '') {
+        const parts = value.split(INTERPOLATION).map((part) => part.replace(REGEX_SPECIAL, '\\$&'));
+        patterns.push(new RegExp(`^${parts.join('.+')}$`));
+      }
+    } else if (value !== null && typeof value === 'object') {
+      Object.values(value).forEach(collect);
+    }
+  };
+  const files = (await readdir(LOCALE_DIR).catch(() => fail(`locale folder not found: ${LOCALE_DIR}`))).filter((file) => file.endsWith(LOCALE_EXTENSION));
+  if (files.length === 0) fail(`no locale files in ${LOCALE_DIR}`);
+  for (const file of files) collect(JSON.parse(await readFile(join(LOCALE_DIR, file), 'utf8')));
+  return { exact, patterns };
+}
+
+/** Bold text marks a UI label in the guide: it must be a text the product shows (lexer tokens, code excluded). */
+function checkLabels(markdown: string, labels: { exact: Set<string>; patterns: RegExp[] }): void {
+  const unknown = new Set<string>();
+  marked.walkTokens(marked.lexer(markdown), (token) => {
+    if (token.type !== 'strong') return;
+    const label = inlineText((token as Tokens.Strong).tokens, (token as Tokens.Strong).text);
+    if (!labels.exact.has(label) && !labels.patterns.some((pattern) => pattern.test(label))) unknown.add(label);
+  });
+  if (unknown.size > 0) fail(`bold labels not found in ${LOCALE_DIR}: ${[...unknown].map((label) => `"${label}"`).join(', ')}`);
 }
 
 async function writePdf(html: string): Promise<void> {

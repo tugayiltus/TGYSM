@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * Screenshots of the user guide (docs/user-guides/images/<id>-<view>.png), driven by guide/screenshots.ts against the
@@ -32,26 +32,123 @@ export interface GuideShot {
 }
 
 const ALL_VIEWS: readonly GuideView[] = ['mobile', 'desktop'];
+const MOBILE: readonly GuideView[] = ['mobile'];
+const DESKTOP: readonly GuideView[] = ['desktop'];
+
+/** Visible "Aç" (open) links of a list; tables and phone cards both render one, only one of them is visible. */
+const OPEN_LINK = /^Aç /;
+
+/** Article links of the knowledge base list (not the "Yeni makale" link). */
+const ARTICLE_LINK = 'main a[href^="/kb/"]:not([href="/kb/new"])';
+
+/** Clicks the first visible match and waits until the page it leads to is open. */
+const openFirst =
+  (find: (page: Page) => Locator) =>
+  async (page: Page): Promise<void> => {
+    const before = page.url();
+    await find(page).filter({ visible: true }).first().click();
+    await page.waitForURL((url) => url.href !== before);
+  };
+
+/** Opens the first record of the list on the page. */
+const openFirstRecord = openFirst((page) => page.getByRole('link', { name: OPEN_LINK }));
+const openFirstArticle = openFirst((page) => page.locator(ARTICLE_LINK));
+
+const clickButton =
+  (name: string) =>
+  async (page: Page): Promise<void> => {
+    await page.getByRole('button', { name, exact: true }).filter({ visible: true }).first().click();
+    await page.getByRole('dialog').waitFor();
+  };
+
+/** Tickets assigned to the signed-in IT person that are being worked on. */
+const MY_WORK_QUEUE = '/workspace/queue?queue=assigned_to_me&status=in_progress';
+
+/** Opens the first ticket of the list and scrolls its "İşlemler" card into view. */
+const openWorkActions = async (page: Page): Promise<void> => {
+  await openFirstRecord(page);
+  await page.getByRole('heading', { name: 'İşlemler' }).scrollIntoViewIfNeeded();
+};
+
+/** Seed names the guide shows in its examples (backend Features/Pilot). */
+const PILOT_CATEGORY = 'TGYSM Pilot';
+const APPROVAL_REQUEST_TYPE = 'Yeni bilgisayar';
 
 export const MANIFEST: readonly GuideShot[] = [
+  // getting-started
   { id: 'home', role: 'employee', path: '/', views: ALL_VIEWS },
-  { id: 'tickets-list', role: 'employee', path: '/tickets', views: ALL_VIEWS },
-  { id: 'tickets-new-incident', role: 'employee', path: '/tickets/new/incident', views: ALL_VIEWS },
-  { id: 'tickets-new-request', role: 'employee', path: '/tickets/new/request', views: ALL_VIEWS },
-  { id: 'my-assets', role: 'employee', path: '/assets/mine', views: ALL_VIEWS },
-  { id: 'knowledge-base', role: 'employee', path: '/kb', views: ALL_VIEWS },
-  { id: 'workspace', role: 'it', path: '/workspace', views: ALL_VIEWS },
-  { id: 'workspace-queue', role: 'it', path: '/workspace/queue', views: ALL_VIEWS },
-  { id: 'assets-list', role: 'it', path: '/assets', views: ALL_VIEWS },
-  { id: 'assets-import', role: 'it', path: '/assets/import', views: ALL_VIEWS },
-  { id: 'approvals', role: 'approver', path: '/approvals', views: ALL_VIEWS },
+  // incidents-and-requests, feedback
+  { id: 'tickets-new-incident', role: 'employee', path: '/tickets/new/incident', views: DESKTOP },
+  {
+    id: 'tickets-new-request',
+    role: 'employee',
+    path: '/tickets/new/request',
+    setup: async (page) => {
+      await page.getByLabel('Talep tipi').selectOption({ label: APPROVAL_REQUEST_TYPE });
+    },
+    views: MOBILE,
+  },
+  {
+    id: 'feedback-incident',
+    role: 'employee',
+    path: '/tickets/new/incident',
+    setup: async (page) => {
+      await page.getByLabel('Konu').fill('Rapor sayfası açılmıyor');
+      await page.getByLabel('Kategori').selectOption({ label: PILOT_CATEGORY });
+    },
+    views: MOBILE,
+  },
+  // my-tickets
+  { id: 'tickets-list', role: 'employee', path: '/tickets', views: DESKTOP },
+  { id: 'ticket-detail', role: 'employee', path: '/tickets', setup: openFirstRecord, views: DESKTOP },
+  // my-assets
+  { id: 'my-assets', role: 'employee', path: '/assets/mine', views: MOBILE },
+  // knowledge-base
+  { id: 'knowledge-base', role: 'employee', path: '/kb', views: DESKTOP },
+  { id: 'kb-article', role: 'employee', path: '/kb', setup: openFirstArticle, views: MOBILE },
+  { id: 'kb-new', role: 'it', path: '/kb/new', views: DESKTOP },
+  // it-workspace
+  { id: 'workspace', role: 'it', path: '/workspace', views: DESKTOP },
+  { id: 'workspace-queue', role: 'it', path: '/workspace/queue?queue=team', views: DESKTOP },
+  { id: 'ticket-work', role: 'it', path: MY_WORK_QUEUE, setup: openWorkActions, views: DESKTOP },
+  {
+    id: 'ticket-complete',
+    role: 'it',
+    path: MY_WORK_QUEUE,
+    setup: async (page) => {
+      await openFirstRecord(page);
+      await clickButton('Tamamla')(page);
+    },
+    views: DESKTOP,
+  },
+  // inventory
+  { id: 'assets-list', role: 'it', path: '/assets', views: DESKTOP },
+  { id: 'asset-detail', role: 'it', path: '/assets?status=assigned', setup: openFirstRecord, views: DESKTOP },
+  { id: 'asset-new', role: 'it', path: '/assets', setup: clickButton('Yeni cihaz'), views: DESKTOP },
+  { id: 'assets-import', role: 'it', path: '/assets/import', views: DESKTOP },
+  // reports
   { id: 'reports-incidents', role: 'it', path: '/reports/incidents', views: ALL_VIEWS },
-  { id: 'reports-exports', role: 'it', path: '/reports/exports', views: ALL_VIEWS },
-  { id: 'admin-users', role: 'admin', path: '/admin/users', views: ALL_VIEWS },
-  { id: 'admin-locations', role: 'admin', path: '/admin/locations', views: ALL_VIEWS },
-  { id: 'admin-brands', role: 'admin', path: '/admin/brands', views: ALL_VIEWS },
-  { id: 'admin-email-templates', role: 'admin', path: '/admin/email-templates', views: ALL_VIEWS },
-  { id: 'admin-sla-policy', role: 'admin', path: '/admin/sla/policy', views: ALL_VIEWS },
-  { id: 'admin-system', role: 'admin', path: '/admin/system', views: ALL_VIEWS },
-  { id: 'admin-audit', role: 'admin', path: '/admin/audit', views: ALL_VIEWS },
+  { id: 'reports-exports', role: 'it', path: '/reports/exports', views: DESKTOP },
+  // approvals
+  { id: 'approvals', role: 'approver', path: '/approvals', views: DESKTOP },
+  // admin-users-and-organization, first-setup
+  { id: 'admin-overview', role: 'admin', path: '/admin', views: DESKTOP },
+  { id: 'admin-users', role: 'admin', path: '/admin/users', views: DESKTOP },
+  { id: 'admin-user-new', role: 'admin', path: '/admin/users', setup: clickButton('Yeni kullanıcı'), views: DESKTOP },
+  { id: 'admin-departments', role: 'admin', path: '/admin/departments', views: DESKTOP },
+  { id: 'admin-locations', role: 'admin', path: '/admin/locations', views: DESKTOP },
+  { id: 'admin-teams', role: 'admin', path: '/admin/teams', views: DESKTOP },
+  { id: 'admin-audit', role: 'admin', path: '/admin/audit', views: DESKTOP },
+  // admin-catalogs
+  { id: 'admin-categories', role: 'admin', path: '/admin/categories', views: DESKTOP },
+  { id: 'admin-request-types', role: 'admin', path: '/admin/request-types', views: DESKTOP },
+  { id: 'admin-brands', role: 'admin', path: '/admin/brands', views: DESKTOP },
+  { id: 'admin-models', role: 'admin', path: '/admin/models', views: DESKTOP },
+  // admin-sla
+  { id: 'admin-sla-calendar', role: 'admin', path: '/admin/sla/calendar', views: DESKTOP },
+  { id: 'admin-sla-policy', role: 'admin', path: '/admin/sla/policy', views: DESKTOP },
+  // admin-email-and-system
+  { id: 'admin-email-templates', role: 'admin', path: '/admin/email-templates', views: DESKTOP },
+  { id: 'admin-email-deliveries', role: 'admin', path: '/admin/email-deliveries', views: DESKTOP },
+  { id: 'admin-system', role: 'admin', path: '/admin/system', views: DESKTOP },
 ];
