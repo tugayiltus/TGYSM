@@ -54,3 +54,7 @@ The first release needs a reproducible way to run TGYSM on one company host (`tg
 - A wrong `TGYSM_SUBNET` makes the API ignore nginx's headers: sign-in then fails because the antiforgery cookie requires HTTPS.
 
 Implemented in commits `0c4ef18` (migrate command), `ec9d625` (key folder), `40b1995` (proxy trust), `2c7559f` (images) and the Compose commit of Task 5.
+
+## Amendment 2026-10-10
+
+The commit references above predate the rebase of the release branch onto `master`. The implementing commits are `14fa0d0` (migrate command), `c32fecd` (key folder), `fa3cfa4` (proxy trust), `8548110` (images) and `dc48140` (Compose deployment with nginx TLS and `tools/deploy.sh`).

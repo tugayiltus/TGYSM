@@ -48,3 +48,7 @@ The first release must prove that a backup of the database and the files can be 
 - Archives contain the key ring and the full database: anyone who can read them can read all data and unprotect account-link tokens until they expire. Keep the backup folder access-restricted.
 
 Implemented in commits of Phase 6 Tasks 6 and 7 (backup scripts and archive permissions; restore, drill and `migrate --print-latest`).
+
+## Amendment 2026-10-10
+
+Implementing commits: `bfc9892` (nightly and manual backups of database, files and keys), `c25a74c` (archives readable by their owner only) and `9c4c96b` (restore, restore drill and `migrate --print-latest`).
