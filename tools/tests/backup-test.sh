@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Tests the backup scripts (ADR-0025) against the running compose stack (tools/deploy.sh first).
-# Checks: scheduler next-run times, archive contents and manifest, retention after success,
-# and that a failed backup writes nothing and deletes nothing.
+# Checks: scheduler next-run times, archive contents and manifest (checksum, file count), retention after success
+# (expired archives and day-old .partial-* leftovers), and that a failed backup writes nothing and deletes nothing.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 readonly BACKUP_DIR="/backups"
 readonly SECONDS_PER_DAY=86400
 readonly OLD_ARCHIVE_DAYS=30
+readonly OLD_PARTIAL_DAYS=2
 failures=0
 
 pass() { echo "PASS $1"; }
@@ -27,6 +28,7 @@ check_next "scheduler: exactly 02:30 runs the next night" "2026-10-09 23:30" "20
 
 # 2. A run writes one archive with dump, files, keys and manifest; an expired archive goes, a fresh one stays.
 in_backup "touch -d @\$((\$(date +%s) - $OLD_ARCHIVE_DAYS * $SECONDS_PER_DAY)) $BACKUP_DIR/tgysm-20000101-000000.tar.gz; touch $BACKUP_DIR/tgysm-29990101-000000.tar.gz"
+in_backup "touch -d @\$((\$(date +%s) - $OLD_PARTIAL_DAYS * $SECONDS_PER_DAY)) $BACKUP_DIR/.partial-20000101-000000.tar"
 if tools/backup.sh >/dev/null; then pass "backup: exit 0"; else fail "backup: exit 0"; fi
 latest="$(in_backup "ls -t $BACKUP_DIR/tgysm-2[0-8]*.tar.gz | head -1")"
 mode="$(in_backup "stat -c '%a' $latest")"
@@ -36,10 +38,17 @@ for part in db.dump manifest.json files/ keys/; do
   if grep -q "^$part" <<<"$contents"; then pass "archive has $part"; else fail "archive has $part"; fi
 done
 manifest="$(in_backup "tar -xzOf $latest manifest.json")"
-for key in appVersion latestMigration createdAt tables fileCount; do
+for key in appVersion latestMigration createdAt dbSha256 tables fileCount; do
   if grep -q "\"$key\"" <<<"$manifest"; then pass "manifest has $key"; else fail "manifest has $key"; fi
 done
 if grep -Eq '"users" *: *[0-9]' <<<"$manifest"; then pass "manifest counts users"; else fail "manifest counts users"; fi
+recorded_sha="$(sed -n 's/.*"dbSha256": "\([0-9a-f]*\)".*/\1/p' <<<"$manifest")"
+actual_sha="$(in_backup "tar -xzOf $latest db.dump | sha256sum | cut -d ' ' -f 1")"
+if [[ -n "$recorded_sha" && "$recorded_sha" == "$actual_sha" ]]; then pass "manifest dbSha256 matches db.dump"; else fail "manifest dbSha256 '$recorded_sha' vs db.dump $actual_sha"; fi
+recorded_files="$(sed -n 's/.*"fileCount": \([0-9]*\).*/\1/p' <<<"$manifest")"
+archived_files="$(grep -c '^files/.*[^/]$' <<<"$contents" || true)"
+if [[ "$recorded_files" == "$archived_files" ]]; then pass "manifest fileCount matches the archive ($archived_files)"; else fail "manifest fileCount $recorded_files vs $archived_files archived"; fi
+if in_backup "test ! -e $BACKUP_DIR/.partial-20000101-000000.tar"; then pass "retention removed a day-old .partial leftover"; else fail "retention removed a day-old .partial leftover"; fi
 if in_backup "test ! -e $BACKUP_DIR/tgysm-20000101-000000.tar.gz"; then pass "retention removed the expired archive"; else fail "retention removed the expired archive"; fi
 if in_backup "test -e $BACKUP_DIR/tgysm-29990101-000000.tar.gz"; then pass "retention kept a recent archive"; else fail "retention kept a recent archive"; fi
 

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Restores one TGYSM archive (ADR-0025) into the stack's database and file/key volumes. Runs in the "restore" service.
-# Refuses, before writing anything: a file that is not a TGYSM archive, an archive from a newer build than MAX_MIGRATION,
-# and a target database that already has tables (unless --force). After restoring it compares the table row counts
-# with the manifest and fails on any difference.
+# Refuses, before writing anything: a file that is not a TGYSM archive (missing parts, a manifest without a well-formed
+# latestMigration or dbSha256, a db.dump whose SHA-256 or a file count that differs from the manifest), an archive from
+# a newer build than MAX_MIGRATION, and a target database that already has tables (unless --force). Prints what the
+# archive holds before writing. The database is restored in one transaction; afterwards the table row counts are
+# compared with the manifest and any difference fails.
 set -euo pipefail
 umask 077
 
@@ -16,21 +18,44 @@ readonly EXIT_NOT_ARCHIVE=2
 readonly EXIT_NEWER_ARCHIVE=3
 readonly EXIT_NOT_EMPTY=4
 readonly EXIT_COUNT_MISMATCH=5
+# EF Core migration ids: a 14-digit UTC timestamp, an underscore, the name.
+readonly MIGRATION_PATTERN='^[0-9]{14}_[A-Za-z0-9_]+$'
+readonly SHA256_PATTERN='^[0-9a-f]{64}$'
 readonly TABLE_COUNTS_SQL="SELECT json_object_agg(table_name, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint ORDER BY table_name) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-listing="$(tar -tzf "$ARCHIVE" 2>/dev/null)" || { echo "Not a readable archive: $ARCHIVE" >&2; exit "$EXIT_NOT_ARCHIVE"; }
-for part in db.dump manifest.json files/ keys/; do
-  if ! grep -q "^$part" <<<"$listing"; then
-    echo "Not a TGYSM archive (missing $part): $ARCHIVE" >&2
-    exit "$EXIT_NOT_ARCHIVE"
-  fi
-done
-tar -xzf "$ARCHIVE" -C "$work" manifest.json
+not_archive() { echo "Not a usable TGYSM archive ($1): $ARCHIVE" >&2; exit "$EXIT_NOT_ARCHIVE"; }
+manifest_value() { sed -n "s/.*\"$1\": \"\{0,1\}\([^\",]*\)\"\{0,1\},\{0,1\}$/\1/p" "$work/manifest.json"; }
 
-latest="$(sed -n 's/.*"latestMigration": "\([^"]*\)".*/\1/p' "$work/manifest.json")"
+if [[ ! "$MAX_MIGRATION" =~ $MIGRATION_PATTERN ]]; then
+  echo "MAX_MIGRATION is not a migration id: '$MAX_MIGRATION'" >&2
+  exit 1
+fi
+
+listing="$(tar -tzf "$ARCHIVE" 2>/dev/null)" || not_archive "not a readable tar.gz"
+for part in db.dump manifest.json files/ keys/; do
+  if ! grep -q "^$part" <<<"$listing"; then not_archive "missing $part"; fi
+done
+tar -xzf "$ARCHIVE" -C "$work" manifest.json db.dump
+
+latest="$(manifest_value latestMigration)"
+created="$(manifest_value createdAt)"
+app_version="$(manifest_value appVersion)"
+dump_sha256="$(manifest_value dbSha256)"
+file_count="$(manifest_value fileCount)"
+echo "Archive: created ${created:-?}, app version ${app_version:-?}, latest migration ${latest:-?}, ${file_count:-?} file(s)."
+
+if [[ ! "$latest" =~ $MIGRATION_PATTERN ]]; then not_archive "manifest latestMigration is empty or malformed: '$latest'"; fi
+if [[ ! "$dump_sha256" =~ $SHA256_PATTERN ]]; then
+  not_archive "manifest has no dbSha256; archives from before checksums cannot be verified, take a new backup"
+fi
+if [[ "$(sha256sum "$work/db.dump" | cut -d ' ' -f 1)" != "$dump_sha256" ]]; then not_archive "db.dump does not match the manifest's SHA-256"; fi
+if [[ "$(grep -c '^files/.*[^/]$' <<<"$listing" || true)" != "$file_count" ]]; then
+  not_archive "file count differs from the manifest's fileCount $file_count"
+fi
+
 # Migration ids start with a UTC timestamp, so they sort as text.
 if [[ "$latest" > "$MAX_MIGRATION" ]]; then
   echo "Refused: the archive is from a newer build (migration $latest, this build knows up to $MAX_MIGRATION)." >&2
@@ -46,8 +71,7 @@ if (( existing > 0 )); then
   psql -Xqc "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 fi
 
-tar -xzf "$ARCHIVE" -C "$work" db.dump
-pg_restore --no-owner --exit-on-error --dbname="$PGDATABASE" "$work/db.dump"
+pg_restore --no-owner --exit-on-error --single-transaction --dbname="$PGDATABASE" "$work/db.dump"
 
 find "$DATA_DIR/files" "$DATA_DIR/keys" -mindepth 1 -delete
 tar -xzf "$ARCHIVE" -C "$DATA_DIR" files keys
