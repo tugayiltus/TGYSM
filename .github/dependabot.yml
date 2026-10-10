@@ -15,6 +15,12 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+    # Pinned to ^9 until eslint-plugin-react, eslint-plugin-jsx-a11y and eslint-plugin-import support ESLint 10.
+    ignore:
+      - dependency-name: eslint
+        versions: [">=10"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10"]
 
   - package-ecosystem: github-actions
     directory: /
