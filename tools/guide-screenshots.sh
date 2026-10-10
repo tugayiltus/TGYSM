@@ -52,9 +52,13 @@ cleanup() {
 trap cleanup EXIT
 
 wait_for() {
-  local url="$1"
+  local url="$1" pid="$2"
   for ((second = 0; second < READY_TIMEOUT_SECONDS; second++)); do
     if curl -sf -o /dev/null -H "X-Forwarded-Proto: https" "$url"; then return 0; fi
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "The process behind $url exited; see $LOG_DIR/*-guide.log." >&2
+      return 1
+    fi
     sleep 1
   done
   echo "Timed out waiting for $url" >&2
@@ -74,8 +78,8 @@ export Email__PickupFolder="$temp_dir/pickup"
 api_pid=$!
 (cd frontend && exec env TGYSM_API_URL="$API_URL" node node_modules/vite/bin/vite.js preview) >"$LOG_DIR/preview-guide.log" 2>&1 &
 preview_pid=$!
-wait_for "$API_URL$READY_PATH"
-wait_for "$PREVIEW_URL$READY_PATH"
+wait_for "$API_URL$READY_PATH" "$api_pid"
+wait_for "$PREVIEW_URL$READY_PATH" "$preview_pid"
 
 only="$(IFS=,; echo "$*")"
 (cd frontend && GUIDE_BASE_URL="$PREVIEW_URL" GUIDE_IMAGES_DIR="$IMAGES_DIR" GUIDE_ONLY="$only" node guide/screenshots.ts)

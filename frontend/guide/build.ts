@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 
 import { chromium } from '@playwright/test';
 import GithubSlugger from 'github-slugger';
-import { Marked, type Tokens } from 'marked';
+import { Marked, marked, type Token, type Tokens, type TokensList } from 'marked';
 
 /**
  * Builds docs/user-guides/combined.md and combined.pdf, started by tools/build-user-guide.sh.
@@ -14,7 +14,7 @@ import { Marked, type Tokens } from 'marked';
  * 2. combined.md: the pages concatenated; links between pages and links to http://localhost... become in-document anchors.
  * 3. Checks (exit 1 on failure): every `](#...)` link has a rendered `id`; every referenced image exists; every file in
  *    images/ is referenced.
- * 4. combined.pdf: Chromium print of the rendered HTML, A4 through `@page { size: A4; }`; other options stay default.
+ * 4. combined.pdf: Chromium print of the rendered HTML, A4 through `@page { size: A4; margin: ${PAGE_MARGIN}; }`; other options stay default.
  */
 
 const GUIDE_DIR = resolve(process.env.GUIDE_DIR ?? '../docs/user-guides');
@@ -24,15 +24,15 @@ const COMBINED_PDF = 'combined.pdf';
 const IMAGES_DIR = 'images';
 const PAGE_SEPARATOR = '\n\n';
 const INDEX_LINK = /^\s*\d+\.\s+\[[^\]]*\]\(([^)#]+\.md)\)/gm;
-const LINK = /(?<!!)\[([^\]]*)\]\(([^)\s]+)\)/g;
-const IMAGE = /!\[[^\]]*\]\(([^)\s]+)\)/g;
+const LINK = /(?<!!)\[([^\]]*)\]\(([^)\s]+)((?:\s+"[^"]*")?)\)/g;
+const INLINE_CODE = /(`+)[\s\S]*?\1/g;
+const MASK_OPEN = '\u0000';
+const PAGE_MARGIN = '10mm';
 const LOCALHOST_URL = /^https?:\/\/localhost(?::\d+)?(?:[/?#]|$)/;
 const PAGE_LINK = /^([\w.-]+\.md)(#.*)?$/;
 const EXTERNAL_URL = /^[a-z][a-z0-9+.-]*:/i;
-const HEADING_LINE = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
-const FENCE = /^(```|~~~)/;
 const PRINT_CSS = `
-@page { size: A4; }
+@page { size: A4; margin: ${PAGE_MARGIN}; }
 body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1b1b1b; }
 img { max-width: 100%; }
 pre, code { font-family: Menlo, monospace; font-size: 9.5pt; }
@@ -49,21 +49,29 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-/** Heading text as the renderer slugs it: the link/emphasis markup is dropped, like marked's `text` of the token. */
-function plainHeading(raw: string): string {
-  return raw.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`]/g, '');
+/** Plain text of inline tokens (what a heading id is slugged from). */
+function inlineText(tokens: Token[] | undefined, fallback: string): string {
+  if (!tokens) return fallback;
+  return tokens.map((token) => ('tokens' in token && token.tokens ? inlineText(token.tokens, token.raw) : 'text' in token ? String(token.text) : token.raw)).join('');
 }
 
-/** Heading lines of a page outside code fences, in order. */
-function headings(markdown: string): { level: number; text: string }[] {
+/** Headings of a document in order, from the same lexer tokens the renderer uses. */
+function headings(tokens: TokensList): { level: number; text: string }[] {
   const found: { level: number; text: string }[] = [];
-  let inFence = false;
-  for (const line of markdown.split('\n')) {
-    if (FENCE.test(line)) inFence = !inFence;
-    const match = inFence ? null : HEADING_LINE.exec(line);
-    if (match?.[1] && match[2]) found.push({ level: match[1].length, text: plainHeading(match[2]) });
-  }
+  new Marked().walkTokens(tokens, (token) => {
+    if (token.type === 'heading') {
+      const heading = token as Tokens.Heading;
+      found.push({ level: heading.depth, text: inlineText(heading.tokens, heading.text) });
+    }
+  });
   return found;
+}
+
+/** Applies `edit` to the text of a block outside code: fenced/indented code blocks are skipped, inline code is masked. */
+function editOutsideCode(markdown: string, edit: (text: string) => string): string {
+  const spans: string[] = [];
+  const masked = markdown.replace(INLINE_CODE, (span) => `${MASK_OPEN}${spans.push(span) - 1}${MASK_OPEN}`);
+  return edit(masked).replace(new RegExp(`${MASK_OPEN}(\\d+)${MASK_OPEN}`, 'g'), (_whole, index: string) => spans[Number(index)] ?? '');
 }
 
 async function pageOrder(): Promise<string[]> {
@@ -80,69 +88,82 @@ async function main(): Promise<void> {
     sources.set(page, (await readFile(join(GUIDE_DIR, page), 'utf8')).trim());
   }
 
-  // Pre-pass with the renderer's slugger over the whole document: the id of every heading, in order.
+  // Pre-pass over the lexer tokens with the renderer's slugger: the id of every heading, in document order.
   const slugger = new GithubSlugger();
   const pageAnchor = new Map<string, string>();
   const textAnchor = new Map<string, string>();
   for (const page of pages) {
-    for (const heading of headings(sources.get(page) ?? '')) {
+    for (const heading of headings(marked.lexer(sources.get(page) ?? ''))) {
       const id = slugger.slug(heading.text);
       if (heading.level === 1 && !pageAnchor.has(page)) pageAnchor.set(page, id);
       if (!textAnchor.has(heading.text.toLowerCase())) textAnchor.set(heading.text.toLowerCase(), id);
     }
   }
 
-  const rewrite = (page: string, markdown: string): string =>
-    markdown.replace(LINK, (whole, text: string, target: string) => {
+  const rewriteText = (page: string, text: string): string =>
+    text.replace(LINK, (whole, label: string, target: string, title: string) => {
       const pageLink = PAGE_LINK.exec(target);
       if (pageLink?.[1]) {
-        const anchor = pageLink[2] ? pageLink[2] : pageAnchor.has(pageLink[1]) ? `#${pageAnchor.get(pageLink[1])}` : '';
-        if (!pageAnchor.has(pageLink[1]) && !pageLink[2]) fail(`${page}: link to ${target} has no heading in a listed page.`);
-        return `[${text}](${anchor})`;
+        const firstHeading = pageAnchor.get(pageLink[1]);
+        if (!pageLink[2] && !firstHeading) fail(`${page}: link to ${target} has no heading in a listed page.`);
+        return `[${label}](${pageLink[2] ?? `#${firstHeading}`}${title})`;
       }
       if (LOCALHOST_URL.test(target)) {
         // The PDF has no web server: link to the heading named like the link text, else keep the text only.
-        const anchor = textAnchor.get(text.toLowerCase());
-        return anchor ? `[${text}](#${anchor})` : text;
+        const anchor = textAnchor.get(label.toLowerCase());
+        if (anchor) return `[${label}](#${anchor}${title})`;
+        console.warn(`build-user-guide: ${page}: link ${target} has no heading named "${label}"; kept as plain text.`);
+        return label;
       }
       return whole;
     });
+  const rewrite = (page: string, markdown: string): string =>
+    marked
+      .lexer(markdown)
+      .map((block) => (block.type === 'code' ? block.raw : editOutsideCode(block.raw, (text) => rewriteText(page, text))))
+      .join('');
 
   const combined = `${pages.map((page) => rewrite(page, sources.get(page) ?? '')).join(PAGE_SEPARATOR)}\n`;
-  await writeFile(join(GUIDE_DIR, COMBINED_MD), combined);
-
   const html = await render(combined);
   checkAnchors(combined, html);
   await checkImages(combined);
+  await writeFile(join(GUIDE_DIR, COMBINED_MD), combined);
   await writePdf(html);
   console.log(`Built ${COMBINED_MD} and ${COMBINED_PDF} from ${pages.length} pages: ${pages.join(', ')}`);
 }
 
 async function render(markdown: string): Promise<string> {
   const slugger = new GithubSlugger();
-  const marked = new Marked({
+  const renderer = new Marked({
     renderer: {
       heading(this, token: Tokens.Heading) {
-        const id = slugger.slug(plainHeading(token.text));
+        const id = slugger.slug(inlineText(token.tokens, token.text));
         return `<h${token.depth} id="${id}">${this.parser.parseInline(token.tokens)}</h${token.depth}>\n`;
       },
     },
   });
-  const body = await marked.parse(markdown);
+  const body = await renderer.parse(markdown);
   const base = pathToFileURL(`${GUIDE_DIR}/`).href;
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><base href="${base}"><title>TGYSM Kullanıcı Rehberi</title><style>${PRINT_CSS}</style></head><body>${body}</body></html>`;
 }
 
+/** Every in-document link target (from the lexer, code excluded) is an `id` of the rendered HTML. */
 function checkAnchors(markdown: string, html: string): void {
   const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]));
-  const missing = [...markdown.matchAll(/\]\(#([^)]*)\)/g)].map((match) => match[1] ?? '').filter((anchor) => !ids.has(anchor));
-  if (missing.length > 0) fail(`links without a matching id: ${missing.map((anchor) => `#${anchor}`).join(', ')}`);
+  const missing: string[] = [];
+  marked.walkTokens(marked.lexer(markdown), (token) => {
+    if (token.type === 'link' && token.href.startsWith('#') && !ids.has(token.href.slice(1))) missing.push(token.href);
+  });
+  if (missing.length > 0) fail(`links without a matching id: ${missing.join(', ')}`);
 }
 
 async function checkImages(markdown: string): Promise<void> {
   const referenced = new Set<string>();
-  for (const match of markdown.matchAll(IMAGE)) {
-    const target = match[1] ?? '';
+  const targets: string[] = [];
+  marked.walkTokens(marked.lexer(markdown), (token) => {
+    if (token.type === 'image') targets.push(token.href);
+  });
+  for (const target of targets) {
     if (EXTERNAL_URL.test(target)) fail(`image ${target} is not a local file.`);
     referenced.add(target);
     const found = await stat(join(GUIDE_DIR, target)).then((info) => info.isFile(), () => false);
