@@ -9,6 +9,13 @@
 #
 # The command refuses outside Development/Pilot and once the database has a ticket. --fresh and --drop only touch
 # databases whose name starts with tgysm_pilot.
+#
+# Mail: the notifications the seed queues are closed (never sent), but the Worker's SLA monitor later raises breach
+# notifications for open seeded tickets, addressed to @pilot.example.com. While only seed data exists, run the pilot
+# host with a relay that drops that domain, or EMAIL_MODE=Pickup.
+#
+# A failed seed keeps what it wrote. Recovery: locally tools/seed-pilot.sh --fresh; on compose restore the pre-seed
+# backup, or recreate the database volume and migrate, then seed again.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -19,6 +26,7 @@ readonly ADMIN_DB="postgres"
 readonly PILOT_DB_PREFIX="tgysm_pilot"
 readonly COMMAND="seed-pilot"
 readonly PILOT_ENVIRONMENT="Pilot"
+readonly PILOT_EMAIL_DOMAIN="pilot.example.com"
 
 usage() {
   echo "Usage: tools/seed-pilot.sh [--compose | --fresh | --drop] [--scale <factor>]" >&2
@@ -38,6 +46,8 @@ while [[ $# -gt 0 ]]; do
     *) usage ;;
   esac
 done
+
+echo "Note: SLA breach notifications for open seeded tickets will go to @$PILOT_EMAIL_DOMAIN; use a relay that drops it or EMAIL_MODE=Pickup while only seed data exists." >&2
 
 if [[ "$mode" == "compose" ]]; then
   exec tools/compose.sh run --rm -e ASPNETCORE_ENVIRONMENT="$PILOT_ENVIRONMENT" api "$COMMAND" "${seed_args[@]+"${seed_args[@]}"}"

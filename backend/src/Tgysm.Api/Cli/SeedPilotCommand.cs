@@ -23,6 +23,13 @@ internal static class SeedPilotCommand
     private const int Success = 0;
     private const int Failure = 1;
 
+    private const string RecoveryHint =
+        "Local: run tools/seed-pilot.sh --fresh. Compose: restore the pre-seed backup, or recreate the database volume and migrate, then seed again.";
+
+    private static readonly string BreachMailWarning =
+        "Warning: seeded notifications were closed, but the Worker's SLA monitor will later raise breach notifications for open seeded tickets, " +
+        $"addressed to @{PilotSeed.EmailDomain}. While only seed data exists, use a relay that drops that domain or EMAIL_MODE=Pickup.";
+
     private static readonly string[] AllowedEnvironments = [Environments.Development, PilotEnvironment];
 
     public static async Task<int> RunAsync(IServiceProvider services, IReadOnlyList<string> args, TextWriter output, TextWriter error)
@@ -56,8 +63,9 @@ internal static class SeedPilotCommand
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            // What was written stays; the seed is for a fresh database, so the operator drops it and starts over.
-            await error.WriteLineAsync($"Seed failed ({exception.GetType().Name}): {exception.Message}");
+            // What was written stays (each handler call commits); the seed is for a fresh database, so start over.
+            await error.WriteLineAsync($"Seed failed; the data written so far stays. {RecoveryHint}");
+            await error.WriteLineAsync(exception.ToString());
             return Failure;
         }
 
@@ -79,6 +87,7 @@ internal static class SeedPilotCommand
         await output.WriteLineAsync($"Comments: {result.Comments}");
         await output.WriteLineAsync($"Articles: {result.Articles}");
         await output.WriteLineAsync($"Audit events: {result.AuditEvents}");
+        await output.WriteLineAsync(BreachMailWarning);
         return Success;
     }
 

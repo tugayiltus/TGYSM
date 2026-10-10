@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tgysm.Application.Abstractions;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
 
@@ -66,7 +67,23 @@ public sealed class PilotSeed(IServiceScopeFactory scopes, PilotSeedActor actor,
         var password = passwords.Generate();
         var session = new PilotSeedSession(scopes, actor, clock, scale, password, PilotSeedClock.RealUtcNow, cancellationToken);
         var (adminEmail, adminCreated) = await session.RunAsync();
+        await CloseSeededNotificationsAsync(session.TicketIds, cancellationToken);
         return await SummarizeAsync(adminEmail, adminCreated, password, cancellationToken);
+    }
+
+    /// <summary>
+    /// The handlers queued notifications for every seeded ticket action; none of them must reach a mail relay. One
+    /// conditional update moves only this run's still-pending rows to <see cref="OutboxStatus.Skipped"/> (the
+    /// dispatcher's "nothing to send" end state), so the Worker never picks them up.
+    /// </summary>
+    private async Task CloseSeededNotificationsAsync(IReadOnlyList<Guid> ticketIds, CancellationToken cancellationToken)
+    {
+        await using var scope = scopes.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var now = PilotSeedClock.RealUtcNow;
+        await db.OutboxEvents
+            .Where(e => e.Status == OutboxStatus.Pending && e.TicketId != null && ticketIds.Contains(e.TicketId.Value))
+            .ExecuteUpdateAsync(set => set.SetProperty(e => e.Status, OutboxStatus.Skipped).SetProperty(e => e.DispatchedAt, now), cancellationToken);
     }
 
     private async Task<PilotSeedResult> SummarizeAsync(string adminEmail, bool adminCreated, string password, CancellationToken cancellationToken)

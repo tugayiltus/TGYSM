@@ -7,6 +7,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Features.Pilot;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Catalog;
+using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
 using Tgysm.Infrastructure.Persistence;
@@ -129,6 +130,31 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
         var employee = await db.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Employee, Ct);
         Assert.True(passwords.Verify(employee.PasswordHash, password));
         Assert.False(employee.MustChangePassword);
+    }
+
+    [Fact]
+    public async Task Leaves_no_seeded_notification_for_the_worker_to_send()
+    {
+        // The seed writes outbox rows through the handlers; a pilot Worker on a real relay must never mail them.
+        var exit = await SeedPilotCommand.RunAsync(ServicesIn(SeedPilotCommand.PilotEnvironment), [ScaleOption, SmallScale], TextWriter.Null, TextWriter.Null);
+
+        await using var db = factory.Database.CreateDbContext();
+        Assert.Equal(CliSuccess, exit);
+        Assert.True(await db.OutboxEvents.AnyAsync(Ct));
+        Assert.False(await db.OutboxEvents.AnyAsync(e => e.Status == OutboxStatus.Pending, Ct));
+        Assert.All(await db.OutboxEvents.AsNoTracking().ToListAsync(Ct), e => Assert.NotNull(e.DispatchedAt));
+    }
+
+    [Fact]
+    public async Task Prints_the_breach_mail_warning()
+    {
+        var output = new StringWriter();
+
+        var exit = await SeedPilotCommand.RunAsync(ServicesIn(SeedPilotCommand.PilotEnvironment), [ScaleOption, SmallScale], output, TextWriter.Null);
+
+        Assert.Equal(CliSuccess, exit);
+        Assert.Contains(PilotSeed.EmailDomain, output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("EMAIL_MODE=Pickup", output.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]

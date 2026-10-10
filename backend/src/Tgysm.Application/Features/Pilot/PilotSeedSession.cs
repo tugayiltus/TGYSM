@@ -83,14 +83,21 @@ internal sealed class PilotSeedSession(
     private static readonly (int Min, int Max) ArticlePublishDelay = (30, 240);
 
     // One block of the status cycle: mostly completed work, some of every other state.
+    private const int CompletedPerBlock = 11;
+    private const int InProgressPerBlock = 3;
+    private const int CancelledPerBlock = 2;
+    private const int OnHoldPerBlock = 2;
+    private const int OpenPerBlock = 1;
+    private const int OpenAssignedPerBlock = 1;
+
     private static readonly PilotTicketPlan[] PlanBlock =
     [
-        .. Enumerable.Repeat(PilotTicketPlan.Completed, 11),
-        .. Enumerable.Repeat(PilotTicketPlan.InProgress, 3),
-        .. Enumerable.Repeat(PilotTicketPlan.Cancelled, 2),
-        .. Enumerable.Repeat(PilotTicketPlan.OnHold, 2),
-        PilotTicketPlan.Open,
-        PilotTicketPlan.OpenAssigned,
+        .. Enumerable.Repeat(PilotTicketPlan.Completed, CompletedPerBlock),
+        .. Enumerable.Repeat(PilotTicketPlan.InProgress, InProgressPerBlock),
+        .. Enumerable.Repeat(PilotTicketPlan.Cancelled, CancelledPerBlock),
+        .. Enumerable.Repeat(PilotTicketPlan.OnHold, OnHoldPerBlock),
+        .. Enumerable.Repeat(PilotTicketPlan.Open, OpenPerBlock),
+        .. Enumerable.Repeat(PilotTicketPlan.OpenAssigned, OpenAssignedPerBlock),
     ];
 
     private static readonly HoldReason[] HoldReasons = [HoldReason.User, HoldReason.Vendor, HoldReason.ThirdParty];
@@ -116,6 +123,10 @@ internal sealed class PilotSeedSession(
     private DateTimeOffset _setupCursor;
     private Guid _adminId;
     private Guid _fieldTeamId;
+    private readonly List<Guid> _ticketIds = [];
+
+    /// <summary>Every ticket this run opened; their notifications are closed once the run ends.</summary>
+    public IReadOnlyList<Guid> TicketIds => _ticketIds;
 
     private DateTimeOffset Cap => realNow - ActionMargin;
 
@@ -356,6 +367,7 @@ internal sealed class PilotSeedSession(
             ticket = await ActAsync<CreateIncidentHandler, TicketDetail>(requester, at, (h, ct) => h.HandleAsync(command, ct));
         }
 
+        _ticketIds.Add(ticket.Id);
         if (ticket.Approval is { Status: ApprovalStatus.Pending, ApproverId: { } approver } approval)
         {
             if (plan == PilotTicketPlan.OnHold && _random.Next(Hundred) < PendingApprovalPercent)
