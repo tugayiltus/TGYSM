@@ -4,13 +4,14 @@
 #   tools/check-doc-paths.sh [file ...]
 #
 # Without arguments it checks the release docs listed in DEFAULT_DOCS. Prints each missing path with the file that names
-# it and exits 1 when any is missing. Paths the operator creates on the host (RUNTIME_PATHS) are not expected in the repo.
+# it and exits 1 when any is missing, or when no path was checked at all (a broken pattern must not pass silently).
+# Paths the operator creates on the host (RUNTIME_PATHS) are not expected in the repo. Part of tools/lint.sh.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 readonly DEFAULT_DOCS=(README.md capabilities.md SECURITY.md CLAUDE.md docs/operations.md docs/release/acceptance.md)
 # Created on the host from deploy/.env.example; git-ignored.
-readonly RUNTIME_PATHS=(deploy/.env)
+readonly RUNTIME_PATHS=(deploy/.env deploy/.version)
 # A path starts at tools/ or deploy/ not preceded by a path or word character.
 readonly PATH_PATTERN='(^|[^A-Za-z0-9_./-])(tools|deploy)/[A-Za-z0-9._/-]*'
 
@@ -47,6 +48,10 @@ done
 
 if (( missing > 0 )); then
   echo "$missing missing path(s)." >&2
+  exit 1
+fi
+if (( checked == 0 )); then
+  echo "No tools/ or deploy/ path found in ${docs[*]}: nothing was checked." >&2
   exit 1
 fi
 echo "All $checked tools/ and deploy/ path reference(s) exist."
