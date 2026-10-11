@@ -20,6 +20,13 @@ public sealed class PostgresDatabase : IAsyncLifetime
         + "ALTER SEQUENCE asset_tag_seq RESTART; "
         + "SET session_replication_role = origin;";
 
+    // Email templates are migration-seeded rows that tests edit; a copy taken right after migrating restores them.
+    private const string SnapshotTemplatesSql =
+        "CREATE TABLE test_email_template_seed AS SELECT id, subject, body, updated_by, updated_at FROM email_templates;";
+    private const string RestoreTemplatesSql =
+        "UPDATE email_templates t SET subject = s.subject, body = s.body, updated_by = s.updated_by, updated_at = s.updated_at "
+        + "FROM test_email_template_seed s WHERE t.id = s.id;";
+
     private readonly string _databaseName = DatabaseNamePrefix + Guid.NewGuid().ToString("N");
     private string _adminConnectionString = string.Empty;
 
@@ -37,6 +44,7 @@ public sealed class PostgresDatabase : IAsyncLifetime
         await db.Database.MigrateAsync();
         // Same order as the migrate command: post-migration data steps right after the schema.
         await PostMigrationRunner.RunPendingAsync(db, CancellationToken.None);
+        await db.Database.ExecuteSqlRawAsync(SnapshotTemplatesSql);
     }
 
     public AppDbContext CreateDbContext() =>
@@ -53,6 +61,7 @@ public sealed class PostgresDatabase : IAsyncLifetime
         // The SLA calendar and policy are migration-seeded rows that tests mutate (and request_types' CASCADE wipes
         // sla_targets), so every reset puts the seed back.
         await db.Database.ExecuteSqlRawAsync(SlaSeed.Sql);
+        await db.Database.ExecuteSqlRawAsync(RestoreTemplatesSql);
     }
 
     public async ValueTask DisposeAsync()

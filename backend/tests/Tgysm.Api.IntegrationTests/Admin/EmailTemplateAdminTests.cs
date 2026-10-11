@@ -107,6 +107,28 @@ public sealed class EmailTemplateAdminTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_fixture_reset_puts_back_the_seeded_wording_for_the_next_test_class()
+    {
+        // Templates are migration-seeded rows; a test that edits one must not leak its wording into tests that run
+        // after it in the shared database (test order differs between machines).
+        var admin = await AdminAsync();
+        var seeded = await TicketCreatedTemplateAsync(admin);
+        using var update = await admin.PutAsync($"{TemplatesPath}/{NotificationEventTypes.TicketCreated}", new
+        {
+            version = seeded.GetProperty("version").GetUInt32(),
+            subject = "[{{ticketNumber}}] Değişti",
+            body = "Değişti {{status}}",
+        });
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        await factory.ResetAsync();
+
+        var restored = await TicketCreatedTemplateAsync(await AdminAsync());
+        Assert.Equal(seeded.GetProperty("subject").GetString(), restored.GetProperty("subject").GetString());
+        Assert.Equal(seeded.GetProperty("body").GetString(), restored.GetProperty("body").GetString());
+    }
+
+    [Fact]
     public async Task Update_with_an_unknown_variable_returns_a_400_field_error()
     {
         var admin = await AdminAsync();
