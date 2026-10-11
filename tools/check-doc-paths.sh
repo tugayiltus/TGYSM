@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Checks that every tools/… and deploy/… path named in the project docs exists in the repository.
+# Checks that every tools/… and deploy/… path named in the project docs is tracked in the repository.
 #
 #   tools/check-doc-paths.sh [file ...]
 #
@@ -10,8 +10,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 readonly DEFAULT_DOCS=(README.md capabilities.md SECURITY.md CLAUDE.md docs/operations.md docs/release/acceptance.md)
-# Created on the host from deploy/.env.example; git-ignored.
-readonly RUNTIME_PATHS=(deploy/.env deploy/.version)
+# Created on the host (from deploy/.env.example, by tools/deploy.sh, or the operator's certificate); git-ignored.
+readonly RUNTIME_PATHS=(deploy/.env deploy/.version deploy/certs/tgysm.crt deploy/certs/tgysm.key)
 # A path starts at tools/ or deploy/ not preceded by a path or word character.
 readonly PATH_PATTERN='(^|[^A-Za-z0-9_./-])(tools|deploy)/[A-Za-z0-9._/-]*'
 
@@ -24,6 +24,12 @@ is_runtime_path() {
     if [[ "$candidate" == "$runtime" ]]; then return 0; fi
   done
   return 1
+}
+
+# Tracked by Git (a file, or a folder holding tracked files): a local, git-ignored copy must not hide a path that a
+# fresh checkout (CI) lacks.
+is_tracked() {
+  [[ -n "$(git ls-files -- "$1" | head -n 1)" ]]
 }
 
 checked=0
@@ -39,8 +45,8 @@ for doc in "${docs[@]}"; do
     path="$(sed -E 's#^[^td]*##; s#[.,]+$##' <<<"$found")"
     if is_runtime_path "$path"; then continue; fi
     checked=$((checked + 1))
-    if [[ ! -e "$path" ]]; then
-      echo "$doc: $path does not exist" >&2
+    if ! is_tracked "$path"; then
+      echo "$doc: $path is not in the repository" >&2
       missing=$((missing + 1))
     fi
   done < <(grep -oE "$PATH_PATTERN" "$doc" | sort -u)
