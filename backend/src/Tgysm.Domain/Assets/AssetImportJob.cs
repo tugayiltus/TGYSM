@@ -62,7 +62,7 @@ public sealed class AssetImportJob : Entity
         }
 
         Status = AssetImportStatus.Committed;
-        CommittedAt = now;
+        CommittedAt = StoredTime.TruncateToMicroseconds(now);
         return true;
     }
 }

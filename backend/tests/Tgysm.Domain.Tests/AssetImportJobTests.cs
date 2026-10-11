@@ -22,6 +22,20 @@ public sealed class AssetImportJobTests
     }
 
     [Fact]
+    public void Commit_time_keeps_only_the_microseconds_the_database_stores()
+    {
+        // Linux clocks tick every 100 ns; PostgreSQL keeps microseconds, so a repeated commit read back from the
+        // database must return the same instant as the first response.
+        const long subMicrosecondTicks = 4;
+        var job = Job(errorRows: 0);
+        var precise = Now.AddTicks(TimeSpan.TicksPerMicrosecond * 7 + subMicrosecondTicks);
+
+        job.Commit(precise);
+
+        Assert.Equal(Now.AddTicks(TimeSpan.TicksPerMicrosecond * 7), job.CommittedAt);
+    }
+
+    [Fact]
     public void Commit_marks_the_job_once()
     {
         var job = Job(errorRows: 0);

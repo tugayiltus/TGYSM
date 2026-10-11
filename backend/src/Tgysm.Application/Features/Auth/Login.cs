@@ -4,6 +4,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Application.Security;
 using Tgysm.Domain.Audit;
+using Tgysm.Domain.Common;
 using Tgysm.Domain.Users;
 
 namespace Tgysm.Application.Features.Auth;
@@ -87,7 +88,7 @@ public sealed class LoginHandler(
     private async Task<bool> RegisterFailedSignInAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
     {
         const int lockThreshold = User.MaxFailedSignInAttempts - 1;
-        var lockoutEnd = TruncateToMicroseconds(now + User.LockoutDuration);
+        var lockoutEnd = StoredTime.TruncateToMicroseconds(now + User.LockoutDuration);
 
         await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(
             setters => setters
@@ -98,8 +99,4 @@ public sealed class LoginHandler(
 
         return await db.Users.AsNoTracking().AnyAsync(u => u.Id == userId && u.LockoutEnd == lockoutEnd, cancellationToken);
     }
-
-    /// <summary>PostgreSQL timestamps keep microseconds; the value read back must compare equal.</summary>
-    private static DateTimeOffset TruncateToMicroseconds(DateTimeOffset value) =>
-        new(value.Ticks - (value.Ticks % TimeSpan.TicksPerMicrosecond), value.Offset);
 }
