@@ -2,7 +2,7 @@
 # TGYSM images (ADR-0024): target "api" (API + SPA in wwwroot) and target "worker". No secrets in any layer;
 # configuration comes from the environment at run time (deploy/.env).
 
-FROM node:22-bookworm-slim AS frontend-build
+FROM node:26-bookworm-slim AS frontend-build
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
