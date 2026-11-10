@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { kbRoutes, LIST_ARTICLE, paged } from '../../test/kbData';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 
 const articleCalls = (api: ReturnType<typeof mockApi>) => api.calls.filter((c) => c.method === 'GET' && new URL(c.url).pathname === '/api/v1/kb/articles');
 
@@ -49,9 +50,9 @@ describe('KnowledgeListPage', () => {
     renderRoute('/kb');
 
     expect(await screen.findByRole('link', { name: 'VPN bağlantısı nasıl kurulur?' })).toHaveAttribute('href', expect.stringMatching(/^\/kb\//));
-    expect(screen.getByLabelText('Kategori')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Durum')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Görünürlük')).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Kategori' })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Durum' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Görünürlük' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Yeni makale' })).not.toBeInTheDocument();
   });
 
@@ -59,8 +60,8 @@ describe('KnowledgeListPage', () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: IT_ME }, ...kbRoutes() });
     renderRoute('/kb');
 
-    expect(await screen.findByLabelText('Durum')).toBeInTheDocument();
-    expect(screen.getByLabelText('Görünürlük')).toBeInTheDocument();
+    expect(await screen.findByRole('combobox', { name: 'Durum' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Görünürlük' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Yeni makale' })).toHaveAttribute('href', '/kb/new');
   });
 
@@ -80,7 +81,7 @@ describe('KnowledgeListPage', () => {
     const api = mockApi({ 'GET /api/v1/auth/me': { status: 200, body: IT_ME }, ...kbRoutes() });
     const { user } = renderRoute('/kb');
 
-    await user.selectOptions(await screen.findByLabelText('Durum'), 'Taslak');
+    await chooseOption(user, 'Durum', 'Taslak');
 
     await waitFor(() => expect(articleCalls(api).some((c) => new URL(c.url).searchParams.get('status') === 'draft')).toBe(true));
   });

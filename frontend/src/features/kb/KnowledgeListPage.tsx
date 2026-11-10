@@ -1,19 +1,31 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input Nothing; filters come from the URL query.
+ * @output The article list with search and category filters (and status and visibility for IT staff), and paging.
+ * @position `/kb`, inside the app shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { List, ListItem } from '@astryxdesign/core/List';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useSearchParams } from 'react-router';
+import { useLocation } from 'react-router';
 
-import { readPageParam } from '../../shared/lib/pageParam';
+import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
+import { ListToolbar } from '../../shared/list/ListToolbar';
+import { useListParams } from '../../shared/list/useListParams';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { linkState } from '../../shared/navigation/returnTo';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
+import { StateLink } from '../../shared/navigation/StateLink';
 import { articlePath, ROUTES } from '../../shared/routes';
-import { DataCard } from '../../shared/ui/DataCard';
-import { cilPlus, cilSearch } from '../../shared/ui/icons';
-import { Pagination } from '../../shared/ui/Pagination';
-import { SelectField } from '../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
-import { TextField } from '../../shared/ui/TextField';
+import { Icons } from '../../shared/ui/icons';
 import { isItStaffOrAdmin, useSession } from '../auth/session';
 
 import {
@@ -29,25 +41,34 @@ import {
 import { ArticleStatusBadge, ArticleVisibilityBadge } from './ArticleStatusBadge';
 
 const SEARCH_DEBOUNCE_MS = 300;
-const PARAM = { search: 'q', category: 'category', status: 'status', visibility: 'visibility', page: 'page' } as const;
+const SKELETON_ROWS = 5;
+const FILTER_KEYS = ['category', 'status', 'visibility'] as const;
 
 const asStatus = (value: string): ArticleStatus | '' => ARTICLE_STATUSES.find((s) => s === value) ?? '';
 const asVisibility = (value: string): ArticleVisibility | '' => ARTICLE_VISIBILITIES.find((v) => v === value) ?? '';
 
-function ArticleCard({ article, staff }: { article: ArticleListItem; staff: boolean }) {
+function ArticleRow({ article, staff }: { article: ArticleListItem; staff: boolean }) {
   const location = useLocation();
+  const link = useRef<HTMLAnchorElement>(null);
   return (
-    <li className="list-group-item py-3">
-      <Link to={articlePath(article.id)} state={linkState(location)} className="fw-semibold text-break">
-        {article.title}
-      </Link>
-      {article.summary && <p className="mt-1 small text-break">{article.summary}</p>}
-      <div className="mt-2 d-flex flex-wrap align-items-center gap-2 small text-body-secondary">
-        {article.categoryName && <span>{article.categoryName}</span>}
-        {staff && <ArticleStatusBadge status={article.status} />}
-        {staff && <ArticleVisibilityBadge visibility={article.visibility} />}
-      </div>
-    </li>
+    <ListItem
+      label={
+        <StateLink href={articlePath(article.id)} state={linkState(location)} ref={link}>
+          {article.title}
+        </StateLink>
+      }
+      description={
+        <VStack gap={1}>
+          {article.summary && <Text type="supporting" wordBreak="break-word">{article.summary}</Text>}
+          <HStack gap={2} vAlign="center" wrap="wrap">
+            {article.categoryName && <Text type="supporting">{article.categoryName}</Text>}
+            {staff && <ArticleStatusBadge status={article.status} />}
+            {staff && <ArticleVisibilityBadge visibility={article.visibility} />}
+          </HStack>
+        </VStack>
+      }
+      interactiveRef={link}
+    />
   );
 }
 
@@ -55,112 +76,76 @@ export function KnowledgeListPage() {
   const { t } = useTranslation('kb');
   const me = useSession();
   const staff = isItStaffOrAdmin(me.role);
-  const [params, setParams] = useSearchParams();
-
-  const search = params.get(PARAM.search) ?? '';
-  const categoryId = params.get(PARAM.category) ?? '';
-  const status = staff ? asStatus(params.get(PARAM.status) ?? '') : '';
-  const visibility = staff ? asVisibility(params.get(PARAM.visibility) ?? '') : '';
-  const page = readPageParam(params.get(PARAM.page));
-  const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
+  const list = useListParams(FILTER_KEYS);
+  const categoryId = list.filters.category;
+  const status = staff ? asStatus(list.filters.status) : '';
+  const visibility = staff ? asVisibility(list.filters.visibility) : '';
+  const debouncedSearch = useDebouncedValue(list.search.trim(), SEARCH_DEBOUNCE_MS);
 
   const categories = useArticleCategories();
-  const articles = useArticles({ search: debouncedSearch, categoryId, status, visibility, page, pageSize: ARTICLE_PAGE_SIZE });
-
-  /** Any filter change goes back to page 1; the search box replaces history so typing does not fill the back stack. */
-  const setParam = (name: string, value: string) =>
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (value === '') {
-          next.delete(name);
-        } else {
-          next.set(name, value);
-        }
-        if (name !== PARAM.page) {
-          next.delete(PARAM.page);
-        }
-        return next;
-      },
-      { replace: true },
-    );
+  const articles = useArticles({ search: debouncedSearch, categoryId, status, visibility, page: list.page, pageSize: ARTICLE_PAGE_SIZE });
 
   // First use (nothing written yet) and a filter that matches nothing are different situations (UX-11).
-  const filtered = search !== '' || categoryId !== '' || status !== '' || visibility !== '';
+  const filtered = list.search !== '' || categoryId !== '' || status !== '' || visibility !== '';
 
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader
         icon={ROUTE_META.kbList.icon}
         titleOverride={t('list.title')}
-        actions={
-          staff ? (
-            <Link to={ROUTES.kbNew} className="btn btn-primary tgysm-touch d-inline-flex align-items-center gap-2">
-              <CIcon icon={cilPlus} aria-hidden="true" />
-              {t('list.new')}
-            </Link>
-          ) : undefined
-        }
+        actions={staff ? <Button label={t('list.new')} variant="primary" href={ROUTES.kbNew} icon={<Icon icon={Icons.plus} />} /> : undefined}
       />
-      <DataCard
+      <ListToolbar
+        title={t('list.title')}
+        search={list.search}
+        searchLabel={t('list.search')}
+        onSearchChange={list.setSearch}
+        activeCount={list.activeCount}
+        onClear={list.clear}
         filters={
-          <div className="row g-3">
-            <TextField
-              className="col-12 col-sm-6 col-lg-3"
-              type="search"
-              startIcon={cilSearch}
-              label={t('list.search')}
-              value={search}
-              onChange={(event) => setParam(PARAM.search, event.target.value)}
-            />
-            <SelectField
-              className="col-12 col-sm-6 col-lg-3"
+          <>
+            <Selector
               label={t('list.category')}
               placeholder={t('list.allCategories')}
               options={(categories.data ?? []).map((c) => ({ value: c.id, label: c.path }))}
               value={categoryId}
-              onChange={(event) => setParam(PARAM.category, event.target.value)}
+              onChange={(value) => list.setFilter('category', value)}
             />
             {staff && (
               <>
-                <SelectField
-                  className="col-12 col-sm-6 col-lg-3"
+                <Selector
                   label={t('list.status')}
                   placeholder={t('list.all')}
                   options={ARTICLE_STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
                   value={status}
-                  onChange={(event) => setParam(PARAM.status, event.target.value)}
+                  onChange={(value) => list.setFilter('status', value)}
                 />
-                <SelectField
-                  className="col-12 col-sm-6 col-lg-3"
+                <Selector
                   label={t('list.visibility')}
                   placeholder={t('list.all')}
                   options={ARTICLE_VISIBILITIES.map((v) => ({ value: v, label: t(`visibility.${v}`) }))}
                   value={visibility}
-                  onChange={(event) => setParam(PARAM.visibility, event.target.value)}
+                  onChange={(value) => list.setFilter('visibility', value)}
                 />
               </>
             )}
-          </div>
+          </>
         }
-        footer={
-          articles.data && articles.data.items.length > 0 ? (
-            <Pagination page={articles.data.page} pageSize={articles.data.pageSize} totalCount={articles.data.totalCount} onPageChange={(next) => setParam(PARAM.page, String(next))} />
-          ) : undefined
-        }
-      >
-        {articles.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+      />
+      <Card padding={0}>
+        {articles.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {articles.isError && <ErrorState error={articles.error} onRetry={() => void articles.refetch()} />}
         {articles.data && articles.data.items.length === 0 && <EmptyState message={filtered ? t('list.empty') : t('list.emptyFirst')} />}
         {articles.data && articles.data.items.length > 0 && (
-          // keepPreviousData shows the last result while the next one loads: mark it busy and dim it, as reports do.
-          <ul aria-label={t('list.caption')} aria-busy={articles.isPlaceholderData} className={`list-group list-group-flush ${articles.isPlaceholderData ? 'opacity-50' : ''}`}>
+          // keepPreviousData shows the last result while the next one loads: mark it busy for screen readers.
+          <List hasDividers aria-label={t('list.caption')} aria-busy={articles.isPlaceholderData}>
             {articles.data.items.map((article) => (
-              <ArticleCard key={article.id} article={article} staff={staff} />
+              <ArticleRow key={article.id} article={article} staff={staff} />
             ))}
-          </ul>
+          </List>
         )}
-      </DataCard>
-    </>
+      </Card>
+      {articles.data && articles.data.items.length > 0 && <Pagination page={articles.data.page} pageSize={articles.data.pageSize} totalItems={articles.data.totalCount} onChange={list.setPage} />}
+    </VStack>
   );
 }
