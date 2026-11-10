@@ -1,24 +1,33 @@
+/**
+ * @input An asset, the lifecycle operation and a close callback.
+ * @output A dialog with the input that operation needs: a user, a location, a reason or a choice.
+ * @position Opened from the asset detail page.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
+import { Text } from '@astryxdesign/core/Text';
+import { TextInput } from '@astryxdesign/core/TextInput';
+import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import { describeError, fieldError } from '../../shared/api/errorMessage';
+import { describeError } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { FormCheckbox, FormSelector, FormTextInput } from '../../shared/form/formFields';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
-import { Button } from '../../shared/ui/Button';
-import { CheckField } from '../../shared/ui/CheckField';
-import { Dialog } from '../../shared/ui/Dialog';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { SelectField } from '../../shared/ui/SelectField';
-import { TextField } from '../../shared/ui/TextField';
 
 import { useAssetOperation, useReferenceLocations, useUserSearch, type AssetItem, type AssetOperation, type AssetOperationKind } from './api';
 
 /** Mirrors backend AssetMovement.ReasonMaxLength and AssetAssignment.NoteMaxLength. */
 const TEXT_MAX_LENGTH = 500;
 const SEARCH_DEBOUNCE_MS = 300;
+const DIALOG_WIDTH = 520;
 
 const requiredText = z.string().trim().min(1, ERROR_CODES.required).max(TEXT_MAX_LENGTH, ERROR_CODES.tooLong);
 const base = z.object({
@@ -66,20 +75,24 @@ function toOperation(kind: AssetOperationKind, v: OperationValues): AssetOperati
   }
 }
 
-function UserPicker({ error, register, onSearchChange }: { error: string | undefined; register: ReturnType<typeof useForm<OperationValues>>['register']; onSearchChange: () => void }) {
+function UserPicker({ control, onSearchChange }: { control: Control<OperationValues>; onSearchChange: () => void }) {
   const { t } = useTranslation('assets');
   const [search, setSearch] = useState('');
   const users = useUserSearch(useDebouncedValue(search, SEARCH_DEBOUNCE_MS));
   const options = useMemo(() => (users.data ?? []).map((u) => ({ value: u.id, label: `${u.fullName} (${u.email})` })), [users.data]);
   return (
     <>
-      <TextField type="search" label={t('actionFields.userSearch')} value={search} onChange={(event) => {
+      <TextInput
+        type="search"
+        label={t('actionFields.userSearch')}
+        value={search}
+        onChange={(value) => {
           // The chosen user may vanish from the new results; a stale hidden value must not be sent.
           onSearchChange();
-          setSearch(event.target.value);
+          setSearch(value);
         }}
       />
-      <SelectField label={t('actionFields.user')} options={options} placeholder={t('actionFields.selectUser')} error={error} {...register('userId')} />
+      <FormSelector control={control} name="userId" label={t('actionFields.user')} options={options} placeholder={t('actionFields.selectUser')} />
     </>
   );
 }
@@ -91,52 +104,49 @@ export function AssetOperationDialog({ asset, kind, onClose }: { asset: AssetIte
   const operation = useAssetOperation(asset);
   const locations = useReferenceLocations();
   const locationOptions = useMemo(() => (locations.data ?? []).map((l) => ({ value: l.id, label: l.path })), [locations.data]);
-  const {
-    register,
-    setValue,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<OperationValues>({ resolver: zodResolver(SCHEMAS[kind]), defaultValues: DEFAULT_VALUES });
+  const { control, setValue, handleSubmit } = useForm<OperationValues>({ resolver: zodResolver(SCHEMAS[kind]), defaultValues: DEFAULT_VALUES });
 
   const onSubmit = handleSubmit((values) => operation.mutate(toOperation(kind, values), { onSuccess: onClose }));
+  const close = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  };
 
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
+    <Dialog isOpen onOpenChange={close} width={DIALOG_WIDTH} purpose="form">
+      <Layout
+        header={<DialogHeader title={`${t(`actions.${kind}`)} · ${asset.assetTag}`} onOpenChange={close} />}
+        content={
+          <LayoutContent>
+            <form id={formId} noValidate onSubmit={(event) => void onSubmit(event)}>
+              <VStack gap={4}>
+                <FormAlert message={operation.error ? describeError(operation.error) : null} />
+                {(kind === 'assign' || kind === 'transfer') && (
+                  <>
+                    <UserPicker control={control} onSearchChange={() => setValue('userId', '')} />
+                    <FormTextInput control={control} name="note" label={t('actionFields.note')} autoComplete="off" />
+                  </>
+                )}
+                {(kind === 'return' || kind === 'found') && (
+                  <FormSelector control={control} name="locationId" label={t('actionFields.location')} options={locationOptions} placeholder={t('form.selectLocation')} />
+                )}
+                {(kind === 'lost' || kind === 'retire') && <FormTextInput control={control} name="reason" label={t('actionFields.reason')} autoComplete="off" />}
+                {kind === 'maintenanceStart' && asset.status === 'assigned' && <FormCheckbox control={control} name="retainResponsibility" label={t('actionFields.retain')} />}
+                {kind === 'maintenanceEnd' && <Text type="supporting">{t('actionFields.maintenanceEndHint')}</Text>}
+              </VStack>
+            </form>
+          </LayoutContent>
         }
-      }}
-      title={`${t(`actions.${kind}`)} · ${asset.assetTag}`}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button type="submit" form={formId} variant={kind === 'lost' || kind === 'retire' ? 'danger' : 'primary'} isLoading={operation.isPending}>
-            {tc('actions.confirm')}
-          </Button>
-        </>
-      }
-    >
-      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
-        <FormAlert message={operation.error ? describeError(operation.error) : null} />
-        {(kind === 'assign' || kind === 'transfer') && (
-          <>
-            <UserPicker error={fieldError(errors.userId)} register={register} onSearchChange={() => setValue('userId', '')} />
-            <TextField label={t('actionFields.note')} autoComplete="off" error={fieldError(errors.note)} {...register('note')} />
-          </>
-        )}
-        {(kind === 'return' || kind === 'found') && (
-          <SelectField label={t('actionFields.location')} options={locationOptions} placeholder={t('form.selectLocation')} error={fieldError(errors.locationId)} {...register('locationId')} />
-        )}
-        {(kind === 'lost' || kind === 'retire') && <TextField label={t('actionFields.reason')} autoComplete="off" error={fieldError(errors.reason)} {...register('reason')} />}
-        {kind === 'maintenanceStart' && asset.status === 'assigned' && (
-          <CheckField label={t('actionFields.retain')} {...register('retainResponsibility')} />
-        )}
-        {kind === 'maintenanceEnd' && <p className="small text-body-secondary">{t('actionFields.maintenanceEndHint')}</p>}
-      </form>
+        footer={
+          <LayoutFooter>
+            <HStack gap={2} hAlign="end">
+              <Button label={tc('actions.cancel')} variant="secondary" onClick={onClose} />
+              <Button type="submit" form={formId} label={tc('actions.confirm')} variant={kind === 'lost' || kind === 'retire' ? 'destructive' : 'primary'} isLoading={operation.isPending} />
+            </HStack>
+          </LayoutFooter>
+        }
+      />
     </Dialog>
   );
 }

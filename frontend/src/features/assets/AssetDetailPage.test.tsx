@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { LAPTOP, LOCATIONS } from '../../test/assetData';
 import { IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 
 const HISTORY = {
   movements: [
@@ -49,7 +50,7 @@ describe('AssetDetailPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Teslim et' }));
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText('Kullanıcı ara'), 'ayşe');
-    await user.selectOptions(within(dialog).getByLabelText('Kullanıcı'), await within(dialog).findByRole('option', { name: 'Ayşe Kaya (ayse@example.com)' }));
+    await chooseOption(user, 'Kullanıcı', 'Ayşe Kaya (ayse@example.com)', dialog);
     await user.type(within(dialog).getByLabelText('Not'), 'Yeni başlangıç');
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
@@ -93,7 +94,7 @@ describe('AssetDetailPage', () => {
     expect(await screen.findByText('Ayşe Kaya')).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'İade al' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: 'Merkez Kampüs / A Blok' }));
+    await chooseOption(user, 'Lokasyon', 'Merkez Kampüs / A Blok', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     await screen.findByRole('heading', { name: 'DT-0001' });
@@ -134,10 +135,9 @@ describe('AssetOperationDialog user search', () => {
     await user.click(await screen.findByRole('button', { name: 'Teslim et' }));
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText('Kullanıcı ara'), 'ayşe');
-    await user.selectOptions(within(dialog).getByLabelText('Kullanıcı'), await within(dialog).findByRole('option', { name: 'Ayşe Kaya (ayse@example.com)' }));
+    await chooseOption(user, 'Kullanıcı', 'Ayşe Kaya (ayse@example.com)', dialog);
     await user.clear(within(dialog).getByLabelText('Kullanıcı ara'));
     await user.type(within(dialog).getByLabelText('Kullanıcı ara'), 'ali');
-    await within(dialog).findByRole('option', { name: 'Ali Veli (ali@example.com)' });
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     expect(await within(dialog).findByText('Bu alan zorunludur.')).toBeInTheDocument();
