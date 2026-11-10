@@ -1,17 +1,27 @@
+/**
+ * @input A ticket and whether the signed-in person is its requester.
+ * @output Linked devices and related tickets, with dialogs to link a device or create a related request.
+ * @position Ticket detail page.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Grid } from '@astryxdesign/core/Grid';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Link } from '@astryxdesign/core/Link';
+import { List, ListItem } from '@astryxdesign/core/List';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { TextInput } from '@astryxdesign/core/TextInput';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import { describeError } from '../../shared/api/errorMessage';
+import { ActionDialog } from '../../shared/feedback/ActionDialog';
+import { FormAlert } from '../../shared/feedback/FormAlert';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
+import { SectionCard } from '../../shared/page/SectionCard';
 import { ticketPath } from '../../shared/routes';
-import { Button } from '../../shared/ui/Button';
-import { Dialog } from '../../shared/ui/Dialog';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { PageCard } from '../../shared/ui/PageCard';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
-import { SelectField } from '../../shared/ui/SelectField';
-import { TextField } from '../../shared/ui/TextField';
 import { useAssets, useMyAssets } from '../assets/api';
 
 import { useCreateRelatedRequest, useLinkAsset, useReferenceRequestTypes, useTicketAssets, useUnlinkAsset, type TicketDetail } from './api';
@@ -20,6 +30,9 @@ import { TicketStatusBadge } from './TicketBadges';
 const SEARCH_DEBOUNCE_MS = 300;
 const ASSET_SEARCH_PAGE_SIZE = 20;
 const FIRST_PAGE = 1;
+/** The two cards sit side by side from this width. */
+const CARD_COLUMNS = { minWidth: 320 } as const;
+const LABEL_SEPARATOR = ' · ';
 
 function AssetPicker({ ticket, value, onChange }: { ticket: TicketDetail; value: string; onChange: (id: string) => void }) {
   const { t } = useTranslation('tickets');
@@ -37,42 +50,27 @@ function AssetPicker({ ticket, value, onChange }: { ticket: TicketDetail; value:
   );
   return (
     <>
-      {ticket.canWork && <TextField type="search" label={t('fields.assetSearch')} value={search} onChange={(event) => setSearch(event.target.value)} />}
-      <SelectField label={t('fields.asset')} placeholder={t('fields.select')} options={options} value={value} onChange={(event) => onChange(event.target.value)} />
+      {ticket.canWork && <TextInput type="search" label={t('fields.assetSearch')} value={search} onChange={setSearch} />}
+      <Selector label={t('fields.asset')} placeholder={t('fields.select')} options={options} value={value} onChange={onChange} />
     </>
   );
 }
 
 function LinkAssetDialog({ ticket, onClose }: { ticket: TicketDetail; onClose: () => void }) {
   const { t } = useTranslation('tickets');
-  const { t: tc } = useTranslation();
   const link = useLinkAsset(ticket.number);
   const [assetId, setAssetId] = useState('');
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ActionDialog
       title={t('actions.linkAsset')}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button disabled={assetId === ''} isLoading={link.isPending} onClick={() => link.mutate(assetId, { onSuccess: onClose })}>
-            {tc('actions.confirm')}
-          </Button>
-        </>
-      }
+      isPending={link.isPending}
+      isConfirmDisabled={assetId === ''}
+      error={link.error}
+      onConfirm={() => link.mutate(assetId, { onSuccess: onClose })}
+      onClose={onClose}
     >
-      <div className="d-flex flex-column gap-3">
-        <FormAlert message={link.error ? describeError(link.error) : null} />
-        <AssetPicker ticket={ticket} value={assetId} onChange={setAssetId} />
-      </div>
-    </Dialog>
+      <AssetPicker ticket={ticket} value={assetId} onChange={setAssetId} />
+    </ActionDialog>
   );
 }
 
@@ -84,40 +82,17 @@ function RelatedRequestDialog({ ticket, onClose }: { ticket: TicketDetail; onClo
   const create = useCreateRelatedRequest(ticket.number);
   const [typeId, setTypeId] = useState('');
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ActionDialog
       title={t('actions.relatedRequest')}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button
-            disabled={typeId === ''}
-            isLoading={create.isPending}
-            onClick={() => create.mutate(typeId, { onSuccess: (request) => void navigate(ticketPath(request.number)) })}
-          >
-            {tc('actions.create')}
-          </Button>
-        </>
-      }
+      confirmLabel={tc('actions.create')}
+      isPending={create.isPending}
+      isConfirmDisabled={typeId === ''}
+      error={create.error}
+      onConfirm={() => create.mutate(typeId, { onSuccess: (request) => void navigate(ticketPath(request.number)) })}
+      onClose={onClose}
     >
-      <div className="d-flex flex-column gap-3">
-        <FormAlert message={create.error ? describeError(create.error) : null} />
-        <SelectField
-          label={t('fields.requestType')}
-          placeholder={t('fields.select')}
-          options={(types.data ?? []).map((r) => ({ value: r.id, label: r.name }))}
-          value={typeId}
-          onChange={(event) => setTypeId(event.target.value)}
-        />
-      </div>
-    </Dialog>
+      <Selector label={t('fields.requestType')} placeholder={t('fields.select')} options={(types.data ?? []).map((r) => ({ value: r.id, label: r.name }))} value={typeId} onChange={setTypeId} />
+    </ActionDialog>
   );
 }
 
@@ -129,52 +104,53 @@ export function TicketLinks({ ticket, isRequester }: { ticket: TicketDetail; isR
   const [dialog, setDialog] = useState<'asset' | 'related' | null>(null);
   const open = ticket.status !== 'completed' && ticket.status !== 'cancelled';
 
+  const linkedAssets = assets.data ?? [];
   return (
-    <div className="row g-3">
-      <div className="col-12 col-md-6">
-      <PageCard title={t('detail.assets')} className="h-100" bodyClassName="d-flex flex-column gap-2">
+    <Grid columns={CARD_COLUMNS} gap={4} align="start">
+      <SectionCard title={t('detail.assets')}>
         <FormAlert message={unlink.error ? describeError(unlink.error) : null} />
-        {(assets.data ?? []).length === 0 && <p className="mb-0 text-body-secondary">{t('detail.noAssets')}</p>}
-        <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
-          {(assets.data ?? []).map((a) => (
-            <li key={a.assetId} className="d-flex align-items-center justify-content-between gap-2 rounded border bg-body-tertiary p-2">
-              <span>{`${a.assetTag} · ${a.brand} ${a.model}`}</span>
-              {ticket.canWork && open && (
-                <Button variant="ghost" aria-label={recordActionLabel(t('actions.unlinkAsset'), a.assetTag)} onClick={() => unlink.mutate(a.assetId)}>
-                  {t('actions.unlinkAsset')}
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
+        {linkedAssets.length === 0 ? (
+          <Text type="supporting">{t('detail.noAssets')}</Text>
+        ) : (
+          <List hasDividers density="compact" aria-label={t('detail.assets')}>
+            {linkedAssets.map((asset) => (
+              <ListItem
+                key={asset.assetId}
+                label={[asset.assetTag, `${asset.brand} ${asset.model}`].join(LABEL_SEPARATOR)}
+                endContent={
+                  ticket.canWork &&
+                  open && <Button label={t('actions.unlinkAsset')} aria-label={recordActionLabel(t('actions.unlinkAsset'), asset.assetTag)} variant="ghost" onClick={() => unlink.mutate(asset.assetId)} />
+                }
+              />
+            ))}
+          </List>
+        )}
         {open && (ticket.canWork || isRequester) && (
-          <Button variant="secondary" className="align-self-start" onClick={() => setDialog('asset')}>
-            {t('actions.linkAsset')}
-          </Button>
+          <HStack>
+            <Button label={t('actions.linkAsset')} variant="secondary" onClick={() => setDialog('asset')} />
+          </HStack>
         )}
-      </PageCard>
-      </div>
-      <div className="col-12 col-md-6">
-      <PageCard title={t('detail.related')} className="h-100" bodyClassName="d-flex flex-column gap-2">
-        <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
-          {ticket.relatedTickets.map((r) => (
-            <li key={r.number} className="d-flex align-items-center justify-content-between gap-2">
-              <Link to={ticketPath(r.number)} className="link-primary text-decoration-underline">
-                {`${r.number} · ${r.subject}`}
-              </Link>
-              <TicketStatusBadge status={r.status} />
-            </li>
-          ))}
-        </ul>
+      </SectionCard>
+      <SectionCard title={t('detail.related')}>
+        {ticket.relatedTickets.length > 0 && (
+          <List hasDividers density="compact" aria-label={t('detail.related')}>
+            {ticket.relatedTickets.map((related) => (
+              <ListItem
+                key={related.number}
+                label={<Link href={ticketPath(related.number)}>{[related.number, related.subject].join(LABEL_SEPARATOR)}</Link>}
+                endContent={<TicketStatusBadge status={related.status} />}
+              />
+            ))}
+          </List>
+        )}
         {ticket.canWork && open && ticket.kind === 'incident' && (
-          <Button variant="secondary" className="align-self-start" onClick={() => setDialog('related')}>
-            {t('actions.relatedRequest')}
-          </Button>
+          <HStack>
+            <Button label={t('actions.relatedRequest')} variant="secondary" onClick={() => setDialog('related')} />
+          </HStack>
         )}
-      </PageCard>
-      </div>
+      </SectionCard>
       {dialog === 'asset' && <LinkAssetDialog ticket={ticket} onClose={() => setDialog(null)} />}
       {dialog === 'related' && <RelatedRequestDialog ticket={ticket} onClose={() => setDialog(null)} />}
-    </div>
+    </Grid>
   );
 }

@@ -5,6 +5,7 @@ import { findAlert, messageAlerts } from '../../test/alerts';
 import { ARTICLE_ID, kbRoutes, LIST_ARTICLE } from '../../test/kbData';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 import { detailRoutes, INCIDENT } from '../../test/ticketData';
 
 const ARTICLES_ROUTE = `/api/v1/tickets/${INCIDENT.number}/articles`;
@@ -51,7 +52,7 @@ describe('TicketArticles', () => {
     expect(await screen.findByText('Çalışana gösterilmez')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Makale bağla' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(await within(dialog).findByLabelText('Makale'), LIST_ARTICLE.title);
+    await chooseOption(user, 'Makale', LIST_ARTICLE.title, dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     expect(await screen.findByRole('link', { name: LINKED.title })).toBeInTheDocument();
@@ -71,7 +72,7 @@ describe('TicketArticles', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Makale bağla' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(await within(dialog).findByLabelText('Makale'), LIST_ARTICLE.title);
+    await chooseOption(user, 'Makale', LIST_ARTICLE.title, dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     expect(await within(dialog).findByText('Bu makale kayda zaten bağlı.')).toBeInTheDocument();
@@ -111,7 +112,7 @@ describe('TicketArticles', () => {
 
     await user.click(screen.getByRole('button', { name: 'Makale bağla' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(await within(dialog).findByLabelText('Makale'), LIST_ARTICLE.title);
+    await chooseOption(user, 'Makale', LIST_ARTICLE.title, dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     expect(await screen.findByRole('link', { name: LINKED.title })).toBeInTheDocument();
