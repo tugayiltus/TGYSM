@@ -1,129 +1,121 @@
+/**
+ * @input Nothing; search and page come from the URL query.
+ * @output The team list with member count, status and intake marker; create, edit, members and (de)activate.
+ * @position `/admin/teams`, inside the admin shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Text } from '@astryxdesign/core/Text';
+import { Token } from '@astryxdesign/core/Token';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ConfirmDialog } from '../../../shared/feedback/ConfirmDialog';
+import { EmptyState, ErrorState, LoadingState } from '../../../shared/feedback/States';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { DataList, type DataColumn } from '../../../shared/list/DataList';
+import { ListToolbar } from '../../../shared/list/ListToolbar';
+import { useListParams } from '../../../shared/list/useListParams';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
-import { Button } from '../../../shared/ui/Button';
-import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
-import { DataCard } from '../../../shared/ui/DataCard';
-import { cilPlus, cilSearch } from '../../../shared/ui/icons';
-import { Pagination } from '../../../shared/ui/Pagination';
+import { ActiveToken } from '../../../shared/page/ActiveToken';
+import { RecordActions } from '../../../shared/page/RecordActions';
+import { Icons } from '../../../shared/ui/icons';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
-import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
-import { StatusBadge } from '../../../shared/ui/StatusBadge';
-import { TextField } from '../../../shared/ui/TextField';
 
 import { useSetTeamActive, useTeams, type TeamItem } from './api';
 import { TeamFormDialog } from './TeamFormDialog';
 import { TeamMembersDialog } from './TeamMembersDialog';
 
 const PAGE_SIZE = 20;
-const FIRST_PAGE = 1;
+const SKELETON_ROWS = 5;
 const SEARCH_DEBOUNCE_MS = 300;
-
-interface TeamActionsProps {
-  team: TeamItem;
-  onEdit: (team: TeamItem) => void;
-  onMembers: (team: TeamItem) => void;
-  onToggle: (team: TeamItem) => void;
-}
-
-function TeamActions({ team, onEdit, onMembers, onToggle }: TeamActionsProps) {
-  const { t } = useTranslation('admin');
-  const { t: tc } = useTranslation();
-  return (
-    <div className="d-flex flex-wrap gap-2">
-      <Button aria-label={recordActionLabel(t('teams.manageMembers'), team.name)} variant="secondary" onClick={() => onMembers(team)}>
-        {t('teams.manageMembers')}
-      </Button>
-      <Button aria-label={recordActionLabel(tc('actions.edit'), team.name)} variant="secondary" onClick={() => onEdit(team)}>
-        {tc('actions.edit')}
-      </Button>
-      <Button aria-label={recordActionLabel(team.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), team.name)} variant="ghost" onClick={() => onToggle(team)}>
-        {team.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
-      </Button>
-    </div>
-  );
-}
+const NO_FILTERS = [] as const;
 
 /** Active state plus the intake marker, rendered once per view (UX-08). */
-function TeamBadges({ team }: { team: TeamItem }) {
+function TeamTokens({ team }: { team: TeamItem }) {
   const { t } = useTranslation('admin');
   return (
-    <span className="d-inline-flex flex-wrap gap-1">
-      <StatusBadge isActive={team.isActive} />
-      {team.isDefaultIntake && <span className="badge bg-primary-subtle text-primary-emphasis">{t('teams.intakeBadge')}</span>}
-    </span>
+    <HStack gap={1} wrap="wrap">
+      <ActiveToken isActive={team.isActive} />
+      {team.isDefaultIntake && <Token size="sm" color="blue" label={t('teams.intakeBadge')} />}
+    </HStack>
   );
 }
 
 export function TeamsPage() {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(FIRST_PAGE);
+  const list = useListParams(NO_FILTERS);
   const [form, setForm] = useState<{ team: TeamItem | null } | null>(null);
   const [membersOf, setMembersOf] = useState<TeamItem | null>(null);
   const [toggling, setToggling] = useState<TeamItem | null>(null);
-  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
-  const teams = useTeams({ search: debouncedSearch, page, pageSize: PAGE_SIZE });
+  const search = useDebouncedValue(list.search, SEARCH_DEBOUNCE_MS);
+  const teams = useTeams({ search, page: list.page, pageSize: PAGE_SIZE });
   const setActive = useSetTeamActive();
 
-  const edit = (team: TeamItem) => setForm({ team });
-  const openToggle = (team: TeamItem) => {
-    setActive.reset();
-    setToggling(team);
-  };
-
-  const columns: Column<TeamItem>[] = [
-    { key: 'name', header: t('teams.columns.name'), renderCell: (team) => <span className="fw-medium">{team.name}</span> },
+  const actions = (team: TeamItem) => (
+    <RecordActions
+      name={team.name}
+      isActive={team.isActive}
+      onEdit={() => setForm({ team })}
+      onToggle={() => {
+        setActive.reset();
+        setToggling(team);
+      }}
+      extra={
+        <Button
+          label={t('teams.manageMembers')}
+          aria-label={recordActionLabel(t('teams.manageMembers'), team.name)}
+          size="sm"
+          variant="secondary"
+          onClick={() => setMembersOf(team)}
+        />
+      }
+    />
+  );
+  const columns: DataColumn<TeamItem>[] = [
+    { key: 'name', header: t('teams.columns.name'), renderCell: (team) => <Text type="label">{team.name}</Text> },
     { key: 'members', header: t('teams.columns.members'), renderCell: (team) => t('teams.memberCount', { count: team.memberCount }) },
-    { key: 'status', header: t('teams.columns.status'), renderCell: (team) => <TeamBadges team={team} /> },
-    { key: 'actions', header: t('teams.columns.actions'), renderCell: (team) => <TeamActions team={team} onEdit={edit} onMembers={setMembersOf} onToggle={openToggle} /> },
+    { key: 'status', header: t('teams.columns.status'), renderCell: (team) => <TeamTokens team={team} /> },
+    { key: 'actions', header: t('teams.columns.actions'), renderCell: actions },
   ];
-
   const renderCard = (team: TeamItem) => (
-    <div className="d-flex flex-column gap-2">
-      <div className="d-flex align-items-start justify-content-between gap-2">
-        <div className="min-w-0">
-          <p className="mb-0 fw-medium text-break">{team.name}</p>
-          <p className="mb-0 small text-body-secondary">{t('teams.memberCount', { count: team.memberCount })}</p>
-        </div>
-        <TeamBadges team={team} />
-      </div>
-      <TeamActions team={team} onEdit={edit} onMembers={setMembersOf} onToggle={openToggle} />
-    </div>
+    <VStack gap={2}>
+      <HStack gap={2} hAlign="between" vAlign="start">
+        <VStack gap={0}>
+          <Text type="label" wordBreak="break-word">
+            {team.name}
+          </Text>
+          <Text type="supporting">{t('teams.memberCount', { count: team.memberCount })}</Text>
+        </VStack>
+        <TeamTokens team={team} />
+      </HStack>
+      {actions(team)}
+    </VStack>
   );
 
   return (
-    <section>
-      <PageHeader icon={ROUTE_META.adminTeams.icon} titleOverride={t('teams.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ team: null })}>{t('teams.new')}</Button>} />
-      <DataCard
-        filters={
-          <>
-            <TextField
-              type="search"
-              startIcon={cilSearch}
-              label={t('teams.searchLabel')}
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(FIRST_PAGE);
-              }}
-            />
-          </>
-        }
-        footer={teams.data && teams.data.items.length > 0 ? <Pagination page={teams.data.page} pageSize={teams.data.pageSize} totalCount={teams.data.totalCount} onPageChange={setPage} /> : undefined}
-      >
-        {teams.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+    <VStack gap={4}>
+      <PageHeader
+        icon={ROUTE_META.adminTeams.icon}
+        titleOverride={t('teams.title')}
+        actions={<Button label={t('teams.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setForm({ team: null })} />}
+      />
+      <ListToolbar title={t('teams.title')} search={list.search} searchLabel={t('teams.searchLabel')} onSearchChange={list.setSearch} activeCount={list.activeCount} onClear={list.clear} />
+      <Card padding={0}>
+        {teams.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {teams.isError && <ErrorState error={teams.error} onRetry={() => void teams.refetch()} />}
         {teams.data && teams.data.items.length === 0 && <EmptyState />}
         {teams.data && teams.data.items.length > 0 && (
-          <ResponsiveList items={teams.data.items} columns={columns} getKey={(team) => team.id} renderCard={renderCard} caption={t('teams.listCaption')} />
+          <DataList items={teams.data.items} columns={columns} getKey={(team) => team.id} renderCard={renderCard} caption={t('teams.listCaption')} />
         )}
-      </DataCard>
+      </Card>
+      {teams.data && teams.data.items.length > 0 && <Pagination page={teams.data.page} pageSize={teams.data.pageSize} totalItems={teams.data.totalCount} onChange={list.setPage} />}
 
       {form !== null && <TeamFormDialog key={form.team?.id ?? 'new'} team={form.team} onClose={() => setForm(null)} />}
       {membersOf !== null && <TeamMembersDialog key={membersOf.id} teamId={membersOf.id} teamName={membersOf.name} onClose={() => setMembersOf(null)} />}
@@ -135,12 +127,10 @@ export function TeamsPage() {
           variant={toggling.isActive ? 'danger' : 'primary'}
           isPending={setActive.isPending}
           error={setActive.error}
-          onConfirm={() =>
-            setActive.mutate({ id: toggling.id, version: toggling.version, isActive: !toggling.isActive }, { onSuccess: () => setToggling(null) })
-          }
+          onConfirm={() => setActive.mutate({ id: toggling.id, version: toggling.version, isActive: !toggling.isActive }, { onSuccess: () => setToggling(null) })}
           onCancel={() => setToggling(null)}
         />
       )}
-    </section>
+    </VStack>
   );
 }

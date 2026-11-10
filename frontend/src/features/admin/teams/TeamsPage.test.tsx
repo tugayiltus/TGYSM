@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findAlert } from '../../../test/alerts';
 import { ADMIN_ME, mockApi } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
 
@@ -24,13 +25,12 @@ describe('TeamsPage', () => {
     await user.click((await screen.findAllByRole('button', { name: /^Üyeleri yönet/ }))[0]!);
     const dialog = await screen.findByRole('dialog');
     expect(await within(dialog).findByText('Mert Can')).toBeInTheDocument();
-    const select = within(dialog).getByLabelText('Eklenecek kişi');
-    expect(within(select).queryByRole('option', { name: /Çalışan Kişi/ })).not.toBeInTheDocument();
-
-    await user.selectOptions(select, await within(select).findByRole('option', { name: /Elif Su/ }));
+    await user.click(within(dialog).getByRole('combobox', { name: 'Eklenecek kişi' }));
+    expect(screen.queryByRole('option', { name: /Çalışan Kişi/ })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('option', { name: /Elif Su/ }));
     await user.click(within(dialog).getByRole('button', { name: 'Üye ekle' }));
 
-    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Pasif kullanıcı ekibe eklenemez.');
+    expect(await findAlert('Pasif kullanıcı ekibe eklenemez.')).toBeInTheDocument();
   });
 
   it('locks every remove button while one removal is running', async () => {
@@ -48,6 +48,6 @@ describe('TeamsPage', () => {
     const dialog = await screen.findByRole('dialog');
     await user.click(await within(dialog).findByRole('button', { name: 'Çıkar Mert Can' }));
 
-    expect(within(dialog).getByRole('button', { name: 'Çıkar Ali Er' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Çıkar Ali Er' })).toHaveAttribute('aria-disabled', 'true');
   });
 });

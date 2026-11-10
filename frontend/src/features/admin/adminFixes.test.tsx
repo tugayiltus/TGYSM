@@ -5,6 +5,7 @@ import admin from '../../shared/i18n/locales/tr/admin.json';
 import { pageOf } from '../../test/assetData';
 import { ADMIN_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { stubPhoneViewport } from '../../test/viewport';
 
 const targets = ['incident', 'request'].flatMap((kind) =>
   ['p1', 'p2', 'p3', 'p4'].flatMap((priority) => [
@@ -67,13 +68,18 @@ describe('audit filter (UX-07)', () => {
 
 describe('teams intake badge (UX-08)', () => {
   const TEAM = { id: 't-1', name: 'Servis Masası', isActive: true, memberCount: 2, isDefaultIntake: true, version: 1 };
-  it('shows the intake badge once in the table and once in the phone card', async () => {
+  it('shows the intake badge once in the table', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/teams': { status: 200, body: pageOf([TEAM]) } });
     renderRoute('/admin/teams');
     const table = await screen.findByRole('table');
     expect(within(table).getAllByText('Kayıt alan ekip')).toHaveLength(1);
-    // ResponsiveList's phone cards: the list hidden from 768 px.
-    const cards = document.querySelector('[role="main"] ul.d-md-none') as HTMLElement;
+  });
+
+  it('shows the intake badge once in the phone card', async () => {
+    stubPhoneViewport();
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/teams': { status: 200, body: pageOf([TEAM]) } });
+    renderRoute('/admin/teams');
+    const cards = await screen.findByRole('list', { name: 'Ekip listesi' });
     expect(within(cards).getAllByText('Kayıt alan ekip')).toHaveLength(1);
   });
 });
