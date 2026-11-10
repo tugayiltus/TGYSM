@@ -72,7 +72,7 @@ describe('NewTicketPage', () => {
     await user.type(screen.getByLabelText('Konu'), 'Yazıcı çalışmıyor');
     await user.type(screen.getByLabelText('Açıklama'), 'Kağıt sıkışıyor');
     await user.selectOptions(screen.getByLabelText('Kategori'), await screen.findByRole('option', { name: 'Donanım' }));
-    await user.upload(screen.getByLabelText(/Dosya ekle/), new File([new Uint8Array([0x89, 0x50])], 'ekran.png', { type: 'image/png' }));
+    await user.upload(screen.getByLabelText(/Dosya ekle/, { selector: 'input[type="file"]' }), new File([new Uint8Array([0x89, 0x50])], 'ekran.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/tickets/${INCIDENT.number}`));

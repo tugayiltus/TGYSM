@@ -96,7 +96,7 @@ describe('review fixes', () => {
 
     await user.type(await screen.findByLabelText('Konu'), 'Yazıcı');
     await user.type(screen.getByLabelText('Açıklama'), 'Bozuk');
-    await user.upload(screen.getByLabelText(/Dosya ekle/), new File(['x'], 'not.pdf', { type: 'application/pdf' }));
+    await user.upload(screen.getByLabelText(/Dosya ekle/, { selector: 'input[type="file"]' }), new File(['x'], 'not.pdf', { type: 'application/pdf' }));
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/tickets/${INCIDENT.number}`));
