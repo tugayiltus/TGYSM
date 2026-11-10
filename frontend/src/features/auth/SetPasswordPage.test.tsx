@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findAlert } from '../../test/alerts';
 import { mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
@@ -39,7 +40,7 @@ describe('SetPasswordPage', () => {
 
     await fill(user, VALID_PASSWORD);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Bağlantı geçersiz veya süresi dolmuş.');
+    expect(await findAlert('Bağlantı geçersiz veya süresi dolmuş.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Yeni bağlantı iste' })).toHaveAttribute('href', '/forgot-password');
   });
 
@@ -47,8 +48,8 @@ describe('SetPasswordPage', () => {
     const mock = mockApi({});
     renderRoute('/set-password');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Bağlantı geçersiz veya süresi dolmuş.');
-    expect(screen.getByRole('button', { name: 'Şifreyi kaydet' })).toBeDisabled();
+    expect(await findAlert('Bağlantı geçersiz veya süresi dolmuş.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Şifreyi kaydet' })).toHaveAttribute('aria-disabled', 'true');
     expect(mock.calls.some((request) => request.url.includes('set-password'))).toBe(false);
   });
 
@@ -72,6 +73,6 @@ describe('SetPasswordPage', () => {
 
     await fill(user, VALID_PASSWORD);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Çok fazla deneme yapıldı.');
+    expect(await findAlert('Çok fazla deneme yapıldı.')).toBeInTheDocument();
   });
 });

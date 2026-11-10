@@ -63,11 +63,13 @@ describe('profile and error pages', () => {
 });
 
 describe('sign-in look', () => {
-  it('shows the sign-in fields with leading icons and the product brand', async () => {
+  it('shows the sign-in fields with leading icons under the product brand', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 401, body: { code: 'auth.unauthenticated' } } });
     renderRoute('/login');
     await screen.findByRole('heading', { level: 1 });
-    expect(document.querySelectorAll('main .input-group .input-group-text svg')).toHaveLength(2);
+    for (const label of ['E-posta', 'Şifre']) {
+      expect(screen.getByLabelText(label).parentElement?.querySelector('svg')).not.toBeNull();
+    }
     expect(within(screen.getByRole('main')).getByRole('heading', { level: 2, name: 'TGYSM' })).toBeInTheDocument();
   });
 });

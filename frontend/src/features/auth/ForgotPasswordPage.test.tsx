@@ -1,6 +1,7 @@
 import { cleanup, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findAlert } from '../../test/alerts';
 import { mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
@@ -53,6 +54,6 @@ describe('ForgotPasswordPage', () => {
     await user.type(await screen.findByLabelText('E-posta'), 'a@example.com');
     await user.click(screen.getByRole('button', { name: 'Bağlantı iste' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Çok fazla deneme yapıldı.');
+    expect(await findAlert('Çok fazla deneme yapıldı.')).toBeInTheDocument();
   });
 });

@@ -1,9 +1,9 @@
 import type { PropsWithChildren } from 'react';
 import { Navigate, useLocation } from 'react-router';
 
+import { ErrorState, LoadingState } from '../../shared/feedback/States';
 import { ROUTES } from '../../shared/routes';
 import { ForbiddenPage } from '../../shared/ui/ForbiddenPage';
-import { ErrorState, LoadingState } from '../../shared/ui/States';
 
 import { useMe, type Role } from './api';
 import { SessionContext, useSession } from './session';

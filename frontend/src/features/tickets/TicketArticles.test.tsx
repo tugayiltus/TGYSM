@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findAlert, messageAlerts } from '../../test/alerts';
 import { ARTICLE_ID, kbRoutes, LIST_ARTICLE } from '../../test/kbData';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
@@ -106,7 +107,7 @@ describe('TicketArticles', () => {
     const { user } = renderRoute(`/tickets/${INCIDENT.number}`);
 
     await user.click(await screen.findByRole('button', { name: `Bağlantıyı kaldır ${INTERNAL.title}` }));
-    const unlinkError = await screen.findByRole('alert');
+    const unlinkError = await findAlert();
 
     await user.click(screen.getByRole('button', { name: 'Makale bağla' }));
     const dialog = await screen.findByRole('dialog');
@@ -116,6 +117,6 @@ describe('TicketArticles', () => {
     expect(await screen.findByRole('link', { name: LINKED.title })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(unlinkError).not.toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(messageAlerts()).toHaveLength(0);
   });
 });

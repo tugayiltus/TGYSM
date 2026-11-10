@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findAlert } from '../../test/alerts';
 import { EMPLOYEE_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
@@ -25,7 +26,7 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText('Şifre'), 'wrong-password-1');
     await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('E-posta veya şifre hatalı.');
+    expect(await findAlert('E-posta veya şifre hatalı.')).toBeInTheDocument();
   });
 
   it('ignores a protocol-relative redirect target', async () => {

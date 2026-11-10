@@ -1,6 +1,7 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findAlert, messageAlerts } from '../../../test/alerts';
 import { ADMIN_ME, mockApi, type MockRoutes } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
 
@@ -111,7 +112,7 @@ describe('SlaCalendarPage', () => {
     const { user } = renderRoute('/admin/sla/calendar');
 
     await user.click(await screen.findByRole('button', { name: 'Takvimi kaydet' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('başka biri tarafından değiştirildi');
+    expect(await findAlert('başka biri tarafından değiştirildi')).toBeInTheDocument();
 
     api.set('GET /api/v1/admin/sla/calendar', { status: 200, body: { ...CALENDAR, version: 3, timeZone: 'Europe/London' } });
     let put: unknown;
@@ -122,7 +123,7 @@ describe('SlaCalendarPage', () => {
     await user.click(screen.getByRole('button', { name: 'Sunucudaki takvimi yükle' }));
 
     expect(await screen.findByDisplayValue('Europe/London')).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(messageAlerts()).toHaveLength(0);
     await user.click(screen.getByRole('button', { name: 'Takvimi kaydet' }));
     await waitFor(() => expect(put).toMatchObject({ version: 3, timeZone: 'Europe/London' }));
   });

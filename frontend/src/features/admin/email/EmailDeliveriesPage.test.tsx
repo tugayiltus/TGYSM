@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findAlert } from '../../../test/alerts';
 import { ADMIN_ME, mockApi, type MockRoutes } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
 
@@ -61,7 +62,7 @@ describe('EmailDeliveriesPage', () => {
 
     await user.click((await screen.findAllByRole('button', { name: 'Yeniden dene failed@example.com' }))[0]!);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Yalnızca başarısız olan e-postalar yeniden gönderilebilir.');
+    expect(await findAlert('Yalnızca başarısız olan e-postalar yeniden gönderilebilir.')).toBeInTheDocument();
   });
 
   it('sends the status, event and recipient filters to the server', async () => {

@@ -16,6 +16,7 @@ import { buildCrumbs, type Crumb } from './crumbs';
 import { PageHeader } from './PageHeader';
 import { linkState, parseReturn } from './returnTo';
 import { ROUTE_IDS, ROUTE_META, type RouteId } from './routeMeta';
+import { StateLink } from './StateLink';
 
 // Untyped key lookup, as the runtime builds keys from route metadata.
 const t = (key: string): string => i18n.t(key as never);
@@ -218,5 +219,27 @@ describe('PageHeader look', () => {
     const heading = screen.getByRole('heading', { level: 1, name: 'Envanter' });
     expect(heading.parentElement?.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByText('Tüm cihazlar')).toBeInTheDocument();
+  });
+});
+
+describe('StateLink', () => {
+  it('opens its target with the router state that leads back', async () => {
+    const user = userEvent.setup();
+    const from = { from: '/workspace/queue?queue=team' };
+    const router = createMemoryRouter(
+      [
+        { path: '/', element: <StateLink href="/tickets/INC-1" state={from}>Yazıcı arızası</StateLink> },
+        { path: '/tickets/:number', element: <p>Kayıt</p> },
+      ],
+      { initialEntries: ['/'] },
+    );
+    render(
+      <AstryxProvider>
+        <RouterProvider router={router} />
+      </AstryxProvider>,
+    );
+    await user.click(screen.getByRole('link', { name: 'Yazıcı arızası' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/tickets/INC-1'));
+    expect(router.state.location.state).toEqual(from);
   });
 });

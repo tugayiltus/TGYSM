@@ -32,7 +32,7 @@ describe('ApprovalsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Reddet REQ-2026-000001' }));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByRole('button', { name: 'Onayla' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Onayla' })).toHaveAttribute('aria-disabled', 'true');
     await user.type(within(dialog).getByLabelText('Neden'), 'Bütçe yok');
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
     await waitFor(() => expect(posted.reject).toEqual({ version: 4, reason: 'Bütçe yok' }));
@@ -53,7 +53,8 @@ describe('ApprovalsPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Onaylayıcı ata REQ-2026-000002' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Onaylayıcı'), await within(dialog).findByRole('option', { name: 'Onay Veren' }));
+    await user.click(within(dialog).getByRole('combobox', { name: 'Onaylayıcı' }));
+    await user.click(await screen.findByRole('option', { name: 'Onay Veren' }));
     await user.type(within(dialog).getByLabelText('Neden'), 'Departman onaylayıcısı yok');
     await user.click(within(dialog).getByRole('button', { name: 'Onaylayıcıyı ata' }));
 

@@ -1,17 +1,27 @@
+/**
+ * @input Nothing; reads where the visitor was heading from the router state.
+ * @output The sign-in form, or a redirect once a session exists.
+ * @position `/login`, outside the app shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Heading } from '@astryxdesign/core/Heading';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Link } from '@astryxdesign/core/Link';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link, Navigate, useLocation } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 
-import { describeError, fieldError } from '../../shared/api/errorMessage';
+import { describeError } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { FormTextInput } from '../../shared/form/formFields';
 import { AuthCard } from '../../shared/layout/AuthCard';
 import { ROUTES } from '../../shared/routes';
-import { Button } from '../../shared/ui/Button';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { cilEnvelopeOpen, cilLockLocked } from '../../shared/ui/icons';
-import { TextField } from '../../shared/ui/TextField';
+import { Icons } from '../../shared/ui/icons';
 
 import { useLogin, useMe } from './api';
 
@@ -41,11 +51,7 @@ export function LoginPage() {
   const me = useMe();
   const login = useLogin();
   const location = useLocation();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginValues>({ resolver: zodResolver(loginSchema), defaultValues: EMPTY_LOGIN });
+  const { control, handleSubmit } = useForm<LoginValues>({ resolver: zodResolver(loginSchema), defaultValues: EMPTY_LOGIN });
 
   // Single redirect point: after login the refreshed session lands here and goes where the user was heading.
   if (me.data) {
@@ -56,29 +62,29 @@ export function LoginPage() {
 
   return (
     <AuthCard>
-      <div>
-        <h1 className="h4 mb-1">{t('login.title')}</h1>
-        <p className="text-body-secondary mb-0">{t('login.subtitle')}</p>
-      </div>
-      <form className="d-flex flex-column gap-3" noValidate onSubmit={(event) => void onSubmit(event)}>
+      <VStack gap={1}>
+        <Heading level={1}>{t('login.title')}</Heading>
+        <Text type="supporting">{t('login.subtitle')}</Text>
+      </VStack>
+      <form noValidate onSubmit={(event) => void onSubmit(event)}>
+        <VStack gap={4}>
           <FormAlert message={login.error ? describeError(login.error) : null} />
-          <TextField label={t('login.email')} type="email" startIcon={cilEnvelopeOpen} autoComplete="username" error={fieldError(errors.email)} {...register('email')} />
-          <TextField
+          <FormTextInput control={control} name="email" label={t('login.email')} type="email" startIcon={Icons.envelopeOpen} autoComplete="username" />
+          <FormTextInput
+            control={control}
+            name="password"
             label={t('login.password')}
             type="password"
-            startIcon={cilLockLocked}
+            startIcon={Icons.lock}
             autoComplete="current-password"
-            hint={t('login.lockoutHint')}
-            error={fieldError(errors.password)}
-            {...register('password')}
+            description={t('login.lockoutHint')}
           />
-          <Button type="submit" className="w-100" isLoading={login.isPending}>
-            {t('login.submit')}
-          </Button>
-          <Link to={ROUTES.forgotPassword} className="text-center">
-            {t('login.forgotLink')}
-          </Link>
-        </form>
+          <Button type="submit" label={t('login.submit')} variant="primary" width="100%" isLoading={login.isPending} />
+          <HStack hAlign="center">
+            <Link href={ROUTES.forgotPassword}>{t('login.forgotLink')}</Link>
+          </HStack>
+        </VStack>
+      </form>
     </AuthCard>
   );
 }
