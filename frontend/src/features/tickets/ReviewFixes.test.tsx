@@ -94,8 +94,8 @@ describe('review fixes', () => {
     } as never);
     const { user, router } = renderRoute('/tickets/new/incident');
 
-    await user.type(await screen.findByLabelText('Konu'), 'Yazıcı');
-    await user.type(screen.getByLabelText('Açıklama'), 'Bozuk');
+    await user.type(await screen.findByLabelText(/^Konu/), 'Yazıcı');
+    await user.type(screen.getByLabelText(/^Açıklama/), 'Bozuk');
     await user.upload(screen.getByLabelText(/Dosya ekle/, { selector: 'input[type="file"]' }), new File(['x'], 'not.pdf', { type: 'application/pdf' }));
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
 

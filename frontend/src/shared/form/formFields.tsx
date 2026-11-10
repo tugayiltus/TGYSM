@@ -23,10 +23,7 @@ interface Bound<T extends FieldValues> {
   name: FieldPath<T>;
 }
 
-/**
- * The binding supplies these props. Callers pass all other props to the Astryx component.
- * `hasClear` is not accepted: it makes the value nullable. Add it when a form needs it.
- */
+/** The binding supplies these props. Callers pass all other props to the Astryx component. */
 type Supplied = 'value' | 'onChange' | 'onBlur' | 'ref' | 'status' | 'name';
 
 const ERROR_STATUS = 'error';
@@ -61,11 +58,30 @@ export interface SelectOption {
 }
 
 export type FormSelectorProps<T extends FieldValues> = Bound<T> &
-  Omit<ComponentProps<typeof Selector>, Supplied | 'options' | 'hasClear'> & { options: readonly SelectOption[] };
+  Omit<ComponentProps<typeof Selector>, Supplied | 'options' | 'hasClear' | 'changeAction'> & {
+    options: readonly SelectOption[];
+    /** Optional choice: a clear button empties it. The form value is then `''`. */
+    isClearable?: boolean;
+  };
 
-export function FormSelector<T extends FieldValues>({ control, name, options, ...props }: FormSelectorProps<T>) {
+const NO_VALUE = '';
+
+export function FormSelector<T extends FieldValues>({ control, name, options, isClearable = false, ...props }: FormSelectorProps<T>) {
   const { value, onChange, status } = useBoundField({ control, name });
-  return <Selector {...props} options={[...options]} value={value as string} onChange={onChange} status={status} />;
+  const current = (value as string | undefined) ?? NO_VALUE;
+  if (isClearable) {
+    return (
+      <Selector
+        {...props}
+        options={[...options]}
+        hasClear
+        value={current === NO_VALUE ? null : current}
+        onChange={(next: string | null) => onChange(next ?? NO_VALUE)}
+        status={status}
+      />
+    );
+  }
+  return <Selector {...props} options={[...options]} value={current} onChange={onChange} status={status} />;
 }
 
 export type FormCheckboxProps<T extends FieldValues> = Bound<T> & Omit<ComponentProps<typeof CheckboxInput>, Supplied>;

@@ -65,7 +65,7 @@ describe('new ticket form', () => {
       'GET /api/v1/tickets': { status: 200, body: pageOf([]) },
     });
     const { user, router } = renderRoute('/tickets/new/incident');
-    await user.type(await screen.findByLabelText('Konu'), 'Ekran');
+    await user.type(await screen.findByLabelText(/^Konu/), 'Ekran');
     await user.click(trail().getByRole('link', { name: 'Kayıtlarım' }));
     expect(await screen.findByRole('dialog', { name: 'Kaydedilmemiş değişiklikler' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/tickets/new/incident');

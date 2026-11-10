@@ -1,9 +1,10 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { LOCATIONS } from '../../test/assetData';
 import { EMPLOYEE_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 import { INCIDENT } from '../../test/ticketData';
 
 const referenceRoutes = {
@@ -32,11 +33,10 @@ describe('incident device', () => {
       [`GET /api/v1/tickets/${INCIDENT.number}`]: { status: 200, body: INCIDENT },
     });
     const { user } = renderRoute('/tickets/new/incident');
-    const device = await screen.findByLabelText('İlgili cihaz');
-    expect(await within(device).findByRole('option', { name: 'DMR-000001 · Lenovo T14' })).toBeInTheDocument();
-    await user.selectOptions(device, 'DMR-000001 · Lenovo T14');
-    await user.type(screen.getByLabelText('Konu'), 'Ekran kırık');
-    await user.type(screen.getByLabelText('Açıklama'), 'Açılmıyor, siyah ekran.');
+    await screen.findByRole('combobox', { name: 'İlgili cihaz' });
+    await chooseOption(user, 'İlgili cihaz', 'DMR-000001 · Lenovo T14');
+    await user.type(screen.getByLabelText(/^Konu/), 'Ekran kırık');
+    await user.type(screen.getByLabelText(/^Açıklama/), 'Açılmıyor, siyah ekran.');
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
     await waitFor(() => expect(posted.assetId).toBe('a-1'));
   });
@@ -44,7 +44,7 @@ describe('incident device', () => {
   it('does not offer a device on a request', async () => {
     mockApi({ ...referenceRoutes, 'GET /api/v1/me/assets': { status: 200, body: [] } });
     renderRoute('/tickets/new/request');
-    await screen.findByLabelText('Konu');
+    await screen.findByLabelText(/^Konu/);
     expect(screen.queryByLabelText('İlgili cihaz')).not.toBeInTheDocument();
   });
 });
@@ -69,9 +69,9 @@ describe('NewTicketPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Gönder' }));
     expect(await screen.findAllByText('Bu alan zorunludur.')).toHaveLength(2);
-    await user.type(screen.getByLabelText('Konu'), 'Yazıcı çalışmıyor');
-    await user.type(screen.getByLabelText('Açıklama'), 'Kağıt sıkışıyor');
-    await user.selectOptions(screen.getByLabelText('Kategori'), await screen.findByRole('option', { name: 'Donanım' }));
+    await user.type(screen.getByLabelText(/^Konu/), 'Yazıcı çalışmıyor');
+    await user.type(screen.getByLabelText(/^Açıklama/), 'Kağıt sıkışıyor');
+    await chooseOption(user, 'Kategori', 'Donanım');
     await user.upload(screen.getByLabelText(/Dosya ekle/, { selector: 'input[type="file"]' }), new File([new Uint8Array([0x89, 0x50])], 'ekran.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
 
@@ -92,10 +92,10 @@ describe('NewTicketPage', () => {
     });
     const { user, router } = renderRoute('/tickets/new/request');
 
-    await user.selectOptions(await screen.findByLabelText('Talep tipi'), await screen.findByRole('option', { name: 'Yeni dizüstü' }));
+    await chooseOption(user, /^Talep tipi/, 'Yeni dizüstü');
     expect(screen.getByText('Bu talep yöneticinizin onayından sonra işleme alınır.')).toBeInTheDocument();
-    await user.type(screen.getByLabelText('Konu'), 'Yeni cihaz');
-    await user.type(screen.getByLabelText('Açıklama'), 'Göreve başlıyorum');
+    await user.type(screen.getByLabelText(/^Konu/), 'Yeni cihaz');
+    await user.type(screen.getByLabelText(/^Açıklama/), 'Göreve başlıyorum');
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/tickets/REQ-2026-000001'));

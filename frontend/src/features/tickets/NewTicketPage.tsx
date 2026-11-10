@@ -1,3 +1,16 @@
+/**
+ * @input The ticket kind: incident or request.
+ * @output The new ticket form; files upload after the ticket exists, then the ticket opens.
+ * @position `/tickets/new/incident` and `/tickets/new/request`, inside the app shell.
+ */
+import { Banner } from '@astryxdesign/core/Banner';
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { Grid } from '@astryxdesign/core/Grid';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -5,19 +18,15 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
-import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../shared/api/errorMessage';
+import { applyServerErrors, describeError, isHandledByFields } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
+import { FormSelector, FormTextArea, FormTextInput } from '../../shared/form/formFields';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ticketPath } from '../../shared/routes';
-import { Button } from '../../shared/ui/Button';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { FormSection } from '../../shared/ui/FormSection';
-import { cilPlus, cilWarning } from '../../shared/ui/icons';
-import { SelectField } from '../../shared/ui/SelectField';
-import { TextAreaField } from '../../shared/ui/TextAreaField';
-import { TextField } from '../../shared/ui/TextField';
-import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
+import { Icons } from '../../shared/ui/icons';
 import { useMyAssets, useReferenceLocations } from '../assets/api';
 
 import { useAddComment, useCreateTicket, useReferenceCategories, useReferenceRequestTypes, type TicketKind } from './api';
@@ -29,6 +38,11 @@ import type { TicketDetailState } from './TicketDetailPage';
 const SUBJECT_MAX_LENGTH = 200;
 const DESCRIPTION_MAX_LENGTH = 4000;
 const NO_SELECTION = '';
+/** Readable width for a long form. */
+const FORM_MAX_WIDTH = 880;
+/** Paired fields sit side by side from this width. */
+const FIELD_COLUMNS = { minWidth: 280 } as const;
+const DESCRIPTION_ROWS = 6;
 
 const ticketSchema = z.object({
   subject: z.string().trim().min(1, ERROR_CODES.required).max(SUBJECT_MAX_LENGTH, ERROR_CODES.tooLong),
@@ -60,11 +74,10 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
   const isRequest = kind === 'request';
 
   const {
-    register,
     control,
     handleSubmit,
     setError,
-    formState: { errors, isDirty },
+    formState: { isDirty },
   } = useForm<TicketFormValues>({
     resolver: zodResolver(isRequest ? requestSchema : ticketSchema),
     defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION, assetId: NO_SELECTION },
@@ -110,40 +123,37 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
   const alert = create.error && !isHandledByFields(create.error, FORM_FIELDS, CODE_FIELDS) ? describeError(create.error) : null;
 
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader icon={ROUTE_META.myTickets.icon} titleOverride={isRequest ? t('new.requestTitle') : t('new.incidentTitle')} />
       <UnsavedChangesGuard when={({ nextLocation }) => hasChanges && (nextLocation.state as TicketDetailState | null)?.created !== true} />
-      <form noValidate onSubmit={(event) => void onSubmit(event)}>
-        <FormSection
-          actions={
-            <Button type="submit" icon={isRequest ? cilPlus : cilWarning} isLoading={create.isPending || upload.isPending}>
-              {t('new.submit')}
-            </Button>
-          }
-        >
-          <p className="col-12 mb-0 text-body-secondary">{isRequest ? t('new.requestIntro') : t('new.incidentIntro')}</p>
-          <div className="col-12">
+      <Card padding={6} maxWidth={FORM_MAX_WIDTH}>
+        <form noValidate onSubmit={(event) => void onSubmit(event)}>
+          <VStack gap={5}>
+            <Text type="supporting">{isRequest ? t('new.requestIntro') : t('new.incidentIntro')}</Text>
             <FormAlert message={alert} />
-          </div>
-          {isRequest && (
-            <>
-              <SelectField className="col-12 col-md-6" label={t('new.requestType')} options={typeOptions} placeholder={t('new.selectRequestType')} error={fieldError(errors.requestTypeId)} {...register('requestTypeId')} />
-              {needsApproval && <p className="col-12 alert alert-warning mb-0">{t('new.approvalHint')}</p>}
-            </>
-          )}
-          <TextField className="col-12" label={t('new.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
-          <TextAreaField className="col-12" label={t('new.description')} error={fieldError(errors.description)} {...register('description')} />
-          <SelectField className="col-12 col-md-6" label={t('new.category')} options={categoryOptions} placeholder={t('fields.select')} error={fieldError(errors.categoryId)} {...register('categoryId')} />
-          {!isRequest && (
-            <SelectField className="col-12 col-md-6" label={t('new.asset')} options={assetOptions} placeholder={t('new.noAsset')} hint={t('new.assetHint')} {...register('assetId')} />
-          )}
-          <SelectField className="col-12 col-md-6" label={t('new.location')} options={locationOptions} placeholder={t('fields.select')} error={fieldError(errors.locationId)} {...register('locationId')} />
-          <div className="col-12">
+            {isRequest && (
+              <VStack gap={3}>
+                <FormSelector control={control} name="requestTypeId" label={t('new.requestType')} options={typeOptions} placeholder={t('new.selectRequestType')} isRequired />
+                {needsApproval && <Banner status="warning" title={t('new.approvalHint')} />}
+              </VStack>
+            )}
+            <FormTextInput control={control} name="subject" label={t('new.subject')} autoComplete="off" isRequired />
+            <FormTextArea control={control} name="description" label={t('new.description')} rows={DESCRIPTION_ROWS} isRequired />
+            <Grid columns={FIELD_COLUMNS} gap={4}>
+              <FormSelector control={control} name="categoryId" label={t('new.category')} options={categoryOptions} placeholder={t('fields.select')} isClearable />
+              {!isRequest && (
+                <FormSelector control={control} name="assetId" label={t('new.asset')} options={assetOptions} placeholder={t('new.noAsset')} description={t('new.assetHint')} isClearable />
+              )}
+              <FormSelector control={control} name="locationId" label={t('new.location')} options={locationOptions} placeholder={t('fields.select')} isClearable />
+            </Grid>
             <AttachmentInput label={t('new.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
-          </div>
-        </FormSection>
-      </form>
-    </>
+            <HStack hAlign="end">
+              <Button type="submit" label={t('new.submit')} variant="primary" icon={<Icon icon={isRequest ? Icons.plus : Icons.warning} />} isLoading={create.isPending || upload.isPending} />
+            </HStack>
+          </VStack>
+        </form>
+      </Card>
+    </VStack>
   );
 }
 
