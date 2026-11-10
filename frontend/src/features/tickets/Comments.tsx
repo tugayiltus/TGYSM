@@ -69,7 +69,10 @@ export function CommentList({ ticket, comments }: { ticket: TicketDetail; commen
   );
 }
 
-/** People working on the ticket also get an internal-note tab. */
+/**
+ * People working on the ticket also get an internal-note tab.
+ * A message in flight keeps the visibility it was sent with, so the tab stays usable while it sends.
+ */
 export function CommentBox({ ticket }: { ticket: TicketDetail }) {
   const { t } = useTranslation('tickets');
   const add = useAddComment();
@@ -101,7 +104,7 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
     >
       <VStack gap={3}>
         {ticket.canWork && (
-          <TabList role="tablist" aria-label={t('comment.tabs')} value={visibility} onChange={(value) => isVisibility(value) && !add.isPending && setVisibility(value)}>
+          <TabList role="tablist" aria-label={t('comment.tabs')} value={visibility} onChange={(value) => isVisibility(value) && setVisibility(value)}>
             {VISIBILITIES.map((tab) => (
               <Tab key={tab} value={tab} label={t(`comment.${tab}`)} />
             ))}

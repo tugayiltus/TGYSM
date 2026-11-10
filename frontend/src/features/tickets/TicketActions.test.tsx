@@ -205,6 +205,36 @@ describe('TicketActions', () => {
     await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).not.toHaveAttribute('aria-disabled', 'true'));
     expect(within(box).getByLabelText('Mesajınız')).toHaveValue('');
   });
+
+  it('applies a tab chosen while a note is still sending to the next message', async () => {
+    let release: () => void = () => undefined;
+    const sent: string[] = [];
+    mockApi(
+      routes({
+        [`POST ${BASE}/comments`]: async (request: Request) => {
+          sent.push(String((await request.formData()).get('visibility')));
+          return sent.length === 1
+            ? new Promise((resolve) => {
+                release = () => resolve({ status: 201, body: {} });
+              })
+            : { status: 201, body: {} };
+        },
+      }) as never,
+    );
+    const { user } = renderRoute(`/tickets/${INCIDENT.number}`);
+
+    const box = await screen.findByRole('form', { name: 'Yazışmalar' });
+    await user.click(within(box).getByRole('tab', { name: 'İç not' }));
+    await user.type(within(box).getByLabelText('Mesajınız'), 'Not');
+    await user.click(within(box).getByRole('button', { name: 'Gönder' }));
+    await waitFor(() => expect(sent).toHaveLength(1));
+    await user.click(within(box).getByRole('tab', { name: 'Yanıt' }));
+    release();
+    await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).toHaveValue(''));
+    await user.type(within(box).getByLabelText('Mesajınız'), 'Yanıt metni');
+    await user.click(within(box).getByRole('button', { name: 'Gönder' }));
+    await waitFor(() => expect(sent).toEqual(['internal', 'public']));
+  });
 });
 
 describe('ticket detail look', () => {
