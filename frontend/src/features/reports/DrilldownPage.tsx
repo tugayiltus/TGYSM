@@ -1,18 +1,28 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input The report from the route; metric, bucket, part and page from the URL query.
+ * @output The rows behind one figure, bucket or ratio part, with the report's filters, paging and export.
+ * @position `/reports/:report/list`, inside the app shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Link } from '@astryxdesign/core/Link';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 
+import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
 import { translateOr } from '../../shared/i18n/dynamic';
 import { formatDate, formatDateTime } from '../../shared/lib/format';
 import { readPageParam } from '../../shared/lib/pageParam';
+import { DataList, type DataColumn } from '../../shared/list/DataList';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { assetPath, reportPath, ticketPath } from '../../shared/routes';
-import { DataCard } from '../../shared/ui/DataCard';
-import { cilArrowLeft } from '../../shared/ui/icons';
-import { Pagination } from '../../shared/ui/Pagination';
-import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
+import { Icons } from '../../shared/ui/icons';
 
 import {
   DRILL_PARAM,
@@ -32,10 +42,12 @@ import { bucketLabel, metricLabel } from './formatMetric';
 import { filterQuery, readReportFilter, type ReportFilterValues } from './useReportFilter';
 
 const DEFAULT_PART: DrillPart = 'numerator';
+const SKELETON_ROWS = 5;
+const META_SEPARATOR = ' · ';
 
 const readPart = (value: string | null): DrillPart => DRILL_PARTS.find((part) => part === value) ?? DEFAULT_PART;
 
-function useTicketColumns(): Column<DrilldownTicketRow>[] {
+function useTicketColumns(): DataColumn<DrilldownTicketRow>[] {
   const { t } = useTranslation('reports');
   return [
     { key: 'number', header: t('drilldown.columns.number'), renderCell: (row) => <TicketLink row={row} /> },
@@ -48,7 +60,7 @@ function useTicketColumns(): Column<DrilldownTicketRow>[] {
   ];
 }
 
-function useAssetColumns(): Column<DrilldownAssetRow>[] {
+function useAssetColumns(): DataColumn<DrilldownAssetRow>[] {
   const { t } = useTranslation('reports');
   const { t: tc } = useTranslation();
   return [
@@ -66,48 +78,41 @@ function useAssetColumns(): Column<DrilldownAssetRow>[] {
 }
 
 function TicketLink({ row }: { row: DrilldownTicketRow }) {
-  return (
-    <Link to={ticketPath(row.number)} className="fw-medium link-primary text-decoration-underline">
-      {row.number}
-    </Link>
-  );
+  return <Link href={ticketPath(row.number)}>{row.number}</Link>;
 }
 
 function AssetLink({ row }: { row: DrilldownAssetRow }) {
-  return (
-    <Link to={assetPath(row.id)} className="fw-medium link-primary text-decoration-underline">
-      {row.assetTag}
-    </Link>
-  );
+  return <Link href={assetPath(row.id)}>{row.assetTag}</Link>;
 }
 
 function TicketCard({ row }: { row: DrilldownTicketRow }) {
   const { t } = useTranslation('reports');
+  const meta = [
+    translateOr(`tickets:statuses.${row.status}`, row.status),
+    translateOr(`tickets:priorities.${row.priority}`, row.priority),
+    row.teamName,
+    row.assigneeName ?? t('buckets.unassigned'),
+  ].join(META_SEPARATOR);
   return (
-    <div className="d-flex flex-column gap-1 small">
+    <VStack gap={0.5}>
       <TicketLink row={row} />
-      <p className="text-break">{row.subject}</p>
-      <p className="text-body-secondary">
-        {translateOr(`tickets:statuses.${row.status}`, row.status)} · {translateOr(`tickets:priorities.${row.priority}`, row.priority)} · {row.teamName} ·{' '}
-        {row.assigneeName ?? t('buckets.unassigned')}
-      </p>
-      <p className="text-body-secondary">{formatDateTime(row.createdAt)}</p>
-    </div>
+      <Text wordBreak="break-word">{row.subject}</Text>
+      <Text type="supporting">{meta}</Text>
+      <Text type="supporting">{formatDateTime(row.createdAt)}</Text>
+    </VStack>
   );
 }
 
 function AssetCard({ row }: { row: DrilldownAssetRow }) {
+  const status = [translateOr(`assets:statuses.${row.status}`, row.status), row.locationName, row.warrantyEndsOn === null ? null : formatDate(row.warrantyEndsOn)]
+    .filter(Boolean)
+    .join(META_SEPARATOR);
   return (
-    <div className="d-flex flex-column gap-1 small">
+    <VStack gap={0.5}>
       <AssetLink row={row} />
-      <p>
-        {translateOr(`assets:types.${row.type}`, row.type)} · {row.brand} {row.model}
-      </p>
-      <p className="text-body-secondary">
-        {translateOr(`assets:statuses.${row.status}`, row.status)} · {row.locationName}
-        {row.warrantyEndsOn !== null && ` · ${formatDate(row.warrantyEndsOn)}`}
-      </p>
-    </div>
+      <Text>{`${translateOr(`assets:types.${row.type}`, row.type)}${META_SEPARATOR}${row.brand} ${row.model}`}</Text>
+      <Text type="supporting">{status}</Text>
+    </VStack>
   );
 }
 
@@ -125,48 +130,22 @@ function DrilldownRows({ report, selection, filter, page, onPageChange }: RowsPr
   const assetColumns = useAssetColumns();
   const rows = useDrilldown(report, selection, filter, page);
 
-  if (rows.isPending) {
-    return (
-      <DataCard>
-        <LoadingState rows={TABLE_SKELETON_ROWS} />
-      </DataCard>
-    );
-  }
-  if (rows.isError) {
-    return (
-      <DataCard>
-        <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />
-      </DataCard>
-    );
-  }
-  const paged = rows.data.tickets ?? rows.data.assets;
-  if (paged === null || paged.totalCount === 0) {
-    return (
-      <DataCard>
-        <EmptyState message={t('drilldown.empty')} />
-      </DataCard>
-    );
-  }
+  const paged = rows.data?.tickets ?? rows.data?.assets ?? null;
   return (
-    <DataCard footer={<Pagination page={paged.page} pageSize={DRILLDOWN_PAGE_SIZE} totalCount={paged.totalCount} onPageChange={onPageChange} />}>
-      {rows.data.tickets !== null ? (
-        <ResponsiveList
-          items={rows.data.tickets.items}
-          columns={ticketColumns}
-          getKey={(row) => row.number}
-          renderCard={(row) => <TicketCard row={row} />}
-          caption={t('drilldown.caption')}
-        />
-      ) : (
-        <ResponsiveList
-          items={rows.data.assets?.items ?? []}
-          columns={assetColumns}
-          getKey={(row) => row.id}
-          renderCard={(row) => <AssetCard row={row} />}
-          caption={t('drilldown.caption')}
-        />
-      )}
-    </DataCard>
+    <VStack gap={3}>
+      <Card padding={0}>
+        {rows.isPending && <LoadingState rows={SKELETON_ROWS} />}
+        {rows.isError && <ErrorState error={rows.error} onRetry={() => void rows.refetch()} />}
+        {rows.data !== undefined && (paged === null || paged.totalCount === 0) && <EmptyState message={t('drilldown.empty')} />}
+        {rows.data?.tickets != null && rows.data.tickets.totalCount > 0 && (
+          <DataList items={rows.data.tickets.items} columns={ticketColumns} getKey={(row) => row.number} renderCard={(row) => <TicketCard row={row} />} caption={t('drilldown.caption')} />
+        )}
+        {rows.data?.tickets == null && rows.data?.assets != null && rows.data.assets.totalCount > 0 && (
+          <DataList items={rows.data.assets.items} columns={assetColumns} getKey={(row) => row.id} renderCard={(row) => <AssetCard row={row} />} caption={t('drilldown.caption')} />
+        )}
+      </Card>
+      {paged !== null && paged.totalCount > 0 && <Pagination page={paged.page} pageSize={DRILLDOWN_PAGE_SIZE} totalItems={paged.totalCount} onChange={onPageChange} />}
+    </VStack>
   );
 }
 
@@ -194,31 +173,32 @@ function Drilldown({ report, metric }: { report: ReportName; metric: string }) {
       return updated;
     });
 
+  const parts = [bucketName, selection.part !== DEFAULT_PART ? t('drilldown.denominator') : null].filter((part): part is string => part !== null);
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader
         icon={ROUTE_META.reports.icon}
         titleOverride={metricLabel(metric)}
         description={
-          bucketName !== null || selection.part !== DEFAULT_PART ? (
-            <>
-              {bucketName !== null && <span>{bucketName}</span>}
-              {selection.part !== DEFAULT_PART && <span>{t('drilldown.denominator')}</span>}
-            </>
-          ) : undefined
+          parts.length === 0 ? undefined : (
+            <HStack gap={2} wrap="wrap">
+              {parts.map((part) => (
+                <Text key={part} type="supporting">
+                  {part}
+                </Text>
+              ))}
+            </HStack>
+          )
         }
         actions={
-          <>
-            <Link to={backQuery === '' ? reportPath(report) : `${reportPath(report)}?${backQuery}`} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
-              <CIcon icon={cilArrowLeft} aria-hidden="true" />
-              {t('drilldown.back')}
-            </Link>
+          <HStack gap={2} vAlign="start" wrap="wrap">
+            <Button label={t('drilldown.back')} variant="secondary" href={backQuery === '' ? reportPath(report) : `${reportPath(report)}?${backQuery}`} icon={<Icon icon={Icons.arrowLeft} />} />
             <ExportButton report={report} selection={selection} filter={filter} />
-          </>
+          </HStack>
         }
       />
       <DrilldownRows report={report} selection={selection} filter={filter} page={page} onPageChange={changePage} />
-    </>
+    </VStack>
   );
 }
 

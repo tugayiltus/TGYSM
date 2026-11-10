@@ -27,14 +27,14 @@ describe('DrilldownPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Açılan kayıt' })).toBeInTheDocument();
     expect((await screen.findAllByRole('link', { name: 'INC-000001' }))[0]).toHaveAttribute('href', '/tickets/INC-000001');
-    expect(screen.getByText('1–20 / 25 kayıt')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '1. sayfaya git' })).toHaveAttribute('aria-current', 'page');
     const first = drillCalls(api)[0];
     expect(first?.get('metric')).toBe('volume');
     expect(first?.get('priority')).toBe('p1');
     expect(first?.get('page')).toBe('1');
     expect(first?.get('pageSize')).toBe(String(PAGE_SIZE));
 
-    await user.click(screen.getByRole('button', { name: 'Sonraki' }));
+    await user.click(screen.getByRole('button', { name: 'Sonraki sayfaya git' }));
 
     expect((await screen.findAllByRole('link', { name: 'INC-000021' }))[0]).toBeInTheDocument();
     expect(new URLSearchParams(router.state.location.search).get('page')).toBe('2');
