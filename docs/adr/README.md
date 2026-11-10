@@ -30,3 +30,4 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0024](0024-docker-compose-deployment.md) | Docker Compose Deployment with Shared Data Protection Keys | accepted | 2026-10-09 |
 | [0025](0025-backup-and-restore.md) | Nightly Backup of Database, Files and Keys, with an Automated Restore Drill | accepted | 2026-10-09 |
 | [0026](0026-coreui-visual-system-and-color-modes.md) | CoreUI Template Visual System and Color Modes | accepted | 2026-10-09 |
+| [0027](0027-astryx-design-system.md) | Astryx Design System Replaces CoreUI | accepted | 2026-11-10 |

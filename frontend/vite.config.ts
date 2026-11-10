@@ -35,6 +35,8 @@ export default defineConfig({
             { name: 'vendor-tanstack', test: /node_modules[\\/]@tanstack[\\/]/, priority: 90 },
             { name: 'vendor-coreui-icons', test: /node_modules[\\/]@coreui[\\/](icons|icons-react)[\\/]/, priority: 95 },
             { name: 'vendor-coreui', test: /node_modules[\\/](@coreui[\\/](react|coreui|utils)|@popperjs)[\\/]/, priority: 90 },
+            // Astryx design system with its StyleX runtime and theme (ADR-0027).
+            { name: 'vendor-astryx', test: /node_modules[\\/](@astryxdesign|@stylexjs)[\\/]/, priority: 90 },
             { name: 'vendor-forms', test: /node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/, priority: 90 },
             { name: 'vendor-i18n', test: /node_modules[\\/](i18next|react-i18next)[\\/]/, priority: 90 },
             { name: 'vendor-markdown', test: MARKDOWN_PACKAGES, priority: 90 },
