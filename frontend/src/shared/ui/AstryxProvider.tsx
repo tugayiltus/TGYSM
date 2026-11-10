@@ -1,3 +1,8 @@
+/**
+ * @input children: the whole app tree.
+ * @output Astryx locale, theme and router-link context around the children.
+ * @position Top of the app, inside the query client (`src/app/App.tsx`).
+ */
 import { InternationalizationProvider } from '@astryxdesign/core/i18n';
 import { LinkProvider } from '@astryxdesign/core/Link';
 import trTR from '@astryxdesign/core/locales/tr-TR.generated.js';
@@ -8,14 +13,13 @@ import { Link } from 'react-router';
 
 import { useColorMode } from './colorMode';
 
-/** The UI is Turkish only (ADR-0006); Astryx's own labels use its shipped Turkish catalog. */
+/** The UI is Turkish only (ADR-0006). Astryx's own labels use its Turkish catalog. */
 const ASTRYX_LOCALE = 'tr-TR';
 const ASTRYX_MESSAGES = { [ASTRYX_LOCALE]: trTR };
 
 /**
- * Astryx theme and router link wiring (ADR-0027). The theme follows the app's
- * light/dark choice, so the header menu drives Astryx and CoreUI screens alike
- * while both libraries live side by side during the migration.
+ * Astryx context for the app (ADR-0027). The theme mode follows the app color mode, so one menu controls Astryx and
+ * CoreUI screens.
  */
 export function AstryxProvider({ children }: { children: ReactNode }) {
   const { resolved } = useColorMode();

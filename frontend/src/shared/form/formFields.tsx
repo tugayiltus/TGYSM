@@ -1,3 +1,8 @@
+/**
+ * @input react-hook-form `control` and field `name`, plus Astryx field props.
+ * @output Astryx inputs that read and write the form value and show its Turkish error.
+ * @position Shared by every migrated form screen.
+ */
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
@@ -10,8 +15,8 @@ import { useController, type Control, type FieldPath, type FieldValues } from 'r
 import { fieldError } from '../api/errorMessage';
 
 /**
- * Astryx fields bound to react-hook-form (ADR-0027). Astryx inputs are controlled, so each field reads and writes the
- * form value through `useController`; the validation message (an error code or i18n key) becomes the Turkish `status`.
+ * Astryx inputs are controlled, so each field reads and writes the form value through `useController` (ADR-0027).
+ * The validation message is an error code or an i18n key. It becomes the Turkish `status`.
  */
 interface Bound<T extends FieldValues> {
   control: Control<T>;
@@ -19,8 +24,8 @@ interface Bound<T extends FieldValues> {
 }
 
 /**
- * Props the binding supplies; callers pass everything else straight to the Astryx component. `hasClear` is left out:
- * it switches Astryx to a nullable value, which a bound field adds when a form first needs it.
+ * The binding supplies these props. Callers pass all other props to the Astryx component.
+ * `hasClear` is not accepted: it makes the value nullable. Add it when a form needs it.
  */
 type Supplied = 'value' | 'onChange' | 'onBlur' | 'ref' | 'status' | 'name';
 
