@@ -6,6 +6,10 @@ import { afterEach, vi } from 'vitest';
 import '../shared/i18n';
 import { resetColorModeForTests } from '../shared/ui/colorMode';
 
+import { installDialogPolyfill } from './dialogPolyfill';
+
+installDialogPolyfill();
+
 // jsdom has no matchMedia: the color mode reads the system scheme through it. Default: a light system that never changes;
 // tests that need a dark or switching system replace it with `stubSystemColorScheme` (src/test/colorMode.ts).
 if (typeof window.matchMedia !== 'function') {
