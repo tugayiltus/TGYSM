@@ -62,12 +62,18 @@ export type FormSelectorProps<T extends FieldValues> = Bound<T> &
     options: readonly SelectOption[];
     /** Optional choice: a clear button empties it. The form value is then `''`. */
     isClearable?: boolean;
+    /** Runs after the form value changes, e.g. to reset a field that depends on this one. */
+    onValueChange?: (value: string) => void;
   };
 
 const NO_VALUE = '';
 
-export function FormSelector<T extends FieldValues>({ control, name, options, isClearable = false, ...props }: FormSelectorProps<T>) {
-  const { value, onChange, status } = useBoundField({ control, name });
+export function FormSelector<T extends FieldValues>({ control, name, options, isClearable = false, onValueChange, ...props }: FormSelectorProps<T>) {
+  const { value, onChange: setValue, status } = useBoundField({ control, name });
+  const onChange = (next: string) => {
+    setValue(next);
+    onValueChange?.(next);
+  };
   const current = (value as string | undefined) ?? NO_VALUE;
   if (isClearable) {
     return (

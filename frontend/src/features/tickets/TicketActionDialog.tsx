@@ -1,17 +1,23 @@
+/**
+ * @input A ticket, the action kind and a close callback.
+ * @output A dialog with the small form that action needs; it sends the version the person saw.
+ * @position Opened from the ticket work actions.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
+import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import { describeError, fieldError } from '../../shared/api/errorMessage';
+import { describeError } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
-import { Button } from '../../shared/ui/Button';
-import { Dialog } from '../../shared/ui/Dialog';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { SelectField } from '../../shared/ui/SelectField';
-import { TextAreaField } from '../../shared/ui/TextAreaField';
-import { TextField } from '../../shared/ui/TextField';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { FormSelector, FormTextArea, FormTextInput } from '../../shared/form/formFields';
 
 import {
   HOLD_REASONS,
@@ -35,6 +41,7 @@ export type DialogActionKind = 'hold' | 'complete' | 'cancel' | 'priority' | 'tr
 const REASON_MAX_LENGTH = 500;
 const TEXT_MAX_LENGTH = 2000;
 const OTHER = 'other';
+const DIALOG_WIDTH = 520;
 
 const required = (max: number) => z.string().trim().min(1, ERROR_CODES.required).max(max, ERROR_CODES.tooLong);
 const optional = (max: number) => z.string().trim().max(max, ERROR_CODES.tooLong);
@@ -89,13 +96,7 @@ export function TicketActionDialog({ ticket, kind, onClose }: { ticket: TicketDe
   const [openedVersion] = useState(ticket.version);
   const action = useTicketAction({ ...ticket, version: openedVersion });
   const teams = useReferenceTeams(kind === 'transfer');
-  const {
-    register,
-    control,
-    setValue,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Values>({
+  const { control, setValue, handleSubmit } = useForm<Values>({
     resolver: zodResolver(SCHEMAS[kind]),
     defaultValues: {
       choice: kind === 'priority' ? ticket.impact : '',
@@ -113,60 +114,67 @@ export function TicketActionDialog({ ticket, kind, onClose }: { ticket: TicketDe
   const onSubmit = handleSubmit((values) => action.mutate(toAction(kind, ticket, values), { onSuccess: onClose }));
   const levelOptions = LEVELS.map((value) => ({ value, label: t(`levels.${value}`) }));
 
+  const close = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  };
+  const select = (name: 'choice' | 'second' | 'third', label: string, options: { value: string; label: string }[], placeholder?: string, onValueChange?: (value: string) => void) => (
+    <FormSelector control={control} name={name} label={label} options={options} placeholder={placeholder} onValueChange={onValueChange} />
+  );
+  const text = (name: 'text' | 'note', label: string) => <FormTextInput control={control} name={name} label={label} autoComplete="off" />;
+
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
+    <Dialog isOpen onOpenChange={close} width={DIALOG_WIDTH} purpose="form">
+      <Layout
+        header={<DialogHeader title={`${t(`actions.${kind}`)} · ${ticket.number}`} onOpenChange={close} />}
+        content={
+          <LayoutContent>
+            <form id={formId} noValidate onSubmit={(event) => void onSubmit(event)}>
+              <VStack gap={4}>
+                <FormAlert message={action.error ? describeError(action.error) : null} />
+                {kind === 'hold' && (
+                  <>
+                    {select('choice', t('fields.holdReason'), HOLD_REASONS.map((value) => ({ value, label: t(`holdReasons.${value}`) })), t('fields.select'))}
+                    {text('note', t('fields.note'))}
+                  </>
+                )}
+                {kind === 'complete' && (
+                  <>
+                    <FormTextArea control={control} name="text" label={t('fields.resolution')} />
+                    {ticket.kind === 'incident' && select('choice', t('fields.outcome'), INCIDENT_OUTCOMES.map((value) => ({ value, label: t(`outcomes.${value}`) })), t('fields.select'))}
+                    {text('note', t('fields.rootCause'))}
+                  </>
+                )}
+                {(kind === 'cancel' || kind === 'invalidate') && text('text', t('fields.reason'))}
+                {kind === 'priority' && (
+                  <>
+                    {select('choice', t('fields.impact'), levelOptions)}
+                    {select('second', t('fields.urgency'), levelOptions)}
+                    {text('text', t('fields.reason'))}
+                  </>
+                )}
+                {kind === 'transfer' && (
+                  <>
+                    {select('choice', t('fields.team'), (teams.data ?? []).map((team) => ({ value: team.id, label: team.name })), t('fields.select'), () => setValue('second', ''))}
+                    {select('second', t('fields.assignee'), memberOptions, t('fields.anyone'))}
+                    {select('third', t('fields.transferReason'), TRANSFER_REASONS.map((value) => ({ value, label: t(`transferReasons.${value}`) })), t('fields.select'))}
+                    {text('note', t('fields.note'))}
+                  </>
+                )}
+              </VStack>
+            </form>
+          </LayoutContent>
         }
-      }}
-      title={`${t(`actions.${kind}`)} · ${ticket.number}`}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button type="submit" form={formId} variant={kind === 'cancel' ? 'danger' : 'primary'} isLoading={action.isPending}>
-            {tc('actions.confirm')}
-          </Button>
-        </>
-      }
-    >
-      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
-        <FormAlert message={action.error ? describeError(action.error) : null} />
-        {kind === 'hold' && (
-          <>
-            <SelectField label={t('fields.holdReason')} placeholder={t('fields.select')} options={HOLD_REASONS.map((value) => ({ value, label: t(`holdReasons.${value}`) }))} error={fieldError(errors.choice)} {...register('choice')} />
-            <TextField label={t('fields.note')} autoComplete="off" error={fieldError(errors.note)} {...register('note')} />
-          </>
-        )}
-        {kind === 'complete' && (
-          <>
-            <TextAreaField label={t('fields.resolution')} error={fieldError(errors.text)} {...register('text')} />
-            {ticket.kind === 'incident' && (
-              <SelectField label={t('fields.outcome')} placeholder={t('fields.select')} options={INCIDENT_OUTCOMES.map((value) => ({ value, label: t(`outcomes.${value}`) }))} error={fieldError(errors.choice)} {...register('choice')} />
-            )}
-            <TextField label={t('fields.rootCause')} autoComplete="off" error={fieldError(errors.note)} {...register('note')} />
-          </>
-        )}
-        {(kind === 'cancel' || kind === 'invalidate') && <TextField label={t('fields.reason')} autoComplete="off" error={fieldError(errors.text)} {...register('text')} />}
-        {kind === 'priority' && (
-          <>
-            <SelectField label={t('fields.impact')} options={levelOptions} error={fieldError(errors.choice)} {...register('choice')} />
-            <SelectField label={t('fields.urgency')} options={levelOptions} error={fieldError(errors.second)} {...register('second')} />
-            <TextField label={t('fields.reason')} autoComplete="off" error={fieldError(errors.text)} {...register('text')} />
-          </>
-        )}
-        {kind === 'transfer' && (
-          <>
-            <SelectField label={t('fields.team')} placeholder={t('fields.select')} options={(teams.data ?? []).map((team) => ({ value: team.id, label: team.name }))} error={fieldError(errors.choice)} {...register('choice', { onChange: () => setValue('second', '') })} />
-            <SelectField label={t('fields.assignee')} placeholder={t('fields.anyone')} options={memberOptions} error={fieldError(errors.second)} {...register('second')} />
-            <SelectField label={t('fields.transferReason')} placeholder={t('fields.select')} options={TRANSFER_REASONS.map((value) => ({ value, label: t(`transferReasons.${value}`) }))} error={fieldError(errors.third)} {...register('third')} />
-            <TextField label={t('fields.note')} autoComplete="off" error={fieldError(errors.note)} {...register('note')} />
-          </>
-        )}
-      </form>
+        footer={
+          <LayoutFooter>
+            <HStack gap={2} hAlign="end">
+              <Button label={tc('actions.cancel')} variant="secondary" onClick={onClose} />
+              <Button type="submit" form={formId} label={tc('actions.confirm')} variant={kind === 'cancel' ? 'destructive' : 'primary'} isLoading={action.isPending} />
+            </HStack>
+          </LayoutFooter>
+        }
+      />
     </Dialog>
   );
 }

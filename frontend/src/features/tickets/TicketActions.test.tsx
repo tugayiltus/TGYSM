@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 import { detailRoutes, INCIDENT } from '../../test/ticketData';
 
 const WORKABLE = { ...INCIDENT, canWork: true };
@@ -64,7 +65,7 @@ describe('TicketActions', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
     expect(await within(dialog).findByText('Bu alan zorunludur.')).toBeInTheDocument();
     await user.type(within(dialog).getByLabelText('Çözüm (kullanıcı görür)'), 'Toner değişti');
-    await user.selectOptions(within(dialog).getByLabelText('Sonuç'), 'Çözüldü');
+    await chooseOption(user, 'Sonuç', 'Çözüldü', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     await waitFor(() => expect(posted).toEqual({ version: 11, resolution: 'Toner değişti', outcome: 'resolved', rootCause: null }));
@@ -105,7 +106,7 @@ describe('TicketActions', () => {
     await user.click(screen.getByRole('button', { name: 'Tamamla' }));
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText('Çözüm (kullanıcı görür)'), 'Toner değişti');
-    await user.selectOptions(within(dialog).getByLabelText('Sonuç'), 'Çözüldü');
+    await chooseOption(user, 'Sonuç', 'Çözüldü', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
     await waitFor(() => expect(posted).toMatchObject({ version: 12 }));
   });
@@ -149,9 +150,9 @@ describe('TicketActions', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Aktar' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Hedef ekip'), await within(dialog).findByRole('option', { name: 'Saha Destek' }));
-    await user.selectOptions(within(dialog).getByLabelText('Atanacak kişi'), 'Deniz Yıldız');
-    await user.selectOptions(within(dialog).getByLabelText('Aktarma nedeni'), 'Diğer');
+    await chooseOption(user, 'Hedef ekip', 'Saha Destek', dialog);
+    await chooseOption(user, 'Atanacak kişi', 'Deniz Yıldız', dialog);
+    await chooseOption(user, 'Aktarma nedeni', 'Diğer', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
     expect(await within(dialog).findByText('Bu alan zorunludur.')).toBeInTheDocument();
     await user.type(within(dialog).getByLabelText('Not'), 'Yerinde bakılmalı');

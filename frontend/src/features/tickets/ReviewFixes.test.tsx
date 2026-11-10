@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 import { detailRoutes, INCIDENT } from '../../test/ticketData';
 
 const OTHER = { ...INCIDENT, id: 't-2', number: 'REQ-2026-000002', kind: 'request' as const, subject: 'Yeni cihaz', relatedTickets: [] };
@@ -43,10 +44,10 @@ describe('review fixes', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Aktar' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Hedef ekip'), await within(dialog).findByRole('option', { name: 'Servis Masası' }));
-    await user.selectOptions(within(dialog).getByLabelText('Atanacak kişi'), 'Can Demir');
-    await user.selectOptions(within(dialog).getByLabelText('Hedef ekip'), 'Saha Destek');
-    await user.selectOptions(within(dialog).getByLabelText('Aktarma nedeni'), 'İş yükü');
+    await chooseOption(user, 'Hedef ekip', 'Servis Masası', dialog);
+    await chooseOption(user, 'Atanacak kişi', 'Can Demir', dialog);
+    await chooseOption(user, 'Hedef ekip', 'Saha Destek', dialog);
+    await chooseOption(user, 'Aktarma nedeni', 'İş yükü', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Onayla' }));
 
     await waitFor(() => expect(posted).toMatchObject({ teamId: 'team-2', assigneeId: null }));
