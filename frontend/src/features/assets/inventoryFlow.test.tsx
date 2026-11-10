@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { LAPTOP, LOCATIONS, pageOf } from '../../test/assetData';
 import { IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 
 const ROW = {
   row: 2, assetTag: 'DT-1', type: 'laptop', brand: 'Lenovo', model: 'T14', serialNumber: null, locationId: 'l-1', locationPath: 'Merkez Kampüs',
@@ -44,7 +45,7 @@ describe('inventory list', () => {
   it('keeps the filters in the URL so the detail returns to them', async () => {
     mockApi(routes() as never);
     const { user, router } = renderRoute('/assets');
-    await user.selectOptions(await screen.findByLabelText('Durum'), 'assigned');
+    await chooseOption(user, 'Durum', 'Zimmetli');
     await waitFor(() => expect(new URLSearchParams(router.state.location.search).get('status')).toBe('assigned'));
     await user.click((await screen.findAllByRole('link', { name: new RegExp(LAPTOP.assetTag) }))[0] as HTMLElement);
     await waitFor(() => expect(router.state.location.pathname).toBe(`/assets/${LAPTOP.id}`));

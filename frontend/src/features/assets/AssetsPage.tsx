@@ -1,89 +1,68 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input Nothing; filters come from the URL query.
+ * @output The inventory list with search, type and status filters, paging, import and create.
+ * @position `/assets`, inside the app shell (IT staff and admins).
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useSearchParams } from 'react-router';
+import { useLocation } from 'react-router';
 
-import { readPageParam } from '../../shared/lib/pageParam';
+import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
+import { DataList, type DataColumn } from '../../shared/list/DataList';
+import { ListToolbar } from '../../shared/list/ListToolbar';
+import { useListParams } from '../../shared/list/useListParams';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { linkState } from '../../shared/navigation/returnTo';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
+import { StateLink } from '../../shared/navigation/StateLink';
 import { assetPath, ROUTES } from '../../shared/routes';
-import { Button } from '../../shared/ui/Button';
-import { DataCard } from '../../shared/ui/DataCard';
-import { cilCloudUpload, cilPlus, cilSearch } from '../../shared/ui/icons';
-import { Pagination } from '../../shared/ui/Pagination';
+import { Icons } from '../../shared/ui/icons';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
-import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
-import { SelectField } from '../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
-import { TextField } from '../../shared/ui/TextField';
 
 import { ASSET_STATUSES, ASSET_TYPES, useAssets, type AssetItem } from './api';
 import { AssetFormDialog } from './AssetFormDialog';
 import { AssetStatusBadge } from './AssetStatusBadge';
 
 const PAGE_SIZE = 20;
+const SKELETON_ROWS = 5;
 const SEARCH_DEBOUNCE_MS = 300;
-const ALL = '';
-/** Filters live in the URL so an asset opened from the list can return to the same filtered view. */
-const PARAM = { search: 'q', type: 'type', status: 'status', page: 'page' } as const;
-const LINK_BUTTON_CLASS = 'btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2';
+const FILTER_KEYS = ['type', 'status'] as const;
+const META_SEPARATOR = ' · ';
+
+const pick = <T extends string>(allowed: readonly T[], value: string): T | undefined => allowed.find((item) => item === value);
 
 function OpenLink({ asset }: { asset: AssetItem }) {
   const { t } = useTranslation('assets');
   const location = useLocation();
   return (
-    <Link to={assetPath(asset.id)} state={linkState(location)} className={LINK_BUTTON_CLASS} aria-label={recordActionLabel(t('list.open'), asset.assetTag)}>
+    <StateLink href={assetPath(asset.id)} state={linkState(location)} label={recordActionLabel(t('list.open'), asset.assetTag)}>
       {t('list.open')}
-    </Link>
+    </StateLink>
   );
 }
 
 export function AssetsPage() {
   const { t } = useTranslation('assets');
   const { t: tc } = useTranslation();
-  const [params, setParams] = useSearchParams();
-  const type = ASSET_TYPES.find((value) => value === params.get(PARAM.type)) ?? ALL;
-  const status = ASSET_STATUSES.find((value) => value === params.get(PARAM.status)) ?? ALL;
-  const page = readPageParam(params.get(PARAM.page));
-  const [search, setSearchText] = useState(params.get(PARAM.search) ?? '');
-  const setFilter = (key: string, value: string) =>
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (value === '') {
-          next.delete(key);
-        } else {
-          next.set(key, value);
-        }
-        next.delete(PARAM.page);
-        return next;
-      },
-      { replace: true },
-    );
-  const setPage = (next: number) =>
-    setParams(
-      (current) => {
-        const updated = new URLSearchParams(current);
-        updated.set(PARAM.page, String(next));
-        return updated;
-      },
-      { replace: true },
-    );
+  const list = useListParams(FILTER_KEYS);
+  const type = pick(ASSET_TYPES, list.filters.type);
+  const status = pick(ASSET_STATUSES, list.filters.status);
+  const search = useDebouncedValue(list.search, SEARCH_DEBOUNCE_MS);
   const [creating, setCreating] = useState(false);
-  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
-  const assets = useAssets({
-    search: debouncedSearch,
-    type: type === ALL ? undefined : type,
-    status: status === ALL ? undefined : status,
-    page,
-    pageSize: PAGE_SIZE,
-  });
+  const assets = useAssets({ search, type, status, page: list.page, pageSize: PAGE_SIZE });
 
-  const device = (a: AssetItem) => `${t(`types.${a.type}`)} · ${a.brand} ${a.model}`;
-  const columns: Column<AssetItem>[] = [
-    { key: 'tag', header: t('list.columns.tag'), renderCell: (a) => <span className="fw-medium">{a.assetTag}</span> },
+  const device = (a: AssetItem) => `${t(`types.${a.type}`)}${META_SEPARATOR}${a.brand} ${a.model}`;
+  const columns: DataColumn<AssetItem>[] = [
+    { key: 'tag', header: t('list.columns.tag'), renderCell: (a) => <Text type="label">{a.assetTag}</Text> },
     { key: 'device', header: t('list.columns.device'), renderCell: device },
     { key: 'status', header: t('list.columns.status'), renderCell: (a) => <AssetStatusBadge status={a.status} /> },
     { key: 'location', header: t('list.columns.location'), renderCell: (a) => a.locationName },
@@ -92,82 +71,70 @@ export function AssetsPage() {
   ];
 
   const renderCard = (a: AssetItem) => (
-    <div className="d-flex flex-column gap-2">
-      <div className="d-flex align-items-start justify-content-between gap-2">
-        <div className="min-w-0">
-          <p className="mb-0 fw-medium text-break">{a.assetTag}</p>
-          <p className="mb-0 small text-body-secondary">{device(a)}</p>
-          <p className="mb-0 small text-body-secondary">{a.assignedUserName ?? a.locationName}</p>
-        </div>
+    <VStack gap={2}>
+      <HStack gap={2} hAlign="between" vAlign="start">
+        <VStack gap={0}>
+          <Text type="label" wordBreak="break-word">
+            {a.assetTag}
+          </Text>
+          <Text type="supporting">{device(a)}</Text>
+          <Text type="supporting">{a.assignedUserName ?? a.locationName}</Text>
+        </VStack>
         <AssetStatusBadge status={a.status} />
-      </div>
+      </HStack>
       <OpenLink asset={a} />
-    </div>
+    </VStack>
   );
 
+  const option = (value: string | undefined) => value ?? '';
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader
         icon={ROUTE_META.assets.icon}
         titleOverride={t('list.title')}
         actions={
           <>
-            <Link to={ROUTES.assetImport} className={LINK_BUTTON_CLASS}>
-              <CIcon icon={cilCloudUpload} aria-hidden="true" />
-              {t('list.import')}
-            </Link>
-            <Button icon={cilPlus} onClick={() => setCreating(true)}>
-              {t('list.new')}
-            </Button>
+            <Button label={t('list.import')} variant="secondary" href={ROUTES.assetImport} icon={<Icon icon={Icons.upload} />} />
+            <Button label={t('list.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setCreating(true)} />
           </>
         }
       />
-      <DataCard
+      <ListToolbar
+        title={t('list.title')}
+        search={list.search}
+        searchLabel={t('list.searchLabel')}
+        onSearchChange={list.setSearch}
+        activeCount={list.activeCount}
+        onClear={list.clear}
         filters={
-          <div className="row g-3">
-            <TextField
-              className="col-12 col-md-4"
-              type="search"
-              startIcon={cilSearch}
-              label={t('list.searchLabel')}
-              value={search}
-              onChange={(event) => {
-                setSearchText(event.target.value);
-                setFilter(PARAM.search, event.target.value);
-              }}
-            />
-            <SelectField
+          <>
+            <Selector
               label={t('list.typeFilter')}
               placeholder={t('list.allTypes')}
               options={ASSET_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))}
-              className="col-12 col-md-4"
-              value={type}
-              onChange={(event) => setFilter(PARAM.type, event.target.value)}
+              value={option(type)}
+              onChange={(value) => list.setFilter('type', value)}
             />
-            <SelectField
+            <Selector
               label={t('list.statusFilter')}
               placeholder={t('list.allStatuses')}
               options={ASSET_STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
-              className="col-12 col-md-4"
-              value={status}
-              onChange={(event) => setFilter(PARAM.status, event.target.value)}
+              value={option(status)}
+              onChange={(value) => list.setFilter('status', value)}
             />
-          </div>
+          </>
         }
-        footer={
-          assets.data && assets.data.items.length > 0 ? (
-            <Pagination page={assets.data.page} pageSize={assets.data.pageSize} totalCount={assets.data.totalCount} onPageChange={setPage} />
-          ) : undefined
-        }
-      >
-        {assets.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+      />
+      <Card padding={0}>
+        {assets.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {assets.isError && <ErrorState error={assets.error} onRetry={() => void assets.refetch()} />}
         {assets.data && assets.data.items.length === 0 && <EmptyState />}
         {assets.data && assets.data.items.length > 0 && (
-          <ResponsiveList items={assets.data.items} columns={columns} getKey={(a) => a.id} renderCard={renderCard} caption={t('list.caption')} />
+          <DataList items={assets.data.items} columns={columns} getKey={(a) => a.id} renderCard={renderCard} caption={t('list.caption')} />
         )}
-      </DataCard>
+      </Card>
+      {assets.data && assets.data.items.length > 0 && <Pagination page={assets.data.page} pageSize={assets.data.pageSize} totalItems={assets.data.totalCount} onChange={list.setPage} />}
       {creating && <AssetFormDialog asset={null} onClose={() => setCreating(false)} />}
-    </>
+    </VStack>
   );
 }

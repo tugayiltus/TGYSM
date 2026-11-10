@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { DEPARTMENTS, LAPTOP, LOCATIONS, pageOf, CATALOG } from '../../test/assetData';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 
 const referenceRoutes = {
   'GET /api/v1/assets/catalog': { status: 200, body: CATALOG },
@@ -21,22 +22,24 @@ describe('AssetsPage', () => {
 
     expect(await screen.findAllByText('DT-0001')).not.toHaveLength(0);
     expect(screen.getAllByText('Stokta')).not.toHaveLength(0);
-    await user.selectOptions(screen.getByLabelText('Tür'), 'Tablet');
+    await chooseOption(user, 'Tür', 'Tablet');
 
     await waitFor(() => expect(api.calls.some((c) => new URL(c.url).searchParams.get('type') === 'tablet')).toBe(true));
   });
 
-  it('shows the inventory inside one list card with the filters on top and paging below', async () => {
+  it('shows the filters above the inventory table and paging below it', async () => {
     mockApi({
       'GET /api/v1/auth/me': { status: 200, body: IT_ME },
       'GET /api/v1/assets': { status: 200, body: pageOf([LAPTOP]) },
     });
     renderRoute('/assets');
     await screen.findAllByText('DT-0001');
-    const card = document.querySelector('[role="main"] .card');
-    expect(card?.querySelector('.card-header')).toHaveTextContent('Durum');
-    expect(card?.querySelector('.card-body table')).not.toBeNull();
-    expect(card?.querySelector('.card-footer nav')).not.toBeNull();
+    const main = screen.getByRole('main');
+    const filter = within(main).getByRole('combobox', { name: 'Durum' });
+    const table = within(main).getByRole('table');
+    const paging = within(main).getByRole('navigation', { name: 'Sayfalama' });
+    expect(filter.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(table.compareDocumentPosition(paging) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('creates an asset without a tag field and shows a taken serial under its field', async () => {
