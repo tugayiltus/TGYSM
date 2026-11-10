@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, vi } from 'vitest';
 
@@ -9,6 +9,10 @@ import { resetColorModeForTests } from '../shared/ui/colorMode';
 import { installDialogPolyfill } from './dialogPolyfill';
 
 installDialogPolyfill();
+
+/** Pages render inside the Astryx shell and its providers; under a full parallel run the first paint can pass 1 s. */
+const ASYNC_UTIL_TIMEOUT_MS = 3000;
+configure({ asyncUtilTimeout: ASYNC_UTIL_TIMEOUT_MS });
 
 // jsdom has no matchMedia: the color mode reads the system scheme through it. Default: a light system that never changes;
 // tests that need a dark or switching system replace it with `stubSystemColorScheme` (src/test/colorMode.ts).

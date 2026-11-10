@@ -82,7 +82,7 @@ export function ChangePasswordPage() {
 
   return (
     <>
-      <PageHeader icon={cilLockLocked} />
+      <PageHeader icon="lock" />
       <PageCard className="tgysm-form-card">{form}</PageCard>
     </>
   );

@@ -1,10 +1,11 @@
 import type { Role } from '../../features/auth/api';
 import { ADMIN_MENU_GROUPS, APP_MENU_GROUPS, ROUTE_IDS, ROUTE_META, routeChain, type MenuArea, type MenuGroupId, type RouteId } from '../navigation/routeMeta';
+import type { AppIcon } from '../ui/icons';
 
 export interface MenuItem {
   id: RouteId;
   to: string;
-  icon: string[];
+  icon: AppIcon | undefined;
 }
 
 export interface MenuGroup {
@@ -23,7 +24,7 @@ export function menuFor(area: MenuArea, role: Role): MenuGroup[] {
         return meta.area === area && meta.group === group && meta.menu !== undefined && (meta.menu.roles === undefined || meta.menu.roles.includes(role));
       })
         .sort((a, b) => (ROUTE_META[a].menu?.order ?? 0) - (ROUTE_META[b].menu?.order ?? 0))
-        .map((id) => ({ id, to: ROUTE_META[id].path, icon: ROUTE_META[id].icon ?? [] })),
+        .map((id) => ({ id, to: ROUTE_META[id].path, icon: ROUTE_META[id].icon })),
     }))
     .filter((group) => group.items.length > 0);
 }

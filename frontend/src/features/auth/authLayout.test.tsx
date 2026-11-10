@@ -58,7 +58,7 @@ describe('profile and error pages', () => {
     mockApi(SIGNED_OUT);
     renderRoute('/no-such-page');
     expect(await screen.findByRole('heading', { level: 1, name: 'Sayfa bulunamadı' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Ana sayfaya dön' })).toHaveClass('btn');
+    expect(screen.getByRole('link', { name: 'Ana sayfaya dön' })).toHaveAttribute('href', '/');
   });
 });
 
@@ -68,6 +68,6 @@ describe('sign-in look', () => {
     renderRoute('/login');
     await screen.findByRole('heading', { level: 1 });
     expect(document.querySelectorAll('main .input-group .input-group-text svg')).toHaveLength(2);
-    expect(document.querySelector('main .tgysm-auth-brand svg')).not.toBeNull();
+    expect(within(screen.getByRole('main')).getByRole('heading', { level: 2, name: 'TGYSM' })).toBeInTheDocument();
   });
 });

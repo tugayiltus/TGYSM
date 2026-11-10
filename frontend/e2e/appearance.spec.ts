@@ -15,7 +15,7 @@ test('dark mode is kept after a reload and pages stay inside the screen', async 
   const page = admin.page;
   await page.goto('/assets');
   await page.getByRole('button', { name: /Görünüm/ }).click();
-  await page.getByRole('button', { name: 'Koyu' }).click();
+  await page.getByRole('menuitemradio', { name: 'Koyu' }).click();
   await expect(page.locator('html')).toHaveAttribute(THEME_ATTRIBUTE, DARK);
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute(THEME_ATTRIBUTE, DARK);

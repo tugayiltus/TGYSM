@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { routes as appRoutes } from '../../app/router';
 import { EMPLOYEE_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
-import { cilDevices } from '../ui/icons';
+import { stubPhoneViewport } from '../../test/viewport';
+import { AstryxProvider } from '../ui/AstryxProvider';
 
 import { useBreadcrumbLabel } from './breadcrumbLabels';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -169,19 +170,24 @@ describe('Breadcrumbs', () => {
   });
 
   it('collapses the middle of a long trail into a working "…" menu on phones', async () => {
+    stubPhoneViewport();
     const user = userEvent.setup();
-    render(<RouterProvider router={trailRouter('/kb/k1/edit')} />);
+    render(
+      <AstryxProvider>
+        <RouterProvider router={trailRouter('/kb/k1/edit')} />
+      </AstryxProvider>,
+    );
     const nav = screen.getByRole('navigation', { name: 'Sayfa yolu' });
     const more = within(nav).getByRole('button', { name: 'Diğer üst sayfalar' });
     await user.click(more);
     expect(await screen.findByRole('menuitem', { name: 'Bilgi bankası' })).toHaveAttribute('href', '/kb');
   });
 
-  it('truncates a very long title instead of widening the page', () => {
+  it('keeps a very long title whole for assistive tech while the trail clamps it to one line', () => {
     render(<RouterProvider router={trailRouter('/kb/k1/edit')} />);
     const longItem = screen.getAllByText(/çok uzun bir başlık/)[0];
-    expect(longItem).toHaveClass('text-truncate');
-    expect(longItem).toHaveAttribute('title');
+    expect(longItem).toHaveTextContent('Yazıcı kurulumu ve sürücü güncellemesi için çok uzun bir başlık Yazıcı kurulumu');
+    expect(longItem?.closest('a')).toHaveAttribute('href', '/kb/k1');
   });
 });
 
@@ -207,10 +213,10 @@ describe('route icons', () => {
 
 describe('PageHeader look', () => {
   it('shows an optional icon before the title and a description under it', () => {
-    const router = createMemoryRouter([{ path: '/', element: <PageHeader titleOverride="Envanter" icon={cilDevices} description="Tüm cihazlar" /> }]);
+    const router = createMemoryRouter([{ path: '/', element: <PageHeader titleOverride="Envanter" icon="devices" description="Tüm cihazlar" /> }]);
     render(<RouterProvider router={router} />);
     const heading = screen.getByRole('heading', { level: 1, name: 'Envanter' });
     expect(heading.parentElement?.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
-    expect(screen.getByText('Tüm cihazlar')).toHaveClass('text-body-secondary');
+    expect(screen.getByText('Tüm cihazlar')).toBeInTheDocument();
   });
 });

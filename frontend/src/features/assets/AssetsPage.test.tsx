@@ -33,7 +33,7 @@ describe('AssetsPage', () => {
     });
     renderRoute('/assets');
     await screen.findAllByText('DT-0001');
-    const card = document.querySelector('main .card');
+    const card = document.querySelector('[role="main"] .card');
     expect(card?.querySelector('.card-header')).toHaveTextContent('Durum');
     expect(card?.querySelector('.card-body table')).not.toBeNull();
     expect(card?.querySelector('.card-footer nav')).not.toBeNull();

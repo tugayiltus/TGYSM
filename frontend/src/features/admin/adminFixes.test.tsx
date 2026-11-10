@@ -73,7 +73,7 @@ describe('teams intake badge (UX-08)', () => {
     const table = await screen.findByRole('table');
     expect(within(table).getAllByText('Kayıt alan ekip')).toHaveLength(1);
     // ResponsiveList's phone cards: the list hidden from 768 px.
-    const cards = document.querySelector('main ul.d-md-none') as HTMLElement;
+    const cards = document.querySelector('[role="main"] ul.d-md-none') as HTMLElement;
     expect(within(cards).getAllByText('Kayıt alan ekip')).toHaveLength(1);
   });
 });

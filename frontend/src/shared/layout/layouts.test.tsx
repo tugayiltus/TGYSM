@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stubSystemColorScheme } from '../../test/colorMode';
 import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { stubPhoneViewport } from '../../test/viewport';
+import { AstryxProvider } from '../ui/AstryxProvider';
 import { resetColorModeForTests } from '../ui/colorMode';
 
 import { ThemeMenu } from './ThemeMenu';
@@ -17,7 +19,13 @@ const ADMIN_DATA = {
 };
 
 const mainNav = () => screen.findByRole('navigation', { name: 'Ana menü' });
-const linkNames = (nav: HTMLElement) => within(nav).getAllByRole('link').map((link) => link.textContent);
+const APP_BRAND = 'TGYSM';
+/** Menu item names; the brand link at the top of the side navigation is not a menu item. */
+const linkNames = (nav: HTMLElement) =>
+  within(nav)
+    .getAllByRole('link')
+    .map((link) => link.textContent)
+    .filter((name) => name !== APP_BRAND);
 
 describe('AppLayout sidebar', () => {
   it('shows an employee only the personal group', async () => {
@@ -49,31 +57,33 @@ describe('AppLayout sidebar', () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME }, 'GET /api/v1/tickets': { status: 200, body: { items: [], totalCount: 0, page: 1, pageSize: 20 } } });
     renderRoute('/tickets/new/incident');
     const nav = await mainNav();
-    expect(within(nav).getByRole('link', { name: 'Kayıtlarım' })).toHaveAttribute('aria-current', 'true');
+    expect(within(nav).getByRole('link', { name: 'Kayıtlarım' })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: 'Ana sayfa' })).not.toHaveAttribute('aria-current');
   });
 
   it('opens the menu in a panel on phones and closes it on navigation, moving focus to the new page title', async () => {
+    stubPhoneViewport();
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME } });
     const { user, router } = renderRoute('/profile');
     const hamburger = await screen.findByRole('button', { name: 'Menüyü aç' });
     await user.click(hamburger);
-    const panel = await screen.findByRole('dialog', { name: 'Ana menü' });
+    const panel = await screen.findByRole('dialog', { name: 'Menü' });
     await user.click(within(panel).getByRole('link', { name: 'Zimmetlerim' }));
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana menü' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Menü' })).not.toBeInTheDocument());
     // The target page is lazy: the location changes once its module has loaded.
     await waitFor(() => expect(router.state.location.pathname).toBe('/assets/mine'));
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Zimmetlerim' })).toHaveFocus());
   });
 
   it('gives focus back to the menu button when the panel closes without navigating', async () => {
+    stubPhoneViewport();
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME } });
     const { user } = renderRoute('/profile');
     const hamburger = await screen.findByRole('button', { name: 'Menüyü aç' });
     await user.click(hamburger);
-    const panel = await screen.findByRole('dialog', { name: 'Ana menü' });
-    await user.click(within(panel).getByRole('button', { name: 'Kapat' }));
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ana menü' })).not.toBeInTheDocument());
+    const panel = await screen.findByRole('dialog', { name: 'Menü' });
+    await user.click(within(panel).getByRole('button', { name: 'Menüyü kapat' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Menü' })).not.toBeInTheDocument());
     await waitFor(() => expect(hamburger).toHaveFocus());
   });
 });
@@ -87,7 +97,7 @@ describe('sidebar width', () => {
     const { user } = renderRoute('/profile');
     await user.click(await screen.findByRole('button', { name: 'Menüyü daralt' }));
     expect(window.localStorage.getItem('tgysm.sidebar.narrow')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Menüyü genişlet' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Menüyü genişlet' })).toBeInTheDocument();
   });
 
   it('still renders when storage is unavailable', async () => {
@@ -106,8 +116,7 @@ describe('account menu', () => {
     const { user, router } = renderRoute('/profile');
     const accountButton = await screen.findByRole('button', { name: /Hesap menüsü/ });
     await user.click(accountButton);
-    // The closed theme menu is also a role=menu in jsdom (no CSS); the account menu is the one this button controls.
-    const menu = document.getElementById(accountButton.getAttribute('aria-controls') ?? '') as HTMLElement;
+    const menu = await screen.findByRole('menu');
     expect(within(menu).getByRole('menuitem', { name: 'Profilim' })).toHaveAttribute('href', '/profile');
     expect(within(menu).getByRole('menuitem', { name: 'Şifre değiştir' })).toHaveAttribute('href', '/change-password');
     mock.set('GET /api/v1/auth/me', () => ({ status: 401, body: { code: 'auth.unauthenticated' } }));
@@ -115,12 +124,12 @@ describe('account menu', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
   });
 
-  it('truncates a very long name in the header', async () => {
+  it('shows the account as an avatar, so a very long name cannot widen the header', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: { ...EMPLOYEE_ME, firstName: 'Ayşe'.repeat(30) } } });
     renderRoute('/profile');
     const header = await screen.findByRole('banner');
-    const name = within(header).getByText(new RegExp(`^${'Ayşe'.repeat(30)}`));
-    expect(name).toHaveClass('text-truncate');
+    expect(within(header).getByRole('button', { name: new RegExp(`Hesap menüsü: ${'Ayşe'.repeat(30)}`) })).toBeInTheDocument();
+    expect(within(header).queryByText(new RegExp(`^${'Ayşe'.repeat(30)}`))).not.toBeVisible();
   });
 });
 
@@ -137,11 +146,12 @@ describe('shell look', () => {
     expect(within(nav).getByRole('link', { name: 'Envanter' })).toBeInTheDocument();
   });
 
-  it('puts the breadcrumb in the header', async () => {
+  it('puts the breadcrumb at the top of the page, where phones keep it too', async () => {
+    stubPhoneViewport();
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME } });
     renderRoute('/profile');
-    const header = await screen.findByRole('banner');
-    expect(within(header).getByRole('navigation', { name: 'Sayfa yolu' })).toBeInTheDocument();
+    const main = await screen.findByRole('main');
+    expect(within(main).getByRole('navigation', { name: 'Sayfa yolu' })).toBeInTheDocument();
   });
 });
 
@@ -186,16 +196,25 @@ describe('ThemeMenu', () => {
   });
 
   it('is not a stray list item in the header (no bullet)', () => {
-    const { container } = render(<ThemeMenu />);
+    const { container } = render(
+      <AstryxProvider>
+        <ThemeMenu />
+      </AstryxProvider>,
+    );
     expect(container.querySelector('li')).toBeNull();
   });
 
   it('switches the color mode from the header menu', async () => {
     const user = userEvent.setup();
-    render(<ThemeMenu />);
+    render(
+      <AstryxProvider>
+        <ThemeMenu />
+      </AstryxProvider>,
+    );
     await user.click(screen.getByRole('button', { name: /Görünüm/ }));
-    await user.click(screen.getByRole('button', { name: 'Koyu' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Koyu' }));
     expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('dark');
+    expect(document.querySelector('[data-astryx-theme]')).toHaveAttribute('data-theme', 'dark');
     expect(window.localStorage.getItem('tgysm-theme')).toBe('dark');
     expect(screen.getByRole('button', { name: /Görünüm: Koyu/ })).toBeInTheDocument();
   });

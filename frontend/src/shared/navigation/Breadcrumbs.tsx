@@ -1,97 +1,68 @@
-import { CBreadcrumbItem } from '@coreui/react';
-import { useState, type ReactNode } from 'react';
+/**
+ * @input Nothing; reads the crumbs of the current route.
+ * @output The page trail. On phones a long trail folds its middle into a menu.
+ * @position Start of the top bar in the app shell.
+ */
+import { BreadcrumbItem, Breadcrumbs as AstryxBreadcrumbs } from '@astryxdesign/core/Breadcrumbs';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Text } from '@astryxdesign/core/Text';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+
+import { useIsPhone } from '../list/useIsPhone';
 
 import type { Crumb } from './crumbs';
 import { useCrumbs } from './useCrumbs';
 
-/** Root, "…", parent, current: the middle collapses into a menu below 768 px. */
+/** Root, "…", parent, current: the middle folds on phones from four crumbs. */
 const ALWAYS_SHOWN_TAIL = 2;
 const COLLAPSE_FROM = ALWAYS_SHOWN_TAIL + 2;
+/** A long title takes one line and shows in full on hover. */
+const CRUMB_LINES = 1;
 
-function CrumbText({ label }: { label: string }) {
+function CrumbLabel({ label }: { label: string }) {
   return (
-    <span className="d-inline-block text-truncate align-bottom tgysm-crumb" title={label}>
+    <Text type="inherit" maxLines={CRUMB_LINES}>
       {label}
-    </span>
+    </Text>
   );
 }
 
-function CrumbItem({ crumb, active = false, className }: { crumb: Crumb; active?: boolean; className?: string }) {
+/** A menu row shows the whole title. A long title wraps, even inside one long word, so the menu stays on the screen. */
+function WrappedLabel({ label }: { label: string }) {
   return (
-    <CBreadcrumbItem active={active} className={className}>
-      {crumb.href === undefined || active ? (
-        <CrumbText label={crumb.label} />
-      ) : (
-        <Link to={crumb.href}>
-          <CrumbText label={crumb.label} />
-        </Link>
-      )}
-    </CBreadcrumbItem>
+    <Text type="inherit" textWrap="wrap" wordBreak="break-word">
+      {label}
+    </Text>
   );
 }
 
-function CollapsedItems({ crumbs }: { crumbs: Crumb[] }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  return (
-    <CBreadcrumbItem className="d-md-none">
-      <button type="button" className="btn btn-link p-0 align-baseline" aria-haspopup="menu" aria-expanded={open} aria-label={t('breadcrumb.more')} onClick={() => setOpen((v) => !v)}>
-        …
-      </button>
-      {open && (
-        <ul role="menu" className="dropdown-menu show position-absolute tgysm-crumb-menu">
-          {crumbs.map((crumb) => (
-            <li key={crumb.label} role="none">
-              {crumb.href === undefined ? (
-                <span className="dropdown-item-text">{crumb.label}</span>
-              ) : (
-                <Link role="menuitem" className="dropdown-item" to={crumb.href} onClick={() => setOpen(false)}>
-                  {crumb.label}
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </CBreadcrumbItem>
-  );
-}
-
-/** Where the user is in the app (spec §4.4); the last item is the current page. */
 export function Breadcrumbs() {
   const { t } = useTranslation();
   const crumbs = useCrumbs();
+  const isPhone = useIsPhone();
   if (crumbs.length === 0) {
     return null;
   }
   const last = crumbs.length - 1;
-  const collapse = crumbs.length >= COLLAPSE_FROM;
-  const middle = collapse ? crumbs.slice(1, crumbs.length - ALWAYS_SHOWN_TAIL) : [];
-  return (
-    // The nav anchors the overflow menu, so it can span the screen from the trail start.
-    // Own <nav>: CoreUI's CBreadcrumb hard-codes an English aria-label.
-    <nav aria-label={t('breadcrumb.label')} className="min-w-0 flex-grow-1 position-relative">
-      <ol className="breadcrumb my-0 small flex-nowrap min-w-0">
-      {crumbs.map((crumb, index) => {
-        const isMiddle = collapse && index >= 1 && index < crumbs.length - ALWAYS_SHOWN_TAIL;
-        return (
-          <FragmentWithCollapse key={`${index}-${crumb.label}`} showCollapse={collapse && index === 1} middle={middle}>
-            <CrumbItem crumb={crumb} active={index === last} className={isMiddle ? 'd-none d-md-flex' : undefined} />
-          </FragmentWithCollapse>
-        );
-      })}
-      </ol>
-    </nav>
+  const collapse = isPhone && crumbs.length >= COLLAPSE_FROM;
+  const middleEnd = crumbs.length - ALWAYS_SHOWN_TAIL;
+  const item = (crumb: Crumb, index: number) => (
+    <BreadcrumbItem key={`${index}-${crumb.label}`} href={index === last ? undefined : crumb.href} isCurrent={index === last}>
+      <CrumbLabel label={crumb.label} />
+    </BreadcrumbItem>
   );
-}
-
-function FragmentWithCollapse({ showCollapse, middle, children }: { showCollapse: boolean; middle: Crumb[]; children: ReactNode }) {
+  if (!collapse) {
+    return <AstryxBreadcrumbs label={t('breadcrumb.label')}>{crumbs.map(item)}</AstryxBreadcrumbs>;
+  }
+  const [root, ...rest] = crumbs;
+  const middle = crumbs.slice(1, middleEnd);
   return (
-    <>
-      {showCollapse && <CollapsedItems crumbs={middle} />}
-      {children}
-    </>
+    <AstryxBreadcrumbs label={t('breadcrumb.label')}>
+      {root !== undefined && item(root, 0)}
+      <BreadcrumbItem menu={middle.map((crumb) => ({ label: <WrappedLabel label={crumb.label} />, href: crumb.href, isDisabled: crumb.href === undefined }))} isCurrent={false}>
+        <Icon icon="moreHorizontal" label={t('breadcrumb.more')} />
+      </BreadcrumbItem>
+      {rest.slice(middle.length).map((crumb, offset) => item(crumb, middleEnd + offset))}
+    </AstryxBreadcrumbs>
   );
 }

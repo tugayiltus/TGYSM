@@ -134,7 +134,10 @@
       "light": "Açık",
       "dark": "Koyu",
       "auto": "Otomatik"
-    }
+    },
+    "closeMenu": "Menüyü kapat",
+    "menu": "Menü",
+    "topBar": "Üst çubuk"
   },
   "field": {
     "required": "(zorunlu)"

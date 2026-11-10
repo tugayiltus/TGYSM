@@ -1,17 +1,18 @@
+/**
+ * @input Nothing.
+ * @output An empty state that says the role may not open this page, with a link home.
+ * @position Inside the app shell, for a page reached by a direct URL that the role may not open.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { EmptyState } from '@astryxdesign/core/EmptyState';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
 import { ROUTES } from '../routes';
 
-/** Shown inside the app layout when the signed-in role may not open a page reached by a direct URL. */
+/** The page title is this state's heading, so it is the H1. */
+const TITLE_LEVEL = 1;
+
 export function ForbiddenPage() {
   const { t } = useTranslation();
-  return (
-    <section className="d-flex flex-column align-items-center gap-3 p-4 text-center">
-      <h1 className="h4 mb-0">{t('forbidden.title')}</h1>
-      <Link to={ROUTES.home} className="btn btn-primary tgysm-touch d-inline-flex align-items-center">
-        {t('forbidden.back')}
-      </Link>
-    </section>
-  );
+  return <EmptyState title={t('forbidden.title')} headingLevel={TITLE_LEVEL} actions={<Button label={t('forbidden.back')} variant="primary" href={ROUTES.home} />} />;
 }

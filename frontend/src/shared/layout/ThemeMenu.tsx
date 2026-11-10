@@ -1,45 +1,33 @@
-import CIcon from '@coreui/icons-react';
-import { CDropdown, CDropdownItem, CDropdownMenu, CDropdownToggle } from '@coreui/react';
-import { useState } from 'react';
+/**
+ * @input Nothing; reads and sets the app color mode.
+ * @output An icon button whose menu picks light, dark or the system mode.
+ * @position Top bar of the app shell.
+ */
+import { DropdownMenu, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@astryxdesign/core/DropdownMenu';
+import { Icon } from '@astryxdesign/core/Icon';
 import { useTranslation } from 'react-i18next';
 
 import { COLOR_MODES, useColorMode, type ColorMode } from '../ui/colorMode';
-import { cilContrast, cilMoon, cilSun } from '../ui/icons';
+import { Icons, type AppIcon } from '../ui/icons';
 
-const MODE_ICON: Record<ColorMode, string[]> = { light: cilSun, dark: cilMoon, auto: cilContrast };
+const MODE_ICON: Record<ColorMode, AppIcon> = { light: 'sun', dark: 'moon', auto: 'contrast' };
 
-/** Header menu for the color mode (spec §2.2): the toggle shows the active mode's icon. */
+const isColorMode = (value: string): value is ColorMode => (COLOR_MODES as readonly string[]).includes(value);
+
 export function ThemeMenu() {
   const { t } = useTranslation();
   const { mode, setMode } = useColorMode();
-  // Items exist only while the menu is open, so a closed menu adds nothing to the page's accessibility tree.
-  const [open, setOpen] = useState(false);
   return (
-    <CDropdown variant="dropdown" placement="bottom-end" visible={open} onShow={() => setOpen(true)} onHide={() => setOpen(false)}>
-      <CDropdownToggle
-        caret={false}
-        className="btn btn-ghost-secondary tgysm-touch d-inline-flex align-items-center"
-        aria-label={`${t('layout.theme.label')}: ${t(`layout.theme.${mode}`)}`}
-      >
-        <CIcon icon={MODE_ICON[mode]} size="lg" aria-hidden="true" />
-      </CDropdownToggle>
-      <CDropdownMenu>
-        {open &&
-          COLOR_MODES.map((item) => (
-            <CDropdownItem
-              key={item}
-              as="button"
-              type="button"
-              active={item === mode}
-              aria-pressed={item === mode}
-              className="d-flex align-items-center gap-2"
-              onClick={() => setMode(item)}
-            >
-              <CIcon icon={MODE_ICON[item]} aria-hidden="true" />
-              {t(`layout.theme.${item}`)}
-            </CDropdownItem>
-          ))}
-      </CDropdownMenu>
-    </CDropdown>
+    <DropdownMenu
+      hasChevron={false}
+      alignment="end"
+      button={{ label: `${t('layout.theme.label')}: ${t(`layout.theme.${mode}`)}`, variant: 'ghost', isIconOnly: true, icon: <Icon icon={Icons[MODE_ICON[mode]]} /> }}
+    >
+      <DropdownMenuRadioGroup label={t('layout.theme.label')} value={mode} onChange={(value: string) => isColorMode(value) && setMode(value)}>
+        {COLOR_MODES.map((item) => (
+          <DropdownMenuRadioItem key={item} value={item} label={t(`layout.theme.${item}`)} icon={Icons[MODE_ICON[item]]} />
+        ))}
+      </DropdownMenuRadioGroup>
+    </DropdownMenu>
   );
 }

@@ -6,6 +6,7 @@ import { createMemoryRouter, RouterProvider, type InitialEntry } from 'react-rou
 import { createQueryClient } from '../app/queryClient';
 import { routes } from '../app/router';
 import { resetCsrfToken } from '../shared/api/client';
+import { AstryxProvider } from '../shared/ui/AstryxProvider';
 import { ToastProvider } from '../shared/ui/Toast';
 
 export function renderRoute(path: InitialEntry) {
@@ -15,9 +16,11 @@ export function renderRoute(path: InitialEntry) {
   const user = userEvent.setup();
   render(
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
+      <AstryxProvider>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AstryxProvider>
     </QueryClientProvider>,
   );
   return { router, user, queryClient };

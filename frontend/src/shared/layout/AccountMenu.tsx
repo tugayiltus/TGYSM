@@ -1,67 +1,41 @@
-import { CAvatar } from '@coreui/react';
-import { useId, useState, type KeyboardEvent } from 'react';
+/**
+ * @input Nothing; reads the signed-in user.
+ * @output An avatar button whose menu holds profile, password change and logout.
+ * @position Top bar of the app shell, at the end.
+ */
+import { Avatar } from '@astryxdesign/core/Avatar';
+import { DropdownMenu, DropdownMenuDivider, DropdownMenuGroup, DropdownMenuItem } from '@astryxdesign/core/DropdownMenu';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import { useLogout } from '../../features/auth/api';
 import { useSession } from '../../features/auth/session';
 import { ROUTES } from '../routes';
 
-/** Header account menu: profile, password change and logout (spec §4.1). */
+/** Only the avatar shows in the bar. The full name is the group title in the menu, so a long name cannot widen the bar. */
 export function AccountMenu() {
   const { t } = useTranslation();
   const { t: ta } = useTranslation('auth');
   const me = useSession();
   const logout = useLogout();
   const navigate = useNavigate();
-  const menuId = useId();
-  const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
-  const initials = `${me.firstName.charAt(0)}${me.lastName.charAt(0)}`;
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      close();
-    }
-  };
-
+  const fullName = `${me.firstName} ${me.lastName}`;
   return (
-    <div className="position-relative">
-      <button type="button" className="btn btn-ghost-secondary d-flex align-items-center gap-2 tgysm-touch" aria-haspopup="menu" aria-expanded={open} aria-controls={menuId} onKeyDown={onKeyDown} onClick={() => setOpen((v) => !v)}>
-        <CAvatar color="primary" textColor="white" size="md" aria-hidden="true">
-          {initials}
-        </CAvatar>
-        {/* Phones and tablets show the avatar only: the full name beside the area and theme menus would not fit. */}
-        <span className="d-none d-md-inline text-truncate tgysm-account-name">{`${me.firstName} ${me.lastName}`}</span>
-        <span className="visually-hidden">{t('layout.accountMenu')}</span>
-      </button>
-      {open && (
-        <ul id={menuId} role="menu" className="dropdown-menu dropdown-menu-end show position-absolute end-0" onKeyDown={onKeyDown}>
-          <li role="none">
-            <Link role="menuitem" className="dropdown-item" to={ROUTES.profile} onClick={close}>
-              {ta('shell.profile')}
-            </Link>
-          </li>
-          <li role="none">
-            <Link role="menuitem" className="dropdown-item" to={ROUTES.changePassword} onClick={close}>
-              {t('routes.changePassword')}
-            </Link>
-          </li>
-          <li role="none">
-            <hr className="dropdown-divider" />
-          </li>
-          <li role="none">
-            <button
-              type="button"
-              role="menuitem"
-              className="dropdown-item"
-              disabled={logout.isPending}
-              onClick={() => logout.mutate(undefined, { onSuccess: () => void navigate(ROUTES.login, { replace: true }) })}
-            >
-              {t('actions.logout')}
-            </button>
-          </li>
-        </ul>
-      )}
-    </div>
+    <DropdownMenu
+      hasChevron={false}
+      alignment="end"
+      button={{ label: `${t('layout.accountMenu')}: ${fullName}`, variant: 'ghost', isIconOnly: true, icon: <Avatar name={fullName} size="sm" tooltip={false} /> }}
+    >
+      <DropdownMenuGroup title={fullName}>
+        <DropdownMenuItem label={ta('shell.profile')} href={ROUTES.profile} />
+        <DropdownMenuItem label={t('routes.changePassword')} href={ROUTES.changePassword} />
+      </DropdownMenuGroup>
+      <DropdownMenuDivider />
+      <DropdownMenuItem
+        label={t('actions.logout')}
+        isDisabled={logout.isPending}
+        onClick={() => logout.mutate(undefined, { onSuccess: () => void navigate(ROUTES.login, { replace: true }) })}
+      />
+    </DropdownMenu>
   );
 }

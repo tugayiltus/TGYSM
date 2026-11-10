@@ -4,13 +4,15 @@ import { expectNoHorizontalScroll } from './helpers';
 import { adminSession, seedIncidents, seedPublishedArticle, seedWorld, userSession } from './world';
 
 const MAIN_MENU = 'Ana menü';
+/** The phone drawer that holds the main menu (Astryx app shell). */
+const MENU_PANEL = 'Menü';
 
-/** The left menu: always visible from 992 px, behind the menu button on phones. */
+/** The left menu: always visible from 768 px, behind the menu button on phones. */
 async function openMenu(page: Page) {
   const button = page.getByRole('button', { name: 'Menüyü aç' });
   if (await button.isVisible()) {
     await button.click();
-    return page.getByRole('dialog', { name: MAIN_MENU }).getByRole('navigation', { name: MAIN_MENU });
+    return page.getByRole('dialog', { name: MENU_PANEL });
   }
   return page.getByRole('navigation', { name: MAIN_MENU });
 }
@@ -108,7 +110,7 @@ test('the breadcrumb overflow menu stays inside narrow screens and wraps long cr
 });
 
 test('the phone menu shows every link inside the screen and its links navigate', async ({ browser }, info) => {
-  test.skip(info.project.name !== 'mobile-360', 'The menu sits behind "Menüyü aç" below 992 px only.');
+  test.skip(info.project.name !== 'mobile-360', 'The menu sits behind "Menüyü aç" below 768 px only.');
   const admin = await adminSession(browser);
   const world = await seedWorld(admin);
   const employee = await userSession(browser, world.employeeEmail, world.employeePassword);
@@ -118,7 +120,7 @@ test('the phone menu shows every link inside the screen and its links navigate',
     await page.setViewportSize({ width, height: PHONE_HEIGHT });
     await page.goto('/');
     await page.getByRole('button', { name: 'Menüyü aç' }).click();
-    const menu = page.getByRole('dialog', { name: MAIN_MENU }).getByRole('navigation', { name: MAIN_MENU });
+    const menu = page.getByRole('dialog', { name: MENU_PANEL });
     const links = menu.getByRole('link');
     await expect(links.first()).toBeVisible();
     // Wait for the panel's slide-in to end, then measure: toBeVisible ignores links pushed outside the panel.
@@ -143,6 +145,6 @@ test('the phone menu shows every link inside the screen and its links navigate',
     }
     await menu.getByRole('link', { name: 'Kayıtlarım' }).click();
     await expect(page).toHaveURL(/\/tickets$/);
-    await expect(page.getByRole('dialog', { name: MAIN_MENU })).toHaveCount(0);
+    await expect(page.getByRole('dialog', { name: MENU_PANEL })).toHaveCount(0);
   }
 });

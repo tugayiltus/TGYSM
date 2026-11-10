@@ -1,22 +1,38 @@
-import CIcon from '@coreui/icons-react';
-import { CCard, CCardBody } from '@coreui/react';
+/**
+ * @input The screen's content.
+ * @output A centered card under the product name, with no menu and no breadcrumb.
+ * @position Sign-in, password links, forced password change and the 404 page.
+ */
+import { Card } from '@astryxdesign/core/Card';
+import { Center } from '@astryxdesign/core/Center';
+import { Heading } from '@astryxdesign/core/Heading';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { VStack } from '@astryxdesign/core/VStack';
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { cilDevices } from '../ui/icons';
+import { Icons } from '../ui/icons';
 
-/** Centred card for screens outside the app (sign-in, password links, forced change, 404): no menu, no breadcrumb. */
+/** Readable width for a short form. */
+const CARD_MAX_WIDTH = 440;
+
 export function AuthCard({ children }: PropsWithChildren) {
   const { t } = useTranslation();
   return (
-    <main className="min-vh-100 d-flex flex-column align-items-center justify-content-center gap-3 p-3 bg-body-tertiary">
-      <p className="tgysm-auth-brand d-flex align-items-center gap-2 mb-0 fs-4 fw-semibold text-primary">
-        <CIcon icon={cilDevices} size="xxl" aria-hidden="true" />
-        {t('appName')}
-      </p>
-      <CCard className="w-100 shadow tgysm-auth-card">
-        <CCardBody className="p-4 p-sm-5 d-flex flex-column gap-3">{children}</CCardBody>
-      </CCard>
+    // No app shell here, so this screen supplies the main landmark itself.
+    <main>
+      <Center minHeight="100dvh" padding={4}>
+      <VStack gap={4} hAlign="center" width="100%" maxWidth={CARD_MAX_WIDTH}>
+        <HStack gap={2} vAlign="center">
+          <Icon icon={Icons.devices} size="lg" color="accent" />
+          <Heading level={2}>{t('appName')}</Heading>
+        </HStack>
+        <Card padding={6} width="100%">
+          <VStack gap={3}>{children}</VStack>
+        </Card>
+        </VStack>
+      </Center>
     </main>
   );
 }

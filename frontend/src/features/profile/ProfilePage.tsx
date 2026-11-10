@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTES } from '../../shared/routes';
-import { cilLockLocked, cilUser } from '../../shared/ui/icons';
+import { cilLockLocked } from '../../shared/ui/icons';
 import { PageCard } from '../../shared/ui/PageCard';
 import { useSession } from '../auth/session';
 
@@ -24,7 +24,7 @@ export function ProfilePage() {
   return (
     <>
       <PageHeader
-        icon={cilUser}
+        icon="user"
         actions={
           <Link to={ROUTES.changePassword} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
             <CIcon icon={cilLockLocked} aria-hidden="true" />

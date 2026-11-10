@@ -22,7 +22,7 @@ describe('AssetImportPage', () => {
     const { user } = renderRoute('/assets/import');
     await user.upload(await screen.findByLabelText('CSV dosyası'), csvFile());
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
-    expect(await screen.findByText('Otomatik')).toBeInTheDocument();
+    expect(await within(screen.getByRole('main')).findByText('Otomatik')).toBeInTheDocument();
   });
 
   it('previews a file and lists row errors without allowing the commit', async () => {

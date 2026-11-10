@@ -1,13 +1,22 @@
-import { useRef, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
+/**
+ * @input The menu area, the app or area title, the menu label, and an optional area link.
+ * @output The Astryx app shell: side navigation, top bar, then the page trail and the routed page.
+ * @position Root element of `AppLayout` and `AdminLayout`.
+ */
+import { AppShell } from '@astryxdesign/core/AppShell';
+import { VStack } from '@astryxdesign/core/VStack';
+import type { ReactNode } from 'react';
 import { Outlet } from 'react-router';
 
+import { Breadcrumbs } from '../navigation/Breadcrumbs';
 import type { MenuArea } from '../navigation/routeMeta';
-import { Sheet } from '../ui/Sheet';
 
 import { AppHeader } from './AppHeader';
-import { AppSidebar, SidebarNav } from './AppSidebar';
+import { AppSidebar } from './AppSidebar';
 import { useSidebar } from './useSidebar';
+
+/** Pages hold forms, lists and text, so the content area gets standard padding. */
+const CONTENT_PADDING = 4;
 
 export interface ShellFrameProps {
   area: MenuArea;
@@ -16,42 +25,30 @@ export interface ShellFrameProps {
   areaSwitch?: ReactNode;
 }
 
-/** CoreUI frame shared by the app and admin layouts: sidebar, header, breadcrumb, content. */
 export function ShellFrame({ area, title, navLabel, areaSwitch }: ShellFrameProps) {
-  const { t } = useTranslation();
   const sidebar = useSidebar();
-  const trigger = useRef<HTMLButtonElement | null>(null);
-  const closePanel = () => {
-    sidebar.setMobileOpen(false);
-    trigger.current?.focus();
-  };
   return (
-    <div className="d-flex min-vh-100 bg-body-tertiary">
-      <AppSidebar area={area} label={navLabel} title={title} narrow={sidebar.narrow} onToggleNarrow={sidebar.toggleNarrow} />
-      <Sheet open={sidebar.mobileOpen} onOpenChange={(open) => (open ? sidebar.setMobileOpen(true) : closePanel())} title={navLabel}>
-        {/* `show`: below 992 px CoreUI slides a `.sidebar` without it off-screen (negative margin), even inside the sheet. */}
-        <div className="sidebar sidebar-dark show w-100 border-0 position-static">
-          <SidebarNav area={area} label={navLabel} onNavigate={closePanel} />
-        </div>
-      </Sheet>
-      <div className="wrapper d-flex flex-column flex-grow-1 min-w-0">
-        <a className="visually-hidden-focusable" href="#main">
-          {t('layout.skipToContent')}
-        </a>
-        <AppHeader
+    <AppShell
+      height="auto"
+      contentPadding={CONTENT_PADDING}
+      topNav={<AppHeader areaSwitch={areaSwitch} />}
+      sideNav={
+        <AppSidebar
+          area={area}
+          label={navLabel}
           title={title}
-          areaSwitch={areaSwitch}
-          onOpenMenu={(button) => {
-            trigger.current = button;
-            sidebar.setMobileOpen(true);
-          }}
+          isCollapsed={sidebar.narrow}
+          onCollapsedChange={sidebar.setNarrow}
+          onNavigate={() => sidebar.setMobileOpen(false)}
         />
-        <main id="main" className="body flex-grow-1 px-3 py-3 py-lg-4 min-w-0">
-          <div className="container-lg px-0">
-            <Outlet />
-          </div>
-        </main>
-      </div>
-    </div>
+      }
+      mobileNav={{ isOpen: sidebar.mobileOpen, onOpenChange: sidebar.setMobileOpen }}
+    >
+      {/* The trail sits above the page, not in the top bar: on phones Astryx moves top-bar content into the menu drawer. */}
+      <VStack gap={4}>
+        <Breadcrumbs />
+        <Outlet />
+      </VStack>
+    </AppShell>
   );
 }

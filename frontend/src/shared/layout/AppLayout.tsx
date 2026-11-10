@@ -1,10 +1,11 @@
-import CIcon from '@coreui/icons-react';
+import { Button } from '@astryxdesign/core/Button';
+import { Icon } from '@astryxdesign/core/Icon';
 import { useTranslation } from 'react-i18next';
-import { Link, Outlet } from 'react-router';
+import { Outlet } from 'react-router';
 
 import { useSession } from '../../features/auth/session';
 import { ROUTES } from '../routes';
-import { cilSettings } from '../ui/icons';
+import { Icons } from '../ui/icons';
 
 import { ShellFrame } from './ShellFrame';
 
@@ -18,11 +19,6 @@ export function AppLayout() {
     return <Outlet />;
   }
   const areaSwitch =
-    me.role === 'admin' ? (
-      <Link to={ROUTES.admin} aria-label={t('routes.admin')} className="btn btn-ghost-secondary tgysm-touch d-inline-flex align-items-center gap-2">
-        <CIcon icon={cilSettings} aria-hidden="true" />
-        <span className="d-none d-sm-inline">{t('routes.admin')}</span>
-      </Link>
-    ) : undefined;
+    me.role === 'admin' ? <Button label={t('routes.admin')} variant="ghost" href={ROUTES.admin} icon={<Icon icon={Icons.settings} />} /> : undefined;
   return <ShellFrame area="app" title={t('appName')} navLabel={ta('shell.mainNav')} areaSwitch={areaSwitch} />;
 }

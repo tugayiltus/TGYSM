@@ -1,30 +1,41 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input Optional actions, title override, icon and description.
+ * @output The page title row: icon, H1 and primary actions, with an optional line below.
+ * @position First element of every page inside the app shell.
+ */
+import { Heading } from '@astryxdesign/core/Heading';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
+import { Icons, type AppIcon } from '../ui/icons';
+
 import { useCrumbs } from './useCrumbs';
 
-/** Pathname seen by the last mounted header; focus moves to the new H1 only on navigation, not on first load. */
+/** Pathname of the last mounted header. Focus moves to the new H1 only on navigation, not on first load. */
 let lastPathname: string | null = null;
 
 export interface PageHeaderProps {
-  /** Primary page actions, right of the title on wide screens. */
+  /** Primary page actions, after the title on wide screens. */
   actions?: ReactNode;
   /** Title when it differs from the breadcrumb's current item. */
   titleOverride?: string;
-  /** The page's icon (usually its menu icon), before the title. */
-  icon?: string[];
+  /** The page's icon, usually its menu icon. */
+  icon?: AppIcon;
   /** One line under the title. */
   description?: ReactNode;
 }
 
-/** Page H1 and primary actions (spec §4.1); the layout renders the breadcrumb above it. The H1 takes focus after in-app navigation. */
 export function PageHeader({ actions, titleOverride, icon, description }: PageHeaderProps) {
   const crumbs = useCrumbs();
   const { pathname } = useLocation();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const title = titleOverride ?? crumbs.at(-1)?.label ?? '';
 
+  // Synchronizes keyboard focus with router navigation: a screen reader then reads the new page title.
   useEffect(() => {
     if (lastPathname !== null && lastPathname !== pathname) {
       headingRef.current?.focus();
@@ -33,17 +44,21 @@ export function PageHeader({ actions, titleOverride, icon, description }: PageHe
   }, [pathname]);
 
   return (
-    <div className="mb-3 mb-lg-4">
-      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div className="d-flex align-items-center gap-2 min-w-0">
-          {icon !== undefined && <CIcon icon={icon} size="xl" className="text-primary flex-shrink-0" aria-hidden="true" />}
-          <h1 ref={headingRef} tabIndex={-1} className="h3 mb-0 text-break tgysm-page-title">
+    <VStack gap={1}>
+      <HStack gap={3} hAlign="between" vAlign="center" wrap="wrap">
+        <HStack gap={2} vAlign="center">
+          {icon !== undefined && <Icon icon={Icons[icon]} size="lg" color="accent" />}
+          <Heading level={1} ref={headingRef} tabIndex={-1}>
             {title}
-          </h1>
-        </div>
-        {actions !== undefined && <div className="d-flex flex-wrap gap-2">{actions}</div>}
-      </div>
-      {description !== undefined && <div className="d-flex flex-wrap gap-2 text-body-secondary small mt-1">{description}</div>}
-    </div>
+          </Heading>
+        </HStack>
+        {actions !== undefined && (
+          <HStack gap={2} wrap="wrap">
+            {actions}
+          </HStack>
+        )}
+      </HStack>
+      {description !== undefined && <Text type="supporting">{description}</Text>}
+    </VStack>
   );
 }
