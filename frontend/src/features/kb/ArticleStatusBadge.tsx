@@ -1,22 +1,25 @@
+/**
+ * @input An article status or visibility.
+ * @output A colored token with the translated name; color is never the only cue.
+ * @position Knowledge list, article page and editor.
+ */
+import { Token } from '@astryxdesign/core/Token';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { ArticleStatus, ArticleVisibility } from './api';
 
-const STATUS_CLASSES: Record<ArticleStatus, string> = {
-  draft: 'bg-warning-subtle text-warning-emphasis',
-  published: 'bg-success-subtle text-success-emphasis',
-  archived: 'bg-secondary-subtle text-secondary-emphasis',
-};
+type TokenColor = NonNullable<ComponentProps<typeof Token>['color']>;
 
-const BADGE_BASE = 'badge fw-medium';
+const STATUS_COLOR: Record<ArticleStatus, TokenColor> = { draft: 'yellow', published: 'green', archived: 'gray' };
+const VISIBILITY_COLOR: Record<ArticleVisibility, TokenColor> = { employees: 'blue', internal: 'gray' };
 
 export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
   const { t } = useTranslation('kb');
-  return <span className={`${BADGE_BASE} ${STATUS_CLASSES[status]}`}>{t(`status.${status}`)}</span>;
+  return <Token size="sm" color={STATUS_COLOR[status]} label={t(`status.${status}`)} />;
 }
 
 export function ArticleVisibilityBadge({ visibility }: { visibility: ArticleVisibility }) {
   const { t } = useTranslation('kb');
-  const classes = visibility === 'internal' ? 'bg-secondary-subtle text-secondary-emphasis' : 'bg-info-subtle text-info-emphasis';
-  return <span className={`${BADGE_BASE} ${classes}`}>{t(`visibility.${visibility}`)}</span>;
+  return <Token size="sm" color={VISIBILITY_COLOR[visibility]} label={t(`visibility.${visibility}`)} />;
 }

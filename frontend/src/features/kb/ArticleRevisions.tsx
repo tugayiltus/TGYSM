@@ -1,17 +1,26 @@
+/**
+ * @input An article id, or a list of revisions.
+ * @output The revision history: number, title, visibility, editor and time.
+ * @position Article page, for IT staff.
+ */
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useTranslation } from 'react-i18next';
 
+import { ErrorState, LoadingState } from '../../shared/feedback/States';
 import { formatDateTime } from '../../shared/lib/format';
-import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
-import { ErrorState, LoadingState } from '../../shared/ui/States';
+import { DataList, type DataColumn } from '../../shared/list/DataList';
 
 import { useArticleRevisions, type ArticleRevisionItem } from './api';
+
+const META_SEPARATOR = ' · ';
 
 export function ArticleRevisionTable({ revisions }: { revisions: readonly ArticleRevisionItem[] }) {
   const { t } = useTranslation('kb');
   if (revisions.length === 0) {
-    return <p className="text-body-secondary">{t('revisions.empty')}</p>;
+    return <Text type="supporting">{t('revisions.empty')}</Text>;
   }
-  const columns: Column<ArticleRevisionItem>[] = [
+  const columns: DataColumn<ArticleRevisionItem>[] = [
     { key: 'revision', header: t('revisions.revision'), renderCell: (r) => r.revision },
     { key: 'title', header: t('revisions.title'), renderCell: (r) => r.title },
     { key: 'visibility', header: t('revisions.visibility'), renderCell: (r) => t(`visibility.${r.visibility}`) },
@@ -19,13 +28,13 @@ export function ArticleRevisionTable({ revisions }: { revisions: readonly Articl
     { key: 'editedAt', header: t('revisions.editedAt'), renderCell: (r) => formatDateTime(r.editedAt) },
   ];
   const renderCard = (r: ArticleRevisionItem) => (
-    <div className="d-flex flex-column gap-1">
-      <p className="fw-medium text-break">{`${t('revisions.revision')} ${r.revision} · ${r.title}`}</p>
-      <p className="small text-body-secondary">{t(`visibility.${r.visibility}`)}</p>
-      <p className="small text-body-secondary">{`${r.editedByName} · ${formatDateTime(r.editedAt)}`}</p>
-    </div>
+    <VStack gap={0.5}>
+      <Text type="label" wordBreak="break-word">{`${t('revisions.revision')} ${r.revision}${META_SEPARATOR}${r.title}`}</Text>
+      <Text type="supporting">{t(`visibility.${r.visibility}`)}</Text>
+      <Text type="supporting">{`${r.editedByName}${META_SEPARATOR}${formatDateTime(r.editedAt)}`}</Text>
+    </VStack>
   );
-  return <ResponsiveList items={revisions} columns={columns} getKey={(r) => String(r.revision)} renderCard={renderCard} caption={t('revisions.caption')} />;
+  return <DataList items={revisions} columns={columns} getKey={(r) => String(r.revision)} renderCard={renderCard} caption={t('revisions.caption')} />;
 }
 
 /** IT staff only: the endpoint is closed to employees. */
