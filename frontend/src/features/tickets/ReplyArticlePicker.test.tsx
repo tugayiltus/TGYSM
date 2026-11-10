@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ARTICLE_ID, kbRoutes, LIST_ARTICLE } from '../../test/kbData';
 import { IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption } from '../../test/select';
 import { detailRoutes, INCIDENT } from '../../test/ticketData';
 
 const base = (extra = {}) =>
@@ -21,6 +22,7 @@ describe('reply article picker', () => {
     const { user } = renderRoute(`/tickets/${INCIDENT.number}`);
 
     await user.click(await screen.findByRole('button', { name: 'Makale ekle' }));
+    await user.click(await screen.findByRole('combobox', { name: 'Makale' }));
     await screen.findByRole('option', { name: LIST_ARTICLE.title });
 
     const calls = api.calls.filter((c) => c.method === 'GET' && new URL(c.url).pathname === '/api/v1/kb/articles');
@@ -38,7 +40,7 @@ describe('reply article picker', () => {
 
     await user.type(await screen.findByLabelText('Mesajınız'), 'Şunu deneyin:');
     await user.click(screen.getByRole('button', { name: 'Makale ekle' }));
-    await user.selectOptions(await screen.findByLabelText('Makale'), LIST_ARTICLE.title);
+    await chooseOption(user, 'Makale', LIST_ARTICLE.title);
     await user.click(screen.getByRole('button', { name: 'Ekle' }));
 
     await waitFor(() => expect(screen.getByLabelText('Mesajınız')).toHaveValue(`Şunu deneyin:\n${LIST_ARTICLE.title}: /kb/${ARTICLE_ID}`));

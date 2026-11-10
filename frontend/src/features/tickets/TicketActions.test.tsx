@@ -197,9 +197,12 @@ describe('TicketActions', () => {
     await user.type(within(box).getByLabelText('Mesajınız'), 'Birinci');
     await user.click(within(box).getByRole('button', { name: 'Gönder' }));
 
-    await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).toBeDisabled());
+    // Astryx keeps a focused field focusable while it is locked, so the lock is aria-disabled.
+    await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).toHaveAttribute('aria-disabled', 'true'));
+    await user.type(within(box).getByLabelText('Mesajınız'), 'İkinci');
+    expect(within(box).getByLabelText('Mesajınız')).toHaveValue('Birinci');
     release();
-    await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).toBeEnabled());
+    await waitFor(() => expect(within(box).getByLabelText('Mesajınız')).not.toHaveAttribute('aria-disabled', 'true'));
     expect(within(box).getByLabelText('Mesajınız')).toHaveValue('');
   });
 });

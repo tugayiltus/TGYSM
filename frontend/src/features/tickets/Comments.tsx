@@ -1,10 +1,21 @@
+/**
+ * @input A ticket and its comments.
+ * @output The comment thread with attachments, and the reply box (public reply or internal note).
+ * @position "Yazışmalar" card on the ticket detail page.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Tab, TabList } from '@astryxdesign/core/TabList';
+import { Text } from '@astryxdesign/core/Text';
+import { TextArea } from '@astryxdesign/core/TextArea';
+import { Token } from '@astryxdesign/core/Token';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FormAlert } from '../../shared/feedback/FormAlert';
 import { formatDateTime } from '../../shared/lib/format';
-import { Button } from '../../shared/ui/Button';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { TextAreaField } from '../../shared/ui/TextAreaField';
 
 import { useAddComment, type CommentItem, type TicketDetail, type Visibility } from './api';
 import { AttachmentInput } from './AttachmentInput';
@@ -12,44 +23,53 @@ import { describeCommentError } from './commentErrors';
 import { ReplyArticlePicker } from './ReplyArticlePicker';
 
 const ATTACHMENTS_PATH = 'attachments';
+const LINE_BREAK = /\r?\n/;
+const VISIBILITIES: readonly Visibility[] = ['public', 'internal'];
 
 const attachmentUrl = (number: string, id: string) => `/api/v1/tickets/${number}/${ATTACHMENTS_PATH}/${id}`;
+const isVisibility = (value: string): value is Visibility => (VISIBILITIES as readonly string[]).includes(value);
 
 export function CommentList({ ticket, comments }: { ticket: TicketDetail; comments: readonly CommentItem[] }) {
   const { t } = useTranslation('tickets');
   if (comments.length === 0) {
-    return <p className="mb-0 text-body-secondary">{t('detail.noComments')}</p>;
+    return <Text type="supporting">{t('detail.noComments')}</Text>;
   }
   return (
-    <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
-      {comments.map((c) => (
-        <li key={c.id} className={`rounded border p-3 ${c.visibility === 'internal' ? 'border-warning-subtle bg-warning-subtle' : 'bg-body-tertiary'}`}>
-          <p className="mb-0 d-flex flex-wrap align-items-center gap-2 small">
-            <span className="fw-medium">{c.authorName}</span>
-            <time className="text-body-secondary" dateTime={c.createdAt}>
-              {formatDateTime(c.createdAt)}
-            </time>
-            {c.visibility === 'internal' && <span className="badge bg-warning-subtle text-warning-emphasis">{t('detail.internal')}</span>}
-          </p>
-          {c.body && <p className="mb-0 mt-1 tgysm-pre-wrap text-break">{c.body}</p>}
-          {c.attachments.length > 0 && (
-            <ul className="list-unstyled mb-0 mt-2 d-flex flex-wrap gap-2">
-              {c.attachments.map((a) => (
-                <li key={a.id}>
-                  <a href={attachmentUrl(ticket.number, a.id)} className="small link-primary text-decoration-underline" download>
-                    {a.originalName}
-                  </a>
-                </li>
+    <VStack gap={2}>
+      {comments.map((comment) => (
+        <Card key={comment.id} padding={3} variant={comment.visibility === 'internal' ? 'yellow' : 'muted'}>
+          <VStack gap={1}>
+            <HStack gap={2} vAlign="center" wrap="wrap">
+              <Text type="label">{comment.authorName}</Text>
+              <Text type="supporting">{formatDateTime(comment.createdAt)}</Text>
+              {comment.visibility === 'internal' && <Token size="sm" color="yellow" label={t('detail.internal')} />}
+            </HStack>
+            {comment.body &&
+              comment.body.split(LINE_BREAK).map((line, index) => (
+                <Text key={index} wordBreak="break-word">
+                  {line}
+                </Text>
               ))}
-            </ul>
-          )}
-        </li>
+            {comment.attachments.length > 0 && (
+              <HStack gap={3} wrap="wrap">
+                {comment.attachments.map((attachment) => (
+                  // A native download link: the router must not handle a file URL.
+                  <a key={attachment.id} href={attachmentUrl(ticket.number, attachment.id)} download>
+                    <Text type="supporting" color="accent">
+                      {attachment.originalName}
+                    </Text>
+                  </a>
+                ))}
+              </HStack>
+            )}
+          </VStack>
+        </Card>
       ))}
-    </ul>
+    </VStack>
   );
 }
 
-/** Reply box; people working on the ticket also get an internal-note tab (spec §3.7). */
+/** People working on the ticket also get an internal-note tab. */
 export function CommentBox({ ticket }: { ticket: TicketDetail }) {
   const { t } = useTranslation('tickets');
   const add = useAddComment();
@@ -58,7 +78,6 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
   const [files, setFiles] = useState<File[]>([]);
   const [formKey, setFormKey] = useState(0);
 
-  const tabs: Visibility[] = ['public', 'internal'];
   const submit = () =>
     add.mutate(
       { number: ticket.number, body, visibility, files },
@@ -75,37 +94,28 @@ export function CommentBox({ ticket }: { ticket: TicketDetail }) {
     // Inside the "Yazışmalar" card: the form keeps that name for screen readers and tests.
     <form
       aria-label={t('detail.comments')}
-      className="d-flex flex-column gap-2 border-top pt-3"
       onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}
     >
-      {ticket.canWork && (
-        <div role="tablist" aria-label={t('comment.tabs')} className="d-flex gap-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={visibility === tab}
-              disabled={add.isPending}
-              className="btn btn-sm btn-ghost-secondary tgysm-touch aria-selected-active"
-              onClick={() => setVisibility(tab)}
-            >
-              {t(`comment.${tab}`)}
-            </button>
-          ))}
-        </div>
-      )}
-      <FormAlert message={add.error ? describeCommentError(add.error) : null} />
-      {/* Locked while sending: the success handler clears the box, which would drop anything typed meanwhile. */}
-      <TextAreaField label={t('comment.body')} value={body} disabled={add.isPending} onChange={(event) => setBody(event.target.value)} />
-      <ReplyArticlePicker onInsert={(text) => setBody((current) => (current.trim() === '' ? text : `${current}\n${text}`))} />
-      <AttachmentInput key={formKey} label={t('comment.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
-      <Button type="submit" className="align-self-start" disabled={body.trim() === '' && files.length === 0} isLoading={add.isPending}>
-        {t('comment.send')}
-      </Button>
+      <VStack gap={3}>
+        {ticket.canWork && (
+          <TabList role="tablist" aria-label={t('comment.tabs')} value={visibility} onChange={(value) => isVisibility(value) && !add.isPending && setVisibility(value)}>
+            {VISIBILITIES.map((tab) => (
+              <Tab key={tab} value={tab} label={t(`comment.${tab}`)} />
+            ))}
+          </TabList>
+        )}
+        <FormAlert message={add.error ? describeCommentError(add.error) : null} />
+        {/* Locked while sending: the success handler clears the box, which would drop anything typed meanwhile. */}
+        <TextArea label={t('comment.body')} value={body} isDisabled={add.isPending} onChange={setBody} />
+        <ReplyArticlePicker onInsert={(text) => setBody((current) => (current.trim() === '' ? text : `${current}\n${text}`))} />
+        <AttachmentInput key={formKey} label={t('comment.files')} hint={t('new.filesHint')} files={files} onChange={setFiles} />
+        <HStack>
+          <Button type="submit" label={t('comment.send')} variant="primary" isDisabled={body.trim() === '' && files.length === 0} isLoading={add.isPending} />
+        </HStack>
+      </VStack>
     </form>
   );
 }

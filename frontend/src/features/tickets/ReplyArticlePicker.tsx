@@ -1,10 +1,18 @@
+/**
+ * @input A callback that receives the text to add to the reply.
+ * @output A "Makale ekle" button that opens a search for published articles and adds the chosen one as a link.
+ * @position Comment reply box on the ticket detail page.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Selector } from '@astryxdesign/core/Selector';
+import { TextInput } from '@astryxdesign/core/TextInput';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { articlePath } from '../../shared/routes';
-import { Button } from '../../shared/ui/Button';
-import { SelectField } from '../../shared/ui/SelectField';
-import { TextField } from '../../shared/ui/TextField';
 import { usePublishedArticleOptions } from '../kb/api';
 
 const ENTER_KEY = 'Enter';
@@ -22,28 +30,30 @@ function ArticlePanel({ onInsert }: { onInsert: (articleId: string, title: strin
   const [search, setSearch] = useState('');
   const [articleId, setArticleId] = useState('');
   const options = usePublishedArticleOptions(search, 'employees');
-  const chosen = options.find((o) => o.value === articleId);
+  const chosen = options.find((option) => option.value === articleId);
 
   return (
-    <div className="d-flex flex-column gap-2 rounded border p-2">
-      <TextField type="search" label={t('reply.search')} value={search} onKeyDown={keepEnterFromSubmitting} onChange={(event) => setSearch(event.target.value)} />
-      <SelectField label={t('reply.pick')} placeholder={t('reply.select')} options={options} value={articleId} onChange={(event) => setArticleId(event.target.value)} />
-      <Button className="align-self-start" disabled={chosen === undefined} onClick={() => chosen && onInsert(chosen.value, chosen.label)}>
-        {t('reply.insert')}
-      </Button>
-    </div>
+    <Card padding={3} variant="muted">
+      <VStack gap={3}>
+        <TextInput type="search" label={t('reply.search')} value={search} onKeyDown={keepEnterFromSubmitting} onChange={setSearch} />
+        <Selector label={t('reply.pick')} placeholder={t('reply.select')} options={[...options]} value={articleId} onChange={setArticleId} />
+        <HStack>
+          <Button label={t('reply.insert')} variant="primary" isDisabled={chosen === undefined} onClick={() => chosen && onInsert(chosen.value, chosen.label)} />
+        </HStack>
+      </VStack>
+    </Card>
   );
 }
 
-/** "Makale ekle": appends `Title: /kb/{id}` to the reply text. */
+/** Appends `Title: /kb/{id}` to the reply text. */
 export function ReplyArticlePicker({ onInsert }: { onInsert: (text: string) => void }) {
   const { t } = useTranslation('kb');
   const [open, setOpen] = useState(false);
   return (
-    <div className="d-flex flex-column gap-2">
-      <Button variant="secondary" className="align-self-start" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
-        {t('reply.add')}
-      </Button>
+    <VStack gap={2}>
+      <HStack>
+        <Button label={t('reply.add')} variant="secondary" aria-expanded={open} onClick={() => setOpen((current) => !current)} />
+      </HStack>
       {open && (
         <ArticlePanel
           onInsert={(id, title) => {
@@ -52,6 +62,6 @@ export function ReplyArticlePicker({ onInsert }: { onInsert: (text: string) => v
           }}
         />
       )}
-    </div>
+    </VStack>
   );
 }
