@@ -1,16 +1,17 @@
+/**
+ * @input The location tree and the target: a new location (with its parent) or a node to edit.
+ * @output A form dialog with the name and the parent; a node cannot move under itself.
+ * @position Opened from the location tree.
+ */
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
+import { applyServerErrors, describeError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
-import { Button } from '../../../shared/ui/Button';
-import { Dialog } from '../../../shared/ui/Dialog';
-import { FormAlert } from '../../../shared/ui/FormAlert';
-import { SelectField } from '../../../shared/ui/SelectField';
-import { TextField } from '../../../shared/ui/TextField';
+import { FormDialog } from '../../../shared/feedback/FormDialog';
+import { FormSelector, FormTextInput } from '../../../shared/form/formFields';
 import { withCurrentOption } from '../shared/referenceOptions';
 
 import { useCreateLocation, useUpdateLocation } from './api';
@@ -39,7 +40,6 @@ export type LocationFormTarget = { kind: 'create'; parentId: string | null } | {
 export function LocationFormDialog({ roots, target, onClose }: { roots: readonly LocationNode[]; target: LocationFormTarget; onClose: () => void }) {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
-  const formId = useId();
   const create = useCreateLocation();
   const update = useUpdateLocation();
   const mutation = target.kind === 'create' ? create : update;
@@ -54,12 +54,7 @@ export function LocationFormDialog({ roots, target, onClose }: { roots: readonly
     currentParentId ? findLocationNode(roots, currentParentId)?.path : undefined,
   );
 
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<LocationFormValues>({
+  const { control, handleSubmit, setError } = useForm<LocationFormValues>({
     resolver: zodResolver(locationSchema),
     defaultValues: { name: target.kind === 'edit' ? target.node.item.name : '', parentId: currentParentId ?? NO_PARENT },
   });
@@ -77,36 +72,16 @@ export function LocationFormDialog({ roots, target, onClose }: { roots: readonly
   const alert = mutation.error && !isHandledByFields(mutation.error, FORM_FIELDS, CODE_FIELDS) ? describeError(mutation.error) : null;
 
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <FormDialog
       title={target.kind === 'create' ? t('locations.new') : t('locations.edit')}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button type="submit" form={formId} isLoading={mutation.isPending}>
-            {target.kind === 'create' ? tc('actions.create') : tc('actions.save')}
-          </Button>
-        </>
-      }
+      submitLabel={target.kind === 'create' ? tc('actions.create') : tc('actions.save')}
+      isPending={mutation.isPending}
+      alert={alert}
+      onSubmit={(event) => void onSubmit(event)}
+      onClose={onClose}
     >
-      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
-        <FormAlert message={alert} />
-        <TextField label={t('locations.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
-        <SelectField
-          label={t('locations.fields.parent')}
-          options={parentOptions}
-          placeholder={t('locations.noParent')}
-          error={fieldError(errors.parentId)}
-          {...register('parentId')}
-        />
-      </form>
-    </Dialog>
+      <FormTextInput control={control} name="name" label={t('locations.fields.name')} autoComplete="off" />
+      <FormSelector control={control} name="parentId" label={t('locations.fields.parent')} options={parentOptions} placeholder={t('locations.noParent')} isClearable />
+    </FormDialog>
   );
 }

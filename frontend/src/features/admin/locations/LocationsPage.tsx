@@ -1,19 +1,34 @@
+/**
+ * @input Nothing; loads all locations.
+ * @output The location tree with edit, add-child and (de)activate per node.
+ * @position `/admin/locations`, inside the admin shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Section } from '@astryxdesign/core/Section';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ConfirmDialog } from '../../../shared/feedback/ConfirmDialog';
+import { EmptyState, ErrorState, LoadingState } from '../../../shared/feedback/States';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
-import { Button } from '../../../shared/ui/Button';
-import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
-import { DataCard } from '../../../shared/ui/DataCard';
-import { cilPlus } from '../../../shared/ui/icons';
+import { ActiveToken } from '../../../shared/page/ActiveToken';
+import { RecordActions } from '../../../shared/page/RecordActions';
+import { Icons } from '../../../shared/ui/icons';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
-import { StatusBadge } from '../../../shared/ui/StatusBadge';
 
 import { useLocations, useSetLocationActive, type LocationItem } from './api';
 import { LocationFormDialog, type LocationFormTarget } from './LocationFormDialog';
 import { buildLocationTree, type LocationNode } from './locationTree';
+
+const SKELETON_ROWS = 5;
+/** Each tree level indents by this spacing step, with a line at its start. */
+const LEVEL_INDENT = 4;
 
 interface TreeListProps {
   nodes: readonly LocationNode[];
@@ -24,38 +39,45 @@ interface TreeListProps {
 
 function LocationTreeList({ nodes, onEdit, onAddChild, onToggle }: TreeListProps) {
   const { t } = useTranslation('admin');
-  const { t: tc } = useTranslation();
   return (
-    <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
+    <VStack gap={2} role="list">
       {nodes.map((node) => (
-        <li key={node.item.id}>
-          <div className="d-flex flex-column gap-2 rounded border bg-body p-2 flex-sm-row align-items-sm-center justify-content-sm-between">
-            <div className="d-flex min-w-0 align-items-center gap-2">
-              <span className="fw-medium text-break">{node.item.name}</span>
-              {!node.item.isActive && <StatusBadge isActive={false} />}
-            </div>
-            <div className="d-flex flex-wrap gap-2">
-              <Button aria-label={recordActionLabel(tc('actions.edit'), node.item.name)} variant="secondary" onClick={() => onEdit(node)}>
-                {tc('actions.edit')}
-              </Button>
-              {node.item.isActive && (
-                <Button aria-label={recordActionLabel(t('locations.addChild'), node.item.name)} variant="secondary" onClick={() => onAddChild(node.item.id)}>
-                  {t('locations.addChild')}
-                </Button>
-              )}
-              <Button aria-label={recordActionLabel(node.item.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), node.item.name)} variant="ghost" onClick={() => onToggle(node.item)}>
-                {node.item.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
-              </Button>
-            </div>
-          </div>
+        <VStack key={node.item.id} gap={2} role="listitem">
+          <Card padding={3}>
+            <HStack gap={2} hAlign="between" vAlign="center" wrap="wrap">
+              <HStack gap={2} vAlign="center">
+                <Text type="label" wordBreak="break-word">
+                  {node.item.name}
+                </Text>
+                {!node.item.isActive && <ActiveToken isActive={false} />}
+              </HStack>
+              <RecordActions
+                name={node.item.name}
+                isActive={node.item.isActive}
+                onEdit={() => onEdit(node)}
+                onToggle={() => onToggle(node.item)}
+                extra={
+                  node.item.isActive && (
+                    <Button
+                      label={t('locations.addChild')}
+                      aria-label={recordActionLabel(t('locations.addChild'), node.item.name)}
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onAddChild(node.item.id)}
+                    />
+                  )
+                }
+              />
+            </HStack>
+          </Card>
           {node.children.length > 0 && (
-            <div className="mt-2 ms-2 ps-3 border-start">
+            <Section variant="transparent" padding={0} paddingInlineStart={LEVEL_INDENT} dividers={['start']}>
               <LocationTreeList nodes={node.children} onEdit={onEdit} onAddChild={onAddChild} onToggle={onToggle} />
-            </div>
+            </Section>
           )}
-        </li>
+        </VStack>
       ))}
-    </ul>
+    </VStack>
   );
 }
 
@@ -68,29 +90,29 @@ export function LocationsPage() {
   const [toggling, setToggling] = useState<LocationItem | null>(null);
   const roots = useMemo(() => buildLocationTree(locations.data ?? []), [locations.data]);
 
-  const openToggle = (item: LocationItem) => {
-    setActive.reset();
-    setToggling(item);
-  };
-
   return (
-    <section className="d-flex flex-column gap-3" aria-label={t('locations.treeLabel')}>
-      <PageHeader icon={ROUTE_META.adminLocations.icon} titleOverride={t('locations.title')} actions={<Button icon={cilPlus} onClick={() => setTarget({ kind: 'create', parentId: null })}>{t('locations.new')}</Button>} />
-      <DataCard>
-        {locations.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+    <VStack gap={4}>
+      <PageHeader
+        icon={ROUTE_META.adminLocations.icon}
+        titleOverride={t('locations.title')}
+        actions={<Button label={t('locations.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setTarget({ kind: 'create', parentId: null })} />}
+      />
+      <VStack gap={2} role="region" aria-label={t('locations.treeLabel')}>
+        {locations.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {locations.isError && <ErrorState error={locations.error} onRetry={() => void locations.refetch()} />}
         {locations.data && roots.length === 0 && <EmptyState />}
         {roots.length > 0 && (
-          <div className="p-3">
           <LocationTreeList
             nodes={roots}
             onEdit={(node) => setTarget({ kind: 'edit', node })}
             onAddChild={(parentId) => setTarget({ kind: 'create', parentId })}
-            onToggle={openToggle}
+            onToggle={(item) => {
+              setActive.reset();
+              setToggling(item);
+            }}
           />
-          </div>
         )}
-      </DataCard>
+      </VStack>
 
       {target !== null && (
         <LocationFormDialog
@@ -108,12 +130,10 @@ export function LocationsPage() {
           variant={toggling.isActive ? 'danger' : 'primary'}
           isPending={setActive.isPending}
           error={setActive.error}
-          onConfirm={() =>
-            setActive.mutate({ id: toggling.id, version: toggling.version, isActive: !toggling.isActive }, { onSuccess: () => setToggling(null) })
-          }
+          onConfirm={() => setActive.mutate({ id: toggling.id, version: toggling.version, isActive: !toggling.isActive }, { onSuccess: () => setToggling(null) })}
           onCancel={() => setToggling(null)}
         />
       )}
-    </section>
+    </VStack>
   );
 }

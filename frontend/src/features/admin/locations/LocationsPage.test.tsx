@@ -22,10 +22,10 @@ describe('LocationsPage', () => {
     });
     const { user } = renderRoute('/admin/locations');
 
-    const blockRow = (await screen.findByText('A Blok')).closest('li')!;
+    const blockRow = (await screen.findByText('A Blok')).closest<HTMLElement>('[role="listitem"]')!;
     await user.click(within(blockRow).getByRole('button', { name: /^Alt lokasyon ekle/ }));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByLabelText('Üst lokasyon')).toHaveValue('b');
+    expect(within(dialog).getByRole('combobox', { name: 'Üst lokasyon' })).toHaveTextContent(/A Blok/);
     await user.type(within(dialog).getByLabelText('Lokasyon adı'), 'Kat 1');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
@@ -40,11 +40,11 @@ describe('LocationsPage', () => {
     });
     const { user } = renderRoute('/admin/locations');
 
-    const campusRow = (await screen.findByText('Merkez Kampüs')).closest('li')!;
+    const campusRow = (await screen.findByText('Merkez Kampüs')).closest<HTMLElement>('[role="listitem"]')!;
     await user.click(within(campusRow).getAllByRole('button', { name: /^Düzenle/ })[0]!);
-    const parentSelect = within(await screen.findByRole('dialog')).getByLabelText('Üst lokasyon');
-
-    expect(within(parentSelect).queryByRole('option', { name: /A Blok/ })).not.toBeInTheDocument();
-    expect(within(parentSelect).queryByRole('option', { name: 'Merkez Kampüs' })).not.toBeInTheDocument();
+    await user.click(within(await screen.findByRole('dialog')).getByRole('combobox', { name: 'Üst lokasyon' }));
+    expect(await screen.findByRole('listbox', { name: 'Üst lokasyon' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /A Blok/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Merkez Kampüs' })).not.toBeInTheDocument();
   });
 });
