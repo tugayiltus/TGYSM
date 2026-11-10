@@ -18,6 +18,8 @@ export interface ListToolbarProps {
   /** Heading of the phone drawer. */
   title: string;
   search: string;
+  /** Label of the search box; defaults to "Ara". */
+  searchLabel?: string;
   onSearchChange: (value: string) => void;
   /** Filter controls; they apply as they change. */
   filters?: ReactNode;
@@ -25,12 +27,13 @@ export interface ListToolbarProps {
   onClear: () => void;
 }
 
-export function ListToolbar({ title, search, onSearchChange, filters, activeCount, onClear }: ListToolbarProps) {
+export function ListToolbar({ title, search, searchLabel, onSearchChange, filters, activeCount, onClear }: ListToolbarProps) {
   const { t } = useTranslation();
   const isPhone = useIsPhone();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const searchBox = <TextInput type="search" label={t('filters.search')} isLabelHidden placeholder={t('filters.search')} startIcon="search" value={search} onChange={onSearchChange} />;
+  const label = searchLabel ?? t('filters.search');
+  const searchBox = <TextInput type="search" label={label} isLabelHidden placeholder={label} startIcon="search" value={search} onChange={onSearchChange} />;
   const clearButton = activeCount > 0 && <Button label={t('filters.clear')} variant="ghost" onClick={onClear} />;
 
   if (!isPhone) {

@@ -10,6 +10,8 @@ import { FIRST_PAGE, readPageParam } from '../lib/pageParam';
 
 export const PAGE_PARAM = 'page';
 export const SEARCH_PARAM = 'q';
+/** Each keystroke or filter change replaces the history entry, so Back leaves the list instead of undoing a letter. */
+const REPLACE = { replace: true } as const;
 
 export function useListParams<K extends string>(filterKeys: readonly K[]) {
   const [params, setParams] = useSearchParams();
@@ -31,7 +33,7 @@ export function useListParams<K extends string>(filterKeys: readonly K[]) {
         }
         next.delete(PAGE_PARAM);
         return next;
-      }),
+      }, REPLACE),
     [setParams],
   );
 
@@ -45,7 +47,7 @@ export function useListParams<K extends string>(filterKeys: readonly K[]) {
           params.set(PAGE_PARAM, String(next));
         }
         return params;
-      }),
+      }, REPLACE),
     [setParams],
   );
 
@@ -55,7 +57,7 @@ export function useListParams<K extends string>(filterKeys: readonly K[]) {
         const next = new URLSearchParams(current);
         [SEARCH_PARAM, PAGE_PARAM, ...filterKeys].forEach((key) => next.delete(key));
         return next;
-      }),
+      }, REPLACE),
     [filterKeys, setParams],
   );
 

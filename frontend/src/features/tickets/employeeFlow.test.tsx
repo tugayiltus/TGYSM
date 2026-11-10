@@ -37,7 +37,8 @@ describe('my tickets', () => {
   it('keeps its filters in the URL and the ticket returns to that filtered list', async () => {
     const api = mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME }, 'GET /api/v1/tickets': { status: 200, body: pageOf([LIST_ITEM]) }, ...detailRoutes() });
     const { user, router } = renderRoute('/tickets');
-    await user.selectOptions(await screen.findByLabelText('Durum'), 'open');
+    await user.click(await screen.findByRole('combobox', { name: 'Durum' }));
+    await user.click(await screen.findByRole('option', { name: 'Açık' }));
     await waitFor(() => expect(new URLSearchParams(router.state.location.search).get('status')).toBe('open'));
     await waitFor(() => expect(listCalls(api).some((c) => new URL(c.url).searchParams.get('status') === 'open')).toBe(true));
 
@@ -49,8 +50,8 @@ describe('my tickets', () => {
   it('restores the filters from the URL', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME }, 'GET /api/v1/tickets': { status: 200, body: pageOf([LIST_ITEM]) } });
     renderRoute('/tickets?status=completed&q=yaz');
-    expect(await screen.findByLabelText('Durum')).toHaveValue('completed');
-    expect(screen.getByLabelText('Numara veya konu ara')).toHaveValue('yaz');
+    expect(await screen.findByRole('combobox', { name: 'Durum' })).toHaveTextContent('Tamamlandı');
+    expect(screen.getByRole('searchbox', { name: 'Numara veya konu ara' })).toHaveValue('yaz');
   });
 });
 

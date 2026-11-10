@@ -53,11 +53,12 @@ describe('ticket detail layout', () => {
     expect(trail().getByRole('link', { name: 'İş listem' })).toHaveAttribute('href', '/workspace');
   });
 
-  it('truncates a very long subject in the queue cards', async () => {
+  it('shows a very long subject in full, wrapping inside the list', async () => {
     mockApi(itRoutes({ 'GET /api/v1/tickets': { status: 200, body: pageOf([{ ...LIST_ITEM, subject: 'Yazıcı '.repeat(20) }]) } }) as never);
     renderRoute('/workspace/queue?queue=team');
     const subjects = await screen.findAllByText(/^(Yazıcı )+/);
-    expect(subjects.some((element) => element.classList.contains('text-break'))).toBe(true);
+    expect(subjects.length).toBeGreaterThan(0);
+    expect(subjects[0]).toHaveTextContent('Yazıcı '.repeat(20).trim());
   });
 });
 

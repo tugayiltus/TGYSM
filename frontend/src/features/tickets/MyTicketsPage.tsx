@@ -1,35 +1,35 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input Nothing.
+ * @output The signed-in person's tickets with buttons to report a fault or ask for something.
+ * @position `/tickets`, inside the app shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Icon } from '@astryxdesign/core/Icon';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ROUTES } from '../../shared/routes';
-import { cilPlus, cilWarning } from '../../shared/ui/icons';
+import { Icons } from '../../shared/ui/icons';
 
 import { TicketList } from './TicketList';
 
 export function MyTicketsPage() {
   const { t } = useTranslation('tickets');
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader
         icon={ROUTE_META.myTickets.icon}
         titleOverride={t('list.title')}
         actions={
           <>
-            <Link to={ROUTES.newIncident} className="btn btn-primary tgysm-touch d-inline-flex align-items-center gap-2">
-              <CIcon icon={cilWarning} aria-hidden="true" />
-              {t('list.newIncident')}
-            </Link>
-            <Link to={ROUTES.newRequest} className="btn btn-outline-primary tgysm-touch d-inline-flex align-items-center gap-2">
-              <CIcon icon={cilPlus} aria-hidden="true" />
-              {t('list.newRequest')}
-            </Link>
+            <Button label={t('list.newIncident')} variant="primary" href={ROUTES.newIncident} icon={<Icon icon={Icons.warning} />} />
+            <Button label={t('list.newRequest')} variant="secondary" href={ROUTES.newRequest} icon={<Icon icon={Icons.plus} />} />
           </>
         }
       />
       <TicketList queue="mine" showWorkColumns={false} />
-    </>
+    </VStack>
   );
 }
