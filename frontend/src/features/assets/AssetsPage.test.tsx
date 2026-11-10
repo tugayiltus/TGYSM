@@ -59,11 +59,10 @@ describe('AssetsPage', () => {
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).queryByLabelText('Demirbaş numarası')).not.toBeInTheDocument();
     expect(within(dialog).getByText('Demirbaş numarası kaydedildiğinde otomatik atanır.')).toBeInTheDocument();
-    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Dizüstü');
-    await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
-    await user.keyboard('{ArrowDown}{Enter}');
-    await user.selectOptions(within(dialog).getByLabelText('Model'), 'T14');
-    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: 'Merkez Kampüs / A Blok' }));
+    await chooseOption(user, 'Tür', 'Dizüstü', dialog);
+    await chooseOption(user, 'Marka', 'Lenovo', dialog);
+    await chooseOption(user, 'Model', 'T14', dialog);
+    await chooseOption(user, 'Lokasyon', 'Merkez Kampüs / A Blok', dialog);
     await user.type(within(dialog).getByLabelText('Garanti bitiş tarihi'), '2027-12-31');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 

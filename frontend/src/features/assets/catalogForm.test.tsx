@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { CATALOG, LAPTOP, LOCATIONS, pageOf } from '../../test/assetData';
 import { ADMIN_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { chooseOption, findSelect } from '../../test/select';
 
 const routes = (me: object, extra: Record<string, unknown> = {}) => ({
   'GET /api/v1/auth/me': { status: 200, body: me },
@@ -20,11 +21,10 @@ describe('generated asset tag', () => {
     const { user } = renderRoute('/assets');
     await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Dizüstü');
-    await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
-    await user.keyboard('{ArrowDown}{Enter}');
-    await user.selectOptions(within(dialog).getByLabelText('Model'), 'T14');
-    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: LOCATIONS[0]?.path ?? '' }));
+    await chooseOption(user, 'Tür', 'Dizüstü', dialog);
+    await chooseOption(user, 'Marka', 'Lenovo', dialog);
+    await chooseOption(user, 'Model', 'T14', dialog);
+    await chooseOption(user, 'Lokasyon', LOCATIONS[0]?.path ?? '', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
     expect(await screen.findByText('Cihaz kaydedildi: DMR-000007')).toBeInTheDocument();
   });
@@ -36,12 +36,12 @@ describe('asset form catalog', () => {
     const { user } = renderRoute('/assets');
     await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Masaüstü');
-    await user.click(within(dialog).getByRole('combobox', { name: 'Marka' }));
-    expect(within(within(dialog).getByRole('listbox')).getAllByRole('option').map((o) => o.textContent)).toEqual(['Lenovo']);
-    await user.keyboard('{ArrowDown}{Enter}');
-    const model = within(dialog).getByLabelText('Model');
-    expect(within(model).getAllByRole('option').map((o) => o.textContent)).toEqual(['Seçiniz', 'M70q']);
+    await chooseOption(user, 'Tür', 'Masaüstü', dialog);
+    await user.click(await findSelect('Marka', dialog));
+    expect((await screen.findAllByRole('option')).map((o) => o.textContent)).toEqual(['Lenovo']);
+    await user.click(screen.getByRole('option', { name: 'Lenovo' }));
+    await user.click(within(dialog).getByRole('combobox', { name: 'Model' }));
+    expect((await screen.findAllByRole('option')).map((o) => o.textContent)).toEqual(['M70q']);
   });
 
   it('clears the brand and model when the device type changes, so a model of the old type is never sent', async () => {
@@ -57,14 +57,13 @@ describe('asset form catalog', () => {
     const { user } = renderRoute('/assets');
     await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Dizüstü');
-    await user.type(within(dialog).getByRole('combobox', { name: 'Marka' }), 'len');
-    await user.keyboard('{ArrowDown}{Enter}');
-    await user.selectOptions(within(dialog).getByLabelText('Model'), 'T14');
-    await user.selectOptions(within(dialog).getByLabelText('Lokasyon'), await within(dialog).findByRole('option', { name: LOCATIONS[0]?.path ?? '' }));
+    await chooseOption(user, 'Tür', 'Dizüstü', dialog);
+    await chooseOption(user, 'Marka', 'Lenovo', dialog);
+    await chooseOption(user, 'Model', 'T14', dialog);
+    await chooseOption(user, 'Lokasyon', LOCATIONS[0]?.path ?? '', dialog);
 
-    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Masaüstü');
-    expect(within(dialog).getByRole('combobox', { name: 'Marka' })).toHaveValue('');
+    await chooseOption(user, 'Tür', 'Masaüstü', dialog);
+    expect(await findSelect('Marka', dialog)).toHaveTextContent('Marka seçin');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
     expect((await within(dialog).findAllByText('Bu alan zorunludur.')).length).toBeGreaterThan(0);
@@ -104,7 +103,7 @@ describe('asset form catalog', () => {
     const { user } = renderRoute(`/assets/${LAPTOP.id}`);
     await user.click(await screen.findByRole('button', { name: 'Düzenle' }));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByLabelText('Model')).toHaveDisplayValue('T470');
+    expect(within(dialog).getByRole('combobox', { name: 'Model' })).toHaveTextContent('T470');
     await user.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
     await waitFor(() => expect(posted.modelId).toBe('m-old'));
   });

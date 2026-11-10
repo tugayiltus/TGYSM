@@ -1,21 +1,30 @@
+/**
+ * @input The asset to edit, or null to create one, and a close callback.
+ * @output The asset form: device type, brand and model from the catalog, serial, location, department, dates and notes.
+ * @position Opened from the inventory list (create) and the asset detail page (edit).
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
+import { Grid } from '@astryxdesign/core/Grid';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Layout, LayoutContent, LayoutFooter } from '@astryxdesign/core/Layout';
+import { Link } from '@astryxdesign/core/Link';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { useToast } from '@astryxdesign/core/Toast';
+import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId, useMemo } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 import { z } from 'zod';
 
 import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../shared/api/errors';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
+import { FormDateInput, FormSelector, FormTextInput } from '../../shared/form/formFields';
 import { ROUTES } from '../../shared/routes';
-import { Button } from '../../shared/ui/Button';
-import { ComboboxField } from '../../shared/ui/ComboboxField';
-import { Dialog } from '../../shared/ui/Dialog';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { SelectField } from '../../shared/ui/SelectField';
-import { TextField } from '../../shared/ui/TextField';
-import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
-import { useToast } from '../../shared/ui/useToast';
 import { withCurrentOption } from '../admin/shared/referenceOptions';
 import { useSession } from '../auth/session';
 
@@ -26,6 +35,9 @@ const NAME_MAX_LENGTH = 100;
 const ADMIN_ROLE = 'admin';
 const NOTES_MAX_LENGTH = 1000;
 const NO_SELECTION = '';
+const DIALOG_WIDTH = 640;
+/** Paired fields sit side by side from this width. */
+const FIELD_COLUMNS = { minWidth: 240 } as const;
 
 const optional = (max: number) => z.string().trim().max(max, ERROR_CODES.tooLong);
 
@@ -64,7 +76,7 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
   const mutation = asset === null ? create : update;
   const catalog = useAssetCatalog();
   const me = useSession();
-  const toast = useToast();
+  const showToast = useToast();
 
   const typeOptions = ASSET_TYPES.map((type) => ({ value: type, label: t(`types.${type}`) }));
   const locationOptions = useMemo(
@@ -77,7 +89,6 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
   );
 
   const {
-    register,
     control,
     handleSubmit,
     setError,
@@ -130,7 +141,7 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
     if (asset === null) {
       // The server assigns the tag (ADR-0023); show the user which number the device got.
       create.mutate(body, { ...callbacks, onSuccess: (created) => {
-        toast.show(t('form.created', { tag: created.assetTag }));
+        showToast({ body: t('form.created', { tag: created.assetTag }) });
         onClose();
       } });
     } else {
@@ -140,72 +151,79 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
 
   const alert = mutation.error && !isHandledByFields(mutation.error, FORM_FIELDS, CODE_FIELDS) ? describeError(mutation.error) : null;
 
+  const close = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  };
+  // Brands and models are listed per type, so a choice made for another type no longer applies.
+  const clearCatalogChoice = () => {
+    setValue('brandId', NO_SELECTION, { shouldDirty: true });
+    setValue('modelId', NO_SELECTION, { shouldDirty: true });
+  };
+
   return (
     <>
-    <UnsavedChangesGuard when={isDirty && !mutation.isPending} />
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-      title={asset === null ? t('form.new') : t('form.edit')}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button type="submit" form={formId} isLoading={mutation.isPending}>
-            {asset === null ? tc('actions.create') : tc('actions.save')}
-          </Button>
-        </>
-      }
-    >
-      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
-        <div className="col-12">
-          <FormAlert message={alert} />
-        </div>
-        {asset === null && <p className="col-12 small text-body-secondary mb-0">{t('form.tagGenerated')}</p>}
-        <SelectField className="col-12 col-sm-6" label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} error={fieldError(errors.type)} {...register('type', {
-            // Brands and models are listed per type, so a choice made for another type no longer applies.
-            onChange: () => {
-              setValue('brandId', NO_SELECTION, { shouldDirty: true });
-              setValue('modelId', NO_SELECTION, { shouldDirty: true });
-            },
-          })} />
-        <div className="col-12 col-sm-6">
-          <Controller
-            control={control}
-            name="brandId"
-            render={({ field }) => (
-              <ComboboxField
-                label={t('fields.brand')}
-                options={brands.map((b) => ({ value: b.id, label: b.name }))}
-                value={field.value === NO_SELECTION ? brandId : field.value}
-                emptyText={t('form.brandEmpty')}
-                error={fieldError(errors.brandId)}
-                onChange={(value) => {
-                  field.onChange(value);
-                  setValue('modelId', NO_SELECTION, { shouldDirty: true });
-                }}
-              />
-            )}
-          />
-        </div>
-        <SelectField className="col-12 col-sm-6" label={t('fields.model')} options={modelOptions} placeholder={t('form.selectModel')} error={fieldError(errors.modelId)} {...register('modelId')} />
-        <p className="col-12 small text-body-secondary mb-0">
-          {t('form.catalogMissing')}{' '}
-          {me.role === ADMIN_ROLE && <Link to={ROUTES.adminModels}>{t('form.editCatalog')}</Link>}
-        </p>
-        <TextField className="col-12 col-sm-6" label={t('fields.serialNumber')} autoComplete="off" error={fieldError(errors.serialNumber)} {...register('serialNumber')} />
-        <SelectField className="col-12 col-sm-6" label={t('fields.location')} options={locationOptions} placeholder={t('form.selectLocation')} error={fieldError(errors.locationId)} {...register('locationId')} />
-        <SelectField className="col-12 col-sm-6" label={t('fields.department')} options={departmentOptions} placeholder={tc('none')} error={fieldError(errors.departmentId)} {...register('departmentId')} />
-        <TextField className="col-12 col-sm-6" type="date" label={t('fields.warrantyEndsOn')} error={fieldError(errors.warrantyEndsOn)} {...register('warrantyEndsOn')} />
-        <TextField className="col-12 col-sm-6" type="date" label={t('fields.purchasedOn')} error={fieldError(errors.purchasedOn)} {...register('purchasedOn')} />
-        <TextField className="col-12" label={t('fields.notes')} autoComplete="off" error={fieldError(errors.notes)} {...register('notes')} />
-      </form>
-    </Dialog>
+      <UnsavedChangesGuard when={isDirty && !mutation.isPending} />
+      <Dialog isOpen onOpenChange={close} width={DIALOG_WIDTH} purpose="form">
+        <Layout
+          header={<DialogHeader title={asset === null ? t('form.new') : t('form.edit')} onOpenChange={close} />}
+          content={
+            <LayoutContent>
+              <form id={formId} noValidate onSubmit={(event) => void onSubmit(event)}>
+                <VStack gap={4}>
+                  <FormAlert message={alert} />
+                  {asset === null && <Text type="supporting">{t('form.tagGenerated')}</Text>}
+                  <Grid columns={FIELD_COLUMNS} gap={4}>
+                    <FormSelector control={control} name="type" label={t('fields.type')} options={typeOptions} placeholder={t('form.selectType')} onValueChange={clearCatalogChoice} />
+                    <Controller
+                      control={control}
+                      name="brandId"
+                      render={({ field }) => (
+                        <Selector
+                          label={t('fields.brand')}
+                          options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                          value={field.value === NO_SELECTION ? brandId : field.value}
+                          placeholder={t('form.selectBrand')}
+                          hasSearch
+                          searchPlaceholder={t('form.searchBrand')}
+                          emptyText={t('form.brandEmpty')}
+                          status={fieldError(errors.brandId) === undefined ? undefined : { type: 'error', message: fieldError(errors.brandId) }}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            setValue('modelId', NO_SELECTION, { shouldDirty: true });
+                          }}
+                        />
+                      )}
+                    />
+                    <FormSelector control={control} name="modelId" label={t('fields.model')} options={modelOptions} placeholder={t('form.selectModel')} />
+                  </Grid>
+                  <HStack gap={1} wrap="wrap">
+                    <Text type="supporting">{t('form.catalogMissing')}</Text>
+                    {me.role === ADMIN_ROLE && <Link href={ROUTES.adminModels}>{t('form.editCatalog')}</Link>}
+                  </HStack>
+                  <Grid columns={FIELD_COLUMNS} gap={4}>
+                    <FormTextInput control={control} name="serialNumber" label={t('fields.serialNumber')} autoComplete="off" />
+                    <FormSelector control={control} name="locationId" label={t('fields.location')} options={locationOptions} placeholder={t('form.selectLocation')} />
+                    <FormSelector control={control} name="departmentId" label={t('fields.department')} options={departmentOptions} placeholder={tc('none')} isClearable />
+                    <FormDateInput control={control} name="warrantyEndsOn" label={t('fields.warrantyEndsOn')} />
+                    <FormDateInput control={control} name="purchasedOn" label={t('fields.purchasedOn')} />
+                  </Grid>
+                  <FormTextInput control={control} name="notes" label={t('fields.notes')} autoComplete="off" />
+                </VStack>
+              </form>
+            </LayoutContent>
+          }
+          footer={
+            <LayoutFooter>
+              <HStack gap={2} hAlign="end">
+                <Button label={tc('actions.cancel')} variant="secondary" onClick={onClose} />
+                <Button type="submit" form={formId} label={asset === null ? tc('actions.create') : tc('actions.save')} variant="primary" isLoading={mutation.isPending} />
+              </HStack>
+            </LayoutFooter>
+          }
+        />
+      </Dialog>
     </>
   );
 }

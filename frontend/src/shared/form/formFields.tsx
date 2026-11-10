@@ -4,6 +4,7 @@
  * @position Shared by every migrated form screen.
  */
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
+import { DateInput } from '@astryxdesign/core/DateInput';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Switch } from '@astryxdesign/core/Switch';
@@ -109,4 +110,15 @@ export type FormNumberInputProps<T extends FieldValues> = Bound<T> & Omit<Compon
 export function FormNumberInput<T extends FieldValues>({ control, name, ...props }: FormNumberInputProps<T>) {
   const { value, onChange, status } = useBoundField({ control, name });
   return <NumberInput {...props} value={value as number | null} onChange={onChange} status={status} />;
+}
+
+export type FormDateInputProps<T extends FieldValues> = Bound<T> & Omit<ComponentProps<typeof DateInput>, Supplied | 'changeAction'>;
+
+/** The form keeps `''` for "no date"; Astryx uses `undefined`. */
+export function FormDateInput<T extends FieldValues>({ control, name, ...props }: FormDateInputProps<T>) {
+  const { value, onChange, status } = useBoundField({ control, name });
+  const current = (value as string | undefined) ?? NO_VALUE;
+  // The schema keeps the value in the API's YYYY-MM-DD form, which is Astryx's ISO date string.
+  const date = current === NO_VALUE ? undefined : (current as ComponentProps<typeof DateInput>['value']);
+  return <DateInput {...props} hasClear value={date} onChange={(next) => onChange(next ?? NO_VALUE)} status={status} />;
 }

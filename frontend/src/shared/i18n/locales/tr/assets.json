@@ -69,7 +69,9 @@
     "catalogMissing": "Listede yoksa tanım eksik: yöneticiye bildirin.",
     "editCatalog": "Kataloğu düzenle",
     "tagGenerated": "Demirbaş numarası kaydedildiğinde otomatik atanır.",
-    "created": "Cihaz kaydedildi: {{tag}}"
+    "created": "Cihaz kaydedildi: {{tag}}",
+    "selectBrand": "Marka seçin",
+    "searchBrand": "Marka ara"
   },
   "detail": {
     "facts": "Cihaz bilgileri",
