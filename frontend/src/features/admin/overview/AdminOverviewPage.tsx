@@ -1,14 +1,23 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input Nothing; reads departments, teams and worker heartbeats.
+ * @output The setup checks: departments without an approver, a missing intake team and background job problems.
+ * @position `/admin`, the admin landing page.
+ */
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Link } from '@astryxdesign/core/Link';
+import { List, ListItem } from '@astryxdesign/core/List';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
+import { LoadingState } from '../../../shared/feedback/States';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
+import { SectionCard } from '../../../shared/page/SectionCard';
 import { ROUTES } from '../../../shared/routes';
-import { cilCheckCircle, cilWarning } from '../../../shared/ui/icons';
-import { PageCard } from '../../../shared/ui/PageCard';
-import { LoadingState } from '../../../shared/ui/States';
+import { Icons } from '../../../shared/ui/icons';
 import { useDepartments } from '../departments/api';
 import { useWorkerHeartbeats } from '../system/api';
 import { useTeams } from '../teams/api';
@@ -21,16 +30,14 @@ const HEALTHY_STATUS = 'ok';
 /** Number of setup checks: departments' approvers, the intake team and the background jobs. */
 const CHECK_COUNT = 3;
 
-/** One setup check: a warning (or, when everything is set up, a success) icon beside its text and link. */
-function CheckItem({ ok = false, children }: { ok?: boolean; children: ReactNode }) {
-  const color = ok ? 'success' : 'warning';
+/** One setup check: a warning (or, when everything is set up, a success) icon before its text and link. */
+function CheckItem({ ok = false, title, children }: { ok?: boolean; title: string; children?: ReactNode }) {
   return (
-    <li className="list-group-item py-3 d-flex align-items-start gap-3">
-      <span className={`d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0 tgysm-kpi-icon bg-${color}-subtle text-${color}-emphasis`} aria-hidden="true">
-        <CIcon icon={ok ? cilCheckCircle : cilWarning} size="xl" />
-      </span>
-      <div className="d-flex flex-column flex-sm-row flex-wrap justify-content-between gap-2 flex-grow-1 min-w-0 align-self-center">{children}</div>
-    </li>
+    <ListItem
+      startContent={<Icon icon={ok ? Icons.checkCircle : Icons.warning} size="md" color={ok ? 'success' : 'warning'} />}
+      label={<Text type="label">{title}</Text>}
+      description={children}
+    />
   );
 }
 
@@ -42,12 +49,12 @@ export function AdminOverviewPage() {
 
   if (departments.isPending || teams.isPending || workers.isPending) {
     return (
-      <>
+      <VStack gap={4}>
         <PageHeader icon={ROUTE_META.adminOverview.icon} />
-        <PageCard title={t('overview.checksTitle')} flush>
+        <SectionCard title={t('overview.checksTitle')}>
           <LoadingState rows={CHECK_COUNT} />
-        </PageCard>
-      </>
+        </SectionCard>
+      </VStack>
     );
   }
   const withoutApprover = departments.data?.items.filter((d) => d.approverUserId === null) ?? [];
@@ -56,41 +63,34 @@ export function AdminOverviewPage() {
   const allGood = withoutApprover.length === 0 && !noIntake && !workerIssue;
 
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader icon={ROUTE_META.adminOverview.icon} />
-      <PageCard title={t('overview.checksTitle')} flush>
-        <ul className="list-group list-group-flush">
-          {allGood && (
-            <CheckItem ok>
-              <p className="mb-0">{t('overview.allGood')}</p>
-            </CheckItem>
-          )}
+      <SectionCard title={t('overview.checksTitle')}>
+        <List hasDividers aria-label={t('overview.checksTitle')}>
+          {allGood && <CheckItem ok title={t('overview.allGood')} />}
           {withoutApprover.length > 0 && (
-            <CheckItem>
-              <p className="mb-1 fw-semibold">{t('overview.missingApprovers')}</p>
-              <ul className="list-unstyled mb-0 d-flex flex-wrap gap-3">
+            <CheckItem title={t('overview.missingApprovers')}>
+              <HStack gap={3} wrap="wrap">
                 {withoutApprover.map((department) => (
-                  <li key={department.id}>
-                    <Link to={ROUTES.adminDepartments}>{department.name}</Link>
-                  </li>
+                  <Link key={department.id} href={ROUTES.adminDepartments}>
+                    {department.name}
+                  </Link>
                 ))}
-              </ul>
+              </HStack>
             </CheckItem>
           )}
           {noIntake && (
-            <CheckItem>
-              <p className="mb-0">{t('overview.noIntake')}</p>
-              <Link to={ROUTES.adminTeams}>{t('overview.goToTeams')}</Link>
+            <CheckItem title={t('overview.noIntake')}>
+              <Link href={ROUTES.adminTeams}>{t('overview.goToTeams')}</Link>
             </CheckItem>
           )}
           {workerIssue && (
-            <CheckItem>
-              <p className="mb-0">{t('overview.workerIssue')}</p>
-              <Link to={ROUTES.adminSystem}>{t('overview.goToSystem')}</Link>
+            <CheckItem title={t('overview.workerIssue')}>
+              <Link href={ROUTES.adminSystem}>{t('overview.goToSystem')}</Link>
             </CheckItem>
           )}
-        </ul>
-      </PageCard>
-    </>
+        </List>
+      </SectionCard>
+    </VStack>
   );
 }
