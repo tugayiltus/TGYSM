@@ -8,6 +8,23 @@ export function requiredEnv(name: string): string {
   return value;
 }
 
+/** Astryx shows status messages in alerts and keeps its own empty alert live region: match only alerts with text. */
+export function messageAlert(scope: Page | Locator): Locator {
+  return scope.getByRole('alert').filter({ hasText: /\S/ });
+}
+
+/** Astryx selects are a combobox button with a popup list rendered at the page root. */
+export async function chooseOption(scope: Page | Locator, label: string | RegExp, option: string): Promise<void> {
+  const page = 'page' in scope ? scope.page() : scope;
+  await scope.getByRole('combobox', { name: label }).click();
+  await page.getByRole('option', { name: option, exact: true }).click();
+}
+
+/** A whole-card link (Astryx ClickableCard): its anchor is an invisible layer, so the person clicks the card's title. */
+export async function openCard(page: Page, title: string): Promise<void> {
+  await page.getByText(title, { exact: true }).click();
+}
+
 export async function login(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/login');
   await page.getByLabel('E-posta').fill(email);

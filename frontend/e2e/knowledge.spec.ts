@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { expectNoHorizontalScroll } from './helpers';
+import { chooseOption, expectNoHorizontalScroll, openCard } from './helpers';
 import { adminSession, seedIncidents, seedPublishedArticle, seedWorld, userSession } from './world';
 
 const ARTICLE_URL = /\/kb\/[0-9a-f-]{36}$/;
@@ -40,7 +40,7 @@ test('knowledge: IT publishes an employee and an internal article; the employee 
   await writeAndPublish(it.page, publicTitle, '## Adımlar\n\n1. Ayarlar\n2. **Yazıcı ekle**', 'Tüm çalışanlar');
   const internalUrl = await writeAndPublish(it.page, internalTitle, 'Yalnızca BT için iç not.', 'Yalnızca IT personeli');
 
-  await employee.page.getByRole('link', { name: /Nasıl Yapılır\?/ }).click();
+  await openCard(employee.page, 'Nasıl Yapılır?');
   // The list is debounced: wait for the searched result, or the "internal title absent" check below would pass on the unfiltered list.
   const searched = employee.page.waitForResponse(
     (response) => new URL(response.url()).pathname === KB_ARTICLES_PATH && new URL(response.url()).searchParams.get(SEARCH_PARAM) === token,
@@ -83,7 +83,7 @@ test('knowledge: IT links two articles to a ticket; the requester sees only the 
     await section.getByRole('button', { name: 'Makale bağla' }).click();
     const dialog = it.page.getByRole('dialog');
     await dialog.getByLabel('Makale ara').fill(token);
-    await dialog.getByLabel('Makale', { exact: true }).selectOption({ label: article.title });
+    await chooseOption(dialog, 'Makale', article.title);
     await dialog.getByRole('button', { name: 'Onayla' }).click();
     await expect(dialog).toHaveCount(0);
     await expect(section.getByRole('link', { name: article.title })).toBeVisible();

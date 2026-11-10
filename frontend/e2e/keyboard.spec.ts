@@ -36,7 +36,7 @@ test('keyboard only: employee opens an incident after fixing the form errors; IT
   const page = employee.page;
   await tabTo(page, page.getByRole('link', { name: /Bir şey çalışmıyor/ }));
   await page.keyboard.press('Enter');
-  const subject = page.getByLabel('Konu', { exact: true });
+  const subject = page.getByLabel(/^Konu/);
   await tabTo(page, page.getByRole('button', { name: 'Gönder' }));
   await page.keyboard.press('Enter');
   await expect(page.getByText(REQUIRED_ERROR)).toHaveCount(2);

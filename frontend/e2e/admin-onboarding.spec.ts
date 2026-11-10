@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { changePassword, expectNoHorizontalScroll, login, visibleEntry } from './helpers';
+import { changePassword, expectNoHorizontalScroll, login, messageAlert, visibleEntry } from './helpers';
 import { adminSession } from './world';
 
 const USER_NEW_PASSWORD = 'User-new-pass-2026';
@@ -13,7 +13,7 @@ test('login form works with the keyboard only', async ({ page }) => {
   await page.keyboard.type('Wrong-pass-2026');
   await page.keyboard.press('Enter');
 
-  await expect(page.getByRole('alert')).toHaveText('E-posta veya şifre hatalı.');
+  await expect(messageAlert(page)).toHaveText('E-posta veya şifre hatalı.');
 });
 
 test('admin onboards a user; deactivation ends that user session', async ({ browser }) => {

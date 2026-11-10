@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { openCard, chooseOption } from './helpers';
 import { adminSession, seedWorld, userSession, waitForEmail } from './world';
 
 const TICKET_URL = /\/tickets\/(INC|REQ)-\d{4}-\d{6}$/;
@@ -12,8 +13,8 @@ test('completing a ticket emails the requester the resolution and never the inte
   const employee = await userSession(browser, world.employeeEmail, world.employeePassword);
   const it = await userSession(browser, world.itEmail, world.itPassword);
 
-  await employee.page.getByRole('link', { name: /Bir şey çalışmıyor/ }).click();
-  await employee.page.getByLabel('Konu', { exact: true }).fill('Yazıcı çalışmıyor');
+  await openCard(employee.page, 'Bir şey çalışmıyor');
+  await employee.page.getByLabel(/^Konu/).fill('Yazıcı çalışmıyor');
   await employee.page.getByLabel('Açıklama').fill('Kağıt sıkışıyor');
   await employee.page.getByRole('button', { name: 'Gönder' }).click();
   await expect(employee.page).toHaveURL(TICKET_URL);
@@ -31,7 +32,7 @@ test('completing a ticket emails the requester the resolution and never the inte
   await it.page.getByRole('button', { name: 'Tamamla' }).click();
   const dialog = it.page.getByRole('dialog');
   await dialog.getByLabel('Çözüm (kullanıcı görür)').fill(RESOLUTION);
-  await dialog.getByLabel('Sonuç').selectOption({ label: 'Çözüldü' });
+  await chooseOption(dialog, 'Sonuç', 'Çözüldü');
   await dialog.getByRole('button', { name: 'Onayla' }).click();
   await expect(it.page.getByText('Tamamlandı').first()).toBeVisible();
 

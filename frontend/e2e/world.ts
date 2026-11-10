@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, type APIRequestContext, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
-import { changePassword, login, requiredEnv } from './helpers';
+import { changePassword, login, requiredEnv, messageAlert } from './helpers';
 
 export const ADMIN_NEW_PASSWORD = 'Admin-new-pass-2026';
 const USER_PASSWORD = 'User-new-pass-2026';
@@ -24,7 +24,7 @@ export async function adminSession(browser: Browser): Promise<Session> {
   const page = await context.newPage();
   const email = requiredEnv('E2E_ADMIN_EMAIL');
   await login(page, email, ADMIN_NEW_PASSWORD);
-  const alert = page.getByRole('alert');
+  const alert = messageAlert(page);
   // Wait for the login outcome: the alert (first run, new password not set yet) or the home heading.
   await expect(alert.or(page.getByRole('heading', { name: HOME_HEADING }))).toBeVisible();
   if (await alert.isVisible()) {

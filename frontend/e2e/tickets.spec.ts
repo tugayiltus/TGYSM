@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { expectNoHorizontalScroll } from './helpers';
+import { chooseOption, expectNoHorizontalScroll, openCard } from './helpers';
 import { adminSession, seedWorld, userSession } from './world';
 
 const TICKET_URL = /\/tickets\/(INC|REQ)-\d{4}-\d{6}$/;
@@ -11,8 +11,8 @@ test('incident: IT claims, notes, replies and completes; employee sees the resol
   const employee = await userSession(browser, world.employeeEmail, world.employeePassword);
   const it = await userSession(browser, world.itEmail, world.itPassword);
 
-  await employee.page.getByRole('link', { name: /Bir şey çalışmıyor/ }).click();
-  await employee.page.getByLabel('Konu', { exact: true }).fill('Yazıcı çalışmıyor');
+  await openCard(employee.page, 'Bir şey çalışmıyor');
+  await employee.page.getByLabel(/^Konu/).fill('Yazıcı çalışmıyor');
   await employee.page.getByLabel('Açıklama').fill('Kağıt sıkışıyor');
   await expectNoHorizontalScroll(employee.page);
   await employee.page.getByRole('button', { name: 'Gönder' }).click();
@@ -35,7 +35,7 @@ test('incident: IT claims, notes, replies and completes; employee sees the resol
   await it.page.getByRole('button', { name: 'Tamamla' }).click();
   const dialog = it.page.getByRole('dialog');
   await dialog.getByLabel('Çözüm (kullanıcı görür)').fill('Toner değiştirildi');
-  await dialog.getByLabel('Sonuç').selectOption({ label: 'Çözüldü' });
+  await chooseOption(dialog, 'Sonuç', 'Çözüldü');
   await dialog.getByRole('button', { name: 'Onayla' }).click();
   await expect(it.page.getByText('Tamamlandı').first()).toBeVisible();
   await expectNoHorizontalScroll(it.page);
@@ -56,10 +56,10 @@ test('request: admin approves, IT hands over a device, employee sees it under Zi
   const employee = await userSession(browser, world.employeeEmail, world.employeePassword);
   const it = await userSession(browser, world.itEmail, world.itPassword);
 
-  await employee.page.getByRole('link', { name: /Bir şey istiyorum/ }).click();
-  await employee.page.getByLabel('Talep tipi').selectOption({ label: world.requestTypeName });
+  await openCard(employee.page, 'Bir şey istiyorum');
+  await chooseOption(employee.page, /^Talep tipi/, world.requestTypeName);
   await expect(employee.page.getByText('Bu talep yöneticinizin onayından sonra işleme alınır.')).toBeVisible();
-  await employee.page.getByLabel('Konu', { exact: true }).fill('Yeni dizüstü');
+  await employee.page.getByLabel(/^Konu/).fill('Yeni dizüstü');
   await employee.page.getByLabel('Açıklama').fill('Göreve başlıyorum');
   await employee.page.getByRole('button', { name: 'Gönder' }).click();
   await expect(employee.page).toHaveURL(TICKET_URL);
@@ -69,7 +69,7 @@ test('request: admin approves, IT hands over a device, employee sees it under Zi
   await admin.page.goto('/approvals');
   await admin.page.getByRole('button', { name: `Onayla ${number}` }).click();
   await admin.page.getByRole('dialog').getByRole('button', { name: 'Onayla' }).click();
-  await expect(admin.page.getByText('Onay bekleyen talep yok.')).toBeVisible();
+  await expect(admin.page.getByRole('heading', { name: 'Onay bekleyen talep yok.' })).toBeVisible();
 
   await it.page.goto('/assets');
   await it.page.getByLabel('Demirbaş no, seri no veya model ara').fill(world.assetTag);
