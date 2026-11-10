@@ -1,13 +1,22 @@
+/**
+ * @input A report, the current filter and a change callback.
+ * @output The report's filters: period days and the report's own selects.
+ * @position Top of every report page; the caller writes each change to the URL (useReportFilter).
+ */
+import { Grid } from '@astryxdesign/core/Grid';
+import { Selector } from '@astryxdesign/core/Selector';
 import { useTranslation } from 'react-i18next';
 
+import type { SelectOption } from '../../shared/form/formFields';
 import { translateOr } from '../../shared/i18n/dynamic';
-import { SelectField, type SelectOption } from '../../shared/ui/SelectField';
 
 import { useFilterChoices, type ReportName } from './api';
 import { DayField } from './DayField';
 import { DAY_BOUNDS, ENUM_FILTER_LABELS, ENUM_FILTERS, isValidFilterValue, REPORT_FILTER_FIELDS, type ReportFilterKey, type ReportFilterValues } from './useReportFilter';
 
 const isEnumKey = (key: ReportFilterKey): key is keyof typeof ENUM_FILTERS => key in ENUM_FILTERS;
+/** Filters reflow from one column on phones to a row on wide screens. */
+const FILTER_COLUMNS = { minWidth: 200 } as const;
 
 export interface ReportFilterBarProps {
   report: ReportName;
@@ -15,7 +24,7 @@ export interface ReportFilterBarProps {
   onChange: (key: ReportFilterKey, value: string) => void;
 }
 
-/** The report's filters; every change is written to the URL by the caller (useReportFilter). */
+/** No per-field clear button: the active-filter chips and Temizle remove filters. */
 export function ReportFilterBar({ report, filter, onChange }: ReportFilterBarProps) {
   const { t } = useTranslation('reports');
   const fields = REPORT_FILTER_FIELDS[report];
@@ -25,8 +34,8 @@ export function ReportFilterBar({ report, filter, onChange }: ReportFilterBarPro
     isEnumKey(key) ? ENUM_FILTERS[key].map((value) => ({ value, label: translateOr(`${ENUM_FILTER_LABELS[key]}.${value}`, value) })) : choices[key];
 
   return (
-    <form aria-label={t('filters.label')} className="d-flex flex-column gap-2" onSubmit={(event) => event.preventDefault()}>
-      <div className="tgysm-grid tgysm-grid-filters">
+    <form aria-label={t('filters.label')} onSubmit={(event) => event.preventDefault()}>
+      <Grid columns={FILTER_COLUMNS} gap={3}>
         {fields.map((key) =>
           key === 'from' || key === 'to' ? (
             <DayField
@@ -39,17 +48,17 @@ export function ReportFilterBar({ report, filter, onChange }: ReportFilterBarPro
               onChange={(value) => onChange(key, value)}
             />
           ) : (
-            <SelectField
+            <Selector
               key={key}
               label={t(`filters.${key}`)}
               placeholder={t('filters.all')}
-              options={optionsOf(key)}
+              options={[...optionsOf(key)]}
               value={filter[key] ?? ''}
-              onChange={(event) => onChange(key, event.target.value)}
+              onChange={(value) => onChange(key, value)}
             />
           ),
         )}
-      </div>
+      </Grid>
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 import { INCIDENTS, REFERENCE_ROUTES, reportResult, TEAM_LOAD, VOLUME } from '../../test/reportData';
+import { chooseOption } from '../../test/select';
 
 /** An explicit range, so the default last-30-days period does not apply. */
 const RANGE = 'from=2026-09-01&to=2026-09-30';
@@ -57,16 +58,16 @@ describe('ReportsPage', () => {
     const api = mockApi(routes());
     const { user, router } = renderRoute(`/reports/incidents?${RANGE}`);
 
-    await user.selectOptions(await screen.findByLabelText('Öncelik'), 'P1 · Kritik');
-    await user.selectOptions(screen.getByLabelText('Durum'), 'Açık');
+    await chooseOption(user, 'Öncelik', 'P1 · Kritik');
+    await chooseOption(user, 'Durum', 'Açık');
 
     expect(new URLSearchParams(router.state.location.search).get('priority')).toBe('p1');
     await waitFor(() => expect(reportCalls(api, 'incidents').some((c) => new URL(c.url).search === `?${RANGE}&priority=p1&status=open`)).toBe(true));
 
     await router.navigate('/reports/incidents?priority=p1&status=open&teamId=bad');
-    expect(await screen.findByLabelText('Öncelik')).toHaveValue('p1');
-    expect(screen.getByLabelText('Durum')).toHaveValue('open');
-    expect(screen.getByLabelText('Ekip')).toHaveValue('');
+    expect(await screen.findByRole('combobox', { name: 'Öncelik' })).toHaveTextContent('P1 · Kritik');
+    expect(screen.getByRole('combobox', { name: 'Durum' })).toHaveTextContent('Açık');
+    expect(screen.getByRole('combobox', { name: 'Ekip' })).toHaveTextContent('Tümü');
 
     await user.click(screen.getByRole('button', { name: 'Temizle' }));
     expect(router.state.location.search).toBe('');

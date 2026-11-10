@@ -1,6 +1,12 @@
-import { useState } from 'react';
+/**
+ * @input Label, allowed range, the day in the URL, a validity check and a change callback.
+ * @output An Astryx date input that writes only a valid day, or an empty value, to the URL.
+ * @position Report filter bar (from / to).
+ */
+import { DateInput } from '@astryxdesign/core/DateInput';
+import type { ComponentProps } from 'react';
 
-import { TextField } from '../../shared/ui/TextField';
+type IsoDay = ComponentProps<typeof DateInput>['value'];
 
 export interface DayFieldProps {
   label: string;
@@ -13,34 +19,24 @@ export interface DayFieldProps {
   onChange: (value: string) => void;
 }
 
-/** What the user typed, and the URL value it was typed against. */
-interface Draft {
-  text: string;
-  source: string;
-}
-
 /**
- * A date input that keeps half-typed days (a browser reports "0002-05-10" while the year is typed) in a local draft and
- * writes only a valid day or an empty field to the URL. When the URL value changes elsewhere (clear, navigation), the
- * draft no longer matches its source and the URL value is shown again.
+ * The URL holds YYYY-MM-DD days, which is Astryx's ISO date form. Astryx keeps a half-typed date inside the input.
+ * No clear button: Temizle on the filter bar resets the period.
  */
-export function DayField({ label, min, max, value, isValid, onChange }: DayFieldProps) {
-  const [draft, setDraft] = useState<Draft>({ text: value, source: value });
-  const shown = draft.source === value ? draft.text : value;
+const asIsoDay = (day: string): IsoDay => (day === '' ? undefined : (day as IsoDay));
 
+export function DayField({ label, min, max, value, isValid, onChange }: DayFieldProps) {
   return (
-    <TextField
-      type="date"
+    <DateInput
       label={label}
-      min={min}
-      max={max}
-      value={shown}
-      onChange={(event) => {
-        const text = event.target.value;
-        const writes = text === '' || isValid(text);
-        setDraft({ text, source: writes ? text : value });
-        if (writes) {
-          onChange(text);
+      min={asIsoDay(min)}
+      max={asIsoDay(max)}
+      value={asIsoDay(value)}
+      onChange={(next) => {
+        if (next === undefined) {
+          onChange('');
+        } else if (isValid(next)) {
+          onChange(next);
         }
       }}
     />

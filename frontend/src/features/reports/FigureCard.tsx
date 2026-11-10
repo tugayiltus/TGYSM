@@ -1,7 +1,19 @@
-import { CCard } from '@coreui/react';
+/**
+ * @input A report, one of its figures and the current filter.
+ * @output A card with the figure's title link, headline, detail lines, a bar chart and bucket links.
+ * @position Report pages, one card per figure.
+ */
+import { Card } from '@astryxdesign/core/Card';
+import { Heading } from '@astryxdesign/core/Heading';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Link } from '@astryxdesign/core/Link';
+import { List, ListItem } from '@astryxdesign/core/List';
+import { MetadataList, MetadataListItem } from '@astryxdesign/core/MetadataList';
+import { Skeleton } from '@astryxdesign/core/Skeleton';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { lazy, Suspense, useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
 import { figureListHref, type ReportFigure, type ReportName } from './api';
 import { chartHeight } from './chartSize';
@@ -26,64 +38,56 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
   const bars = figure.shape === 'distribution' ? (figure.buckets ?? []).map((b) => ({ key: b.key, label: bucketLabel(figure.metric, b), count: b.count })) : [];
 
   return (
-    // Named by its title and described by its headline, so the value can be read (and found) apart from the card's other numbers.
-    <CCard className="shadow-sm min-w-0">
-    <article
-      aria-labelledby={titleId}
-      aria-describedby={view.headline !== null ? headlineId : undefined}
-      className="card-body d-flex min-w-0 flex-column gap-2"
-    >
-      <h2 id={titleId} className="fs-6 fw-semibold mb-0">
-        <Link to={figureListHref(report, figure.metric, filter)} className="link-primary link-underline-opacity-0 link-underline-opacity-100-hover">
-          {title}
-        </Link>
-      </h2>
-      {view.noData && <p className="fs-5 text-body-secondary mb-0">{t('figure.noData')}</p>}
-      {view.headline !== null && (
-        <p id={headlineId} className="fs-2 fw-semibold link-primary mb-0">
-          {view.headline}
-        </p>
-      )}
-      {view.lines.length > 0 && (
-        <dl className="tgysm-pairs column-gap-2 row-gap-1 mb-0">
-          {view.lines.map((line) => (
-            <div key={line.label} className="d-contents">
-              <dt className="small text-body-secondary">{line.label}</dt>
-              <dd className="fw-semibold link-primary mb-0">{line.text}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      {view.note !== null && <p className="small text-body-secondary mb-0">{view.note}</p>}
-      {figure.shape === 'ratio' && figure.denominator !== null && (
-        <Link to={figureListHref(report, figure.metric, filter, '', 'denominator')} className="align-self-start small link-primary text-decoration-underline">
-          {t('figure.openDenominator', { count: figure.denominator })}
-        </Link>
-      )}
-      {bars.length > 0 && (
-        <>
-          <Suspense
-            fallback={
-              <p role="status" className="small text-body-secondary mb-0" style={{ height: chartHeight(bars.length) }}>
-                {t('figure.chartLoading')}
-              </p>
-            }
-          >
-            <DistributionChart bars={bars} />
-          </Suspense>
-          <ul aria-label={t('figure.buckets')} className="list-unstyled d-flex flex-column gap-1 small mb-0">
-            {bars.map((bar) => (
-              <li key={bar.key} className="d-flex align-items-baseline justify-content-between gap-2">
-                <Link to={figureListHref(report, figure.metric, filter, bar.key)} className="min-w-0 text-break link-primary text-decoration-underline">
-                  {bar.label}
-                </Link>
-                <span className="fw-medium font-monospace">{formatNumber(bar.count)}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </article>
-    </CCard>
+    <Card padding={5}>
+      {/* Named by its title and described by its headline, so the value can be read (and found) apart from the card's other numbers. */}
+      <article aria-labelledby={titleId} aria-describedby={view.headline !== null ? headlineId : undefined}>
+        <VStack gap={2}>
+          <Heading level={2} id={titleId}>
+            <Link href={figureListHref(report, figure.metric, filter)}>{title}</Link>
+          </Heading>
+          {view.noData && <Text type="supporting">{t('figure.noData')}</Text>}
+          {view.headline !== null && (
+            <Text type="display-3" color="accent" id={headlineId}>
+              {view.headline}
+            </Text>
+          )}
+          {view.lines.length > 0 && (
+            <MetadataList>
+              {view.lines.map((line) => (
+                <MetadataListItem key={line.label} label={line.label}>
+                  <Text type="label" color="accent">
+                    {line.text}
+                  </Text>
+                </MetadataListItem>
+              ))}
+            </MetadataList>
+          )}
+          {view.note !== null && <Text type="supporting">{view.note}</Text>}
+          {figure.shape === 'ratio' && figure.denominator !== null && (
+            <Link href={figureListHref(report, figure.metric, filter, '', 'denominator')}>{t('figure.openDenominator', { count: figure.denominator })}</Link>
+          )}
+          {bars.length > 0 && (
+            <>
+              <Suspense fallback={<Skeleton height={chartHeight(bars.length)} aria-label={t('figure.chartLoading')} />}>
+                <DistributionChart bars={bars} />
+              </Suspense>
+              <List density="compact" aria-label={t('figure.buckets')}>
+                {bars.map((bar) => (
+                  <ListItem
+                    key={bar.key}
+                    label={<Link href={figureListHref(report, figure.metric, filter, bar.key)}>{bar.label}</Link>}
+                    endContent={
+                      <HStack>
+                        <Text type="code">{formatNumber(bar.count)}</Text>
+                      </HStack>
+                    }
+                  />
+                ))}
+              </List>
+            </>
+          )}
+        </VStack>
+      </article>
+    </Card>
   );
 }
