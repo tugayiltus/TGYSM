@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
+import { chooseOption } from '../../../test/select';
 
 const pageOf = (items: unknown[]) => ({ items, page: 1, pageSize: 20, totalCount: items.length });
 const APPROVER = { id: 'a-1', firstName: 'Onay', lastName: 'Veren', email: 'onay@example.com', role: 'admin', isActive: true, departmentId: null, departmentName: null, locationId: null, locationName: null, version: 1 };
@@ -24,7 +25,7 @@ describe('DepartmentsPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Yeni departman' }));
     const dialog = await screen.findByRole('dialog');
     await user.type(within(dialog).getByLabelText('Departman adı'), 'Finans');
-    await user.selectOptions(within(dialog).getByLabelText('Onaylayıcı yönetici'), await within(dialog).findByRole('option', { name: 'Onay Veren' }));
+    await chooseOption(user, 'Onaylayıcı yönetici', 'Onay Veren', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
     await screen.findByRole('heading', { name: 'Departmanlar' });

@@ -1,113 +1,101 @@
+/**
+ * @input Nothing; search and page come from the URL query.
+ * @output The department list with approver and status, create, edit and (de)activate.
+ * @position `/admin/departments`, inside the admin shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ConfirmDialog } from '../../../shared/feedback/ConfirmDialog';
+import { EmptyState, ErrorState, LoadingState } from '../../../shared/feedback/States';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { DataList, type DataColumn } from '../../../shared/list/DataList';
+import { ListToolbar } from '../../../shared/list/ListToolbar';
+import { useListParams } from '../../../shared/list/useListParams';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
-import { Button } from '../../../shared/ui/Button';
-import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
-import { DataCard } from '../../../shared/ui/DataCard';
-import { cilPlus, cilSearch } from '../../../shared/ui/icons';
-import { Pagination } from '../../../shared/ui/Pagination';
-import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
-import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
-import { StatusBadge } from '../../../shared/ui/StatusBadge';
-import { TextField } from '../../../shared/ui/TextField';
+import { ActiveToken } from '../../../shared/page/ActiveToken';
+import { RecordActions } from '../../../shared/page/RecordActions';
+import { Icons } from '../../../shared/ui/icons';
 
 import { useDepartments, useSetDepartmentActive, type DepartmentItem } from './api';
 import { DepartmentFormDialog } from './DepartmentFormDialog';
 
 const PAGE_SIZE = 20;
-const FIRST_PAGE = 1;
+const SKELETON_ROWS = 5;
 const SEARCH_DEBOUNCE_MS = 300;
+const NO_FILTERS = [] as const;
 
 type FormState = { department: DepartmentItem | null } | null;
-
-interface RowActionsProps {
-  department: DepartmentItem;
-  onEdit: (department: DepartmentItem) => void;
-  onToggle: (department: DepartmentItem) => void;
-}
-
-function DepartmentActions({ department, onEdit, onToggle }: RowActionsProps) {
-  const { t: tc } = useTranslation();
-  return (
-    <div className="d-flex flex-wrap gap-2">
-      <Button aria-label={recordActionLabel(tc('actions.edit'), department.name)} variant="secondary" onClick={() => onEdit(department)}>
-        {tc('actions.edit')}
-      </Button>
-      <Button aria-label={recordActionLabel(department.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), department.name)} variant="secondary" onClick={() => onToggle(department)}>
-        {department.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
-      </Button>
-    </div>
-  );
-}
 
 export function DepartmentsPage() {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(FIRST_PAGE);
+  const list = useListParams(NO_FILTERS);
   const [form, setForm] = useState<FormState>(null);
   const [toggling, setToggling] = useState<DepartmentItem | null>(null);
-  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
-  const departments = useDepartments({ search: debouncedSearch, isActive: undefined, page, pageSize: PAGE_SIZE });
+  const search = useDebouncedValue(list.search, SEARCH_DEBOUNCE_MS);
+  const departments = useDepartments({ search, isActive: undefined, page: list.page, pageSize: PAGE_SIZE });
   const setActive = useSetDepartmentActive();
 
-  const edit = (department: DepartmentItem) => setForm({ department });
-  const openToggle = (department: DepartmentItem) => {
-    setActive.reset();
-    setToggling(department);
-  };
-
-  const columns: Column<DepartmentItem>[] = [
-    { key: 'name', header: t('departments.columns.name'), renderCell: (d) => <span className="fw-medium">{d.name}</span> },
+  const actions = (d: DepartmentItem) => (
+    <RecordActions
+      name={d.name}
+      isActive={d.isActive}
+      onEdit={() => setForm({ department: d })}
+      onToggle={() => {
+        setActive.reset();
+        setToggling(d);
+      }}
+    />
+  );
+  const columns: DataColumn<DepartmentItem>[] = [
+    { key: 'name', header: t('departments.columns.name'), renderCell: (d) => <Text type="label">{d.name}</Text> },
     { key: 'approver', header: t('departments.columns.approver'), renderCell: (d) => d.approverName ?? tc('none') },
-    { key: 'status', header: t('departments.columns.status'), renderCell: (d) => <StatusBadge isActive={d.isActive} /> },
-    { key: 'actions', header: t('departments.columns.actions'), renderCell: (d) => <DepartmentActions department={d} onEdit={edit} onToggle={openToggle} /> },
+    { key: 'status', header: t('departments.columns.status'), renderCell: (d) => <ActiveToken isActive={d.isActive} /> },
+    { key: 'actions', header: t('departments.columns.actions'), renderCell: actions },
   ];
-
   const renderCard = (d: DepartmentItem) => (
-    <div className="d-flex flex-column gap-2">
-      <div className="d-flex align-items-start justify-content-between gap-2">
-        <div className="min-w-0">
-          <p className="mb-0 fw-medium text-break">{d.name}</p>
-          <p className="mb-0 small text-body-secondary">{d.approverName ?? tc('none')}</p>
-        </div>
-        <StatusBadge isActive={d.isActive} />
-      </div>
-      <DepartmentActions department={d} onEdit={edit} onToggle={openToggle} />
-    </div>
+    <VStack gap={2}>
+      <HStack gap={2} hAlign="between" vAlign="start">
+        <VStack gap={0}>
+          <Text type="label" wordBreak="break-word">
+            {d.name}
+          </Text>
+          <Text type="supporting">{d.approverName ?? tc('none')}</Text>
+        </VStack>
+        <ActiveToken isActive={d.isActive} />
+      </HStack>
+      {actions(d)}
+    </VStack>
   );
 
   return (
-    <section>
-      <PageHeader icon={ROUTE_META.adminDepartments.icon} titleOverride={t('departments.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ department: null })}>{t('departments.new')}</Button>} />
-      <DataCard
-        filters={
-          <>
-            <TextField
-              type="search"
-              startIcon={cilSearch}
-              label={t('departments.searchLabel')}
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(FIRST_PAGE);
-              }}
-            />
-          </>
-        }
-        footer={departments.data && departments.data.items.length > 0 ? <Pagination page={departments.data.page} pageSize={departments.data.pageSize} totalCount={departments.data.totalCount} onPageChange={setPage} /> : undefined}
-      >
-        {departments.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+    <VStack gap={4}>
+      <PageHeader
+        icon={ROUTE_META.adminDepartments.icon}
+        titleOverride={t('departments.title')}
+        actions={<Button label={t('departments.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setForm({ department: null })} />}
+      />
+      <ListToolbar title={t('departments.title')} search={list.search} searchLabel={t('departments.searchLabel')} onSearchChange={list.setSearch} activeCount={list.activeCount} onClear={list.clear} />
+      <Card padding={0}>
+        {departments.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {departments.isError && <ErrorState error={departments.error} onRetry={() => void departments.refetch()} />}
         {departments.data && departments.data.items.length === 0 && <EmptyState />}
         {departments.data && departments.data.items.length > 0 && (
-          <ResponsiveList items={departments.data.items} columns={columns} getKey={(d) => d.id} renderCard={renderCard} caption={t('departments.listCaption')} />
+          <DataList items={departments.data.items} columns={columns} getKey={(d) => d.id} renderCard={renderCard} caption={t('departments.listCaption')} />
         )}
-      </DataCard>
+      </Card>
+      {departments.data && departments.data.items.length > 0 && (
+        <Pagination page={departments.data.page} pageSize={departments.data.pageSize} totalItems={departments.data.totalCount} onChange={list.setPage} />
+      )}
 
       {form !== null && <DepartmentFormDialog key={form.department?.id ?? 'new'} department={form.department} onClose={() => setForm(null)} />}
       {toggling !== null && (
@@ -118,12 +106,10 @@ export function DepartmentsPage() {
           variant={toggling.isActive ? 'danger' : 'primary'}
           isPending={setActive.isPending}
           error={setActive.error}
-          onConfirm={() =>
-            setActive.mutate({ id: toggling.id, version: toggling.version, isActive: !toggling.isActive }, { onSuccess: () => setToggling(null) })
-          }
+          onConfirm={() => setActive.mutate({ id: toggling.id, version: toggling.version, isActive: !toggling.isActive }, { onSuccess: () => setToggling(null) })}
           onCancel={() => setToggling(null)}
         />
       )}
-    </section>
+    </VStack>
   );
 }
