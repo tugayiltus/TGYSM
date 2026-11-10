@@ -13,9 +13,16 @@ const FORWARDED_PROTO_HEADER = 'X-Forwarded-Proto';
 // react-markdown and its unified tree (remark/micromark/mdast/unist/hast and their small helpers).
 const MARKDOWN_PACKAGES =
   /node_modules[\\/](react-markdown|remark-[^\\/]+|micromark[^\\/]*|mdast-[^\\/]+|unist-[^\\/]+|hast-[^\\/]+|unified|vfile[^\\/]*|bail|trough|devlop|ccount|character-[^\\/]+|comma-separated-tokens|space-separated-tokens|decode-named-character-reference|estree-util-[^\\/]+|html-url-attributes|is-(alphabetical|alphanumerical|decimal|hexadecimal|plain-obj)|longest-streak|parse-entities|property-information|stringify-entities|trim-lines|zwitch)[\\/]/;
-// Chart.js with its CoreUI wrapper and colour helper (ADR-0022).
+// Chart.js with its React wrapper and colour helper (ADR-0022).
 const CHART_PACKAGES =
-  /node_modules[\\/](chart\.js|@kurkle[\\/]color|@coreui[\\/]react-chartjs)[\\/]/;
+  /node_modules[\\/](chart\.js|@kurkle[\\/]color|react-chartjs-2)[\\/]/;
+/** Astryx `dist` sub-folders per chunk; a folder name is a component or a shared runtime module. */
+const astryxFolders = (folders: string) => new RegExp(`node_modules[\\\\/]@astryxdesign[\\\\/]core[\\\\/]dist[\\\\/](${folders})[\\\\/]`);
+const ASTRYX_THEME = astryxFolders('theme|i18n|Icon|Link|Text|Heading');
+const ASTRYX_RUNTIME = astryxFolders('utils|hooks|motion|gestures|Layer|keyboard|internal|focus');
+const ASTRYX_FORMS = astryxFolders('Selector|MultiSelector|TextInput|TextArea|NumberInput|DateInput|DateTimeInput|DateRangeInput|TimeInput|Calendar|CheckboxInput|Switch|FileInput|Typeahead|BaseTypeahead|Field|InputGroup|ToggleButton|SegmentedControl');
+const ASTRYX_DATA = astryxFolders('Table|List|Item|MetadataList|Pagination|Token|StatusDot|EmptyState|Skeleton|Spinner|Markdown|Code');
+const ASTRYX_OVERLAYS = astryxFolders('Dialog|AlertDialog|Drawer|DropdownMenu|BottomSheet|Popover|Toast|Tooltip|HoverCard|MoreMenu');
 const apiProxy = { '/api': { target: API_TARGET, changeOrigin: false, headers: { [FORWARDED_PROTO_HEADER]: 'https' } } };
 
 export default defineConfig({
@@ -35,7 +42,13 @@ export default defineConfig({
             { name: 'vendor-tanstack', test: /node_modules[\\/]@tanstack[\\/]/, priority: 90 },
             { name: 'vendor-coreui-icons', test: /node_modules[\\/]@coreui[\\/](icons|icons-react)[\\/]/, priority: 95 },
             { name: 'vendor-coreui', test: /node_modules[\\/](@coreui[\\/](react|coreui|utils)|@popperjs)[\\/]/, priority: 90 },
-            // Astryx design system with its StyleX runtime and theme (ADR-0027).
+            // Astryx design system with its StyleX runtime and theme (ADR-0027). One group would pass the chunk budget, so its
+            // dist folders split by role: theme and text, shared runtime, form controls, data display and overlays; the rest stays in vendor-astryx.
+            { name: 'vendor-astryx-theme', test: ASTRYX_THEME, priority: 96 },
+            { name: 'vendor-astryx-runtime', test: ASTRYX_RUNTIME, priority: 96 },
+            { name: 'vendor-astryx-forms', test: ASTRYX_FORMS, priority: 95 },
+            { name: 'vendor-astryx-data', test: ASTRYX_DATA, priority: 95 },
+            { name: 'vendor-astryx-overlays', test: ASTRYX_OVERLAYS, priority: 95 },
             { name: 'vendor-astryx', test: /node_modules[\\/](@astryxdesign|@stylexjs)[\\/]/, priority: 90 },
             { name: 'vendor-icons', test: /node_modules[\\/]lucide-react[\\/]/, priority: 90 },
             { name: 'vendor-forms', test: /node_modules[\\/](react-hook-form|@hookform|zod)[\\/]/, priority: 90 },

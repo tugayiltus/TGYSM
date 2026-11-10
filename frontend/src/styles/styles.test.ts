@@ -15,7 +15,6 @@ describe('styling stack', () => {
     }
     expect(allDependencies['@coreui/react']).toMatch(/^[~^]?5\.13(\.|$)/);
     expect(allDependencies['@coreui/coreui']).toMatch(/^[~^]?5\.9(\.|$)/);
-    expect(allDependencies['@coreui/react-chartjs']).toMatch(/^[~^]?3\.0(\.|$)/);
     expect(allDependencies['chart.js']).toMatch(/^[~^]?4\.5(\.|$)/);
   });
 

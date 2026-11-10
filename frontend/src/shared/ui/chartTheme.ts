@@ -1,7 +1,16 @@
-import { useColorMode } from './colorMode';
+/**
+ * @input Nothing; reads the Astryx theme and the color mode.
+ * @output Bar, text and grid colors for Chart.js, and a key that changes with the color mode.
+ * @position Report charts.
+ */
+import { useTheme } from '@astryxdesign/core/theme';
 
-/** Used only when CoreUI's CSS variables are not available (tests, very early render). The only hex colors allowed in TS/TSX. */
-export const CHART_FALLBACK = { bar: '#5856d6', text: '#252b36', grid: 'rgba(8, 10, 12, 0.175)' } as const;
+/** Astryx data tokens (ADR-0027): one categorical color per series, a neutral for labels, the border for grid lines. */
+export const CHART_TOKENS = {
+  bar: '--color-data-categorical-blue',
+  text: '--color-data-neutral',
+  grid: '--color-border',
+} as const;
 
 export interface ChartColors {
   bar: string;
@@ -9,19 +18,10 @@ export interface ChartColors {
   grid: string;
 }
 
-const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-
-/** Bar, text and grid colors of the current color mode, read from CoreUI's variables (ADR-0026). */
-export function readChartColors(): ChartColors {
-  return {
-    bar: cssVar('--cui-primary') || CHART_FALLBACK.bar,
-    text: cssVar('--cui-body-color') || CHART_FALLBACK.text,
-    grid: cssVar('--cui-border-color-translucent') || CHART_FALLBACK.grid,
-  };
-}
-
-/** Colors for the current color mode; `key` changes with the mode so the chart re-mounts with the new colors. */
+/** Chart.js draws on a canvas, which cannot read CSS variables, so the colors are resolved values for the current mode. */
 export function useChartColors() {
-  const { resolved } = useColorMode();
-  return { colors: readChartColors(), key: resolved };
+  const { mode, token } = useTheme();
+  const colors: ChartColors = { bar: token(CHART_TOKENS.bar), text: token(CHART_TOKENS.text), grid: token(CHART_TOKENS.grid) };
+  // Chart.js keeps its first colors, so the key re-mounts the chart when the mode changes.
+  return { colors, key: mode };
 }

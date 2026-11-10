@@ -73,9 +73,10 @@ describe('report filters', () => {
 });
 
 describe('charts', () => {
-  it('uses Chart.js through CoreUI; Recharts is gone', () => {
+  it('uses Chart.js through react-chartjs-2; Recharts and the CoreUI chart wrapper are gone', () => {
     const dependencies: Record<string, string> = { ...packageJson.dependencies };
     expect(dependencies).not.toHaveProperty('recharts');
-    expect(dependencies).toHaveProperty('@coreui/react-chartjs');
+    expect(dependencies).not.toHaveProperty('@coreui/react-chartjs');
+    expect(dependencies).toHaveProperty('react-chartjs-2');
   });
 });

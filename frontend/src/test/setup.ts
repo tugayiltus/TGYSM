@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 // jsdom has no canvas: Chart.js cannot draw or measure and throws while resizing a detached canvas. Tests check the
-// chart's container and its text alternative, so the CoreUI chart is a plain canvas here.
-vi.mock('@coreui/react-chartjs', () => ({
-  CChartBar: () => createElement('canvas', { 'data-testid': 'chart-canvas' }),
+// chart's container and its text alternative, so the chart is a plain canvas here.
+vi.mock('react-chartjs-2', () => ({
+  Bar: () => createElement('canvas', { 'data-testid': 'chart-canvas' }),
 }));
