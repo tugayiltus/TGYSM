@@ -1,6 +1,6 @@
 /**
  * @input Search value, filter controls, active filter count, and change and clear callbacks.
- * @output A search box with inline filters, or a "Filtreler (n)" button with a drawer on phones.
+ * @output An optional search box with inline filters, or a "Filtreler (n)" button with a drawer on phones.
  * @position Above the `DataList` of every list page.
  */
 import { Button } from '@astryxdesign/core/Button';
@@ -17,10 +17,11 @@ import { useIsPhone } from './useIsPhone';
 export interface ListToolbarProps {
   /** Heading of the phone drawer. */
   title: string;
-  search: string;
+  /** Search text; leave out search and onSearchChange for a toolbar with filters only. */
+  search?: string;
   /** Label of the search box; defaults to "Ara". */
   searchLabel?: string;
-  onSearchChange: (value: string) => void;
+  onSearchChange?: (value: string) => void;
   /** Filter controls; they apply as they change. */
   filters?: ReactNode;
   activeCount: number;
@@ -33,7 +34,9 @@ export function ListToolbar({ title, search, searchLabel, onSearchChange, filter
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const label = searchLabel ?? t('filters.search');
-  const searchBox = <TextInput type="search" label={label} isLabelHidden placeholder={label} startIcon="search" value={search} onChange={onSearchChange} />;
+  const searchBox = search !== undefined && onSearchChange !== undefined && (
+    <TextInput type="search" label={label} isLabelHidden placeholder={label} startIcon="search" value={search} onChange={onSearchChange} />
+  );
   const clearButton = activeCount > 0 && <Button label={t('filters.clear')} variant="ghost" onClick={onClear} />;
 
   if (!isPhone) {

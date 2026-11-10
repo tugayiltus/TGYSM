@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, EMPLOYEE_ME, mockApi } from '../../test/mockApi';
@@ -55,10 +55,10 @@ describe('MyExportsPage', () => {
     });
     const { user } = renderRoute('/reports/exports');
 
-    await user.click(await screen.findByRole('button', { name: 'Sonraki' }));
+    await user.click(await screen.findByRole('button', { name: 'Sonraki sayfaya git' }));
 
-    expect(await screen.findByText('21–21 / 21 kayıt')).toBeInTheDocument();
-    expect(new URL(api.calls.at(-1)?.url ?? '').searchParams.get('page')).toBe('2');
+    await waitFor(() => expect(new URL(api.calls.at(-1)?.url ?? '').searchParams.get('page')).toBe('2'));
+    expect(await screen.findByRole('button', { name: '2. sayfaya git' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('shows the 403 page to an employee', async () => {

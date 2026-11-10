@@ -1,32 +1,44 @@
-import CIcon from '@coreui/icons-react';
-import { useState } from 'react';
+/**
+ * @input Nothing; loads the signed-in user's background exports.
+ * @output The export jobs with status, rows, dates and a download link; pending jobs refresh until done.
+ * @position `/reports/exports`, inside the app shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Text } from '@astryxdesign/core/Text';
+import { Token } from '@astryxdesign/core/Token';
+import { VStack } from '@astryxdesign/core/VStack';
+import { useState, type ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
+import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
 import { formatDateTime } from '../../shared/lib/format';
+import { DataList, type DataColumn } from '../../shared/list/DataList';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { ROUTES } from '../../shared/routes';
-import { DataCard } from '../../shared/ui/DataCard';
-import { cilArrowLeft } from '../../shared/ui/icons';
-import { Pagination } from '../../shared/ui/Pagination';
-import { ResponsiveList, type Column } from '../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../shared/ui/States';
+import { Icons } from '../../shared/ui/icons';
 
 import { EXPORTS_PAGE_SIZE, exportDownloadUrl, FIRST_PAGE, useMyExports, type ExportJobItem } from './api';
 import { formatNumber, metricLabel } from './formatMetric';
 
-const STATUS_CLASSES: Record<ExportJobItem['status'], string> = {
-  pending: 'bg-secondary-subtle text-secondary-emphasis',
-  running: 'bg-info-subtle text-info-emphasis',
-  ready: 'bg-success-subtle text-success-emphasis',
-  failed: 'bg-danger-subtle text-danger-emphasis',
-  expired: 'bg-warning-subtle text-warning-emphasis',
+const SKELETON_ROWS = 5;
+const META_SEPARATOR = ' · ';
+
+const STATUS_COLOR: Record<ExportJobItem['status'], NonNullable<ComponentProps<typeof Token>['color']>> = {
+  pending: 'gray',
+  running: 'cyan',
+  ready: 'green',
+  failed: 'red',
+  expired: 'yellow',
 };
 
 function JobStatus({ job }: { job: ExportJobItem }) {
   const { t } = useTranslation('reports');
-  return <span className={`badge rounded-pill fw-medium ${STATUS_CLASSES[job.status]}`}>{t(`exports.statuses.${job.status}`)}</span>;
+  return <Token size="sm" color={STATUS_COLOR[job.status]} label={t(`exports.statuses.${job.status}`)} />;
 }
 
 /** Only a ready file can be downloaded; the API re-checks the creator's role and scope on every download. */
@@ -36,15 +48,18 @@ function DownloadLink({ job }: { job: ExportJobItem }) {
     return null;
   }
   return (
-    <a href={exportDownloadUrl(job.id)} download className="fw-medium link-primary text-decoration-underline">
-      {t('exports.download')}
+    // A native download link: the router must not handle a file URL.
+    <a href={exportDownloadUrl(job.id)} download>
+      <Text type="label" color="accent">
+        {t('exports.download')}
+      </Text>
     </a>
   );
 }
 
 const rowsText = (job: ExportJobItem) => (job.rowCount === null ? '' : formatNumber(job.rowCount));
 
-function useColumns(): Column<ExportJobItem>[] {
+function useColumns(): DataColumn<ExportJobItem>[] {
   const { t } = useTranslation('reports');
   return [
     { key: 'report', header: t('exports.columns.report'), renderCell: (job) => t(`tabs.${job.report}`) },
@@ -60,18 +75,16 @@ function useColumns(): Column<ExportJobItem>[] {
 function JobCard({ job }: { job: ExportJobItem }) {
   const { t } = useTranslation('reports');
   return (
-    <div className="d-flex flex-column gap-1 small">
-      <p className="fw-medium">
-        {t(`tabs.${job.report}`)} · {metricLabel(job.metric)}
-      </p>
-      <div className="d-flex flex-wrap align-items-center gap-2">
+    <VStack gap={1}>
+      <Text type="label">{`${t(`tabs.${job.report}`)}${META_SEPARATOR}${metricLabel(job.metric)}`}</Text>
+      <HStack gap={2} vAlign="center" wrap="wrap">
         <JobStatus job={job} />
-        {job.rowCount !== null && <span>{t('exports.rows', { count: job.rowCount })}</span>}
-      </div>
-      <p className="text-body-secondary">{formatDateTime(job.createdAt)}</p>
-      {job.status === 'ready' && job.expiresAt !== null && <p className="text-body-secondary">{t('exports.expiresAt', { date: formatDateTime(job.expiresAt) })}</p>}
+        {job.rowCount !== null && <Text type="supporting">{t('exports.rows', { count: job.rowCount })}</Text>}
+      </HStack>
+      <Text type="supporting">{formatDateTime(job.createdAt)}</Text>
+      {job.status === 'ready' && job.expiresAt !== null && <Text type="supporting">{t('exports.expiresAt', { date: formatDateTime(job.expiresAt) })}</Text>}
       <DownloadLink job={job} />
-    </div>
+    </VStack>
   );
 }
 
@@ -83,33 +96,23 @@ export function MyExportsPage() {
   const columns = useColumns();
 
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader
         icon={ROUTE_META.reportExports.icon}
         titleOverride={t('exports.title')}
-        actions={
-          <Link to={ROUTES.reports} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
-            <CIcon icon={cilArrowLeft} aria-hidden="true" />
-            {t('exports.back')}
-          </Link>
-        }
+        actions={<Button label={t('exports.back')} variant="secondary" href={ROUTES.reports} icon={<Icon icon={Icons.arrowLeft} />} />}
       />
-      <DataCard
-        footer={
-          jobs.data !== undefined && jobs.data.totalCount > 0 ? (
-            <Pagination page={jobs.data.page} pageSize={EXPORTS_PAGE_SIZE} totalCount={jobs.data.totalCount} onPageChange={setPage} />
-          ) : undefined
-        }
-      >
-        {jobs.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+      <Card padding={0}>
+        {jobs.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {jobs.isError && <ErrorState error={jobs.error} onRetry={() => void jobs.refetch()} />}
         {jobs.data !== undefined &&
           (jobs.data.totalCount === 0 ? (
             <EmptyState message={t('exports.empty')} />
           ) : (
-            <ResponsiveList items={jobs.data.items} columns={columns} getKey={(job) => job.id} renderCard={(job) => <JobCard job={job} />} caption={t('exports.caption')} />
+            <DataList items={jobs.data.items} columns={columns} getKey={(job) => job.id} renderCard={(job) => <JobCard job={job} />} caption={t('exports.caption')} />
           ))}
-      </DataCard>
-    </>
+      </Card>
+      {jobs.data !== undefined && jobs.data.totalCount > 0 && <Pagination page={jobs.data.page} pageSize={EXPORTS_PAGE_SIZE} totalItems={jobs.data.totalCount} onChange={setPage} />}
+    </VStack>
   );
 }

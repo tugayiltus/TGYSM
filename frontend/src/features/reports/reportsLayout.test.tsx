@@ -5,6 +5,7 @@ import packageJson from '../../../package.json';
 import { ADMIN_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 import { INCIDENTS, REFERENCE_ROUTES, reportResult } from '../../test/reportData';
+import { stubPhoneViewport } from '../../test/viewport';
 
 const MS_PER_DAY = 86_400_000;
 const LAST_30_SPAN_DAYS = 29;
@@ -63,6 +64,7 @@ describe('report filters', () => {
   });
 
   it('puts the filters behind a counted button on phones and lists active ones as removable chips', async () => {
+    stubPhoneViewport();
     mockApi(routes());
     const { user, router } = renderRoute('/reports/incidents?priority=p1');
     expect(await screen.findByRole('button', { name: 'Filtreler (1)' })).toBeInTheDocument();

@@ -28,8 +28,13 @@ describe('ReportsPage', () => {
     expect(await screen.findByRole('link', { name: 'Açılan kayıt' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/reports/incidents');
     const tabs = screen.getByRole('navigation', { name: 'Rapor türleri' });
-    expect(within(tabs).getAllByRole('link').map((l) => l.textContent)).toEqual(['Olaylar', 'Talepler', 'Operasyon', 'Transferler', 'Varlıklar', 'Garanti']);
-    expect(within(tabs).getByRole('link', { name: 'Olaylar' })).toHaveAttribute('aria-current', 'page');
+    const names = ['Olaylar', 'Talepler', 'Operasyon', 'Transferler', 'Varlıklar', 'Garanti'];
+    expect(within(tabs).getAllByRole('link')).toHaveLength(names.length);
+    for (const name of names) {
+      expect(within(tabs).getByRole('link', { name })).toBeInTheDocument();
+    }
+    expect(within(tabs).getByRole('link', { name: 'Olaylar' })).toHaveAttribute('aria-current');
+    expect(within(tabs).getByRole('link', { name: 'Talepler' })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('Kapsam: tüm kayıtlar')).toBeInTheDocument();
     // The sidebar has the same link; this one is the page's own.
     expect(within(screen.getByRole('main')).getByRole('link', { name: 'Dışa aktarımlarım' })).toHaveAttribute('href', '/reports/exports');
