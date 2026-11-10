@@ -26,6 +26,25 @@ Rules for UI code in `frontend/` (ADR-0027). They adapt the Astryx repository's 
 - Styling order: component props, then tokens (`var(--color-*)`, `var(--spacing-*)`, `var(--radius-*)`). No inline styles on raw elements, no hex colors, no px spacing, no new `.css`/`.scss`, no Tailwind, no StyleX compiler. Colors and palettes change only through the theme, never `:root`.
 - Charts take colors from data tokens (`npx astryx docs tokens/tokens-data`), not fixed colors.
 
+## Design rules
+
+Adapted from the Astryx design records (`docs/design/` in `meta/astryx`). Astryx components already own press, hover, motion, reduced-motion and right-to-left behaviour; do not rebuild them.
+
+- **Page composition:** one page title, one control region, one primary content region. One primary action per action group; other actions are secondary or ghost; destructive actions stay clearly separate. On narrow screens the reading order stays: context, primary content, supporting content, actions. Keyboard and touch reach every action without hover.
+- **Spacing:** three gap tiers. Smallest between a label and its value or control, larger between fields or peers, largest between sections. Use space and alignment to group before you add a `Card` or border. Do not use one gap everywhere.
+- **Controls in a row** (toolbar, filter bar) use one size, so they share one height and baseline.
+- **Typography:** pick `Heading`/`Text` by role (page heading, section heading, body, label, supporting text, code), never by the size that fits. Hierarchy never depends on color alone. Long text keeps a readable line length.
+- **Color:** use semantic tokens and component variants. Supporting text must not look disabled. No status meaning by color alone.
+- **System states:**
+  - Loading: a `Skeleton` shaped like the coming content, so nothing jumps. A busy action keeps its size (`isLoading` on the `Button`).
+  - Status pairs color with an icon or text. In-flow, lasting messages use a quiet `Banner`. Short-lived feedback uses a toast. Urgent errors that need a decision use `AlertDialog`.
+  - Disabled controls stay readable and, when useful, say why (`disabledMessage`, tooltip).
+  - A message stays next to the thing it describes, also at phone width.
+- **Elevation and shape:** do not add shadows, borders or radii to Astryx surfaces. A surface uses one edge style (border or shadow, not both). No thick side stripes as accents. Floating content (menus, popovers) uses Astryx layers, so it is never clipped.
+- **Icons:** each icon has a purpose; no decoration. Same concept, same icon across the app (`Icons` map). Outlined artwork; filled only for an on/selected state or status. Size by role: `xsm` indicator, `sm` standard control, `md` prominent control, `lg` display. Icon color uses roles (`primary`, `secondary`, `success`, `warning`, `error`, `inherit`). An icon that does something sits in `IconButton`/`Button` with an accessible name; never put a click handler on a bare `Icon`.
+- **Motion:** no custom animations or transitions. Keep the default hover delays of `Tooltip`, `HoverCard` and menus.
+- **Direction:** the app is Turkish, left to right. Still use start/end props, never left/right, so layout stays direction-neutral.
+
 ## Comments and docs (ASD-STE100 style)
 
 - Names, structure and control flow explain the code. A comment explains only what the code cannot show: a reason, a constraint, an invariant, or a browser quirk.
