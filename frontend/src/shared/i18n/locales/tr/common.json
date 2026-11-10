@@ -59,7 +59,8 @@
     "button": "Filtreler ({{count}})",
     "more": "Diğer filtreler",
     "apply": "Uygula",
-    "clear": "Temizle"
+    "clear": "Temizle",
+    "search": "Ara"
   },
   "unsaved": {
     "title": "Kaydedilmemiş değişiklikler",
