@@ -58,7 +58,7 @@ describe('leaving with unsaved work', () => {
   it('asks before leaving a CSV preview that was not imported', async () => {
     mockApi(routes({ 'POST /api/v1/assets/import/preview': { status: 200, body: JOB } }) as never);
     const { user, router } = renderRoute('/assets/import');
-    await user.upload(await screen.findByLabelText('CSV dosyası'), new File(['x'], 'cihazlar.csv', { type: 'text/csv' }));
+    await user.upload(await screen.findByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), new File(['x'], 'cihazlar.csv', { type: 'text/csv' }));
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
     await screen.findByRole('button', { name: 'İçe aktar' });
     await user.click(within(await trailNav()).getByRole('link', { name: 'Envanter' }));

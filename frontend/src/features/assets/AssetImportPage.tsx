@@ -1,19 +1,27 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input Nothing; the person chooses a CSV file.
+ * @output The CSV import: template link, file choice, preview with row errors or rows, then the import.
+ * @position `/assets/import`, inside the app shell (IT staff and admins).
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { FileInput } from '@astryxdesign/core/FileInput';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Table } from '@astryxdesign/core/Table';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { describeError, translateErrorCode } from '../../shared/api/errorMessage';
 import { ApiError } from '../../shared/api/errors';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
-import { Button } from '../../shared/ui/Button';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { FormSection } from '../../shared/ui/FormSection';
-import { cilCloudDownload, cilCloudUpload, cilSearch } from '../../shared/ui/icons';
-import { PageCard } from '../../shared/ui/PageCard';
-import { StackTable } from '../../shared/ui/StackTable';
-import { TextField } from '../../shared/ui/TextField';
-import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
+import { SectionCard } from '../../shared/page/SectionCard';
+import { Icons } from '../../shared/ui/icons';
 
 import { useCommitImport, usePreviewImport, type AssetImportJobItem } from './api';
 
@@ -27,60 +35,55 @@ function describeImportError(error: unknown): string {
   return fileCode === undefined ? describeError(error) : translateErrorCode(fileCode);
 }
 
-const HEAD_CLASS = 'text-body-secondary small text-uppercase fw-semibold';
+const META_SEPARATOR = ' · ';
+/** Readable width for the file form. */
+const FORM_MAX_WIDTH = 720;
+
+const toFile = (value: File | File[] | null): File | null => (Array.isArray(value) ? (value[0] ?? null) : value);
 
 function ErrorTable({ job }: { job: AssetImportJobItem }) {
   const { t } = useTranslation('assets');
   const fieldLabel = (field: string) => t(`fields.${field}` as 'fields.assetTag', { defaultValue: field });
+  const rows = job.errors.map((error) => ({ key: `${error.row}-${error.field}-${error.code}`, row: error.row, field: fieldLabel(error.field), problem: translateErrorCode(error.code) }));
   return (
-    <PageCard title={t('import.errorsCaption')} flush>
-      <StackTable
-        caption={t('import.errorsCaption')}
-        head={
-          <tr>
-            <th scope="col" className={HEAD_CLASS}>{t('import.columns.row')}</th>
-            <th scope="col" className={HEAD_CLASS}>{t('import.columns.field')}</th>
-            <th scope="col" className={HEAD_CLASS}>{t('import.columns.problem')}</th>
-          </tr>
-        }
-      >
-        {job.errors.map((e) => (
-          <tr key={`${e.row}-${e.field}-${e.code}`}>
-            <td data-label={t('import.columns.row')}>{e.row}</td>
-            <td data-label={t('import.columns.field')}>{fieldLabel(e.field)}</td>
-            <td data-label={t('import.columns.problem')}>{translateErrorCode(e.code)}</td>
-          </tr>
-        ))}
-      </StackTable>
-    </PageCard>
+    <SectionCard title={t('import.errorsCaption')} padding={0}>
+      <Table
+        aria-label={t('import.errorsCaption')}
+        data={rows}
+        idKey="key"
+        columns={[
+          { key: 'row', header: t('import.columns.row') },
+          { key: 'field', header: t('import.columns.field') },
+          { key: 'problem', header: t('import.columns.problem') },
+        ]}
+      />
+    </SectionCard>
   );
 }
 
 function RowTable({ job }: { job: AssetImportJobItem }) {
   const { t } = useTranslation('assets');
+  const rows = job.rows.map((row) => ({
+    key: String(row.row),
+    tag: row.assetTag ?? t('import.autoTag'),
+    device: `${t(`types.${row.type}`)}${META_SEPARATOR}${row.brand} ${row.model}`,
+    location: row.locationPath,
+    status: t(`statuses.${row.status}`),
+  }));
   return (
-    <PageCard title={t('import.rowsCaption')} flush>
-      <StackTable
-        caption={t('import.rowsCaption')}
-        head={
-          <tr>
-            <th scope="col" className={HEAD_CLASS}>{t('list.columns.tag')}</th>
-            <th scope="col" className={HEAD_CLASS}>{t('list.columns.device')}</th>
-            <th scope="col" className={HEAD_CLASS}>{t('list.columns.location')}</th>
-            <th scope="col" className={HEAD_CLASS}>{t('list.columns.status')}</th>
-          </tr>
-        }
-      >
-        {job.rows.map((r) => (
-          <tr key={r.row}>
-            <td data-label={t('list.columns.tag')}>{r.assetTag ?? t('import.autoTag')}</td>
-            <td data-label={t('list.columns.device')}>{`${t(`types.${r.type}`)} · ${r.brand} ${r.model}`}</td>
-            <td data-label={t('list.columns.location')}>{r.locationPath}</td>
-            <td data-label={t('list.columns.status')}>{t(`statuses.${r.status}`)}</td>
-          </tr>
-        ))}
-      </StackTable>
-    </PageCard>
+    <SectionCard title={t('import.rowsCaption')} padding={0}>
+      <Table
+        aria-label={t('import.rowsCaption')}
+        data={rows}
+        idKey="key"
+        columns={[
+          { key: 'tag', header: t('list.columns.tag') },
+          { key: 'device', header: t('list.columns.device') },
+          { key: 'location', header: t('list.columns.location') },
+          { key: 'status', header: t('list.columns.status') },
+        ]}
+      />
+    </SectionCard>
   );
 }
 
@@ -92,11 +95,11 @@ export function AssetImportPage() {
   const job = commit.data ?? preview.data;
 
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader icon={ROUTE_META.assets.icon} titleOverride={t('import.title')} />
       {/* A preview not yet imported is work the user would lose by leaving. */}
       <UnsavedChangesGuard when={job?.status === 'previewed'} />
-      <div className="d-flex flex-column gap-3">
+      <Card padding={6} maxWidth={FORM_MAX_WIDTH}>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -106,65 +109,65 @@ export function AssetImportPage() {
             }
           }}
         >
-          <FormSection
-            actions={
-              <Button type="submit" variant="secondary" icon={cilSearch} disabled={file === null} isLoading={preview.isPending}>
-                {t('import.preview')}
-              </Button>
-            }
-          >
-            <p className="col-12 mb-0">{t('import.intro')}</p>
-            <div className="col-12">
-              <a href={TEMPLATE_URL} download className="d-inline-flex align-items-center gap-2 link-primary text-decoration-underline">
-                <CIcon icon={cilCloudDownload} aria-hidden="true" />
-                {t('import.template')}
-              </a>
-            </div>
-            <TextField
-              type="file"
-              accept={CSV_ACCEPT}
+          <VStack gap={4}>
+            <Text type="body">{t('import.intro')}</Text>
+            {/* A native download link: the router must not handle a file URL. */}
+            <a href={TEMPLATE_URL} download>
+              <HStack gap={1} vAlign="center">
+                <Icon icon={Icons.download} size="sm" color="accent" />
+                <Text type="body" color="accent">
+                  {t('import.template')}
+                </Text>
+              </HStack>
+            </a>
+            <FileInput
               label={t('import.file')}
-              className="col-12 col-md-8"
-              onChange={(event) => {
+              accept={CSV_ACCEPT}
+              value={file}
+              onChange={(value) => {
                 // A new file invalidates the previous preview; its job must not be committable any more.
                 preview.reset();
                 commit.reset();
-                setFile(event.target.files?.[0] ?? null);
+                setFile(toFile(value));
               }}
             />
-            <div className="col-12">
-              <FormAlert message={preview.error ? describeImportError(preview.error) : null} />
-              <FormAlert message={commit.error ? describeError(commit.error) : null} />
-            </div>
-          </FormSection>
+            <FormAlert message={preview.error ? describeImportError(preview.error) : null} />
+            <FormAlert message={commit.error ? describeError(commit.error) : null} />
+            <HStack hAlign="end">
+              <Button type="submit" label={t('import.preview')} variant="secondary" icon={<Icon icon={Icons.search} />} isDisabled={file === null} isLoading={preview.isPending} />
+            </HStack>
+          </VStack>
         </form>
+      </Card>
 
-        {job && (
-          <>
-            <PageCard
-              footer={
-                job.status === 'previewed' ? (
-                  <div className="d-flex justify-content-end">
-                    <Button icon={cilCloudUpload} disabled={job.errorRows > 0 || job.validRows === 0} isLoading={commit.isPending} onClick={() => commit.mutate(job.jobId)}>
-                      {t('import.commit')}
-                    </Button>
-                  </div>
-                ) : undefined
-              }
-              bodyClassName="d-flex flex-column gap-2"
-            >
-              <p role="status" className="mb-0 fw-medium">
-                {job.status === 'committed'
-                  ? t('import.done', { count: job.validRows })
-                  : t('import.summary', { total: job.totalRows, valid: job.validRows, errors: job.errorRows })}
-              </p>
-              {job.errorRows > 0 && <p className="mb-0">{t('import.fixAndRetry')}</p>}
-            </PageCard>
-            {job.errors.length > 0 && <ErrorTable job={job} />}
-            {job.errorRows === 0 && job.rows.length > 0 && <RowTable job={job} />}
-          </>
-        )}
-      </div>
-    </>
+      {job && (
+        <>
+          <Card padding={5}>
+            <VStack gap={3}>
+              <VStack role="status">
+                <Text type="label">
+                  {job.status === 'committed' ? t('import.done', { count: job.validRows }) : t('import.summary', { total: job.totalRows, valid: job.validRows, errors: job.errorRows })}
+                </Text>
+              </VStack>
+              {job.errorRows > 0 && <Text type="body">{t('import.fixAndRetry')}</Text>}
+              {job.status === 'previewed' && (
+                <HStack hAlign="end">
+                  <Button
+                    label={t('import.commit')}
+                    variant="primary"
+                    icon={<Icon icon={Icons.upload} />}
+                    isDisabled={job.errorRows > 0 || job.validRows === 0}
+                    isLoading={commit.isPending}
+                    onClick={() => commit.mutate(job.jobId)}
+                  />
+                </HStack>
+              )}
+            </VStack>
+          </Card>
+          {job.errors.length > 0 && <ErrorTable job={job} />}
+          {job.errorRows === 0 && job.rows.length > 0 && <RowTable job={job} />}
+        </>
+      )}
+    </VStack>
   );
 }

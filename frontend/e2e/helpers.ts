@@ -13,11 +13,27 @@ export function messageAlert(scope: Page | Locator): Locator {
   return scope.getByRole('alert').filter({ hasText: /\S/ });
 }
 
-/** Astryx selects are a combobox button with a popup list rendered at the page root. */
-export async function chooseOption(scope: Page | Locator, label: string | RegExp, option: string): Promise<void> {
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Opens an Astryx select: a combobox, or a button named "label value" when the select has its own search box.
+ * Its popup list renders at the page root.
+ */
+async function openSelect(scope: Page | Locator, label: string | RegExp): Promise<Page> {
   const page = 'page' in scope ? scope.page() : scope;
-  await scope.getByRole('combobox', { name: label }).click();
+  const buttonName = typeof label === 'string' ? new RegExp(`^${escapeRegExp(label)}\\b`) : label;
+  await scope.getByRole('combobox', { name: label }).or(scope.getByRole('button', { name: buttonName })).first().click();
+  return page;
+}
+
+export async function chooseOption(scope: Page | Locator, label: string | RegExp, option: string): Promise<void> {
+  const page = await openSelect(scope, label);
   await page.getByRole('option', { name: option, exact: true }).click();
+}
+
+export async function chooseFirstOption(scope: Page | Locator, label: string | RegExp): Promise<void> {
+  const page = await openSelect(scope, label);
+  await page.getByRole('option').first().click();
 }
 
 /** A whole-card link (Astryx ClickableCard): its anchor is an invisible layer, so the person clicks the card's title. */

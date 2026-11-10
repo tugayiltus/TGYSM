@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { expectNoHorizontalScroll, visibleEntry } from './helpers';
+import { chooseFirstOption, chooseOption, expectNoHorizontalScroll, visibleEntry } from './helpers';
 import { adminSession, seedWorld, userSession } from './world';
 
 const GENERATED_TAG = /^Cihaz kaydedildi: DMR-\d{6,}$/;
@@ -31,13 +31,13 @@ test('admin adds a brand and model; IT registers a device with them and gets a g
   await it.page.getByRole('button', { name: 'Yeni cihaz' }).click();
   const form = it.page.getByRole('dialog');
   await expect(form.getByText('Demirbaş numarası kaydedildiğinde otomatik atanır.')).toBeVisible();
-  await form.getByLabel('Tür').selectOption({ label: 'Dizüstü' });
-  await form.getByRole('combobox', { name: 'Marka' }).fill(brand.slice(0, 4));
-  await form.getByRole('option', { name: brand }).click();
-  await form.getByLabel('Model').selectOption({ label: 'Latitude 5440' });
-  await form.getByLabel('Lokasyon').selectOption({ index: 1 });
+  await chooseOption(form, 'Tür', 'Dizüstü');
+  await chooseOption(form, 'Marka', brand);
+  await chooseOption(form, 'Model', 'Latitude 5440');
+  await chooseFirstOption(form, 'Lokasyon');
   await form.getByRole('button', { name: 'Oluştur' }).click();
-  await expect(it.page.getByRole('status', { name: 'Bildirimler' })).toHaveText(GENERATED_TAG);
+  // Astryx also copies the toast text into its live region, so take the visible toast.
+  await expect(it.page.getByText(GENERATED_TAG).first()).toBeVisible();
   // The inventory list with a device, its filters and paging stays inside a phone screen.
   await expect(visibleEntry(it.page, world.assetTag)).toBeVisible();
   await expectNoHorizontalScroll(it.page);

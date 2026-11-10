@@ -77,7 +77,7 @@ test('request: admin approves, IT hands over a device, employee sees it under Zi
   await it.page.getByRole('button', { name: 'Teslim et' }).click();
   const dialog = it.page.getByRole('dialog');
   await dialog.getByLabel('Kullanıcı ara').fill('Ayşe');
-  await dialog.getByLabel('Kullanıcı', { exact: true }).selectOption({ label: `Ayşe Kaya (${world.employeeEmail})` });
+  await chooseOption(dialog, 'Kullanıcı', `Ayşe Kaya (${world.employeeEmail})`);
   await dialog.getByRole('button', { name: 'Onayla' }).click();
   await expect(dialog).toHaveCount(0);
   await expect(it.page.getByText('Zimmetli', { exact: true }).first()).toBeVisible();

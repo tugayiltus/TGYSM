@@ -20,7 +20,7 @@ describe('AssetImportPage', () => {
       'POST /api/v1/assets/import/preview': { status: 200, body: { ...JOB, rows: [{ ...ROW, assetTag: null }] } },
     });
     const { user } = renderRoute('/assets/import');
-    await user.upload(await screen.findByLabelText('CSV dosyası'), csvFile());
+    await user.upload(await screen.findByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), csvFile());
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
     expect(await within(screen.getByRole('main')).findByText('Otomatik')).toBeInTheDocument();
   });
@@ -33,7 +33,7 @@ describe('AssetImportPage', () => {
     const { user } = renderRoute('/assets/import');
 
     expect(await screen.findByRole('link', { name: 'Şablonu indir' })).toHaveAttribute('href', '/api/v1/assets/import/template');
-    await user.upload(screen.getByLabelText('CSV dosyası'), csvFile());
+    await user.upload(screen.getByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), csvFile());
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
 
     const errors = await screen.findByRole('table', { name: 'Hatalı satırlar' });
@@ -41,7 +41,7 @@ describe('AssetImportPage', () => {
     expect(within(errors).getByText('Marka')).toBeInTheDocument();
     expect(within(errors).getByText('Bu alan zorunludur.')).toBeInTheDocument();
     expect(within(errors).getByText(/Bu adla birden fazla lokasyon var/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'İçe aktar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'İçe aktar' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('commits a clean preview and reports the result', async () => {
@@ -52,7 +52,7 @@ describe('AssetImportPage', () => {
     });
     const { user } = renderRoute('/assets/import');
 
-    await user.upload(await screen.findByLabelText('CSV dosyası'), csvFile());
+    await user.upload(await screen.findByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), csvFile());
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
     await user.click(await screen.findByRole('button', { name: 'İçe aktar' }));
 
@@ -68,7 +68,7 @@ describe('AssetImportPage', () => {
     });
     const { user } = renderRoute('/assets/import');
 
-    await user.upload(await screen.findByLabelText('CSV dosyası'), csvFile());
+    await user.upload(await screen.findByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), csvFile());
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
 
     expect(await screen.findByText(/başlık satırı şablonla uyuşmuyor/)).toBeInTheDocument();
@@ -83,10 +83,10 @@ describe('AssetImportPage after choosing another file', () => {
     });
     const { user } = renderRoute('/assets/import');
 
-    await user.upload(await screen.findByLabelText('CSV dosyası'), csvFile());
+    await user.upload(await screen.findByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), csvFile());
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
     expect(await screen.findByRole('button', { name: 'İçe aktar' })).toBeInTheDocument();
-    await user.upload(screen.getByLabelText('CSV dosyası'), new File(['x'], 'yeni.csv', { type: 'text/csv' }));
+    await user.upload(screen.getByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), new File(['x'], 'yeni.csv', { type: 'text/csv' }));
 
     expect(screen.queryByRole('button', { name: 'İçe aktar' })).not.toBeInTheDocument();
   });
