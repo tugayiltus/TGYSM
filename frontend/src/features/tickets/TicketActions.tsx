@@ -1,11 +1,17 @@
+/**
+ * @input A ticket.
+ * @output The work actions the ticket allows: direct buttons and buttons that open a dialog.
+ * @position Ticket detail page, first in the side column.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { HStack } from '@astryxdesign/core/HStack';
 import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { describeError } from '../../shared/api/errorMessage';
-import { Button } from '../../shared/ui/Button';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { PageCard } from '../../shared/ui/PageCard';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { SectionCard } from '../../shared/page/SectionCard';
 
 import { ticketKeys, useTicketAction, type TicketDetail } from './api';
 import { TicketActionDialog, type DialogActionKind } from './TicketActionDialog';
@@ -56,29 +62,33 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
   }
 
   return (
-    <PageCard title={t('actions.title')} bodyClassName="d-flex flex-column gap-2">
+    <SectionCard title={t('actions.title')}>
       <FormAlert message={direct.error ? describeError(direct.error) : null} />
-      <div className="d-flex flex-wrap gap-2">
+      <HStack gap={2} wrap="wrap">
         {actions.direct.map((kind) => (
-          <Button key={kind} disabled={refreshing} isLoading={direct.isPending && direct.variables?.kind === kind} onClick={() => direct.mutate({ kind })}>
-            {t(`actions.${kind}`)}
-          </Button>
+          <Button
+            key={kind}
+            label={t(`actions.${kind}`)}
+            variant="primary"
+            isDisabled={refreshing}
+            isLoading={direct.isPending && direct.variables?.kind === kind}
+            onClick={() => direct.mutate({ kind })}
+          />
         ))}
         {actions.dialogs.map((kind) => (
           <Button
             key={kind}
-            variant={kind === 'cancel' ? 'danger' : 'secondary'}
-            disabled={refreshing}
+            label={t(`actions.${kind}`)}
+            variant={kind === 'cancel' ? 'destructive' : 'secondary'}
+            isDisabled={refreshing}
             onClick={() => {
               direct.reset();
               setDialog(kind);
             }}
-          >
-            {t(`actions.${kind}`)}
-          </Button>
+          />
         ))}
-      </div>
+      </HStack>
       {dialog !== null && <TicketActionDialog key={dialog} ticket={ticket} kind={dialog} onClose={() => setDialog(null)} />}
-    </PageCard>
+    </SectionCard>
   );
 }

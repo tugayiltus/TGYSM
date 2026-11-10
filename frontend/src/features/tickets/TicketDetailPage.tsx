@@ -1,17 +1,30 @@
-import CIcon from '@coreui/icons-react';
+/**
+ * @input The ticket number from the route.
+ * @output The ticket: status, description, links, articles, comments, history, actions, SLA and details.
+ * @position `/tickets/:number`, inside the app shell.
+ */
+import { Banner } from '@astryxdesign/core/Banner';
+import { Button } from '@astryxdesign/core/Button';
+import { Grid, GridSpan } from '@astryxdesign/core/Grid';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { MetadataList, MetadataListItem } from '@astryxdesign/core/MetadataList';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { ErrorState, LoadingState } from '../../shared/feedback/States';
 import { formatDateTime } from '../../shared/lib/format';
+import { useIsPhone } from '../../shared/list/useIsPhone';
 import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { useReturnTo } from '../../shared/navigation/returnTo';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
+import { SectionCard } from '../../shared/page/SectionCard';
 import { ROUTES } from '../../shared/routes';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { cilArrowLeft } from '../../shared/ui/icons';
-import { PageCard } from '../../shared/ui/PageCard';
-import { ErrorState, LoadingState } from '../../shared/ui/States';
+import { Icons } from '../../shared/ui/icons';
 import { useSession } from '../auth/session';
 
 import { useComments, useTicket, useTimeline, type TicketDetail } from './api';
@@ -23,13 +36,27 @@ import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
 import { TicketLinks } from './TicketLinks';
 import { Timeline } from './Timeline';
 
-function Field({ label, value, wide = false }: { label: string; value: string | null; wide?: boolean }) {
+/** Wide screens: content takes two of three columns, the side column one. */
+const WIDE_COLUMNS = 3;
+const MAIN_SPAN = 2;
+const META_SEPARATOR = ' · ';
+
+const LINE_BREAK = /\r?\n/;
+
+/** A labelled value. Each typed line is its own text line, so the author's line breaks stay. */
+function Field({ label, value }: { label: string; value: string | null }) {
   const { t: tc } = useTranslation();
+  const lines = (value ?? tc('none')).split(LINE_BREAK);
   return (
-    <div className={wide ? 'col-12' : 'col-12 col-sm-6 col-lg-12'}>
-      <dt className="small fw-normal text-body-secondary">{label}</dt>
-      <dd className="mb-0 fw-medium text-break tgysm-pre-wrap">{value ?? tc('none')}</dd>
-    </div>
+    <MetadataListItem label={label}>
+      <VStack gap={0}>
+        {lines.map((line, index) => (
+          <Text key={index} wordBreak="break-word">
+            {line}
+          </Text>
+        ))}
+      </VStack>
+    </MetadataListItem>
   );
 }
 
@@ -39,12 +66,13 @@ function ApprovalBox({ ticket }: { ticket: TicketDetail }) {
   if (approval === null) {
     return null;
   }
+  const approver = approval.approverName ? t('detail.approver', { name: approval.approverName }) : t('detail.noApprover');
   return (
-    <div className="alert alert-warning mb-0 small">
-      <p className="fw-semibold mb-1">{`${t('detail.approval')}: ${t(`approvalStatuses.${approval.status}`)}`}</p>
-      <p className="mb-0">{approval.approverName ? t('detail.approver', { name: approval.approverName }) : t('detail.noApprover')}</p>
-      {approval.reason && <p className="mb-0 mt-1">{approval.reason}</p>}
-    </div>
+    <Banner
+      status="warning"
+      title={`${t('detail.approval')}: ${t(`approvalStatuses.${approval.status}`)}`}
+      description={approval.reason ? `${approver}${META_SEPARATOR}${approval.reason}` : approver}
+    />
   );
 }
 
@@ -70,6 +98,7 @@ function TicketDetail({ number }: { number: string }) {
   const comments = useComments(number);
   const timeline = useTimeline(number);
   const backTo = useReturnTo(ROUTES.tickets);
+  const isPhone = useIsPhone();
   // Only from loaded data: a 404 must not show the number typed into the URL as a title.
   useBreadcrumbLabel('ticketDetail', ticket.data?.number);
 
@@ -81,72 +110,77 @@ function TicketDetail({ number }: { number: string }) {
   }
   const item = ticket.data;
 
+  const side = (
+    <VStack gap={4}>
+      <TicketActions ticket={item} />
+      <ApprovalBox ticket={item} />
+      <SectionCard title={t('sla.title')}>
+        <SlaSummary sla={item.sla} showDue />
+      </SectionCard>
+      <SectionCard>
+        <MetadataList>
+          <Field label={t('detail.requester')} value={item.requesterName} />
+          <Field label={t('detail.team')} value={item.teamName} />
+          <Field label={t('detail.assignee')} value={item.assigneeName} />
+          <Field label={t('detail.category')} value={item.categoryName} />
+          <Field label={t('detail.location')} value={item.locationName} />
+          {item.kind === 'request' && <Field label={t('detail.requestType')} value={item.requestTypeName} />}
+          <Field label={t('detail.createdAt')} value={formatDateTime(item.createdAt)} />
+        </MetadataList>
+      </SectionCard>
+    </VStack>
+  );
+  const main = (
+    <VStack gap={4}>
+      <FormAlert message={uploadError} />
+      <SectionCard>
+        <MetadataList label={{ position: 'top' }}>
+          <Field label={t('detail.description')} value={item.description} />
+          {item.holdNote && <Field label={t('detail.holdNote')} value={item.holdNote} />}
+          {item.resolution && <Field label={t('detail.resolution')} value={item.resolution} />}
+          {item.rootCause && <Field label={t('detail.rootCause')} value={item.rootCause} />}
+          {item.cancelReason && <Field label={t('detail.cancelReason')} value={item.cancelReason} />}
+        </MetadataList>
+      </SectionCard>
+      <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
+      <TicketArticles ticket={item} />
+      <SectionCard title={t('detail.comments')}>
+        {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}
+        {comments.data && <CommentList ticket={item} comments={comments.data} />}
+        <CommentBox ticket={item} />
+      </SectionCard>
+      <SectionCard title={t('detail.timeline')}>
+        {timeline.isError && <ErrorState error={timeline.error} onRetry={() => void timeline.refetch()} />}
+        {timeline.data && <Timeline events={timeline.data} />}
+      </SectionCard>
+    </VStack>
+  );
+
   return (
-    <>
+    <VStack gap={4}>
       <PageHeader
         icon={ROUTE_META.myTickets.icon}
         titleOverride={item.subject}
-        actions={
-          <Link to={backTo} className="btn btn-outline-secondary tgysm-touch d-inline-flex align-items-center gap-2">
-            <CIcon icon={cilArrowLeft} aria-hidden="true" />
-            {t('detail.back')}
-          </Link>
-        }
+        actions={<Button label={t('detail.back')} variant="secondary" href={backTo} icon={<Icon icon={Icons.arrowLeft} />} />}
       />
-      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <span className="small text-body-secondary">{`${item.number} · ${t(`kinds.${item.kind}`)}`}</span>
+      <HStack gap={2} vAlign="center" wrap="wrap">
+        <Text type="supporting">{`${item.number}${META_SEPARATOR}${t(`kinds.${item.kind}`)}`}</Text>
         <TicketStatusBadge status={item.status} />
         <PriorityBadge priority={item.priority} />
-        {item.holdReason && <span className="small">{t(`holdReasons.${item.holdReason}`)}</span>}
-      </div>
-
-      <div className="row g-4">
-        {/* First in the DOM: on phones the actions come before the long content; beside it from 992 px. */}
-        <aside className="col-12 col-lg-4 order-lg-2">
-          <div className="tgysm-sticky-aside d-flex flex-column gap-3">
-            <TicketActions ticket={item} />
-            <ApprovalBox ticket={item} />
-            <PageCard title={t('sla.title')}>
-              <SlaSummary sla={item.sla} showDue />
-            </PageCard>
-            <PageCard>
-              <dl className="row g-2 mb-0">
-                  <Field label={t('detail.requester')} value={item.requesterName} />
-                  <Field label={t('detail.team')} value={item.teamName} />
-                  <Field label={t('detail.assignee')} value={item.assigneeName} />
-                  <Field label={t('detail.category')} value={item.categoryName} />
-                  <Field label={t('detail.location')} value={item.locationName} />
-                  {item.kind === 'request' && <Field label={t('detail.requestType')} value={item.requestTypeName} />}
-                  <Field label={t('detail.createdAt')} value={formatDateTime(item.createdAt)} />
-              </dl>
-            </PageCard>
-          </div>
-        </aside>
-
-        <div className="col-12 col-lg-8 order-lg-1 d-flex flex-column gap-3 min-w-0">
-          <FormAlert message={uploadError} />
-          <PageCard>
-            <dl className="row g-3 mb-0">
-                <Field wide label={t('detail.description')} value={item.description} />
-                {item.holdNote && <Field wide label={t('detail.holdNote')} value={item.holdNote} />}
-                {item.resolution && <Field wide label={t('detail.resolution')} value={item.resolution} />}
-                {item.rootCause && <Field wide label={t('detail.rootCause')} value={item.rootCause} />}
-                {item.cancelReason && <Field wide label={t('detail.cancelReason')} value={item.cancelReason} />}
-            </dl>
-          </PageCard>
-          <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
-          <TicketArticles ticket={item} />
-          <PageCard title={t('detail.comments')} bodyClassName="d-flex flex-column gap-3">
-            {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}
-            {comments.data && <CommentList ticket={item} comments={comments.data} />}
-            <CommentBox ticket={item} />
-          </PageCard>
-          <PageCard title={t('detail.timeline')}>
-            {timeline.isError && <ErrorState error={timeline.error} onRetry={() => void timeline.refetch()} />}
-            {timeline.data && <Timeline events={timeline.data} />}
-          </PageCard>
-        </div>
-      </div>
-    </>
+        {item.holdReason && <Text type="supporting">{t(`holdReasons.${item.holdReason}`)}</Text>}
+      </HStack>
+      {/* Phones show the actions before the long content; wide screens put them in a side column. */}
+      {isPhone ? (
+        <VStack gap={4}>
+          {side}
+          {main}
+        </VStack>
+      ) : (
+        <Grid columns={WIDE_COLUMNS} gap={4} align="start">
+          <GridSpan columns={MAIN_SPAN}>{main}</GridSpan>
+          {side}
+        </Grid>
+      )}
+    </VStack>
   );
 }

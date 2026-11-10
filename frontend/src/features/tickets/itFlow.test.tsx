@@ -5,6 +5,7 @@ import { pageOf } from '../../test/assetData';
 import { ADMIN_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 import { detailRoutes, INCIDENT, LIST_ITEM } from '../../test/ticketData';
+import { stubPhoneViewport } from '../../test/viewport';
 
 const WORKABLE = { ...INCIDENT, canWork: true };
 const trail = () => within(screen.getByRole('navigation', { name: 'Sayfa yolu' }));
@@ -20,13 +21,21 @@ function itRoutes(extra: Record<string, unknown> = {}) {
 }
 
 describe('ticket detail layout', () => {
-  it('puts the work actions before the description and in a sticky side column', async () => {
+  it('puts the work actions before the description on phones', async () => {
+    stubPhoneViewport();
     mockApi(itRoutes() as never);
     renderRoute(`/tickets/${INCIDENT.number}`);
     const actions = await screen.findByRole('region', { name: 'İşlemler' });
     const description = screen.getByText(INCIDENT.description);
     expect(actions.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(actions.closest('.tgysm-sticky-aside')).not.toBeNull();
+  });
+
+  it('keeps the work actions in a side column next to the content on wide screens', async () => {
+    mockApi(itRoutes() as never);
+    renderRoute(`/tickets/${INCIDENT.number}`);
+    const actions = await screen.findByRole('region', { name: 'İşlemler' });
+    const description = screen.getByText(INCIDENT.description);
+    expect(actions.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
   it('names the ticket in the breadcrumb from the loaded data', async () => {

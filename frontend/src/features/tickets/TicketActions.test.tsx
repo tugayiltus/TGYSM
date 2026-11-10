@@ -98,9 +98,9 @@ describe('TicketActions', () => {
 
     // A reply or another action invalidates the ticket; its new version is still on the way.
     void queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    await waitFor(() => expect(complete).toBeDisabled());
+    await waitFor(() => expect(complete).toHaveAttribute('aria-disabled', 'true'));
     release();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Tamamla' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tamamla' })).not.toHaveAttribute('aria-disabled', 'true'));
 
     await user.click(screen.getByRole('button', { name: 'Tamamla' }));
     const dialog = await screen.findByRole('dialog');
@@ -130,9 +130,9 @@ describe('TicketActions', () => {
     await user.type(within(box).getByLabelText('Mesajınız'), 'Toneri değiştiriyoruz');
     await user.click(within(box).getByRole('button', { name: 'Gönder' }));
 
-    await waitFor(() => expect(complete).toBeDisabled());
+    await waitFor(() => expect(complete).toHaveAttribute('aria-disabled', 'true'));
     release();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Tamamla' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Tamamla' })).not.toHaveAttribute('aria-disabled', 'true'));
   });
 
   it('transfers to a member of another team with a reason, requiring a note for "other"', async () => {
@@ -209,7 +209,7 @@ describe('ticket detail look', () => {
     renderRoute(`/tickets/${INCIDENT.number}`);
     for (const name of ['İşlemler', 'SLA', 'Bağlı cihazlar', 'Geçmiş']) {
       const region = await screen.findByRole('region', { name });
-      expect(region.querySelector('.card-header h2')).not.toBeNull();
+      expect(within(region).getByRole('heading', { level: 2, name })).toBeInTheDocument();
     }
   });
 });
