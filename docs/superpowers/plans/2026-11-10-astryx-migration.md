@@ -10,6 +10,14 @@
 
 **Spec:** `docs/adr/0027-astryx-design-system.md` (decision and steps). Owner request: replace the interface completely with Astryx so new screens are faster to build with an AI agent. Setup is done in commit `c59355f`.
 
+## Amendment 2026-11-10 (Task 2 ruling)
+
+Astryx inputs are controlled only (`value` + `onChange(value, e)`), `Selector` is not a native `<select>`, and `Button.icon` is a `ReactNode`; today's wrappers take `register()` spreads and CoreUI icon arrays. Keeping their props is not possible. Instead:
+
+- Features use Astryx components **directly** (`npx astryx component <Name>`), not thin pass-through wrappers.
+- Shared code keeps only wrappers that add app behaviour: react-hook-form-bound fields in `src/shared/form/` (`useController`, Turkish `fieldError` → `status`), Turkish loading/empty/error states, confirm dialog, toast helper, responsive list, unsaved-changes guard, app shell.
+- The CoreUI wrappers in `src/shared/ui` stay unchanged until their last consumer moves, and are deleted in Task 13. Tasks 2–4 therefore build the new Astryx-side pieces next to them instead of rewriting them in place.
+
 ## Global Constraints
 
 - Every screen keeps its behaviour, routes, API calls, permissions and Turkish texts. This is a UI rewrite, not a feature change.
