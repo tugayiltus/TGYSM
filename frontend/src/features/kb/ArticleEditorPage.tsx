@@ -1,21 +1,31 @@
+/**
+ * @input An article id (edit) or nothing (create).
+ * @output The article editor: title, summary, category, visibility and Markdown body with a preview.
+ * @position `/kb/new` and `/kb/:id/edit`, inside the app shell (IT staff and admins).
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { Grid } from '@astryxdesign/core/Grid';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { TextArea } from '@astryxdesign/core/TextArea';
+import { TextInput } from '@astryxdesign/core/TextInput';
+import { ToggleButton, ToggleButtonGroup } from '@astryxdesign/core/ToggleButton';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 
 import { describeError, translateErrorCode } from '../../shared/api/errorMessage';
 import { ApiError, ERROR_CODES } from '../../shared/api/errors';
+import { FormAlert } from '../../shared/feedback/FormAlert';
+import { ErrorState, LoadingState } from '../../shared/feedback/States';
+import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
 import { useBreadcrumbLabel } from '../../shared/navigation/breadcrumbLabels';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { articlePath } from '../../shared/routes';
-import { Button } from '../../shared/ui/Button';
-import { FormAlert } from '../../shared/ui/FormAlert';
-import { FormSection } from '../../shared/ui/FormSection';
-import { SelectField } from '../../shared/ui/SelectField';
-import { ErrorState, LoadingState } from '../../shared/ui/States';
-import { TextAreaField } from '../../shared/ui/TextAreaField';
-import { TextField } from '../../shared/ui/TextField';
-import { UnsavedChangesGuard } from '../../shared/ui/UnsavedChangesGuard';
 
 import {
   ARTICLE_LIMITS,
@@ -31,6 +41,11 @@ import {
 import { ArticleMarkdown } from './ArticleMarkdown';
 
 const BODY_ROWS = 16;
+const EDITOR_TABS = ['write', 'preview'] as const;
+type EditorTab = (typeof EDITOR_TABS)[number];
+/** Paired fields sit side by side from this width. */
+const FIELD_COLUMNS = { minWidth: 240 } as const;
+const ERROR_STATUS = 'error';
 const SUMMARY_ROWS = 3;
 const FIELDS = ['title', 'summary', 'body'] as const;
 type Field = (typeof FIELDS)[number];
@@ -114,7 +129,7 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
   const categories = useArticleCategories();
   const [draft, setDraft] = useState<Draft>(initial);
   const [problems, setProblems] = useState<Problems>({});
-  const [tab, setTab] = useState<'write' | 'preview'>('write');
+  const [tab, setTab] = useState<EditorTab>('write');
 
   const change = (patch: Partial<Draft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -138,87 +153,66 @@ function EditorForm({ initial, isPending, error, onSubmit, onReload, heading }: 
   };
 
   const shown: Problems = { ...serverFieldProblems(error), ...problems };
-  const fieldMessage = (field: Field) => (shown[field] === undefined ? undefined : translateErrorCode(shown[field]));
+  const fieldStatus = (field: Field) => (shown[field] === undefined ? undefined : ({ type: ERROR_STATUS, message: translateErrorCode(shown[field]) } as const));
   const alert = error && Object.keys(serverFieldProblems(error)).length === 0 ? describeError(error) : null;
 
   const dirty = (Object.keys(initial) as (keyof Draft)[]).some((key) => draft[key] !== initial[key]);
 
+  const isVisibility = (value: string): value is ArticleVisibility => (ARTICLE_VISIBILITIES as readonly string[]).includes(value);
+  const isTab = (value: unknown): value is EditorTab => typeof value === 'string' && (EDITOR_TABS as readonly string[]).includes(value);
+
   return (
-    <>
-    <PageHeader icon={ROUTE_META.kbList.icon} titleOverride={heading} />
-    {/* A saved article navigates with state.saved; only other ways out ask about unsaved changes. */}
-    <UnsavedChangesGuard when={({ nextLocation }) => dirty && (nextLocation.state as { saved?: boolean } | null)?.saved !== true} />
-    <form noValidate className="tgysm-editor" onSubmit={submit}>
-      <FormSection
-        actions={
-          <Button type="submit" isLoading={isPending}>
-            {t('editor.save')}
-          </Button>
-        }
-      >
-        <div className="col-12">
-          <FormAlert message={alert} />
-        </div>
-        {isConflict(error) && onReload && (
-          <div className="col-12">
-            <Button variant="secondary" onClick={() => void reload()}>
-              {t('editor.reload')}
-            </Button>
-          </div>
-        )}
-        <TextField className="col-12" label={t('editor.title')} autoComplete="off" value={draft.title} error={fieldMessage('title')} onChange={(event) => change({ title: event.target.value })} />
-        <TextAreaField className="col-12" label={t('editor.summary')} rows={SUMMARY_ROWS} value={draft.summary} error={fieldMessage('summary')} onChange={(event) => change({ summary: event.target.value })} />
-        <SelectField
-          className="col-12 col-sm-6"
-          label={t('editor.category')}
-          placeholder={t('editor.noCategory')}
-          options={(categories.data ?? []).map((c) => ({ value: c.id, label: c.path }))}
-          value={draft.categoryId}
-          onChange={(event) => change({ categoryId: event.target.value })}
-        />
-        <SelectField
-          className="col-12 col-sm-6"
-          label={t('editor.visibility')}
-          options={ARTICLE_VISIBILITIES.map((v) => ({ value: v, label: t(`visibility.${v}`) }))}
-          value={draft.visibility}
-          onChange={(event) => change({ visibility: event.target.value as ArticleVisibility })}
-        />
-        <div className="col-12">
-          {/* Two toggle buttons, not a tablist: a tab pattern would also need arrow-key focus and tabpanel wiring. */}
-          <div role="group" aria-label={t('editor.tabs')} className="btn-group">
-            {(['write', 'preview'] as const).map((name) => (
-              <button
-                key={name}
-                type="button"
-                aria-pressed={tab === name}
-                className={`btn tgysm-touch ${tab === name ? 'btn-primary' : 'btn-outline-primary'}`}
-                onClick={() => setTab(name)}
-              >
-                {t(`editor.${name}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-        {tab === 'write' ? (
-          <TextAreaField
-            className="col-12"
-            label={t('editor.body')}
-            hint={t('editor.bodyHint')}
-            rows={BODY_ROWS}
-            value={draft.body}
-            error={fieldMessage('body')}
-            onChange={(event) => change({ body: event.target.value })}
-          />
-        ) : (
-          <div className="col-12">
-            <div className="border rounded bg-body-tertiary p-3 tgysm-preview">
-              {draft.body.trim() === '' ? <p className="mb-0 text-body-secondary">{t('editor.previewEmpty')}</p> : <ArticleMarkdown body={draft.body} />}
-            </div>
-          </div>
-        )}
-      </FormSection>
-    </form>
-    </>
+    <VStack gap={4}>
+      <PageHeader icon={ROUTE_META.kbList.icon} titleOverride={heading} />
+      {/* A saved article navigates with state.saved; only other ways out ask about unsaved changes. */}
+      <UnsavedChangesGuard when={({ nextLocation }) => dirty && (nextLocation.state as { saved?: boolean } | null)?.saved !== true} />
+      <Card padding={6}>
+        <form noValidate onSubmit={submit}>
+          <VStack gap={4}>
+            <FormAlert message={alert} />
+            {isConflict(error) && onReload && (
+              <HStack>
+                <Button label={t('editor.reload')} variant="secondary" onClick={() => void reload()} />
+              </HStack>
+            )}
+            <TextInput label={t('editor.title')} autoComplete="off" value={draft.title} status={fieldStatus('title')} onChange={(title) => change({ title })} />
+            <TextArea label={t('editor.summary')} rows={SUMMARY_ROWS} value={draft.summary} status={fieldStatus('summary')} onChange={(summary) => change({ summary })} />
+            <Grid columns={FIELD_COLUMNS} gap={4}>
+              <Selector
+                label={t('editor.category')}
+                placeholder={t('editor.noCategory')}
+                options={(categories.data ?? []).map((c) => ({ value: c.id, label: c.path }))}
+                hasClear
+                value={draft.categoryId === '' ? null : draft.categoryId}
+                onChange={(categoryId: string | null) => change({ categoryId: categoryId ?? '' })}
+              />
+              <Selector
+                label={t('editor.visibility')}
+                options={ARTICLE_VISIBILITIES.map((v) => ({ value: v, label: t(`visibility.${v}`) }))}
+                value={draft.visibility}
+                onChange={(value) => isVisibility(value) && change({ visibility: value })}
+              />
+            </Grid>
+            {/* Two toggle buttons, not a tab list: a tab pattern would also need arrow-key focus and tab panel wiring. */}
+            <ToggleButtonGroup label={t('editor.tabs')} value={tab} onChange={(value) => isTab(value) && setTab(value)}>
+              {EDITOR_TABS.map((name) => (
+                <ToggleButton key={name} value={name} label={t(`editor.${name}`)} />
+              ))}
+            </ToggleButtonGroup>
+            {tab === 'write' ? (
+              <TextArea label={t('editor.body')} description={t('editor.bodyHint')} rows={BODY_ROWS} value={draft.body} status={fieldStatus('body')} onChange={(body) => change({ body })} />
+            ) : (
+              <Card padding={4} variant="muted">
+                {draft.body.trim() === '' ? <Text type="supporting">{t('editor.previewEmpty')}</Text> : <ArticleMarkdown body={draft.body} />}
+              </Card>
+            )}
+            <HStack hAlign="end">
+              <Button type="submit" label={t('editor.save')} variant="primary" isLoading={isPending} />
+            </HStack>
+          </VStack>
+        </form>
+      </Card>
+    </VStack>
   );
 }
 

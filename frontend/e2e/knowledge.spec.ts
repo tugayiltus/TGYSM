@@ -16,7 +16,7 @@ async function writeAndPublish(page: Page, title: string, body: string, visibili
   await page.getByRole('link', { name: 'Yeni makale' }).click();
   await page.getByLabel('Başlık', { exact: true }).fill(title);
   await page.getByLabel('Özet').fill(`${title} özeti`);
-  await page.getByLabel('Görünürlük').selectOption({ label: visibility });
+  await chooseOption(page, 'Görünürlük', visibility);
   await page.getByLabel('İçerik (Markdown)').fill(body);
   await expectNoHorizontalScroll(page);
   await page.getByRole('button', { name: 'Kaydet' }).click();
