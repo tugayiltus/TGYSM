@@ -22,6 +22,7 @@ Run through `tools/` scripts.
 - `tools/lint.sh` — `dotnet format --verify-no-changes` + ESLint + TypeScript.
 - `tools/test.sh` — backend tests with coverage gate + frontend tests with coverage gate. Backend uses Microsoft.Testing.Platform (repo-root `global.json`): `dotnet test --solution backend/Tgysm.slnx`, filters `--filter-class` / `--filter-method`.
 - `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5080/4173 (stop the dev services first). Also starts the Worker (`Email:Mode=Pickup` into a per-run temp folder, 2 s job intervals; E2E-only env overrides). Tests seed their data through the admin API (`frontend/e2e/world.ts`).
+- `tools/ui-qa.sh` — browser QA sweep on a fresh E2E database: every screen in light/dark, phone and desktop, into `tmp/ui-qa/` (contact sheets + `problems.txt` for overflow/console errors); stops and restarts the dev services.
 - `tools/gen-api-types.sh` — regenerate OpenAPI JSON and `schema.d.ts` after API contract changes.
 - `tools/build.sh` — lint + tests, then Release build + frontend build with chunk sizes.
 - `tools/docker-build.sh` — build `tgysm-api`/`tgysm-worker` images (tags: Git short hash, `latest`).
