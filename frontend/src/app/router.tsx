@@ -24,6 +24,21 @@ const appRoutes: RouteObject[] = [
     ),
     children: [
       {
+        // Outside the app shell: the page holds only the labels, so the print shows nothing else.
+        element: (
+          <RequireRole roles={IT_STAFF_OR_ADMIN}>
+            <Outlet />
+          </RequireRole>
+        ),
+        children: [
+          {
+            id: 'assetLabels',
+            path: ROUTES.assetLabels,
+            lazy: async () => ({ Component: (await import('../features/assets/labels/AssetLabelsPrintPage')).AssetLabelsPrintPage }),
+          },
+        ],
+      },
+      {
         element: <AppLayout />,
         children: [
           { id: 'home', index: true, lazy: async () => ({ Component: (await import('../features/home/HomePage')).HomePage }) },

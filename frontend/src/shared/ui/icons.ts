@@ -2,7 +2,7 @@
 import type { IconName, IconType } from '@astryxdesign/core/Icon';
 import {
   ArrowLeft, Bell, BookOpen, Building2, ChartPie, ClipboardList, Contrast, Download, Gauge, History, House, Inbox, Laptop, List,
-  Lock, Mail, MailOpen, MapPin, Monitor, MonitorSmartphone, Moon, NotebookText, Pause, Pencil, Plus, Settings, Sun, Tag, Tags, User,
+  Lock, Mail, MailOpen, MapPin, Monitor, MonitorSmartphone, Moon, NotebookText, Pause, Pencil, Plus, Printer, Settings, Sun, Tag, Tags, User,
   Users, UsersRound,
 } from 'lucide-react';
 
@@ -38,6 +38,7 @@ export const Icons = {
   notes: NotebookText,
   pause: Pause,
   pencil: Pencil,
+  printer: Printer,
   people: UsersRound,
   plus: Plus,
   screenDesktop: Monitor,

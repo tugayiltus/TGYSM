@@ -14,7 +14,7 @@ import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 
 import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
 import { useDebouncedValue } from '../../shared/lib/useDebouncedValue';
@@ -32,6 +32,7 @@ import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 import { ASSET_STATUSES, ASSET_TYPES, useAssets, type AssetItem } from './api';
 import { AssetFormDialog } from './AssetFormDialog';
 import { AssetStatusBadge } from './AssetStatusBadge';
+import type { LabelPrintState } from './labels/AssetLabelsPrintPage';
 
 const PAGE_SIZE = 20;
 const SKELETON_ROWS = 5;
@@ -59,6 +60,8 @@ export function AssetsPage() {
   const status = pick(ASSET_STATUSES, list.filters.status);
   const search = useDebouncedValue(list.search, SEARCH_DEBOUNCE_MS);
   const [creating, setCreating] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const navigate = useNavigate();
   const assets = useAssets({ search, type, status, page: list.page, pageSize: PAGE_SIZE });
 
   const device = (a: AssetItem) => `${t(`types.${a.type}`)}${META_SEPARATOR}${a.brand} ${a.model}`;
@@ -90,6 +93,10 @@ export function AssetsPage() {
   );
 
   const option = (value: string | undefined) => value ?? '';
+  const items = assets.data?.items ?? [];
+  // Labels print in list order; only rows on the current page count.
+  const selectedIds = items.filter((a) => selected.has(a.id)).map((a) => a.id);
+  const printSelected = () => void navigate(ROUTES.assetLabels, { state: { ids: selectedIds } satisfies LabelPrintState });
   return (
     <VStack gap={4}>
       <PageHeader
@@ -128,12 +135,28 @@ export function AssetsPage() {
           </>
         }
       />
+      <HStack hAlign="end">
+        <Button
+          label={t('labels.printSelected')}
+          variant="secondary"
+          icon={<Icon icon={Icons.printer} />}
+          isDisabled={selectedIds.length === 0}
+          onClick={printSelected}
+        />
+      </HStack>
       <Card padding={0}>
         {assets.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {assets.isError && <ErrorState error={assets.error} onRetry={() => void assets.refetch()} />}
         {assets.data && assets.data.items.length === 0 && <EmptyState />}
         {assets.data && assets.data.items.length > 0 && (
-          <DataList items={assets.data.items} columns={columns} getKey={(a) => a.id} renderCard={renderCard} caption={t('list.caption')} />
+          <DataList
+            items={assets.data.items}
+            columns={columns}
+            getKey={(a) => a.id}
+            renderCard={renderCard}
+            caption={t('list.caption')}
+            selection={{ selected, onChange: setSelected, rowLabel: (a) => a.assetTag }}
+          />
         )}
       </Card>
       {assets.data && assets.data.items.length > 0 && <Pagination page={assets.data.page} pageSize={assets.data.pageSize} totalItems={assets.data.totalCount} onChange={list.setPage} />}

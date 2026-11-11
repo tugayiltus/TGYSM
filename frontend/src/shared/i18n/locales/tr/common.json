@@ -55,6 +55,9 @@
   "toast": {
     "label": "Bildirimler"
   },
+  "list": {
+    "selectRow": "{{label}} öğesini seç"
+  },
   "filters": {
     "button": "Filtreler ({{count}})",
     "more": "Diğer filtreler",
@@ -91,6 +94,7 @@
     "myAssets": "Zimmetlerim",
     "assets": "Envanter",
     "assetImport": "İçe aktar",
+    "assetLabels": "Etiketler",
     "assetDetail": "Cihaz",
     "reports": "Raporlar",
     "report": "Rapor",

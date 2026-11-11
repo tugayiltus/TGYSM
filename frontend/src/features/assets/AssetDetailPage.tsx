@@ -30,6 +30,7 @@ import { OPERATIONS_BY_STATUS, useAsset, useAssetHistory, type AssetItem, type A
 import { AssetFormDialog } from './AssetFormDialog';
 import { AssetOperationDialog } from './AssetOperationDialog';
 import { AssetStatusBadge } from './AssetStatusBadge';
+import { AssetQrCard } from './labels/AssetQrCard';
 
 const SKELETON_ROWS = 5;
 const META_SEPARATOR = ' · ';
@@ -117,6 +118,7 @@ export function AssetDetailPage() {
   const operations = OPERATIONS_BY_STATUS[item.status];
 
   const side = (
+    <VStack gap={4}>
     <SectionCard title={t('detail.operations')}>
       {operations.length === 0 ? (
         <Text type="supporting">{t('detail.noOperations')}</Text>
@@ -128,6 +130,8 @@ export function AssetDetailPage() {
         </HStack>
       )}
     </SectionCard>
+    <AssetQrCard assetId={item.id} assetTag={item.assetTag} />
+    </VStack>
   );
   const main = (
     <VStack gap={4}>

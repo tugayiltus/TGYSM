@@ -8,6 +8,8 @@ export const ROUTES = {
   profile: '/profile',
   assets: '/assets',
   assetImport: '/assets/import',
+  assetLabels: '/assets/labels',
+  scanAsset: '/scan/asset/:id',
   myAssets: '/assets/mine',
   tickets: '/tickets',
   newIncident: '/tickets/new/incident',
@@ -37,6 +39,8 @@ export const ROUTES = {
 } as const;
 
 export const assetPath = (id: string) => `${ROUTES.assets}/${id}`;
+/** Print view of one asset's label; a bulk print passes its ids in navigation state (a long list does not fit a URL). */
+export const assetLabelsPath = (id: string) => `${ROUTES.assetLabels}?${new URLSearchParams({ ids: id }).toString()}`;
 
 export const ticketPath = (number: string) => `${ROUTES.tickets}/${number}`;
 

@@ -76,6 +76,14 @@
     "selectBrand": "Marka seçin",
     "searchBrand": "Marka ara"
   },
+  "labels": {
+    "card": "QR kod",
+    "download": "İndir",
+    "print": "Etiketi yazdır",
+    "printSelected": "Seçili cihazların etiketlerini yazdır",
+    "image": "{{tag}} etiketi",
+    "none": "Yazdırılacak cihaz seçilmedi."
+  },
   "detail": {
     "facts": "Cihaz bilgileri",
     "back": "Envantere dön",

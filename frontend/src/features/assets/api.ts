@@ -22,6 +22,7 @@ export const assetKeys = {
   detail: (id: string) => ['assets', 'detail', id],
   history: (id: string) => ['assets', 'history', id],
   mine: ['assets', 'mine'],
+  labels: (ids: readonly string[]) => ['assets', 'labels', ...ids],
   reference: ['reference'],
 } as const;
 
@@ -170,5 +171,14 @@ export function useCommitImport() {
   return useMutation({
     mutationFn: (jobId: string) => unwrap(api.POST('/api/v1/assets/import/{jobId}/commit', { params: { path: { jobId } } })),
     onSuccess: invalidate,
+  });
+}
+
+/** Label data and the company address for the given assets, in the order asked for (ADR-0028). */
+export function useAssetLabels(ids: readonly string[]) {
+  return useQuery({
+    queryKey: assetKeys.labels(ids),
+    queryFn: () => unwrap(api.POST('/api/v1/assets/labels', { body: { ids: [...ids] } })),
+    enabled: ids.length > 0,
   });
 }
