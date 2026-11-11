@@ -33,6 +33,17 @@ test('reports: the filters use the card width and stay within two rows on wide s
   }
 });
 
+test('reports: phones reach every report from one selector without sideways scrolling', async ({ browser }, info) => {
+  test.skip(info.project.name !== 'mobile-360', 'Wide screens show the report links in a row.');
+  const admin = await adminSession(browser);
+  await admin.page.goto('/reports/incidents');
+  await expect(admin.page.getByRole('combobox', { name: 'Rapor türü' })).toBeVisible();
+  await expectNoHorizontalScroll(admin.page);
+  await chooseOption(admin.page, 'Rapor türü', 'Garanti');
+  await expect(admin.page).toHaveURL(/\/reports\/warranty/);
+  await expectNoHorizontalScroll(admin.page);
+});
+
 test('reports: admin drills into an incident figure, exports it and downloads a background export', async ({ browser }, testInfo) => {
   test.setTimeout(REPORTS_TEST_TIMEOUT_MS);
   const admin = await adminSession(browser);

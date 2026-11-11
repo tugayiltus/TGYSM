@@ -5,6 +5,7 @@
   "page": {
     "title": "Raporlar",
     "tabs": "Rapor türleri",
+    "reportType": "Rapor türü",
     "myExports": "Dışa aktarımlarım",
     "unknown": "Böyle bir rapor yok.",
     "empty": "Bu rapor için gösterilecek sonuç yok.",

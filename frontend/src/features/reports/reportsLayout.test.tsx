@@ -115,6 +115,32 @@ describe('report filter layout', () => {
   });
 });
 
+describe('report navigation', () => {
+  it('lets phones pick the report from one selector and keeps only the filters the target understands', async () => {
+    stubPhoneViewport();
+    mockApi({ ...routes(), 'GET /api/v1/reports/requests': { status: 200, body: reportResult('requests', []) } });
+    const { user, router } = renderRoute('/reports/operations?kind=incident&priority=p1');
+    const selector = await screen.findByRole('combobox', { name: 'Rapor türü' });
+    expect(screen.queryByRole('navigation', { name: 'Rapor türleri' })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('tab')).toHaveLength(0);
+    expect(selector).toHaveTextContent('Operasyon');
+    await chooseOption(user, 'Rapor türü', 'Talepler');
+    await waitFor(() => expect(router.state.location.pathname).toBe('/reports/requests'));
+    expect(router.state.location.search).toBe('?priority=p1');
+  });
+
+  it('marks wide-screen report links as navigation with the current page, and no tab lacks its panel', async () => {
+    mockApi(routes());
+    renderRoute('/reports/incidents');
+    const nav = await screen.findByRole('navigation', { name: 'Rapor türleri' });
+    expect(within(nav).getByRole('link', { name: 'Olaylar' })).toHaveAttribute('aria-current');
+    for (const tab of document.querySelectorAll('[role="tab"]')) {
+      const controls = tab.getAttribute('aria-controls');
+      expect(controls !== null && document.getElementById(controls) !== null).toBe(true);
+    }
+  });
+});
+
 describe('charts', () => {
   it('uses Chart.js through react-chartjs-2; Recharts and the CoreUI chart wrapper are gone', () => {
     const dependencies: Record<string, string> = { ...packageJson.dependencies };

@@ -8,11 +8,12 @@ import { Button } from '@astryxdesign/core/Button';
 import { Grid } from '@astryxdesign/core/Grid';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
+import { Selector } from '@astryxdesign/core/Selector';
 import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useParams, useSearchParams } from 'react-router';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
 import { ListToolbar } from '../../shared/list/ListToolbar';
@@ -44,6 +45,18 @@ function tabHref(target: ReportName, params: URLSearchParams): string {
 function ReportTabs({ current }: { current: string }) {
   const { t } = useTranslation('reports');
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  // Six link tabs do not fit a phone row (part of it scrolled sideways); one selector reaches every report.
+  if (useIsPhone()) {
+    return (
+      <Selector
+        label={t('page.reportType')}
+        options={REPORT_NAMES.map((name) => ({ value: name, label: t(`tabs.${name}`) }))}
+        value={current}
+        onChange={(value) => isReportName(value) && void navigate(tabHref(value, params))}
+      />
+    );
+  }
   return (
     // Link tabs: Astryx renders them as a navigation landmark and marks the current one.
     <TabList aria-label={t('page.tabs')} value={current} onChange={() => undefined} hasDivider>
