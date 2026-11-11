@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, EMPLOYEE_ME, mockApi, type MockRoutes } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
+import { chooseOption } from '../../../test/select';
 
 const USER = {
   id: 'u-1',
@@ -229,8 +230,8 @@ describe('UsersPage', () => {
     });
     const { user } = renderRoute('/admin/users');
 
-    await user.selectOptions(await screen.findByLabelText('Durum'), 'active');
-    await user.click(await screen.findByRole('button', { name: 'Sonraki' }));
+    await chooseOption(user, 'Durum', 'Aktif');
+    await user.click(await screen.findByRole('button', { name: 'Sonraki sayfaya git' }));
     await user.click((await screen.findAllByRole('button', { name: /^Pasifleştir Son Kişi/ }))[0]!);
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Onayla' }));
 

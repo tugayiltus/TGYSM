@@ -1,35 +1,50 @@
+/**
+ * @input Nothing; search, status, role and page come from the URL query.
+ * @output The user list with create, edit, (de)activate and password reset; a credential notice after create or reset.
+ * @position `/admin/users`, inside the admin shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ConfirmDialog } from '../../../shared/feedback/ConfirmDialog';
+import { EmptyState, ErrorState, LoadingState } from '../../../shared/feedback/States';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { DataList, type DataColumn } from '../../../shared/list/DataList';
+import { ListToolbar } from '../../../shared/list/ListToolbar';
+import { useListParams } from '../../../shared/list/useListParams';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
-import { Button } from '../../../shared/ui/Button';
-import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
-import { DataCard } from '../../../shared/ui/DataCard';
-import { cilPlus, cilSearch } from '../../../shared/ui/icons';
-import { Pagination } from '../../../shared/ui/Pagination';
+import { ActiveToken } from '../../../shared/page/ActiveToken';
+import { RecordActions } from '../../../shared/page/RecordActions';
+import { Icons } from '../../../shared/ui/icons';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
-import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
-import { StatusBadge } from '../../../shared/ui/StatusBadge';
-import { TemporaryPasswordDialog } from '../../../shared/ui/TemporaryPasswordDialog';
-import { TextField } from '../../../shared/ui/TextField';
 
 import { useResetUserPassword, useSetUserActive, useUsers, type CredentialDelivery, type UserListItem, type UserRole } from './api';
 import { LinkSentDialog, ResetPasswordDialog } from './CredentialNoticeDialogs';
+import { TemporaryPasswordDialog } from './TemporaryPasswordDialog';
 import { UserFormDialog } from './UserFormDialog';
 import { USER_ROLES } from './userSchema';
 
 const PAGE_SIZE = 20;
 const FIRST_PAGE = 1;
+const SKELETON_ROWS = 5;
 const SEARCH_DEBOUNCE_MS = 300;
-const ALL_ROLES = '';
+const FILTER_KEYS = ['status', 'role'] as const;
+const META_SEPARATOR = ' · ';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
-const STATUS_FILTERS: readonly StatusFilter[] = ['all', 'active', 'inactive'];
-const STATUS_TO_IS_ACTIVE: Record<StatusFilter, boolean | undefined> = { all: undefined, active: true, inactive: false };
+type StatusFilter = 'active' | 'inactive';
+const STATUS_FILTERS: readonly StatusFilter[] = ['active', 'inactive'];
+const STATUS_TO_IS_ACTIVE: Record<StatusFilter, boolean> = { active: true, inactive: false };
+
+const pick = <T extends string>(allowed: readonly T[], value: string): T | undefined => allowed.find((item) => item === value);
 
 type PendingAction = { kind: 'deactivate' | 'reactivate' | 'reset'; user: UserListItem };
 type CredentialNotice = { kind: 'password'; password: string } | { kind: 'link'; email: string };
@@ -37,45 +52,42 @@ type FormState = { mode: 'create' } | { mode: 'edit'; user: UserListItem } | nul
 
 const fullName = (user: UserListItem) => `${user.firstName} ${user.lastName}`;
 
-interface UserActionsProps {
-  user: UserListItem;
-  onEdit: (user: UserListItem) => void;
-  onAction: (action: PendingAction) => void;
-}
-
-function UserActions({ user, onEdit, onAction }: UserActionsProps) {
+function UserActions({ user, onEdit, onAction }: { user: UserListItem; onEdit: (user: UserListItem) => void; onAction: (action: PendingAction) => void }) {
   const { t } = useTranslation('admin');
-  const { t: tc } = useTranslation();
   return (
-    <div className="d-flex flex-wrap gap-2">
-      <Button aria-label={recordActionLabel(tc('actions.edit'), fullName(user))} variant="secondary" onClick={() => onEdit(user)}>
-        {tc('actions.edit')}
-      </Button>
-      <Button aria-label={recordActionLabel(user.isActive ? tc('actions.deactivate') : tc('actions.reactivate'), fullName(user))} variant="secondary" onClick={() => onAction({ kind: user.isActive ? 'deactivate' : 'reactivate', user })}>
-        {user.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}
-      </Button>
-      <Button aria-label={recordActionLabel(t('users.resetPassword'), fullName(user))} variant="ghost" onClick={() => onAction({ kind: 'reset', user })}>
-        {t('users.resetPassword')}
-      </Button>
-    </div>
+    <RecordActions
+      name={fullName(user)}
+      isActive={user.isActive}
+      onEdit={() => onEdit(user)}
+      onToggle={() => onAction({ kind: user.isActive ? 'deactivate' : 'reactivate', user })}
+      extra={
+        <Button
+          label={t('users.resetPassword')}
+          aria-label={recordActionLabel(t('users.resetPassword'), fullName(user))}
+          size="sm"
+          variant="ghost"
+          onClick={() => onAction({ kind: 'reset', user })}
+        />
+      }
+    />
   );
 }
 
 export function UsersPage() {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
-  const [role, setRole] = useState<UserRole | typeof ALL_ROLES>(ALL_ROLES);
-  const [page, setPage] = useState(FIRST_PAGE);
+  const list = useListParams(FILTER_KEYS);
+  const status = pick(STATUS_FILTERS, list.filters.status);
+  const role: UserRole | undefined = pick(USER_ROLES, list.filters.role);
+  const page = list.page;
   const [form, setForm] = useState<FormState>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [notice, setNotice] = useState<CredentialNotice | null>(null);
-  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+  const debouncedSearch = useDebouncedValue(list.search, SEARCH_DEBOUNCE_MS);
   const users = useUsers({
     search: debouncedSearch,
-    isActive: STATUS_TO_IS_ACTIVE[status],
-    role: role === ALL_ROLES ? undefined : role,
+    isActive: status === undefined ? undefined : STATUS_TO_IS_ACTIVE[status],
+    role,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -113,7 +125,7 @@ export function UsersPage() {
           setPending(null);
           // The row leaves the filtered list; do not strand the admin on an empty page.
           if (leavesFilter && wasLastOnPage) {
-            setPage(page - 1);
+            list.setPage(page - 1);
           }
         },
       },
@@ -125,79 +137,73 @@ export function UsersPage() {
     reactivate: { message: t('users.confirmReactivate', { name: fullName(pending.user) }), label: tc('actions.reactivate') },
   }[pending.kind];
 
-  const columns: Column<UserListItem>[] = [
-    { key: 'name', header: t('users.columns.name'), renderCell: (user) => <span className="fw-medium">{fullName(user)}</span> },
-    { key: 'email', header: t('users.columns.email'), renderCell: (user) => <span className="text-break">{user.email}</span> },
+  const columns: DataColumn<UserListItem>[] = [
+    { key: 'name', header: t('users.columns.name'), renderCell: (user) => <Text type="label">{fullName(user)}</Text> },
+    { key: 'email', header: t('users.columns.email'), renderCell: (user) => <Text wordBreak="break-word">{user.email}</Text> },
     { key: 'role', header: t('users.columns.role'), renderCell: (user) => tc(`roles.${user.role}`) },
     { key: 'department', header: t('users.columns.department'), renderCell: (user) => user.departmentName ?? tc('none') },
-    { key: 'status', header: t('users.columns.status'), renderCell: (user) => <StatusBadge isActive={user.isActive} /> },
+    { key: 'status', header: t('users.columns.status'), renderCell: (user) => <ActiveToken isActive={user.isActive} /> },
     { key: 'actions', header: t('users.columns.actions'), renderCell: (user) => <UserActions user={user} onEdit={editUser} onAction={openAction} /> },
   ];
 
   const renderCard = (user: UserListItem) => (
-    <div className="d-flex flex-column gap-2">
-      <div className="d-flex align-items-start justify-content-between gap-2">
-        <div className="min-w-0">
-          <p className="mb-0 fw-medium">{fullName(user)}</p>
-          <p className="mb-0 small text-break text-body-secondary">{user.email}</p>
-        </div>
-        <StatusBadge isActive={user.isActive} />
-      </div>
-      <p className="mb-0 small">
-        {tc(`roles.${user.role}`)} · {user.departmentName ?? tc('none')}
-      </p>
+    <VStack gap={2}>
+      <HStack gap={2} hAlign="between" vAlign="start">
+        <VStack gap={0}>
+          <Text type="label">{fullName(user)}</Text>
+          <Text type="supporting" wordBreak="break-word">
+            {user.email}
+          </Text>
+        </VStack>
+        <ActiveToken isActive={user.isActive} />
+      </HStack>
+      <Text type="supporting">{`${tc(`roles.${user.role}`)}${META_SEPARATOR}${user.departmentName ?? tc('none')}`}</Text>
       <UserActions user={user} onEdit={editUser} onAction={openAction} />
-    </div>
+    </VStack>
   );
 
   return (
-    <section>
-      <PageHeader icon={ROUTE_META.adminUsers.icon} titleOverride={t('users.title')} actions={<Button icon={cilPlus} onClick={() => setForm({ mode: 'create' })}>{t('users.new')}</Button>} />
-      <DataCard
+    <VStack gap={4}>
+      <PageHeader
+        icon={ROUTE_META.adminUsers.icon}
+        titleOverride={t('users.title')}
+        actions={<Button label={t('users.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setForm({ mode: 'create' })} />}
+      />
+      <ListToolbar
+        title={t('users.title')}
+        search={list.search}
+        searchLabel={t('users.searchLabel')}
+        onSearchChange={list.setSearch}
+        activeCount={list.activeCount}
+        onClear={list.clear}
         filters={
           <>
-            <div className="tgysm-grid tgysm-grid-3">
-              <TextField
-                type="search"
-                startIcon={cilSearch}
-                label={t('users.searchLabel')}
-                placeholder={t('users.searchPlaceholder')}
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(FIRST_PAGE);
-                }}
-              />
-              <SelectField
-                label={t('users.statusFilter')}
-                value={status}
-                options={STATUS_FILTERS.map((value) => ({ value, label: tc(`status.${value}`) }))}
-                onChange={(event) => {
-                  setStatus(event.target.value as StatusFilter);
-                  setPage(FIRST_PAGE);
-                }}
-              />
-              <SelectField
-                label={t('users.roleFilter')}
-                value={role}
-                options={[{ value: ALL_ROLES, label: tc('roles.all') }, ...USER_ROLES.map((value) => ({ value, label: tc(`roles.${value}`) }))]}
-                onChange={(event) => {
-                  setRole(event.target.value as UserRole | typeof ALL_ROLES);
-                  setPage(FIRST_PAGE);
-                }}
-              />
-            </div>
+            <Selector
+              label={t('users.statusFilter')}
+              placeholder={tc('status.all')}
+              value={status ?? ''}
+              options={STATUS_FILTERS.map((value) => ({ value, label: tc(`status.${value}`) }))}
+              onChange={(value) => list.setFilter('status', value)}
+            />
+            <Selector
+              label={t('users.roleFilter')}
+              placeholder={tc('roles.all')}
+              value={role ?? ''}
+              options={USER_ROLES.map((value) => ({ value, label: tc(`roles.${value}`) }))}
+              onChange={(value) => list.setFilter('role', value)}
+            />
           </>
         }
-        footer={users.data && users.data.items.length > 0 ? <Pagination page={users.data.page} pageSize={users.data.pageSize} totalCount={users.data.totalCount} onPageChange={setPage} /> : undefined}
-      >
-        {users.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+      />
+      <Card padding={0}>
+        {users.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {users.isError && <ErrorState error={users.error} onRetry={() => void users.refetch()} />}
         {users.data && users.data.items.length === 0 && <EmptyState />}
         {users.data && users.data.items.length > 0 && (
-          <ResponsiveList items={users.data.items} columns={columns} getKey={(user) => user.id} renderCard={renderCard} caption={t('users.listCaption')} />
+          <DataList items={users.data.items} columns={columns} getKey={(user) => user.id} renderCard={renderCard} caption={t('users.listCaption')} />
         )}
-      </DataCard>
+      </Card>
+      {users.data && users.data.items.length > 0 && <Pagination page={users.data.page} pageSize={users.data.pageSize} totalItems={users.data.totalCount} onChange={list.setPage} />}
 
       {form !== null && (
         <UserFormDialog
@@ -227,6 +233,6 @@ export function UsersPage() {
       )}
       {notice?.kind === 'password' && <TemporaryPasswordDialog password={notice.password} onClose={() => setNotice(null)} />}
       {notice?.kind === 'link' && <LinkSentDialog email={notice.email} onClose={() => setNotice(null)} />}
-    </section>
+    </VStack>
   );
 }

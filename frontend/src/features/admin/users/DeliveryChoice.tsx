@@ -1,7 +1,10 @@
-import { useId } from 'react';
+/**
+ * @input The chosen delivery and a change callback.
+ * @output Radio choices: emailed set-password link (default) or a temporary password shown once.
+ * @position User create form and the password reset dialog.
+ */
+import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList';
 import { useTranslation } from 'react-i18next';
-
-import { CheckField } from '../../../shared/ui/CheckField';
 
 import type { CredentialDelivery } from './api';
 
@@ -12,21 +15,20 @@ const DELIVERY_LABEL_KEY = {
   temporary_password: 'users.delivery.temporaryPassword',
 } as const satisfies Record<CredentialDelivery, string>;
 
+const isDelivery = (value: string): value is CredentialDelivery => (DELIVERIES as readonly string[]).includes(value);
+
 export interface DeliveryChoiceProps {
   value: CredentialDelivery;
   onChange: (value: CredentialDelivery) => void;
 }
 
-/** How the user gets their first password: emailed set-password link (default) or a temporary password shown once. */
 export function DeliveryChoice({ value, onChange }: DeliveryChoiceProps) {
   const { t } = useTranslation('admin');
-  const name = useId();
   return (
-    <fieldset className="d-flex flex-column">
-      <legend className="form-label fw-medium small mb-1">{t('users.delivery.label')}</legend>
+    <RadioList label={t('users.delivery.label')} value={value} onChange={(next) => isDelivery(next) && onChange(next)}>
       {DELIVERIES.map((delivery) => (
-        <CheckField key={delivery} type="radio" name={name} value={delivery} label={t(DELIVERY_LABEL_KEY[delivery])} checked={value === delivery} onChange={() => onChange(delivery)} />
+        <RadioListItem key={delivery} value={delivery} label={t(DELIVERY_LABEL_KEY[delivery])} />
       ))}
-    </fieldset>
+    </RadioList>
   );
 }

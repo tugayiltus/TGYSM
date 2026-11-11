@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { expectNoHorizontalScroll, login } from './helpers';
+import { chooseOption, expectNoHorizontalScroll, login } from './helpers';
 import { adminSession, waitForEmail } from './world';
 
 const NEW_PASSWORD = 'Link-set-pass-2026';
@@ -16,7 +16,7 @@ test('admin creates a user with an emailed link; the activation email lets them 
   await form.getByLabel('Ad', { exact: true }).fill('Selin');
   await form.getByLabel('Soyad').fill('Arslan');
   await form.getByLabel('E-posta', { exact: true }).fill(email);
-  await form.getByLabel('Rol').selectOption({ label: 'IT personeli' });
+  await chooseOption(form, 'Rol', 'IT personeli');
   await expect(form.getByRole('radio', { name: 'E-posta ile bağlantı gönder' })).toBeChecked();
   await form.getByRole('button', { name: 'Oluştur' }).click();
   await expect(admin.page.getByRole('heading', { name: 'Bağlantı gönderildi' })).toBeVisible();
