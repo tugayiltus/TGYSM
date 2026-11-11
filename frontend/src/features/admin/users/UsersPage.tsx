@@ -158,7 +158,7 @@ export function UsersPage() {
             </Text>
           </VStack>
         </StackItem>
-        <ActiveToken isActive={user.isActive} />
+        <StackItem><ActiveToken isActive={user.isActive} /></StackItem>
       </HStack>
       <Text type="supporting">{`${tc(`roles.${user.role}`)}${META_SEPARATOR}${user.departmentName ?? tc('none')}`}</Text>
       <UserActions user={user} onEdit={editUser} onAction={openAction} />

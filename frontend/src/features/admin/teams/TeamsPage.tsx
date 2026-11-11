@@ -96,7 +96,7 @@ export function TeamsPage() {
             <Text type="supporting">{t('teams.memberCount', { count: team.memberCount })}</Text>
           </VStack>
         </StackItem>
-        <TeamTokens team={team} />
+        <StackItem><TeamTokens team={team} /></StackItem>
       </HStack>
       {actions(team)}
     </VStack>

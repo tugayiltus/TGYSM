@@ -160,7 +160,7 @@ export function CategoriesPage() {
             <Text type="supporting">{t(`categories.scopes.${r.item.scope}`)}</Text>
           </VStack>
         </StackItem>
-        <ActiveToken isActive={r.isActive} />
+        <StackItem><ActiveToken isActive={r.isActive} /></StackItem>
       </HStack>
       {actions(r)}
     </VStack>

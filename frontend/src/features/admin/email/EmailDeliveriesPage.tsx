@@ -109,7 +109,7 @@ export function EmailDeliveriesPage() {
             {delivery.recipientEmail}
           </Text>
         </StackItem>
-        <DeliveryStatusToken status={delivery.status} />
+        <StackItem><DeliveryStatusToken status={delivery.status} /></StackItem>
       </HStack>
       <VStack gap={0}>
         <Text type="body">{`${eventLabel(delivery.eventType)}${META_SEPARATOR}${delivery.subject}`}</Text>

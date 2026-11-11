@@ -98,7 +98,7 @@ export function BrandsPage() {
             {b.name}
           </Text>
         </StackItem>
-        <ActiveToken isActive={b.isActive} />
+        <StackItem><ActiveToken isActive={b.isActive} /></StackItem>
       </HStack>
       {actions(b)}
     </VStack>

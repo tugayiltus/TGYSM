@@ -83,7 +83,7 @@ export function AssetsPage() {
             <Text type="supporting">{a.assignedUserName ?? a.locationName}</Text>
           </VStack>
         </StackItem>
-        <AssetStatusBadge status={a.status} />
+        <StackItem><AssetStatusBadge status={a.status} /></StackItem>
       </HStack>
       <OpenLink asset={a} />
     </VStack>

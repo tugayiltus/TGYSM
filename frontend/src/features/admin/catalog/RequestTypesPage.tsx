@@ -130,7 +130,7 @@ export function RequestTypesPage() {
             <Text type="supporting">{approvalText(r)}</Text>
           </VStack>
         </StackItem>
-        <ActiveToken isActive={r.isActive} />
+        <StackItem><ActiveToken isActive={r.isActive} /></StackItem>
       </HStack>
       {actions(r)}
     </VStack>

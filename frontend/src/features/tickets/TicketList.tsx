@@ -80,7 +80,7 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
             </Text>
           </VStack>
         </StackItem>
-        <TicketStatusBadge status={x.status} />
+        <StackItem><TicketStatusBadge status={x.status} /></StackItem>
       </HStack>
       {showWorkColumns && (
         <HStack gap={2} vAlign="center" wrap="wrap">

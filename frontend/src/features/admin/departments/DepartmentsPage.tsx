@@ -74,7 +74,7 @@ export function DepartmentsPage() {
             <Text type="supporting">{d.approverName ?? tc('none')}</Text>
           </VStack>
         </StackItem>
-        <ActiveToken isActive={d.isActive} />
+        <StackItem><ActiveToken isActive={d.isActive} /></StackItem>
       </HStack>
       {actions(d)}
     </VStack>

@@ -58,11 +58,13 @@ export function ListToolbar({ title, search, searchLabel, onSearchChange, filter
       </HStack>
     );
   }
-  // The search box takes the free width, so the "Filtreler (n)" button keeps its full label.
+  // The search box takes the free width; the "Filtreler (n)" button keeps its full label and never shrinks.
   return (
     <HStack gap={2} vAlign="end">
       {searchBox && <StackItem size="fill">{searchBox}</StackItem>}
-      <Button label={t('filters.button', { count: activeCount })} variant="secondary" icon={<Icon icon="funnel" />} onClick={() => setDrawerOpen(true)} />
+      <StackItem>
+        <Button label={t('filters.button', { count: activeCount })} variant="secondary" icon={<Icon icon="funnel" />} onClick={() => setDrawerOpen(true)} />
+      </StackItem>
       <Drawer label={title} isOpen={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerHeader title={title} onOpenChange={setDrawerOpen} />
         <VStack gap={4} padding={4}>

@@ -146,7 +146,7 @@ export function ModelsPage() {
             <Text type="supporting">{ta(`types.${m.type}`)}</Text>
           </VStack>
         </StackItem>
-        <ActiveToken isActive={m.isActive} />
+        <StackItem><ActiveToken isActive={m.isActive} /></StackItem>
       </HStack>
       {actions(m)}
     </VStack>
