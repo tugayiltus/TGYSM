@@ -28,9 +28,9 @@ describe('SlaCalendarPage', () => {
     setup();
     renderRoute('/admin/sla/calendar');
 
-    expect(await screen.findByLabelText('Saat dilimi')).toHaveValue('Europe/Istanbul');
+    expect(await screen.findByLabelText(/^Saat dilimi/)).toHaveValue('Europe/Istanbul');
     expect(screen.getByLabelText('Pazartesi Başlangıç')).toHaveValue('09:00');
-    expect(screen.getByLabelText('Cumartesi Başlangıç')).toBeDisabled();
+    expect(screen.getByLabelText('Cumartesi Başlangıç')).toHaveAttribute('aria-disabled', 'true');
     expect((await screen.findAllByText('Cumhuriyet Bayramı')).length).toBeGreaterThan(0);
   });
 
@@ -51,7 +51,7 @@ describe('SlaCalendarPage', () => {
     setup();
     const { user } = renderRoute('/admin/sla/calendar');
 
-    await screen.findByLabelText('Saat dilimi');
+    await screen.findByLabelText(/^Saat dilimi/);
     for (const day of ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma']) {
       await user.click(screen.getByRole('switch', { name: `${day} · Çalışılıyor` }));
     }
@@ -64,10 +64,10 @@ describe('SlaCalendarPage', () => {
     setup();
     const { user } = renderRoute('/admin/sla/calendar');
 
-    await user.clear(await screen.findByLabelText('Saat dilimi'));
+    await user.clear(await screen.findByLabelText(/^Saat dilimi/));
     await user.click(screen.getByRole('button', { name: 'Takvimi kaydet' }));
 
-    expect(await screen.findByText(/zorunlu/i)).toBeInTheDocument();
+    expect(await screen.findByText('Bu alan zorunludur.')).toBeInTheDocument();
   });
 
   it('saves the calendar with its version', async () => {
@@ -97,7 +97,7 @@ describe('SlaCalendarPage', () => {
       },
     });
     const { user, queryClient } = renderRoute('/admin/sla/calendar');
-    await screen.findByLabelText('Saat dilimi');
+    await screen.findByLabelText(/^Saat dilimi/);
 
     api.set('GET /api/v1/admin/sla/calendar', { status: 200, body: { ...CALENDAR, version: 3, timeZone: 'Europe/London' } });
     await act(() => queryClient.invalidateQueries());

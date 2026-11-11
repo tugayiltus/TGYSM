@@ -1,56 +1,69 @@
-import { useState } from 'react';
+/**
+ * @input Nothing; recipient search, status, event and page come from the URL query.
+ * @output The email delivery log with a retry action for failed deliveries.
+ * @position `/admin/email-deliveries`, inside the admin shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { Token } from '@astryxdesign/core/Token';
+import { VStack } from '@astryxdesign/core/VStack';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { describeError } from '../../../shared/api/errorMessage';
+import { FormAlert } from '../../../shared/feedback/FormAlert';
+import { EmptyState, ErrorState, LoadingState } from '../../../shared/feedback/States';
 import { formatDateTime } from '../../../shared/lib/format';
 import { useDebouncedValue } from '../../../shared/lib/useDebouncedValue';
+import { DataList, type DataColumn } from '../../../shared/list/DataList';
+import { ListToolbar } from '../../../shared/list/ListToolbar';
+import { useListParams } from '../../../shared/list/useListParams';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
-import { Button } from '../../../shared/ui/Button';
-import { DataCard } from '../../../shared/ui/DataCard';
-import { FormAlert } from '../../../shared/ui/FormAlert';
-import { cilSearch } from '../../../shared/ui/icons';
-import { Pagination } from '../../../shared/ui/Pagination';
 import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
-import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
-import { TextField } from '../../../shared/ui/TextField';
 
 import { useEmailDeliveries, useRetryEmailDelivery, type DeliveryStatus, type EmailDeliveryItem } from './api';
 import { EMAIL_EVENT_TYPES, isEmailEventType } from './eventTypes';
 
 const PAGE_SIZE = 20;
-const FIRST_PAGE = 1;
+const SKELETON_ROWS = 5;
 const SEARCH_DEBOUNCE_MS = 300;
-const ALL = '';
+const STATUS_FILTER_KEY = 'status';
+const EVENT_FILTER_KEY = 'event';
+const FILTER_KEYS = [STATUS_FILTER_KEY, EVENT_FILTER_KEY] as const;
+const META_SEPARATOR = ' · ';
 const DELIVERY_STATUSES = ['pending', 'sending', 'sent', 'failed'] as const satisfies readonly DeliveryStatus[];
 const RETRYABLE_STATUS: DeliveryStatus = 'failed';
 
-const STATUS_CLASS: Record<DeliveryStatus, string> = {
-  pending: 'bg-secondary-subtle text-secondary-emphasis',
-  sending: 'bg-info-subtle text-info-emphasis',
-  sent: 'bg-success-subtle text-success-emphasis',
-  failed: 'bg-danger-subtle text-danger-emphasis',
+const STATUS_COLOR: Record<DeliveryStatus, ComponentProps<typeof Token>['color']> = {
+  pending: 'gray',
+  sending: 'blue',
+  sent: 'green',
+  failed: 'red',
 };
 
-function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
+const readStatus = (value: string): DeliveryStatus | undefined => DELIVERY_STATUSES.find((status) => status === value);
+
+function DeliveryStatusToken({ status }: { status: DeliveryStatus }) {
   const { t } = useTranslation('admin');
-  return <span className={`badge rounded-pill fw-medium ${STATUS_CLASS[status]}`}>{t(`emailDeliveries.statuses.${status}`)}</span>;
+  return <Token label={t(`emailDeliveries.statuses.${status}`)} color={STATUS_COLOR[status]} size="sm" />;
 }
 
 export function EmailDeliveriesPage() {
   const { t } = useTranslation('admin');
-  const [status, setStatus] = useState<DeliveryStatus | typeof ALL>(ALL);
-  const [eventType, setEventType] = useState(ALL);
-  const [recipient, setRecipient] = useState('');
-  const [page, setPage] = useState(FIRST_PAGE);
-  const debouncedRecipient = useDebouncedValue(recipient.trim(), SEARCH_DEBOUNCE_MS);
+  const list = useListParams(FILTER_KEYS);
+  const status = readStatus(list.filters.status);
+  const eventType = list.filters.event;
+  const recipient = useDebouncedValue(list.search.trim(), SEARCH_DEBOUNCE_MS);
   const deliveries = useEmailDeliveries({
-    status: status === ALL ? undefined : status,
-    eventType: eventType === ALL ? undefined : eventType,
-    recipient: debouncedRecipient === '' ? undefined : debouncedRecipient,
-    page,
+    status,
+    eventType: eventType === '' ? undefined : eventType,
+    recipient: recipient === '' ? undefined : recipient,
+    page: list.page,
     pageSize: PAGE_SIZE,
   });
   const retry = useRetryEmailDelivery();
@@ -59,20 +72,28 @@ export function EmailDeliveriesPage() {
   const retryButton = (delivery: EmailDeliveryItem) =>
     delivery.status === RETRYABLE_STATUS ? (
       <Button
+        label={t('emailDeliveries.retry')}
         aria-label={recordActionLabel(t('emailDeliveries.retry'), delivery.recipientEmail)}
+        size="sm"
         variant="secondary"
         isLoading={retry.isPending && retry.variables === delivery.id}
         onClick={() => retry.mutate(delivery.id)}
-      >
-        {t('emailDeliveries.retry')}
-      </Button>
+      />
     ) : null;
 
-  const columns: Column<EmailDeliveryItem>[] = [
-    { key: 'recipient', header: t('emailDeliveries.columns.recipient'), renderCell: (delivery) => <span className="text-break">{delivery.recipientEmail}</span> },
+  const columns: DataColumn<EmailDeliveryItem>[] = [
+    {
+      key: 'recipient',
+      header: t('emailDeliveries.columns.recipient'),
+      renderCell: (delivery) => (
+        <Text type="body" wordBreak="break-all">
+          {delivery.recipientEmail}
+        </Text>
+      ),
+    },
     { key: 'event', header: t('emailDeliveries.columns.event'), renderCell: (delivery) => eventLabel(delivery.eventType) },
     { key: 'subject', header: t('emailDeliveries.columns.subject'), renderCell: (delivery) => delivery.subject },
-    { key: 'status', header: t('emailDeliveries.columns.status'), renderCell: (delivery) => <DeliveryStatusBadge status={delivery.status} /> },
+    { key: 'status', header: t('emailDeliveries.columns.status'), renderCell: (delivery) => <DeliveryStatusToken status={delivery.status} /> },
     { key: 'attempts', header: t('emailDeliveries.columns.attempts'), renderCell: (delivery) => delivery.attempts },
     { key: 'error', header: t('emailDeliveries.columns.error'), renderCell: (delivery) => delivery.lastError ?? '' },
     { key: 'date', header: t('emailDeliveries.columns.date'), renderCell: (delivery) => formatDateTime(delivery.eventCreatedAt) },
@@ -80,74 +101,63 @@ export function EmailDeliveriesPage() {
   ];
 
   const renderCard = (delivery: EmailDeliveryItem) => (
-    <div className="d-flex flex-column gap-2">
-      <div className="d-flex align-items-start justify-content-between gap-2">
-        <p className="mb-0 min-w-0 fw-medium text-break">{delivery.recipientEmail}</p>
-        <DeliveryStatusBadge status={delivery.status} />
-      </div>
-      <p className="mb-0 small">
-        {eventLabel(delivery.eventType)} · {delivery.subject}
-      </p>
-      {delivery.lastError && <p className="mb-0 small text-danger">{delivery.lastError}</p>}
-      <p className="mb-0 small text-body-secondary">
-        {formatDateTime(delivery.eventCreatedAt)} · {t('emailDeliveries.columns.attempts')}: {delivery.attempts}
-      </p>
+    <VStack gap={2}>
+      <HStack gap={2} hAlign="between" vAlign="start">
+        <Text type="label" wordBreak="break-all">
+          {delivery.recipientEmail}
+        </Text>
+        <DeliveryStatusToken status={delivery.status} />
+      </HStack>
+      <VStack gap={0}>
+        <Text type="body">{`${eventLabel(delivery.eventType)}${META_SEPARATOR}${delivery.subject}`}</Text>
+        {delivery.lastError && <Text type="supporting">{`${t('emailDeliveries.columns.error')}: ${delivery.lastError}`}</Text>}
+        <Text type="supporting">{`${formatDateTime(delivery.eventCreatedAt)}${META_SEPARATOR}${t('emailDeliveries.columns.attempts')}: ${delivery.attempts}`}</Text>
+      </VStack>
       {retryButton(delivery)}
-    </div>
+    </VStack>
   );
 
-  const resetPage = () => setPage(FIRST_PAGE);
-
   return (
-    <section>
+    <VStack gap={4}>
       <PageHeader icon={ROUTE_META.adminEmailDeliveries.icon} titleOverride={t('emailDeliveries.title')} />
-      <DataCard
+      <ListToolbar
+        title={t('emailDeliveries.title')}
+        search={list.search}
+        searchLabel={t('emailDeliveries.filters.recipient')}
+        onSearchChange={list.setSearch}
+        activeCount={list.activeCount}
+        onClear={list.clear}
         filters={
           <>
-            <div className="tgysm-grid tgysm-grid-3">
-              <SelectField
-                label={t('emailDeliveries.filters.status')}
-                value={status}
-                options={DELIVERY_STATUSES.map((value) => ({ value, label: t(`emailDeliveries.statuses.${value}`) }))}
-                placeholder={t('emailDeliveries.statuses.all')}
-                onChange={(event) => {
-                  setStatus(event.target.value as DeliveryStatus | typeof ALL);
-                  resetPage();
-                }}
-              />
-              <SelectField
-                label={t('emailDeliveries.filters.event')}
-                value={eventType}
-                options={EMAIL_EVENT_TYPES.map((value) => ({ value, label: t(`emailEvents.${value}`) }))}
-                placeholder={t('emailDeliveries.allEvents')}
-                onChange={(event) => {
-                  setEventType(event.target.value);
-                  resetPage();
-                }}
-              />
-              <TextField
-                type="search"
-                startIcon={cilSearch}
-                label={t('emailDeliveries.filters.recipient')}
-                value={recipient}
-                onChange={(event) => {
-                  setRecipient(event.target.value);
-                  resetPage();
-                }}
-              />
-            </div>
+            <Selector
+              label={t('emailDeliveries.filters.status')}
+              placeholder={t('emailDeliveries.statuses.all')}
+              value={status ?? ''}
+              options={DELIVERY_STATUSES.map((value) => ({ value, label: t(`emailDeliveries.statuses.${value}`) }))}
+              onChange={(value) => list.setFilter(STATUS_FILTER_KEY, value)}
+            />
+            <Selector
+              label={t('emailDeliveries.filters.event')}
+              placeholder={t('emailDeliveries.allEvents')}
+              value={eventType}
+              options={EMAIL_EVENT_TYPES.map((value) => ({ value, label: t(`emailEvents.${value}`) }))}
+              onChange={(value) => list.setFilter(EVENT_FILTER_KEY, value)}
+            />
           </>
         }
-        footer={deliveries.data && deliveries.data.items.length > 0 ? <Pagination page={deliveries.data.page} pageSize={deliveries.data.pageSize} totalCount={deliveries.data.totalCount} onPageChange={setPage} /> : undefined}
-      >
-        <FormAlert message={retry.error ? describeError(retry.error) : null} />
-        {deliveries.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+      />
+      <FormAlert message={retry.error ? describeError(retry.error) : null} />
+      <Card padding={0}>
+        {deliveries.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {deliveries.isError && <ErrorState error={deliveries.error} onRetry={() => void deliveries.refetch()} />}
         {deliveries.data && deliveries.data.items.length === 0 && <EmptyState />}
         {deliveries.data && deliveries.data.items.length > 0 && (
-          <ResponsiveList items={deliveries.data.items} columns={columns} getKey={(delivery) => delivery.id} renderCard={renderCard} caption={t('emailDeliveries.listCaption')} />
+          <DataList items={deliveries.data.items} columns={columns} getKey={(delivery) => delivery.id} renderCard={renderCard} caption={t('emailDeliveries.listCaption')} />
         )}
-      </DataCard>
-    </section>
+      </Card>
+      {deliveries.data && deliveries.data.items.length > 0 && (
+        <Pagination page={deliveries.data.page} pageSize={deliveries.data.pageSize} totalItems={deliveries.data.totalCount} onChange={list.setPage} />
+      )}
+    </VStack>
   );
 }

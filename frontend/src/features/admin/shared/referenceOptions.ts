@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { api, unwrap } from '../../../shared/api/client';
-import type { SelectOption } from '../../../shared/ui/SelectField';
+import type { SelectOption } from '../../../shared/form/formFields';
 import { useLocations } from '../locations/api';
 import { buildLocationTree, flattenLocationTree } from '../locations/locationTree';
 import type { UserRole } from '../users/api';

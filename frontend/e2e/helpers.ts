@@ -21,7 +21,7 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&
  */
 async function openSelect(scope: Page | Locator, label: string | RegExp): Promise<Page> {
   const page = 'page' in scope ? scope.page() : scope;
-  const buttonName = typeof label === 'string' ? new RegExp(`^${escapeRegExp(label)}\\b`) : label;
+  const buttonName = typeof label === 'string' ? new RegExp(`^${escapeRegExp(label)}(?:\\s|$)`) : label;
   await scope.getByRole('combobox', { name: label }).or(scope.getByRole('button', { name: buttonName })).first().click();
   return page;
 }

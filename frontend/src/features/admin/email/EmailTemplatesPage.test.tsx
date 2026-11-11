@@ -54,7 +54,7 @@ describe('EmailTemplatesPage', () => {
 
     await user.click((await screen.findAllByRole('button', { name: /^Düzenle/ }))[0]!);
     const dialog = await screen.findByRole('dialog');
-    const subject = within(dialog).getByLabelText('Konu');
+    const subject = within(dialog).getByLabelText(/^Konu/);
     await user.clear(subject);
     await user.type(subject, 'Yeni konu');
     await user.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
@@ -77,7 +77,7 @@ describe('EmailTemplatesPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
 
     expect(await within(dialog).findByText('Bu değişken bu bildirim türü için kullanılamaz.')).toBeInTheDocument();
-    expect(within(dialog).getByLabelText('İçerik')).toHaveAttribute('aria-invalid', 'true');
+    expect(within(dialog).getByLabelText(/^İçerik/)).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('shows an unknown-variable error on the subject', async () => {

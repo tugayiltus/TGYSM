@@ -1,22 +1,35 @@
-import { useState } from 'react';
+/**
+ * @input Nothing; entity type and page come from the URL query.
+ * @output The audit event list with Turkish action names and the old and new values per event.
+ * @position `/admin/audit`, inside the admin shell.
+ */
+import { Card } from '@astryxdesign/core/Card';
+import { CodeBlock } from '@astryxdesign/core/CodeBlock';
+import { Collapsible } from '@astryxdesign/core/Collapsible';
+import { Pagination } from '@astryxdesign/core/Pagination';
+import { Selector } from '@astryxdesign/core/Selector';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { useTranslation } from 'react-i18next';
 
+import { EmptyState, ErrorState, LoadingState } from '../../../shared/feedback/States';
 import { translateOr } from '../../../shared/i18n/dynamic';
 import adminTexts from '../../../shared/i18n/locales/tr/admin.json';
 import { formatDateTime } from '../../../shared/lib/format';
+import { DataList, type DataColumn } from '../../../shared/list/DataList';
+import { ListToolbar } from '../../../shared/list/ListToolbar';
+import { useListParams } from '../../../shared/list/useListParams';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
-import { DataCard } from '../../../shared/ui/DataCard';
-import { Pagination } from '../../../shared/ui/Pagination';
-import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { SelectField } from '../../../shared/ui/SelectField';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
 
 import { useAuditEvents, type AuditEventItem } from './api';
 
 const PAGE_SIZE = 20;
-const FIRST_PAGE = 1;
-const ALL_ENTITIES = '';
+const SKELETON_ROWS = 5;
+const ENTITY_FILTER_KEY = 'entity';
+const FILTER_KEYS = [ENTITY_FILTER_KEY] as const;
+const META_SEPARATOR = ' · ';
+const CODE_MAX_HEIGHT = 240;
 const JSON_INDENT = 2;
 /** Every audited entity type: TranslationCoverageTests guarantees each backend AuditEntityTypes value has a text here. */
 const ENTITY_TYPES = Object.keys(adminTexts.entityTypes);
@@ -40,81 +53,71 @@ function AuditDetails({ event }: { event: AuditEventItem }) {
   const before = prettyJson(event.oldValues);
   const after = prettyJson(event.newValues);
   return (
-    <details className="small">
-      <summary className="link-primary">{t('audit.details')}</summary>
-      <div className="mt-2 d-flex flex-column gap-2">
-        {before && (
-          <div>
-            <p className="mb-0 fw-medium">{t('audit.before')}</p>
-            <pre className="overflow-x-auto rounded bg-body-secondary p-2 small">{before}</pre>
-          </div>
-        )}
-        {after && (
-          <div>
-            <p className="mb-0 fw-medium">{t('audit.after')}</p>
-            <pre className="overflow-x-auto rounded bg-body-secondary p-2 small">{after}</pre>
-          </div>
-        )}
-        <p className="mb-0 small text-break text-body-secondary">
-          {t('audit.correlation')}: {event.correlationId}
-        </p>
-      </div>
-    </details>
+    <Collapsible defaultIsOpen={false} trigger={<Text type="label">{t('audit.details')}</Text>}>
+      <VStack gap={2}>
+        {before && <CodeBlock title={t('audit.before')} code={before} language="json" hasLanguageLabel={false} isWrapped maxHeight={CODE_MAX_HEIGHT} />}
+        {after && <CodeBlock title={t('audit.after')} code={after} language="json" hasLanguageLabel={false} isWrapped maxHeight={CODE_MAX_HEIGHT} />}
+        <Text type="supporting" wordBreak="break-all">{`${t('audit.correlation')}: ${event.correlationId}`}</Text>
+      </VStack>
+    </Collapsible>
   );
 }
 
 export function AuditPage() {
   const { t } = useTranslation('admin');
-  const [entityType, setEntityType] = useState<string>(ALL_ENTITIES);
-  const [page, setPage] = useState(FIRST_PAGE);
-  const events = useAuditEvents({ entityType: entityType === ALL_ENTITIES ? undefined : entityType, page, pageSize: PAGE_SIZE });
+  const list = useListParams(FILTER_KEYS);
+  const entityType = list.filters.entity;
+  const events = useAuditEvents({ entityType: entityType === '' ? undefined : entityType, page: list.page, pageSize: PAGE_SIZE });
 
   const actorName = (event: AuditEventItem) => event.actorName ?? t('audit.system');
 
-  const columns: Column<AuditEventItem>[] = [
-    { key: 'time', header: t('audit.columns.time'), renderCell: (event) => <span className="text-nowrap">{formatDateTime(event.occurredAt)}</span> },
+  const columns: DataColumn<AuditEventItem>[] = [
+    { key: 'time', header: t('audit.columns.time'), renderCell: (event) => formatDateTime(event.occurredAt) },
     { key: 'actor', header: t('audit.columns.actor'), renderCell: actorName },
-    { key: 'action', header: t('audit.columns.action'), renderCell: (event) => actionLabel(event.action) },
+    { key: 'action', header: t('audit.columns.action'), renderCell: (event) => <Text type="label">{actionLabel(event.action)}</Text> },
     { key: 'entity', header: t('audit.columns.entity'), renderCell: (event) => entityLabel(event.entityType) },
     { key: 'details', header: t('audit.details'), renderCell: (event) => <AuditDetails event={event} /> },
   ];
 
   const renderCard = (event: AuditEventItem) => (
-    <div className="d-flex flex-column gap-1">
-      <p className="mb-0 fw-medium">{actionLabel(event.action)}</p>
-      <p className="mb-0 small text-body-secondary">
-        {formatDateTime(event.occurredAt)} · {actorName(event)} · {entityLabel(event.entityType)}
-      </p>
+    <VStack gap={2}>
+      <VStack gap={0}>
+        <Text type="label">{actionLabel(event.action)}</Text>
+        <Text type="supporting">{[formatDateTime(event.occurredAt), actorName(event), entityLabel(event.entityType)].join(META_SEPARATOR)}</Text>
+      </VStack>
       <AuditDetails event={event} />
-    </div>
+    </VStack>
   );
 
   return (
-    <section>
+    <VStack gap={4}>
       <PageHeader icon={ROUTE_META.adminAudit.icon} titleOverride={t('audit.title')} />
-      <DataCard
+      <ListToolbar
+        title={t('audit.title')}
+        activeCount={list.activeCount}
+        onClear={list.clear}
         filters={
-          <>
-            <SelectField
-              label={t('audit.entityFilter')}
-              value={entityType}
-              options={[{ value: ALL_ENTITIES, label: t('audit.allEntities') }, ...ENTITY_TYPES.map((type) => ({ value: type, label: entityLabel(type) }))]}
-              onChange={(event) => {
-                setEntityType(event.target.value);
-                setPage(FIRST_PAGE);
-              }}
-            />
-          </>
+          <Selector
+            label={t('audit.entityFilter')}
+            placeholder={t('audit.allEntities')}
+            hasSearch
+            value={entityType}
+            options={ENTITY_TYPES.map((type) => ({ value: type, label: entityLabel(type) }))}
+            onChange={(value) => list.setFilter(ENTITY_FILTER_KEY, value)}
+          />
         }
-        footer={events.data && events.data.items.length > 0 ? <Pagination page={events.data.page} pageSize={events.data.pageSize} totalCount={events.data.totalCount} onPageChange={setPage} /> : undefined}
-      >
-        {events.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+      />
+      <Card padding={0}>
+        {events.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {events.isError && <ErrorState error={events.error} onRetry={() => void events.refetch()} />}
         {events.data && events.data.items.length === 0 && <EmptyState />}
         {events.data && events.data.items.length > 0 && (
-          <ResponsiveList items={events.data.items} columns={columns} getKey={(event) => event.id} renderCard={renderCard} caption={t('audit.listCaption')} />
+          <DataList items={events.data.items} columns={columns} getKey={(event) => event.id} renderCard={renderCard} caption={t('audit.listCaption')} />
         )}
-      </DataCard>
-    </section>
+      </Card>
+      {events.data && events.data.items.length > 0 && (
+        <Pagination page={events.data.page} pageSize={events.data.pageSize} totalItems={events.data.totalCount} onChange={list.setPage} />
+      )}
+    </VStack>
   );
 }

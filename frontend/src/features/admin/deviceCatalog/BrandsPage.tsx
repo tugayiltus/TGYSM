@@ -1,37 +1,46 @@
+/**
+ * @input Nothing; search and status come from the URL query.
+ * @output The device brand list with create, edit and (de)activate (ADR-0023).
+ * @position `/admin/brands`, inside the admin shell.
+ */
+import { Button } from '@astryxdesign/core/Button';
+import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
+import { Icon } from '@astryxdesign/core/Icon';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
+import { applyServerErrors, describeError, isHandledByFields } from '../../../shared/api/errorMessage';
+import { ConfirmDialog } from '../../../shared/feedback/ConfirmDialog';
+import { FormDialog } from '../../../shared/feedback/FormDialog';
+import { EmptyState, ErrorState, LoadingState } from '../../../shared/feedback/States';
+import { FormTextInput } from '../../../shared/form/formFields';
+import { DataList, type DataColumn } from '../../../shared/list/DataList';
+import { ListToolbar } from '../../../shared/list/ListToolbar';
+import { useListParams } from '../../../shared/list/useListParams';
 import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
-import { Button } from '../../../shared/ui/Button';
-import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog';
-import { DataCard } from '../../../shared/ui/DataCard';
-import { Dialog } from '../../../shared/ui/Dialog';
-import { FormAlert } from '../../../shared/ui/FormAlert';
-import { cilPlus } from '../../../shared/ui/icons';
-import { ResponsiveList, type Column } from '../../../shared/ui/ResponsiveList';
-import { EmptyState, ErrorState, LoadingState, TABLE_SKELETON_ROWS } from '../../../shared/ui/States';
-import { StatusBadge } from '../../../shared/ui/StatusBadge';
-import { TextField } from '../../../shared/ui/TextField';
+import { ActiveToken } from '../../../shared/page/ActiveToken';
+import { RecordActions } from '../../../shared/page/RecordActions';
+import { Icons } from '../../../shared/ui/icons';
+import { filterRows, readStatusFilter, STATUS_FILTER_KEY } from '../shared/statusFilter';
+import { StatusFilterSelector } from '../shared/StatusFilterSelector';
 
 import { useBrands, useSaveBrand, useSetBrandActive, type BrandItem } from './api';
 import { NAME_CODE_FIELDS, NAME_FIELDS, nameSchema, type NameValues } from './catalogName';
-import { CatalogRowActions } from './CatalogToggle';
+
+const SKELETON_ROWS = 5;
+const FILTER_KEYS = [STATUS_FILTER_KEY] as const;
 
 function BrandFormDialog({ brand, onClose }: { brand: BrandItem | null; onClose: () => void }) {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
-  const formId = useId();
   const save = useSaveBrand();
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<NameValues>({ resolver: zodResolver(nameSchema), defaultValues: { name: brand?.name ?? '' } });
+  const { control, handleSubmit, setError } = useForm<NameValues>({ resolver: zodResolver(nameSchema), defaultValues: { name: brand?.name ?? '' } });
   const onSubmit = handleSubmit((v) =>
     save.mutate(
       { id: brand?.id ?? null, version: brand?.version ?? 0, name: v.name },
@@ -40,44 +49,32 @@ function BrandFormDialog({ brand, onClose }: { brand: BrandItem | null; onClose:
   );
   const alert = save.error && !isHandledByFields(save.error, NAME_FIELDS, NAME_CODE_FIELDS) ? describeError(save.error) : null;
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <FormDialog
       title={brand === null ? t('deviceCatalog.brands.new') : t('deviceCatalog.brands.edit')}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button type="submit" form={formId} isLoading={save.isPending}>
-            {brand === null ? tc('actions.create') : tc('actions.save')}
-          </Button>
-        </>
-      }
+      submitLabel={brand === null ? tc('actions.create') : tc('actions.save')}
+      isPending={save.isPending}
+      alert={alert}
+      onSubmit={(event) => void onSubmit(event)}
+      onClose={onClose}
     >
-      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
-        <FormAlert message={alert} />
-        <TextField label={t('deviceCatalog.fields.name')} autoComplete="off" error={fieldError(errors.name)} {...register('name')} />
-      </form>
-    </Dialog>
+      <FormTextInput control={control} name="name" label={t('deviceCatalog.fields.name')} autoComplete="off" isRequired />
+    </FormDialog>
   );
 }
 
-/** `/admin/brands`: device brands offered in asset forms (ADR-0023). */
 export function BrandsPage() {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
+  const list = useListParams(FILTER_KEYS);
+  const status = readStatusFilter(list.filters.status);
   const brands = useBrands();
   const setActive = useSetBrandActive();
   const [form, setForm] = useState<{ brand: BrandItem | null } | null>(null);
   const [toggling, setToggling] = useState<BrandItem | null>(null);
+  const rows = brands.data === undefined ? undefined : filterRows(brands.data, list.search, status, (b) => b.name);
 
   const actions = (b: BrandItem) => (
-    <CatalogRowActions
+    <RecordActions
       name={b.name}
       isActive={b.isActive}
       onEdit={() => setForm({ brand: b })}
@@ -87,37 +84,46 @@ export function BrandsPage() {
       }}
     />
   );
-  const columns: Column<BrandItem>[] = [
-    { key: 'name', header: t('deviceCatalog.fields.name'), renderCell: (b) => <span className="fw-medium">{b.name}</span> },
-    { key: 'status', header: t('deviceCatalog.fields.status'), renderCell: (b) => <StatusBadge isActive={b.isActive} /> },
+  const columns: DataColumn<BrandItem>[] = [
+    { key: 'name', header: t('deviceCatalog.fields.name'), renderCell: (b) => <Text type="label">{b.name}</Text> },
+    { key: 'status', header: t('deviceCatalog.fields.status'), renderCell: (b) => <ActiveToken isActive={b.isActive} /> },
     { key: 'actions', header: t('deviceCatalog.fields.actions'), renderCell: actions },
   ];
+  const renderCard = (b: BrandItem) => (
+    <VStack gap={2}>
+      <HStack gap={2} hAlign="between" vAlign="start">
+        <Text type="label" wordBreak="break-word">
+          {b.name}
+        </Text>
+        <ActiveToken isActive={b.isActive} />
+      </HStack>
+      {actions(b)}
+    </VStack>
+  );
 
   return (
-    <section>
-      <PageHeader icon={ROUTE_META.adminBrands.icon} actions={<Button icon={cilPlus} onClick={() => setForm({ brand: null })}>{t('deviceCatalog.brands.new')}</Button>} />
-      <DataCard>
-        {brands.isPending && <LoadingState rows={TABLE_SKELETON_ROWS} />}
+    <VStack gap={4}>
+      <PageHeader
+        icon={ROUTE_META.adminBrands.icon}
+        actions={<Button label={t('deviceCatalog.brands.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setForm({ brand: null })} />}
+      />
+      <ListToolbar
+        title={t('deviceCatalog.brands.title')}
+        search={list.search}
+        searchLabel={t('deviceCatalog.brands.searchLabel')}
+        onSearchChange={list.setSearch}
+        activeCount={list.activeCount}
+        onClear={list.clear}
+        filters={<StatusFilterSelector value={status} onChange={(value) => list.setFilter(STATUS_FILTER_KEY, value)} />}
+      />
+      <Card padding={0}>
+        {brands.isPending && <LoadingState rows={SKELETON_ROWS} />}
         {brands.isError && <ErrorState error={brands.error} onRetry={() => void brands.refetch()} />}
-        {brands.data?.length === 0 && <EmptyState />}
-        {brands.data !== undefined && brands.data.length > 0 && (
-          <ResponsiveList
-            items={brands.data}
-            columns={columns}
-            getKey={(b) => b.id}
-            caption={t('deviceCatalog.brands.listCaption')}
-            renderCard={(b) => (
-              <div className="d-flex flex-column gap-2">
-                <div className="d-flex justify-content-between gap-2">
-                  <span className="fw-medium text-break">{b.name}</span>
-                  <StatusBadge isActive={b.isActive} />
-                </div>
-                {actions(b)}
-              </div>
-            )}
-          />
+        {rows?.length === 0 && <EmptyState />}
+        {rows !== undefined && rows.length > 0 && (
+          <DataList items={rows} columns={columns} getKey={(b) => b.id} renderCard={renderCard} caption={t('deviceCatalog.brands.listCaption')} />
         )}
-      </DataCard>
+      </Card>
       {form !== null && <BrandFormDialog key={form.brand?.id ?? 'new'} brand={form.brand} onClose={() => setForm(null)} />}
       {toggling !== null && (
         <ConfirmDialog
@@ -131,6 +137,6 @@ export function BrandsPage() {
           onCancel={() => setToggling(null)}
         />
       )}
-    </section>
+    </VStack>
   );
 }

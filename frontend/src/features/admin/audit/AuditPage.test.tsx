@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
+import { chooseOption } from '../../../test/select';
 
 const EVENT = {
   id: 'e-1',
@@ -29,9 +30,10 @@ describe('AuditPage', () => {
     expect((await screen.findAllByText('Rol değiştirildi')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Tugay İltuş').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/12:05/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/"it_staff"/).length).toBeGreaterThan(0);
+    await user.click(screen.getAllByRole('button', { name: 'Ayrıntılar' })[0]!);
+    expect((await screen.findAllByText(/it_staff/)).length).toBeGreaterThan(0);
 
-    await user.selectOptions(screen.getByLabelText('Kayıt türü'), 'team');
+    await chooseOption(user, 'Kayıt türü', 'Ekip');
 
     await waitFor(() => expect(mock.calls.some((r) => new URL(r.url).searchParams.get('entityType') === 'team')).toBe(true));
   });

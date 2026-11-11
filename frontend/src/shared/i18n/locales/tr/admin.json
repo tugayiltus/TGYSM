@@ -301,6 +301,8 @@
     "new": "Yeni kategori",
     "edit": "Kategoriyi düzenle",
     "listCaption": "Kategori listesi",
+    "searchLabel": "Kategori ara",
+    "scopeFilter": "Kullanım",
     "fields": {
       "name": "Kategori adı",
       "parent": "Üst kategori",
@@ -326,6 +328,8 @@
     "new": "Yeni talep tipi",
     "edit": "Talep tipini düzenle",
     "listCaption": "Talep tipi listesi",
+    "searchLabel": "Talep tipi ara",
+    "approvalFilter": "Onay",
     "fields": {
       "name": "Talep tipi adı",
       "requiresApproval": "Yönetici onayı gerekir"
@@ -344,6 +348,7 @@
   "emailTemplates": {
     "title": "E-posta şablonları",
     "listCaption": "E-posta şablonları listesi",
+    "searchLabel": "Şablon ara",
     "edit": "Şablonu düzenle",
     "columns": {
       "event": "Bildirim",
@@ -440,6 +445,7 @@
       "name": "Ad",
       "add": "Tatil ekle",
       "remove": "Kaldır",
+      "actions": "İşlemler",
       "empty": "Tatil günü tanımlı değil.",
       "caption": "Tatil günleri listesi"
     }
@@ -475,6 +481,7 @@
       "new": "Yeni marka",
       "edit": "Markayı düzenle",
       "listCaption": "Markalar listesi",
+      "searchLabel": "Marka ara",
       "confirmDeactivate": "{{name}} markası yeni cihazlarda seçilemeyecek. Mevcut cihazlar etkilenmez.",
       "confirmReactivate": "{{name}} markası yeniden seçilebilecek."
     },
@@ -483,6 +490,7 @@
       "new": "Yeni model",
       "edit": "Modeli düzenle",
       "listCaption": "Modeller listesi",
+      "searchLabel": "Model ara",
       "brandFilter": "Marka filtresi",
       "allBrands": "Tüm markalar",
       "confirmDeactivate": "{{name}} modeli yeni cihazlarda seçilemeyecek. Mevcut cihazlar etkilenmez.",

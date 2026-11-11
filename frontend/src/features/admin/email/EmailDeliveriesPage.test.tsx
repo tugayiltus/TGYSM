@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { findAlert } from '../../../test/alerts';
 import { ADMIN_ME, mockApi, type MockRoutes } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
+import { chooseOption } from '../../../test/select';
 
 const delivery = (id: string, status: string, recipientEmail: string) => ({
   id,
@@ -69,8 +70,9 @@ describe('EmailDeliveriesPage', () => {
     const mock = setup();
     const { user } = renderRoute('/admin/email-deliveries');
 
-    await user.selectOptions(await screen.findByLabelText('Durum'), 'failed');
-    await user.selectOptions(screen.getByLabelText('Bildirim'), 'ticket_created');
+    await screen.findByRole('table');
+    await chooseOption(user, 'Durum', 'Başarısız');
+    await chooseOption(user, 'Bildirim', 'Kayıt oluşturuldu');
     await user.type(screen.getByLabelText('Alıcı'), 'failed@example.com');
 
     await waitFor(() => {

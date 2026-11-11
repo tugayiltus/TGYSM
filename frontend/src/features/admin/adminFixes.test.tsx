@@ -5,6 +5,7 @@ import admin from '../../shared/i18n/locales/tr/admin.json';
 import { pageOf } from '../../test/assetData';
 import { ADMIN_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
+import { findSelect } from '../../test/select';
 import { stubPhoneViewport } from '../../test/viewport';
 
 const targets = ['incident', 'request'].flatMap((kind) =>
@@ -24,8 +25,16 @@ describe('SLA policy (UX-03)', () => {
     const table = await screen.findByRole('table');
     expect(within(table).getAllByText('dk')).toHaveLength(SLA_ROWS * SLA_METRICS);
     expect(within(table).getAllByText('%')).toHaveLength(SLA_ROWS * SLA_METRICS);
-    expect(table).toHaveClass('tgysm-stack-table');
-    expect(within(table).getAllByRole('cell')[0]).toHaveAttribute('data-label');
+  });
+
+  it('stacks the target rows into cards on phones', async () => {
+    stubPhoneViewport();
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/sla/policy': { status: 200, body: POLICY } });
+    renderRoute('/admin/sla/policy');
+    const cards = await screen.findByRole('list', { name: 'Hedefler (iş dakikası)' });
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(within(cards).getAllByRole('listitem')).toHaveLength(SLA_ROWS);
+    expect(within(cards).getAllByText('dk')).toHaveLength(SLA_ROWS * SLA_METRICS);
   });
 });
 
@@ -59,10 +68,10 @@ describe('system page (UX-04)', () => {
 describe('audit filter (UX-07)', () => {
   it('offers every audited entity type', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/audit': { status: 200, body: pageOf([]) } });
-    renderRoute('/admin/audit');
-    const select = await screen.findByLabelText('Kayıt türü');
-    const values = within(select).getAllByRole('option').map((option) => (option as HTMLOptionElement).value).filter((value) => value !== '');
-    expect(values.sort()).toEqual(Object.keys(admin.entityTypes).sort());
+    const { user } = renderRoute('/admin/audit');
+    await user.click(await findSelect('Kayıt türü'));
+    const labels = (await screen.findAllByRole('option')).map((option) => option.textContent);
+    expect(labels.sort()).toEqual(Object.values(admin.entityTypes).sort());
   });
 });
 

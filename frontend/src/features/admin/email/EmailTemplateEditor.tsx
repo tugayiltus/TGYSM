@@ -1,16 +1,22 @@
+/**
+ * @input One email template and a close callback.
+ * @output A form dialog for the subject and body, with the variables the event allows.
+ * @position Opened from the email template list.
+ */
+import { Heading } from '@astryxdesign/core/Heading';
+import { List, ListItem } from '@astryxdesign/core/List';
+import { Text } from '@astryxdesign/core/Text';
+import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import { applyServerErrors, describeError, fieldError, isHandledByFields } from '../../../shared/api/errorMessage';
+import { applyServerErrors, describeError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ERROR_CODES } from '../../../shared/api/errors';
-import { Button } from '../../../shared/ui/Button';
-import { Dialog } from '../../../shared/ui/Dialog';
-import { FormAlert } from '../../../shared/ui/FormAlert';
-import { TextAreaField } from '../../../shared/ui/TextAreaField';
-import { TextField } from '../../../shared/ui/TextField';
+import { FormDialog } from '../../../shared/feedback/FormDialog';
+import { FormTextArea, FormTextInput } from '../../../shared/form/formFields';
 
 import { useUpdateEmailTemplate, type EmailTemplateItem } from './api';
 import { isEmailEventType } from './eventTypes';
@@ -22,6 +28,7 @@ const FORM_FIELDS = ['subject', 'body'] as const;
 const VARIABLE_OPEN = '{{';
 const VARIABLE_CLOSE = '}}';
 const BODY_ROWS = 10;
+const DIALOG_WIDTH = 720;
 
 const templateSchema = z.object({
   subject: z.string().trim().min(1, ERROR_CODES.required).max(TEMPLATE_SUBJECT_MAX_LENGTH, ERROR_CODES.tooLong),
@@ -38,14 +45,12 @@ export interface EmailTemplateEditorProps {
 export function EmailTemplateEditor({ template, onClose }: EmailTemplateEditorProps) {
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
-  const formId = useId();
+  const variablesId = useId();
   const update = useUpdateEmailTemplate();
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<TemplateValues>({ resolver: zodResolver(templateSchema), defaultValues: { subject: template.subject, body: template.body } });
+  const { control, handleSubmit, setError } = useForm<TemplateValues>({
+    resolver: zodResolver(templateSchema),
+    defaultValues: { subject: template.subject, body: template.body },
+  });
 
   const onSubmit = handleSubmit((values) =>
     update.mutate(
@@ -56,45 +61,36 @@ export function EmailTemplateEditor({ template, onClose }: EmailTemplateEditorPr
 
   const alert = update.error && !isHandledByFields(update.error, FORM_FIELDS) ? describeError(update.error) : null;
   const title = isEmailEventType(template.eventType) ? t(`emailEvents.${template.eventType}`) : template.eventType;
+  // A save in flight cannot be undone; closing then would hide its result.
+  const close = () => {
+    if (!update.isPending) {
+      onClose();
+    }
+  };
 
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open && !update.isPending) {
-          onClose();
-        }
-      }}
+    <FormDialog
       title={`${t('emailTemplates.edit')}: ${title}`}
-      footer={
-        <>
-          <Button variant="secondary" disabled={update.isPending} onClick={onClose}>
-            {tc('actions.cancel')}
-          </Button>
-          <Button type="submit" form={formId} isLoading={update.isPending}>
-            {tc('actions.save')}
-          </Button>
-        </>
-      }
+      submitLabel={tc('actions.save')}
+      isPending={update.isPending}
+      alert={alert}
+      width={DIALOG_WIDTH}
+      onSubmit={(event) => void onSubmit(event)}
+      onClose={close}
     >
-      <form id={formId} noValidate className="row g-3" onSubmit={(event) => void onSubmit(event)}>
-        <FormAlert message={alert} />
-        <TextField label={t('emailTemplates.fields.subject')} autoComplete="off" error={fieldError(errors.subject)} {...register('subject')} />
-        <TextAreaField label={t('emailTemplates.fields.body')} rows={BODY_ROWS} error={fieldError(errors.body)} {...register('body')} />
-        <section aria-labelledby={`${formId}-variables`}>
-          <h3 id={`${formId}-variables`} className="small fw-medium">
-            {t('emailTemplates.variables.title')}
-          </h3>
-          <p className="mb-0 mt-1 small text-body-secondary">{t('emailTemplates.variables.hint')}</p>
-          <ul className="list-unstyled mb-0 mt-2 d-flex flex-wrap gap-2">
-            {template.allowedVariables.map((name) => (
-              <li key={name} className="rounded bg-body-secondary px-2 py-1 font-monospace small">
-                {`${VARIABLE_OPEN}${name}${VARIABLE_CLOSE}`}
-              </li>
-            ))}
-          </ul>
-        </section>
-      </form>
-    </Dialog>
+      <FormTextInput control={control} name="subject" label={t('emailTemplates.fields.subject')} autoComplete="off" isRequired />
+      <FormTextArea control={control} name="body" label={t('emailTemplates.fields.body')} rows={BODY_ROWS} isRequired />
+      <VStack gap={1} role="region" aria-labelledby={variablesId}>
+        <Heading level={3} id={variablesId}>
+          {t('emailTemplates.variables.title')}
+        </Heading>
+        <Text type="supporting">{t('emailTemplates.variables.hint')}</Text>
+        <List density="compact">
+          {template.allowedVariables.map((name) => (
+            <ListItem key={name} label={<Text type="code">{`${VARIABLE_OPEN}${name}${VARIABLE_CLOSE}`}</Text>} />
+          ))}
+        </List>
+      </VStack>
+    </FormDialog>
   );
 }

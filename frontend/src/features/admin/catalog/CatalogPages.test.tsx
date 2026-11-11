@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
+import { chooseOption, findSelect } from '../../../test/select';
 
 const HARDWARE = { id: 'c-1', name: 'Donanım', parentId: null, scope: 'both', isActive: true, version: 1 };
 const PRINTER = { id: 'c-2', name: 'Yazıcı', parentId: 'c-1', scope: 'incident', isActive: true, version: 1 };
@@ -23,14 +24,29 @@ describe('Catalog admin', () => {
     expect((await screen.findAllByText('Donanım / Yazıcı')).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('button', { name: 'Yeni kategori' }));
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByLabelText('Kategori adı'), 'Toner');
-    await user.selectOptions(within(dialog).getByLabelText('Üst kategori'), 'Donanım');
-    await user.selectOptions(within(dialog).getByLabelText('Kullanım'), 'Arıza');
+    await user.type(within(dialog).getByLabelText(/^Kategori adı/), 'Toner');
+    await chooseOption(user, 'Üst kategori', 'Donanım', dialog);
+    await chooseOption(user, /^Kullanım/, 'Arıza', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 
     expect(await within(dialog).findByText('Kategoriler en fazla iki seviyeli olabilir.')).toBeInTheDocument();
     expect(posted).toEqual({ name: 'Toner', parentId: 'c-1', scope: 'incident' });
-    expect(within(dialog).queryByRole('option', { name: 'Yazıcı' })).not.toBeInTheDocument();
+    await user.click(await findSelect('Üst kategori', dialog));
+    expect(await screen.findByRole('option', { name: 'Donanım' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Yazıcı' })).not.toBeInTheDocument();
+  });
+
+  it('filters categories by scope and keeps the parent path in the search', async () => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/categories': { status: 200, body: [PRINTER, HARDWARE] } });
+    const { user } = renderRoute('/admin/categories?scope=incident');
+    const table = await screen.findByRole('table');
+    expect(within(table).getByText('Donanım / Yazıcı')).toBeInTheDocument();
+    expect(within(table).queryByText('Donanım')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Temizle' }));
+    await user.type(screen.getByRole('searchbox', { name: 'Kategori ara' }), 'yazı');
+    await waitFor(() => expect(within(table).queryByText('Donanım')).not.toBeInTheDocument());
+    expect(within(table).getByText('Donanım / Yazıcı')).toBeInTheDocument();
   });
 
   it('creates a request type that needs approval', async () => {
@@ -47,7 +63,7 @@ describe('Catalog admin', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Yeni talep tipi' }));
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByLabelText('Talep tipi adı'), 'Yeni cihaz');
+    await user.type(within(dialog).getByLabelText(/^Talep tipi adı/), 'Yeni cihaz');
     await user.click(within(dialog).getByRole('switch', { name: 'Yönetici onayı gerekir' }));
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
 

@@ -20,8 +20,8 @@ test('admin adds a brand and model; IT registers a device with them and gets a g
   await admin.page.goto('/admin/models');
   await admin.page.getByRole('button', { name: 'Yeni model' }).click();
   const modelDialog = admin.page.getByRole('dialog');
-  await modelDialog.getByLabel('Marka').selectOption({ label: brand });
-  await modelDialog.getByLabel('Tür').selectOption({ label: 'Dizüstü' });
+  await chooseOption(modelDialog, 'Marka', brand);
+  await chooseOption(modelDialog, 'Tür', 'Dizüstü');
   await modelDialog.getByLabel('Ad').fill('Latitude 5440');
   await modelDialog.getByRole('button', { name: 'Oluştur' }).click();
   await expect(visibleEntry(admin.page, 'Latitude 5440')).toBeVisible();

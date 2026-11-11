@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
+import { chooseOption } from '../../../test/select';
 
 const BRANDS = [
   { id: 'b-1', name: 'Lenovo', isActive: true, version: 3 },
@@ -32,7 +33,7 @@ describe('BrandsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Yeni marka' }));
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByLabelText('Ad'), ' lenovo ');
+    await user.type(within(dialog).getByLabelText(/^Ad/), ' lenovo ');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
     expect(await within(dialog).findByText('Bu ad zaten kayıtlı. Mevcut tanımı kullanın.')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Vazgeç' }));
@@ -40,6 +41,19 @@ describe('BrandsPage', () => {
     await user.click(within(table).getByRole('button', { name: /Pasifleştir.*Lenovo/ }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Onayla' }));
     await waitFor(() => expect(deactivated).toEqual({ version: 3 }));
+  });
+
+  it('filters by search text and status from the URL query', async () => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/brands': { status: 200, body: BRANDS } });
+    const { user } = renderRoute('/admin/brands?status=inactive');
+    const table = await screen.findByRole('table');
+    expect(within(table).getByText('Apple')).toBeInTheDocument();
+    expect(within(table).queryByText('Lenovo')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Temizle' }));
+    await user.type(screen.getByRole('searchbox', { name: 'Marka ara' }), 'LEN');
+    expect(await within(table).findByText('Lenovo')).toBeInTheDocument();
+    expect(within(table).queryByText('Apple')).not.toBeInTheDocument();
   });
 });
 
@@ -56,16 +70,15 @@ describe('ModelsPage', () => {
       },
     });
     const { user } = renderRoute('/admin/models');
-    const filter = await screen.findByLabelText('Marka filtresi');
-    await within(filter).findByRole('option', { name: 'Lenovo' });
-    await user.selectOptions(filter, 'Lenovo');
+    await screen.findByRole('table');
+    await chooseOption(user, 'Marka filtresi', 'Lenovo');
     await waitFor(() => expect(api.calls.some((c) => new URL(c.url).searchParams.get('brandId') === 'b-1')).toBe(true));
 
     await user.click(screen.getByRole('button', { name: 'Yeni model' }));
     const dialog = await screen.findByRole('dialog');
-    await user.selectOptions(within(dialog).getByLabelText('Marka'), 'Lenovo');
-    await user.selectOptions(within(dialog).getByLabelText('Tür'), 'Dizüstü');
-    await user.type(within(dialog).getByLabelText('Ad'), 'ThinkPad T14s');
+    await chooseOption(user, /^Marka/, 'Lenovo', dialog);
+    await chooseOption(user, /^Tür/, 'Dizüstü', dialog);
+    await user.type(within(dialog).getByLabelText(/^Ad/), 'ThinkPad T14s');
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
     await waitFor(() => expect(created).toEqual({ brandId: 'b-1', type: 'laptop', name: 'ThinkPad T14s' }));
   });
