@@ -17,11 +17,11 @@ Run through `tools/` scripts.
 - `tools/setup-admin.sh --email … --first-name … --last-name …` — create first admin (once).
 - `tools/reset-password.sh --email …` — temporary password from the console (locked-out operator).
 - `tools/add-migration.sh <Name>` — add an EF Core migration.
-- `tools/run.sh` — API on `http://localhost:5080`, Worker (email to `tmp/email-pickup`) + Vite on `http://localhost:5173`, in the terminal; refuses while the dev services run.
+- `tools/run.sh` — API on `http://localhost:5311`, Worker (email to `tmp/email-pickup`) + Vite on `http://tgysm.localhost:5310`, in the terminal; refuses while the dev services run.
 - `tools/dev-service.sh install|uninstall|start|stop|restart|status|logs` — launchd agents keep API/Worker/Vite running (last-good-build fallback via `tools/dev-dotnet-host.sh`). Stopping them for builds or E2E is fine, but restart them afterwards (`tools/dev-service.sh start`, or `restart` to pick up backend changes).
 - `tools/lint.sh` — `dotnet format --verify-no-changes` + ESLint + TypeScript.
 - `tools/test.sh` — backend tests with coverage gate + frontend tests with coverage gate. Backend uses Microsoft.Testing.Platform (repo-root `global.json`): `dotnet test --solution backend/Tgysm.slnx`, filters `--filter-class` / `--filter-method`.
-- `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5080/4173 (stop the dev services first). Also starts the Worker (`Email:Mode=Pickup` into a per-run temp folder, 2 s job intervals; E2E-only env overrides). Tests seed their data through the admin API (`frontend/e2e/world.ts`).
+- `tools/e2e.sh` — Playwright E2E on a fresh `tgysm_e2e` database per viewport; refuses to start while `tools/run.sh` holds ports 5311/5312 (stop the dev services first). Also starts the Worker (`Email:Mode=Pickup` into a per-run temp folder, 2 s job intervals; E2E-only env overrides). Tests seed their data through the admin API (`frontend/e2e/world.ts`).
 - `tools/ui-qa.sh` — browser QA sweep on a fresh E2E database: every screen in light/dark, phone and desktop, into `tmp/ui-qa/` (contact sheets + `problems.txt` for overflow/console errors); stops and restarts the dev services.
 - `tools/gen-api-types.sh` — regenerate OpenAPI JSON and `schema.d.ts` after API contract changes.
 - `tools/build.sh` — lint + tests, then Release build + frontend build with chunk sizes.

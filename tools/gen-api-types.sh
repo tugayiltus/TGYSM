@@ -8,7 +8,7 @@ readonly SCHEMA_FILE="src/shared/api/schema.d.ts"
 
 mkdir -p frontend/openapi
 # The OpenAPI generator starts the host, which validates App:PublicBaseUrl (empty by default) on start.
-export App__PublicBaseUrl="http://localhost:5173"
+export App__PublicBaseUrl="http://tgysm.localhost:5310"
 # ...and requires Files:RootPath outside Development; the generator never writes files, so a throwaway folder is enough.
 FILES_ROOT="$(mktemp -d)"
 trap 'rm -rf "$FILES_ROOT"' EXIT

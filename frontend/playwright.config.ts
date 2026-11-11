@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:4173';
+const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:5312';
 const MOBILE_VIEWPORT = { width: 360, height: 800 };
 const DESKTOP_VIEWPORT = { width: 1280, height: 800 };
 /** The screenshot sweep runs only through tools/ui-qa.sh, never in the regular E2E run. */

@@ -8,7 +8,7 @@
 #
 # Optional ids limit the run to those manifest entries. Environment: GUIDE_PASSWORD (required; never stored),
 # TGYSM_DB_HOST / TGYSM_DB_NAME / TGYSM_DB_USER. Only databases named tgysm_pilot* are used, never the development one.
-# Uses API port 5090 and preview port 4173; both must be free (tools/e2e.sh and tools/perf-measure.sh use the same ports).
+# Uses API port 5313 and preview port 5312; both must be free (tools/e2e.sh and tools/perf-measure.sh use the same ports).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -16,8 +16,8 @@ readonly DB_HOST="${TGYSM_DB_HOST:-localhost}"
 readonly DB_NAME="${TGYSM_DB_NAME:-tgysm_pilot}"
 readonly DB_USER="${TGYSM_DB_USER:-tgysm}"
 readonly PILOT_DB_PREFIX="tgysm_pilot"
-readonly API_PORT=5090
-readonly PREVIEW_PORT=4173
+readonly API_PORT=5313
+readonly PREVIEW_PORT=5312
 readonly API_URL="http://localhost:$API_PORT"
 readonly PREVIEW_URL="http://localhost:$PREVIEW_PORT"
 readonly READY_PATH="/api/v1/auth/csrf"

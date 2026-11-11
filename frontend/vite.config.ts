@@ -2,9 +2,9 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-const API_TARGET = process.env.TGYSM_API_URL ?? 'http://localhost:5080';
-const DEV_PORT = 5173;
-const PREVIEW_PORT = 4173;
+const API_TARGET = process.env.TGYSM_API_URL ?? 'http://localhost:5311';
+const DEV_PORT = 5310;
+const PREVIEW_PORT = 5312;
 const CHUNK_WARNING_LIMIT_KB = 500;
 const COVERAGE_LINE_THRESHOLD = 80;
 // The API runs on plain HTTP locally; this header lets it treat proxied requests as HTTPS

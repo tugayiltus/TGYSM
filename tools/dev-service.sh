@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keeps the local dev stack (API on :5080, Worker, Vite on :5173) running as macOS launchd user agents: each starts
+# Keeps the local dev stack (API on :5311, Worker, Vite on :5310) running as macOS launchd user agents: each starts
 # at login and is restarted whenever its process exits. Logs go to tmp/logs/.
 #
 # Usage: tools/dev-service.sh install|uninstall|start|stop|restart|status|logs
@@ -22,8 +22,8 @@ readonly DOMAIN="gui/$(id -u)"
 # Seconds launchd waits before restarting a service that exited, so a crash loop does not spin the CPU.
 readonly RESTART_THROTTLE_SECONDS=10
 readonly LOG_TAIL_LINES=30
-readonly API_HEALTH_URL="http://localhost:5080/api/v1/health"
-readonly WEB_URL="http://localhost:5173"
+readonly API_HEALTH_URL="http://localhost:5311/api/v1/health"
+readonly WEB_URL="http://tgysm.localhost:5310"
 readonly HTTP_TIMEOUT_SECONDS=3
 
 # launchd starts agents with a minimal PATH; give them the toolchain this shell uses.
