@@ -31,3 +31,4 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0025](0025-backup-and-restore.md) | Nightly Backup of Database, Files and Keys, with an Automated Restore Drill | accepted | 2026-10-09 |
 | [0026](0026-coreui-visual-system-and-color-modes.md) | CoreUI Template Visual System and Color Modes | superseded by ADR-0027 | 2026-10-09 |
 | [0027](0027-astryx-design-system.md) | Astryx Design System Replaces CoreUI | accepted | 2026-11-10 |
+| [0028](0028-incident-device-from-qr-scan.md) | A New Incident May Name Any Reportable Device (QR Scan) | accepted | 2026-11-12 |
