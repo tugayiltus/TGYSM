@@ -213,7 +213,7 @@ describe('ThemeMenu', () => {
     );
     await user.click(screen.getByRole('button', { name: /Görünüm/ }));
     await user.click(screen.getByRole('menuitemradio', { name: 'Koyu' }));
-    expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('dark');
+    expect(document.documentElement.style.colorScheme).toBe('dark');
     expect(document.querySelector('[data-astryx-theme]')).toHaveAttribute('data-theme', 'dark');
     expect(window.localStorage.getItem('tgysm-theme')).toBe('dark');
     expect(screen.getByRole('button', { name: /Görünüm: Koyu/ })).toBeInTheDocument();

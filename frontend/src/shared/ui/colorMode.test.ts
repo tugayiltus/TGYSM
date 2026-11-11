@@ -8,7 +8,7 @@ import { applyColorMode, COLOR_MODE_STORAGE_KEY, readStoredMode, resetColorModeF
 describe('color mode', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    document.documentElement.removeAttribute('data-coreui-theme');
+    document.documentElement.style.colorScheme = '';
     resetColorModeForTests();
   });
   afterEach(() => vi.restoreAllMocks());
@@ -23,7 +23,7 @@ describe('color mode', () => {
     stubSystemColorScheme(false);
     setColorMode('dark');
     expect(window.localStorage.getItem(COLOR_MODE_STORAGE_KEY)).toBe('dark');
-    expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('dark');
+    expect(document.documentElement.style.colorScheme).toBe('dark');
   });
 
   it('ignores an unknown stored value', () => {
@@ -42,7 +42,7 @@ describe('color mode', () => {
     });
     expect(readStoredMode()).toBe('auto');
     expect(() => setColorMode('dark')).not.toThrow();
-    expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('dark');
+    expect(document.documentElement.style.colorScheme).toBe('dark');
   });
 
   it('re-resolves auto when the system switches', () => {
@@ -52,7 +52,7 @@ describe('color mode', () => {
     expect(result.current.resolved).toBe('light');
     act(() => system.flip(true));
     expect(result.current.resolved).toBe('dark');
-    expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('dark');
+    expect(document.documentElement.style.colorScheme).toBe('dark');
   });
 
   it('keeps a fixed mode when the system switches', () => {
@@ -66,6 +66,6 @@ describe('color mode', () => {
   it('applies a fixed mode without consulting the system', () => {
     stubSystemColorScheme(true);
     applyColorMode('light');
-    expect(document.documentElement.getAttribute('data-coreui-theme')).toBe('light');
+    expect(document.documentElement.style.colorScheme).toBe('light');
   });
 });

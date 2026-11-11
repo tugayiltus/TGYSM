@@ -7,10 +7,10 @@ import { LoginPage } from '../features/auth/LoginPage';
 import { ADMIN_ONLY, IT_STAFF_OR_ADMIN } from '../features/auth/session';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
+import { LoadingState } from '../shared/feedback/States';
 import { AppLayout } from '../shared/layout/AppLayout';
 import { ROUTES } from '../shared/routes';
 import { NotFoundPage } from '../shared/ui/NotFoundPage';
-import { LoadingState } from '../shared/ui/States';
 
 const appRoutes: RouteObject[] = [
   { path: ROUTES.login, element: <LoginPage /> },

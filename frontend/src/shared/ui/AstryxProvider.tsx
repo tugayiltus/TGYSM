@@ -30,8 +30,7 @@ const ASTRYX_TEXT_KEYS = {
 } as const;
 
 /**
- * Astryx context for the app (ADR-0027). The theme mode follows the app color mode, so one menu controls Astryx and
- * CoreUI screens.
+ * Astryx context for the app (ADR-0027). The theme mode follows the app color mode, so the header menu controls it.
  */
 export function AstryxProvider({ children }: { children: ReactNode }) {
   const { resolved } = useColorMode();

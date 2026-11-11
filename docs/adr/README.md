@@ -24,10 +24,10 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0018](0018-sla-calculation-model.md) | SLA Calculation Model | accepted | 2026-09-27 |
 | [0019](0019-knowledge-base.md) | Knowledge Base | accepted | 2026-10-02 |
 | [0020](0020-reporting-and-excel-export.md) | Reporting and Excel Export | accepted | 2026-10-02 |
-| [0021](0021-coreui-ui-layer.md) | CoreUI Free as the UI Layer | accepted | 2026-10-09 |
-| [0022](0022-chartjs-charts.md) | Chart.js through CoreUI for Report Charts | accepted | 2026-10-09 |
+| [0021](0021-coreui-ui-layer.md) | CoreUI Free as the UI Layer | superseded by ADR-0027 | 2026-10-09 |
+| [0022](0022-chartjs-charts.md) | Chart.js through CoreUI for Report Charts (amended: `react-chartjs-2`) | accepted | 2026-10-09 |
 | [0023](0023-asset-catalog-and-asset-tags.md) | Admin-Managed Device Catalog for Asset Brands and Models | accepted | 2026-10-09 |
 | [0024](0024-docker-compose-deployment.md) | Docker Compose Deployment with Shared Data Protection Keys | accepted | 2026-10-09 |
 | [0025](0025-backup-and-restore.md) | Nightly Backup of Database, Files and Keys, with an Automated Restore Drill | accepted | 2026-10-09 |
-| [0026](0026-coreui-visual-system-and-color-modes.md) | CoreUI Template Visual System and Color Modes | accepted | 2026-10-09 |
+| [0026](0026-coreui-visual-system-and-color-modes.md) | CoreUI Template Visual System and Color Modes | superseded by ADR-0027 | 2026-10-09 |
 | [0027](0027-astryx-design-system.md) | Astryx Design System Replaces CoreUI | accepted | 2026-11-10 |

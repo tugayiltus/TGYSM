@@ -7,7 +7,6 @@ import { createQueryClient } from '../app/queryClient';
 import { routes } from '../app/router';
 import { resetCsrfToken } from '../shared/api/client';
 import { AstryxProvider } from '../shared/ui/AstryxProvider';
-import { ToastProvider } from '../shared/ui/Toast';
 
 export function renderRoute(path: InitialEntry) {
   resetCsrfToken();
@@ -17,9 +16,7 @@ export function renderRoute(path: InitialEntry) {
   render(
     <QueryClientProvider client={queryClient}>
       <AstryxProvider>
-        <ToastProvider>
-          <RouterProvider router={router} />
-        </ToastProvider>
+        <RouterProvider router={router} />
       </AstryxProvider>
     </QueryClientProvider>,
   );

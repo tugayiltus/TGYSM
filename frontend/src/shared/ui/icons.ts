@@ -1,49 +1,4 @@
-// Every icon the UI uses, imported by name so only these ship (ADR-0026).
-// CoreUI icons stay for screens not yet on Astryx; they go in the CoreUI removal step (ADR-0027).
-export {
-  cilArrowLeft,
-  cilAvTimer,
-  cilBell,
-  cilBook,
-  cilBuilding,
-  cilCalendar,
-  cilChartPie,
-  cilCheckAlt,
-  cilCheckCircle,
-  cilCloudDownload,
-  cilCloudUpload,
-  cilContrast,
-  cilDevices,
-  cilEnvelopeClosed,
-  cilEnvelopeOpen,
-  cilGroup,
-  cilHistory,
-  cilHome,
-  cilInbox,
-  cilLaptop,
-  cilList,
-  cilLocationPin,
-  cilLockLocked,
-  cilMediaPause,
-  cilMenu,
-  cilMoon,
-  cilNotes,
-  cilPencil,
-  cilPeople,
-  cilPlus,
-  cilScreenDesktop,
-  cilSearch,
-  cilSettings,
-  cilSpeedometer,
-  cilSun,
-  cilTag,
-  cilTags,
-  cilTask,
-  cilUser,
-  cilWarning,
-  cilX,
-} from '@coreui/icons';
-
+// Every icon the UI uses, imported by name so only these ship.
 import type { IconName, IconType } from '@astryxdesign/core/Icon';
 import {
   ArrowLeft, Bell, BookOpen, Building2, ChartPie, ClipboardList, Contrast, Download, Gauge, History, House, Inbox, Laptop, List,
@@ -53,7 +8,7 @@ import {
 
 /**
  * App icons for Astryx components (ADR-0027): Astryx semantic names where one exists, so the theme can restyle
- * them, else Lucide glyphs (the neutral theme's own set). Same meanings as the CoreUI names above.
+ * them, else Lucide glyphs (the neutral theme's own set). One concept, one icon across the app.
  */
 export const Icons = {
   arrowLeft: ArrowLeft,

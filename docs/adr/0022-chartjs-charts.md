@@ -37,3 +37,7 @@ ADR-0020 chose Recharts for report charts. With the move to CoreUI as the UI lay
 
 ### Risks
 - Canvas output cannot be asserted in unit tests; chart rendering is checked in the browser QA and E2E runs.
+
+## Amendment 2026-11-11
+
+The charts no longer go through `@coreui/react-chartjs`. With CoreUI removed (ADR-0027), they use `react-chartjs-2` on the same Chart.js 4 core, and series colors come from the Astryx data tokens. The decision to use Chart.js stands.

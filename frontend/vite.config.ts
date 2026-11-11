@@ -40,8 +40,6 @@ export default defineConfig({
             { name: 'vendor-react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 100 },
             { name: 'vendor-router', test: /node_modules[\\/]react-router/, priority: 90 },
             { name: 'vendor-tanstack', test: /node_modules[\\/]@tanstack[\\/]/, priority: 90 },
-            { name: 'vendor-coreui-icons', test: /node_modules[\\/]@coreui[\\/](icons|icons-react)[\\/]/, priority: 95 },
-            { name: 'vendor-coreui', test: /node_modules[\\/](@coreui[\\/](react|coreui|utils)|@popperjs)[\\/]/, priority: 90 },
             // Astryx design system with its StyleX runtime and theme (ADR-0027). One group would pass the chunk budget, so its
             // dist folders split by role: theme and text, shared runtime, form controls, data display and overlays; the rest stays in vendor-astryx.
             { name: 'vendor-astryx-theme', test: ASTRYX_THEME, priority: 96 },
@@ -78,8 +76,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    // Vitest empties stylesheets by default; the mobile-first guard (styles.test.ts) reads this one as text.
-    css: { include: [/_layout\.scss/] },
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',

@@ -4,7 +4,7 @@ import { expectNoHorizontalScroll, expectStable, recordStability } from './helpe
 import { adminSession, seedIncidents, seedWorld } from './world';
 
 const DARK = 'dark';
-const THEME_ATTRIBUTE = 'data-coreui-theme';
+const COLOR_SCHEME = 'color-scheme';
 /** Scrolls the ticket page so the side column sticks, but not so far that it reaches the end of its column. */
 
 test('dark mode is kept after a reload and pages stay inside the screen', async ({ browser }) => {
@@ -15,13 +15,13 @@ test('dark mode is kept after a reload and pages stay inside the screen', async 
   await page.goto('/assets');
   await page.getByRole('button', { name: /Görünüm/ }).click();
   await page.getByRole('menuitemradio', { name: 'Koyu' }).click();
-  await expect(page.locator('html')).toHaveAttribute(THEME_ATTRIBUTE, DARK);
+  await expect(page.locator('html')).toHaveCSS(COLOR_SCHEME, DARK);
   await page.reload();
-  await expect(page.locator('html')).toHaveAttribute(THEME_ATTRIBUTE, DARK);
+  await expect(page.locator('html')).toHaveCSS(COLOR_SCHEME, DARK);
   for (const path of ['/assets', `/tickets/${ticket ?? ''}`, '/reports']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.locator('html')).toHaveAttribute(THEME_ATTRIBUTE, DARK);
+    await expect(page.locator('html')).toHaveCSS(COLOR_SCHEME, DARK);
     await expectNoHorizontalScroll(page);
   }
 });

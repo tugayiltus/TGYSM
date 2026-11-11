@@ -1,13 +1,15 @@
 import { useSyncExternalStore } from 'react';
 
-/** Light, dark or the system's choice (ADR-0026). CoreUI reads the resolved mode from `data-coreui-theme`. */
+/**
+ * Light, dark or the system's choice. Astryx gets the resolved mode through `Theme` (ADR-0027); the root `color-scheme`
+ * colors the page canvas before React mounts and keeps native controls in the same mode.
+ */
 export const COLOR_MODES = ['light', 'dark', 'auto'] as const;
 export type ColorMode = (typeof COLOR_MODES)[number];
 export type ResolvedMode = Exclude<ColorMode, 'auto'>;
 
 /** Mirrored in the pre-paint script in `index.html`; a test keeps the two equal. */
 export const COLOR_MODE_STORAGE_KEY = 'tgysm-theme';
-const THEME_ATTRIBUTE = 'data-coreui-theme';
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 const DEFAULT_MODE: ColorMode = 'auto';
 
@@ -33,7 +35,7 @@ export function resolveMode(mode: ColorMode): ResolvedMode {
 }
 
 export function applyColorMode(mode: ColorMode, root: HTMLElement = document.documentElement) {
-  root.setAttribute(THEME_ATTRIBUTE, resolveMode(mode));
+  root.style.colorScheme = resolveMode(mode);
 }
 
 interface ColorModeState {
@@ -81,7 +83,7 @@ export function setColorMode(mode: ColorMode) {
   publish(mode);
 }
 
-/** Called once at start-up: the pre-paint script already set the attribute; this keeps it in sync afterwards. */
+/** Called once at start-up: the pre-paint script already set `color-scheme`; this keeps it in sync afterwards. */
 export function initColorMode() {
   current = null;
   applyColorMode(snapshot().mode);

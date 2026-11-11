@@ -1,7 +1,7 @@
 # ADR-0021: CoreUI Free as the UI Layer
 
 **Date**: 2026-10-09
-**Status**: accepted
+**Status**: superseded by ADR-0027
 **Deciders**: Tugay İLTUŞ
 
 ## Context

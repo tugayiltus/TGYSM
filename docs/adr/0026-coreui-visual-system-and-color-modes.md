@@ -1,7 +1,7 @@
 # ADR-0026: CoreUI Template Visual System and Color Modes
 
 **Date**: 2026-10-09
-**Status**: accepted
+**Status**: superseded by ADR-0027
 **Deciders**: Tugay İLTUŞ
 
 ## Context

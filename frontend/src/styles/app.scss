@@ -1,8 +1,0 @@
-// Single stylesheet entry (ADR-0021, ADR-0026): variables, CoreUI, then scoped TGYSM rules.
-@use "variables" as *;
-@use "@coreui/coreui/scss/coreui" with (
-  $font-family-sans-serif: $font-family-sans-serif,
-  $border-radius: $border-radius,
-  $input-font-size: $input-font-size
-);
-@use "layout";

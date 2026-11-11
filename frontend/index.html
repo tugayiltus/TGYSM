@@ -14,7 +14,7 @@
           if (stored === 'light' || stored === 'dark' || stored === 'auto') mode = stored;
         } catch (e) {}
         if (mode === 'auto') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-coreui-theme', mode);
+        document.documentElement.style.colorScheme = mode;
       })();
     </script>
   </head>

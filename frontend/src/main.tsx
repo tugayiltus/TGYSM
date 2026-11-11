@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { App } from './app/App';
-// Astryx layers first (reset, components, theme tokens); CoreUI stays unlayered until the migration ends (ADR-0027).
+// Astryx layers: reset, components, theme tokens (ADR-0027).
 import '@astryxdesign/core/reset.css';
 import '@astryxdesign/core/astryx.css';
 import '@astryxdesign/theme-neutral/theme.css';
@@ -11,7 +11,6 @@ import '@fontsource/figtree/400.css';
 import '@fontsource/figtree/500.css';
 import '@fontsource/figtree/600.css';
 import '@fontsource/figtree/700.css';
-import './styles/app.scss';
 import './shared/i18n';
 import { initColorMode } from './shared/ui/colorMode';
 
