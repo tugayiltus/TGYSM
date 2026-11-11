@@ -7,6 +7,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { Drawer, DrawerHeader } from '@astryxdesign/core/Drawer';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState, type ReactNode } from 'react';
@@ -48,9 +49,19 @@ export function ListToolbar({ title, search, searchLabel, onSearchChange, filter
       </HStack>
     );
   }
+  // A toolbar with only a search box needs no drawer.
+  if (filters === undefined) {
+    return (
+      <HStack gap={2} vAlign="end">
+        <StackItem size="fill">{searchBox}</StackItem>
+        {clearButton}
+      </HStack>
+    );
+  }
+  // The search box takes the free width, so the "Filtreler (n)" button keeps its full label.
   return (
     <HStack gap={2} vAlign="end">
-      {searchBox}
+      {searchBox && <StackItem size="fill">{searchBox}</StackItem>}
       <Button label={t('filters.button', { count: activeCount })} variant="secondary" icon={<Icon icon="funnel" />} onClick={() => setDrawerOpen(true)} />
       <Drawer label={title} isOpen={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerHeader title={title} onOpenChange={setDrawerOpen} />

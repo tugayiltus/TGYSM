@@ -9,6 +9,7 @@ import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { Pagination } from '@astryxdesign/core/Pagination';
 import { Selector } from '@astryxdesign/core/Selector';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
@@ -149,12 +150,14 @@ export function UsersPage() {
   const renderCard = (user: UserListItem) => (
     <VStack gap={2}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <VStack gap={0}>
-          <Text type="label">{fullName(user)}</Text>
-          <Text type="supporting" wordBreak="break-word">
-            {user.email}
-          </Text>
-        </VStack>
+        <StackItem size="fill">
+          <VStack gap={0}>
+            <Text type="label">{fullName(user)}</Text>
+            <Text type="supporting" wordBreak="break-word">
+              {user.email}
+            </Text>
+          </VStack>
+        </StackItem>
         <ActiveToken isActive={user.isActive} />
       </HStack>
       <Text type="supporting">{`${tc(`roles.${user.role}`)}${META_SEPARATOR}${user.departmentName ?? tc('none')}`}</Text>

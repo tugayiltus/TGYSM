@@ -8,6 +8,7 @@ import { Card } from '@astryxdesign/core/Card';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Pagination } from '@astryxdesign/core/Pagination';
 import { Selector } from '@astryxdesign/core/Selector';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -103,9 +104,11 @@ export function EmailDeliveriesPage() {
   const renderCard = (delivery: EmailDeliveryItem) => (
     <VStack gap={2}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <Text type="label" wordBreak="break-all">
-          {delivery.recipientEmail}
-        </Text>
+        <StackItem size="fill">
+          <Text type="label" wordBreak="break-all">
+            {delivery.recipientEmail}
+          </Text>
+        </StackItem>
         <DeliveryStatusToken status={delivery.status} />
       </HStack>
       <VStack gap={0}>
@@ -113,7 +116,7 @@ export function EmailDeliveriesPage() {
         {delivery.lastError && <Text type="supporting">{`${t('emailDeliveries.columns.error')}: ${delivery.lastError}`}</Text>}
         <Text type="supporting">{`${formatDateTime(delivery.eventCreatedAt)}${META_SEPARATOR}${t('emailDeliveries.columns.attempts')}: ${delivery.attempts}`}</Text>
       </VStack>
-      {retryButton(delivery)}
+      <HStack>{retryButton(delivery)}</HStack>
     </VStack>
   );
 

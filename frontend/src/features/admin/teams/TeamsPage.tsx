@@ -8,6 +8,7 @@ import { Card } from '@astryxdesign/core/Card';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { Pagination } from '@astryxdesign/core/Pagination';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -87,12 +88,14 @@ export function TeamsPage() {
   const renderCard = (team: TeamItem) => (
     <VStack gap={2}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <VStack gap={0}>
-          <Text type="label" wordBreak="break-word">
-            {team.name}
-          </Text>
-          <Text type="supporting">{t('teams.memberCount', { count: team.memberCount })}</Text>
-        </VStack>
+        <StackItem size="fill">
+          <VStack gap={0}>
+            <Text type="label" wordBreak="break-word">
+              {team.name}
+            </Text>
+            <Text type="supporting">{t('teams.memberCount', { count: team.memberCount })}</Text>
+          </VStack>
+        </StackItem>
         <TeamTokens team={team} />
       </HStack>
       {actions(team)}

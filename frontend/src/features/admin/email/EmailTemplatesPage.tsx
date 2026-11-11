@@ -5,6 +5,7 @@
  */
 import { Button } from '@astryxdesign/core/Button';
 import { Card } from '@astryxdesign/core/Card';
+import { HStack } from '@astryxdesign/core/HStack';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
@@ -69,7 +70,7 @@ export function EmailTemplatesPage() {
         </Text>
         <Text type="supporting">{formatDateTime(template.updatedAt)}</Text>
       </VStack>
-      {editButton(template)}
+      <HStack>{editButton(template)}</HStack>
     </VStack>
   );
 

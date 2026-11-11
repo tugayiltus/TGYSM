@@ -8,6 +8,7 @@ import { Card } from '@astryxdesign/core/Card';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { Selector } from '@astryxdesign/core/Selector';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -121,12 +122,14 @@ export function RequestTypesPage() {
   const renderCard = (r: RequestTypeItem) => (
     <VStack gap={2}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <VStack gap={0}>
-          <Text type="label" wordBreak="break-word">
-            {r.name}
-          </Text>
-          <Text type="supporting">{approvalText(r)}</Text>
-        </VStack>
+        <StackItem size="fill">
+          <VStack gap={0}>
+            <Text type="label" wordBreak="break-word">
+              {r.name}
+            </Text>
+            <Text type="supporting">{approvalText(r)}</Text>
+          </VStack>
+        </StackItem>
         <ActiveToken isActive={r.isActive} />
       </HStack>
       {actions(r)}

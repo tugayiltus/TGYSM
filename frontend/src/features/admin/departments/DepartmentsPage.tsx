@@ -8,6 +8,7 @@ import { Card } from '@astryxdesign/core/Card';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { Pagination } from '@astryxdesign/core/Pagination';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useState } from 'react';
@@ -65,12 +66,14 @@ export function DepartmentsPage() {
   const renderCard = (d: DepartmentItem) => (
     <VStack gap={2}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <VStack gap={0}>
-          <Text type="label" wordBreak="break-word">
-            {d.name}
-          </Text>
-          <Text type="supporting">{d.approverName ?? tc('none')}</Text>
-        </VStack>
+        <StackItem size="fill">
+          <VStack gap={0}>
+            <Text type="label" wordBreak="break-word">
+              {d.name}
+            </Text>
+            <Text type="supporting">{d.approverName ?? tc('none')}</Text>
+          </VStack>
+        </StackItem>
         <ActiveToken isActive={d.isActive} />
       </HStack>
       {actions(d)}

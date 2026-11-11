@@ -151,4 +151,29 @@ describe('ListToolbar', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Durum' })).not.toBeInTheDocument());
   });
+
+  it('shows only the search box on phones when a list has no filters', async () => {
+    stubPhone(true);
+    const user = userEvent.setup();
+    const router = createMemoryRouter(
+      [{ path: '/list', element: <SearchOnlyHarness /> }],
+      { initialEntries: ['/list'] },
+    );
+    render(
+      <AstryxProvider>
+        <RouterProvider router={router} />
+      </AstryxProvider>,
+    );
+    expect(screen.queryByRole('button', { name: /^Filtreler/ })).not.toBeInTheDocument();
+    await user.type(screen.getByRole('searchbox', { name: 'Ara' }), 'vpn');
+    expect(await screen.findByRole('button', { name: 'Temizle' })).toBeInTheDocument();
+  });
 });
+
+function SearchOnlyHarness() {
+  const list = useListParams(NO_FILTER_KEYS);
+  return <ListToolbar title="Liste" search={list.search} onSearchChange={list.setSearch} activeCount={list.activeCount} onClear={list.clear} />;
+}
+
+const NO_FILTER_KEYS = [] as const;
+

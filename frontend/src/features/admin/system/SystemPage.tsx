@@ -5,6 +5,7 @@
  */
 import { Banner } from '@astryxdesign/core/Banner';
 import { HStack } from '@astryxdesign/core/HStack';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
@@ -62,7 +63,9 @@ export function SystemPage() {
   const renderCard = (heartbeat: WorkerHeartbeatItem) => (
     <VStack gap={1}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <Text type="label">{heartbeat.job}</Text>
+        <StackItem size="fill">
+          <Text type="label">{heartbeat.job}</Text>
+        </StackItem>
         <HStack gap={1} wrap="wrap">
           <FreshnessBadge stale={heartbeat.stale} />
           <InstanceBadge silent={isSilent(heartbeat, fetchedAt)} />

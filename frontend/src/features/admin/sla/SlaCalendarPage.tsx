@@ -217,7 +217,7 @@ function HolidaysSection() {
         <Text type="label">{h.name}</Text>
         <Text type="supporting">{formatDate(h.date)}</Text>
       </VStack>
-      {removeButton(h)}
+      <HStack>{removeButton(h)}</HStack>
     </VStack>
   );
 

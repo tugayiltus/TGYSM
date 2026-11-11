@@ -7,6 +7,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { Card } from '@astryxdesign/core/Card';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -92,9 +93,11 @@ export function BrandsPage() {
   const renderCard = (b: BrandItem) => (
     <VStack gap={2}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <Text type="label" wordBreak="break-word">
-          {b.name}
-        </Text>
+        <StackItem size="fill">
+          <Text type="label" wordBreak="break-word">
+            {b.name}
+          </Text>
+        </StackItem>
         <ActiveToken isActive={b.isActive} />
       </HStack>
       {actions(b)}

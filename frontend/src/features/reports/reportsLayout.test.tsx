@@ -5,6 +5,7 @@ import packageJson from '../../../package.json';
 import { ADMIN_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 import { INCIDENTS, REFERENCE_ROUTES, reportResult } from '../../test/reportData';
+import { chooseOption } from '../../test/select';
 import { stubPhoneViewport } from '../../test/viewport';
 
 const MS_PER_DAY = 86_400_000;
@@ -45,6 +46,16 @@ describe('report period', () => {
     const params = new URLSearchParams(router.state.location.search);
     expect((Date.parse(params.get('to') ?? '') - Date.parse(params.get('from') ?? '')) / MS_PER_DAY).toBe(6);
     expect(screen.getByRole('button', { name: 'Son 7 gün' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('offers the quick periods in a selector on phones', async () => {
+    stubPhoneViewport();
+    mockApi(routes());
+    const { user, router } = renderRoute('/reports/incidents');
+    await chooseOption(user, 'Dönem', 'Son 7 gün');
+    const params = new URLSearchParams(router.state.location.search);
+    expect((Date.parse(params.get('to') ?? '') - Date.parse(params.get('from') ?? '')) / MS_PER_DAY).toBe(6);
+    expect(screen.queryByRole('button', { name: 'Son 7 gün' })).not.toBeInTheDocument();
   });
 
   it('warns when a date range in the URL ends before it starts (UX-12)', async () => {

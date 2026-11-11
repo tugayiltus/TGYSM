@@ -7,6 +7,7 @@ import { Card } from '@astryxdesign/core/Card';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Pagination } from '@astryxdesign/core/Pagination';
 import { Selector } from '@astryxdesign/core/Selector';
+import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useTranslation } from 'react-i18next';
@@ -71,12 +72,14 @@ export function TicketList({ queue, showWorkColumns }: { queue: TicketQueue | un
   const renderCard = (x: TicketListItem) => (
     <VStack gap={2}>
       <HStack gap={2} hAlign="between" vAlign="start">
-        <VStack gap={0}>
-          <Text type="supporting">{x.number}</Text>
-          <Text type="label" wordBreak="break-word">
-            {x.subject}
-          </Text>
-        </VStack>
+        <StackItem size="fill">
+          <VStack gap={0}>
+            <Text type="supporting">{x.number}</Text>
+            <Text type="label" wordBreak="break-word">
+              {x.subject}
+            </Text>
+          </VStack>
+        </StackItem>
         <TicketStatusBadge status={x.status} />
       </HStack>
       {showWorkColumns && (

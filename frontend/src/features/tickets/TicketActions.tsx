@@ -65,11 +65,12 @@ export function TicketActions({ ticket }: { ticket: TicketDetail }) {
     <SectionCard title={t('actions.title')}>
       <FormAlert message={direct.error ? describeError(direct.error) : null} />
       <HStack gap={2} wrap="wrap">
-        {actions.direct.map((kind) => (
+        {/* One primary action per group: the first direct step; the rest are secondary. */}
+        {actions.direct.map((kind, index) => (
           <Button
             key={kind}
             label={t(`actions.${kind}`)}
-            variant="primary"
+            variant={index === 0 ? 'primary' : 'secondary'}
             isDisabled={refreshing}
             isLoading={direct.isPending && direct.variables?.kind === kind}
             onClick={() => direct.mutate({ kind })}
