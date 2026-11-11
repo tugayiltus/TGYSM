@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router';
 import { z } from 'zod';
 
 import { applyServerErrors, describeError, isHandledByFields } from '../../../shared/api/errorMessage';
@@ -39,7 +40,13 @@ import { useAssetModels, useBrands, useSaveAssetModel, useSetAssetModelActive, t
 import { NAME_CODE_FIELDS, nameSchema } from './catalogName';
 
 const SKELETON_ROWS = 5;
-const BRAND_FILTER_KEY = 'brand';
+export const BRAND_FILTER_KEY = 'brand';
+/** Navigation state from a brand row: open the model form with this brand chosen. */
+export interface ModelsPageState {
+  createModelForBrand: string;
+}
+const brandToCreateFor = (state: unknown): string | undefined =>
+  typeof state === 'object' && state !== null && 'createModelForBrand' in state && typeof state.createModelForBrand === 'string' ? state.createModelForBrand : undefined;
 const FILTER_KEYS = [BRAND_FILTER_KEY, STATUS_FILTER_KEY] as const;
 
 const createSchema = nameSchema.extend({
@@ -52,7 +59,7 @@ const CREATE_FIELDS = ['brandId', 'type', 'name'] as const;
 
 const modelName = (m: AssetModelItem) => `${m.brandName} ${m.name}`;
 
-function ModelFormDialog({ model, onClose }: { model: AssetModelItem | null; onClose: () => void }) {
+function ModelFormDialog({ model, initialBrandId, onClose }: { model: AssetModelItem | null; initialBrandId?: string; onClose: () => void }) {
   const { t } = useTranslation('admin');
   const { t: ta } = useTranslation('assets');
   const { t: tc } = useTranslation();
@@ -60,7 +67,7 @@ function ModelFormDialog({ model, onClose }: { model: AssetModelItem | null; onC
   const brands = useBrands();
   const { control, handleSubmit, setError } = useForm<CreateValues>({
     resolver: zodResolver(model === null ? createSchema : editSchema),
-    defaultValues: { brandId: model?.brandId ?? '', type: model?.type ?? '', name: model?.name ?? '' },
+    defaultValues: { brandId: model?.brandId ?? initialBrandId ?? '', type: model?.type ?? '', name: model?.name ?? '' },
   });
   const onSubmit = handleSubmit((v) =>
     save.mutate(model === null ? { id: null, brandId: v.brandId, type: v.type as AssetType, name: v.name } : { id: model.id, version: model.version, name: v.name }, {
@@ -113,8 +120,20 @@ export function ModelsPage() {
   const brands = useBrands();
   const models = useAssetModels(brandId);
   const setActive = useSetAssetModelActive();
-  const [form, setForm] = useState<{ model: AssetModelItem | null } | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [form, setForm] = useState<{ model: AssetModelItem | null; brandId?: string } | null>(() => {
+    const brandFromRow = brandToCreateFor(location.state);
+    return brandFromRow === undefined ? null : { model: null, brandId: brandFromRow };
+  });
   const [toggling, setToggling] = useState<AssetModelItem | null>(null);
+  const closeForm = () => {
+    setForm(null);
+    // The request from a brand row is used once; a reload or a back step must not open the form again.
+    if (brandToCreateFor(location.state) !== undefined) {
+      void navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
+    }
+  };
   const rows = models.data === undefined ? undefined : filterRows(models.data, list.search, status, modelName);
 
   const actions = (m: AssetModelItem) => (
@@ -186,7 +205,7 @@ export function ModelsPage() {
           <DataList items={rows} columns={columns} getKey={(m) => m.id} renderCard={renderCard} caption={t('deviceCatalog.models.listCaption')} />
         )}
       </Card>
-      {form !== null && <ModelFormDialog key={form.model?.id ?? 'new'} model={form.model} onClose={() => setForm(null)} />}
+      {form !== null && <ModelFormDialog key={form.model?.id ?? 'new'} model={form.model} initialBrandId={form.brandId} onClose={closeForm} />}
       {toggling !== null && (
         <ConfirmDialog
           title={toggling.isActive ? tc('actions.deactivate') : tc('actions.reactivate')}

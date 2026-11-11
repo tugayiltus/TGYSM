@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../../test/mockApi';
 import { renderRoute } from '../../../test/renderRoute';
-import { chooseOption } from '../../../test/select';
+import { chooseOption, findSelect } from '../../../test/select';
 
 const BRANDS = [
   { id: 'b-1', name: 'Lenovo', isActive: true, version: 3 },
@@ -54,6 +54,34 @@ describe('BrandsPage', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Marka ara' }), 'LEN');
     expect(await within(table).findByText('Lenovo')).toBeInTheDocument();
     expect(within(table).queryByText('Apple')).not.toBeInTheDocument();
+  });
+});
+
+describe('brand row actions', () => {
+  const routes = () => ({
+    'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+    'GET /api/v1/admin/brands': { status: 200, body: BRANDS },
+    'GET /api/v1/admin/models': { status: 200, body: MODELS },
+  });
+
+  it('opens the models of a brand', async () => {
+    mockApi(routes());
+    const { user, router } = renderRoute('/admin/brands');
+    await user.click(await screen.findByRole('button', { name: 'Modelleri gör Lenovo' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/admin/models'));
+    expect(new URLSearchParams(router.state.location.search).get('brand')).toBe('b-1');
+  });
+
+  it('opens the model form with the brand chosen, once', async () => {
+    mockApi(routes());
+    const { user, router } = renderRoute('/admin/brands');
+    await user.click(await screen.findByRole('button', { name: 'Model ekle Lenovo' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(router.state.location.pathname).toBe('/admin/models');
+    expect(await findSelect(/^Marka/, dialog)).toHaveTextContent('Lenovo');
+    await user.click(within(dialog).getByRole('button', { name: 'Vazgeç' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(router.state.location.state).toBeNull();
   });
 });
 

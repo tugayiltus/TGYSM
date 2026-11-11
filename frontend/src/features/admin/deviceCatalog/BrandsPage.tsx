@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 
 import { applyServerErrors, describeError, isHandledByFields } from '../../../shared/api/errorMessage';
 import { ConfirmDialog } from '../../../shared/feedback/ConfirmDialog';
@@ -27,12 +28,15 @@ import { PageHeader } from '../../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../../shared/navigation/routeMeta';
 import { ActiveToken } from '../../../shared/page/ActiveToken';
 import { RecordActions } from '../../../shared/page/RecordActions';
+import { ROUTES } from '../../../shared/routes';
 import { Icons } from '../../../shared/ui/icons';
+import { recordActionLabel } from '../../../shared/ui/recordActionLabel';
 import { filterRows, readStatusFilter, STATUS_FILTER_KEY } from '../shared/statusFilter';
 import { StatusFilterSelector } from '../shared/StatusFilterSelector';
 
 import { useBrands, useSaveBrand, useSetBrandActive, type BrandItem } from './api';
 import { NAME_CODE_FIELDS, NAME_FIELDS, nameSchema, type NameValues } from './catalogName';
+import { BRAND_FILTER_KEY, type ModelsPageState } from './ModelsPage';
 
 const SKELETON_ROWS = 5;
 const FILTER_KEYS = [STATUS_FILTER_KEY] as const;
@@ -73,10 +77,29 @@ export function BrandsPage() {
   const [form, setForm] = useState<{ brand: BrandItem | null } | null>(null);
   const [toggling, setToggling] = useState<BrandItem | null>(null);
   const rows = brands.data === undefined ? undefined : filterRows(brands.data, list.search, status, (b) => b.name);
+  const navigate = useNavigate();
 
   const actions = (b: BrandItem) => (
     <RecordActions
       name={b.name}
+      extra={
+        <>
+          <Button
+            label={t('deviceCatalog.brands.viewModels')}
+            aria-label={recordActionLabel(t('deviceCatalog.brands.viewModels'), b.name)}
+            size="sm"
+            variant="secondary"
+            onClick={() => void navigate(`${ROUTES.adminModels}?${new URLSearchParams({ [BRAND_FILTER_KEY]: b.id }).toString()}`)}
+          />
+          <Button
+            label={t('deviceCatalog.brands.addModel')}
+            aria-label={recordActionLabel(t('deviceCatalog.brands.addModel'), b.name)}
+            size="sm"
+            variant="secondary"
+            onClick={() => void navigate(ROUTES.adminModels, { state: { createModelForBrand: b.id } satisfies ModelsPageState })}
+          />
+        </>
+      }
       isActive={b.isActive}
       onEdit={() => setForm({ brand: b })}
       onToggle={() => {

@@ -479,6 +479,8 @@
     "brands": {
       "title": "Markalar",
       "new": "Yeni marka",
+      "viewModels": "Modelleri gör",
+      "addModel": "Model ekle",
       "edit": "Markayı düzenle",
       "listCaption": "Markalar listesi",
       "searchLabel": "Marka ara",
