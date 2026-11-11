@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { figureListHref, type ReportFigure, type ReportName } from './api';
 import { chartHeight } from './chartSize';
 import { bucketLabel, describeFigure, formatNumber, metricLabel } from './formatMetric';
+import { companyToday, periodText } from './period';
 import type { ReportFilterValues } from './useReportFilter';
 
 // Chart.js stays out of the page chunk: it loads with the first distribution card (vendor-charts).
@@ -32,6 +33,7 @@ export interface FigureCardProps {
 export function FigureCard({ report, figure, filter }: FigureCardProps) {
   const { t } = useTranslation('reports');
   const view = describeFigure(figure);
+  const period = periodText(filter, companyToday());
   const title = metricLabel(figure.metric);
   const titleId = useId();
   const headlineId = useId();
@@ -43,9 +45,9 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
       <article aria-labelledby={titleId} aria-describedby={view.headline !== null ? headlineId : undefined}>
         <VStack gap={2}>
           <Heading level={2} id={titleId}>
-            <Link href={figureListHref(report, figure.metric, filter)}>{title}</Link>
+            {view.isEmpty ? title : <Link href={figureListHref(report, figure.metric, filter)}>{title}</Link>}
           </Heading>
-          {view.noData && <Text type="supporting">{t('figure.noData')}</Text>}
+          {view.isEmpty && <Text type="supporting">{period === null ? t('figure.empty') : t('figure.emptyForPeriod', { period })}</Text>}
           {view.headline !== null && (
             <Text type="display-3" color="accent" id={headlineId}>
               {view.headline}
@@ -63,7 +65,7 @@ export function FigureCard({ report, figure, filter }: FigureCardProps) {
             </MetadataList>
           )}
           {view.note !== null && <Text type="supporting">{view.note}</Text>}
-          {figure.shape === 'ratio' && figure.denominator !== null && (
+          {figure.shape === 'ratio' && figure.denominator !== null && !view.isEmpty && (
             <Link href={figureListHref(report, figure.metric, filter, '', 'denominator')}>{t('figure.openDenominator', { count: figure.denominator })}</Link>
           )}
           {bars.length > 0 && (

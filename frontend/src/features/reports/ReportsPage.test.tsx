@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
-import { INCIDENTS, REFERENCE_ROUTES, reportResult, TEAM_LOAD, VOLUME } from '../../test/reportData';
+import { INCIDENTS, REFERENCE_ROUTES, reportResult, SLA_COMPLIANCE, TEAM_LOAD, VOLUME } from '../../test/reportData';
 import { chooseOption } from '../../test/select';
 
 /** An explicit range, so the default last-30-days period does not apply. */
@@ -28,7 +28,7 @@ describe('ReportsPage', () => {
     expect(await screen.findByRole('link', { name: 'Açılan kayıt' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/reports/incidents');
     const tabs = screen.getByRole('navigation', { name: 'Rapor türleri' });
-    const names = ['Olaylar', 'Talepler', 'Operasyon', 'Transferler', 'Varlıklar', 'Garanti'];
+    const names = ['Olaylar', 'Talepler', 'Operasyon', 'Transferler', 'Envanter', 'Garanti'];
     expect(within(tabs).getAllByRole('link')).toHaveLength(names.length);
     for (const name of names) {
       expect(within(tabs).getByRole('link', { name })).toBeInTheDocument();
@@ -48,12 +48,12 @@ describe('ReportsPage', () => {
     expect(card).toHaveAccessibleDescription(String(VOLUME.value));
   });
 
-  it('shows "Veri yok" for a figure without data and the ratio parts', async () => {
+  it('names the period on a figure without data and shows the ratio parts', async () => {
     mockApi(routes());
     renderRoute('/reports/incidents');
 
-    const card = (await screen.findByRole('link', { name: 'İlk yanıt süresi' })).closest('article');
-    expect(within(card as HTMLElement).getByText('Veri yok')).toBeInTheDocument();
+    const card = await screen.findByRole('article', { name: 'İlk yanıt süresi' });
+    expect(within(card).getByText('Son 30 gün için kayıt yok.')).toBeInTheDocument();
     const ratio = screen.getByRole('link', { name: 'SLA uyumu' }).closest('article') as HTMLElement;
     expect(within(ratio).getByText('%75')).toBeInTheDocument();
     expect(within(ratio).getByText('3 / 4')).toBeInTheDocument();
@@ -102,6 +102,16 @@ describe('ReportsPage', () => {
     expect(from).not.toHaveValue('2026-05-10');
   });
 
+  it('names the period on an empty card instead of linking to an empty list', async () => {
+    const empty = { ...INCIDENTS, figures: [{ ...SLA_COMPLIANCE, value: null, numerator: 0, denominator: 0 }] };
+    mockApi({ ...routes(), 'GET /api/v1/reports/incidents': { status: 200, body: empty } });
+    renderRoute(`/reports/incidents?${RANGE}`);
+
+    const card = await screen.findByRole('article', { name: 'SLA uyumu' });
+    expect(within(card).getByText('1 Eyl 2026 – 30 Eyl 2026 için kayıt yok.')).toBeInTheDocument();
+    expect(within(card).queryByRole('link')).not.toBeInTheDocument();
+  });
+
   it('builds the drill-down URL of a card with the same filters', async () => {
     mockApi(routes());
     const { user, router } = renderRoute(`/reports/incidents?${RANGE}&priority=p1`);
@@ -127,7 +137,7 @@ describe('ReportsPage', () => {
 
     const tabs = await screen.findByRole('navigation', { name: 'Rapor türleri' });
     expect(within(tabs).getByRole('link', { name: 'Operasyon' })).toHaveAttribute('href', '/reports/operations?priority=p1&status=open');
-    expect(within(tabs).getByRole('link', { name: 'Varlıklar' })).toHaveAttribute('href', '/reports/assets');
+    expect(within(tabs).getByRole('link', { name: 'Envanter' })).toHaveAttribute('href', '/reports/assets');
   });
 
   it('labels the team scope of IT staff and shows bucket names from the server', async () => {

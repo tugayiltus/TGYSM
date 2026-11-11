@@ -64,6 +64,8 @@ export interface FigureLine {
 /** What a figure card shows: a headline number, or labeled lines (calendar and SLA time), plus a note. */
 export interface FigureView {
   noData: boolean;
+  /** No records behind the figure: no value, a zero count or a zero denominator; its drill-down list would be empty. */
+  isEmpty: boolean;
   headline: string | null;
   lines: FigureLine[];
   note: string | null;
@@ -73,7 +75,7 @@ const bucketCount = (figure: ReportFigure, key: string) => figure.buckets?.find(
 
 const sampleNote = (figure: ReportFigure) => (figure.denominator === null ? null : i18n.t('reports:figure.sample', { count: figure.denominator }));
 
-function durationView(figure: ReportFigure, calendar: number, sla: number | undefined): FigureView {
+function durationView(figure: ReportFigure, calendar: number, sla: number | undefined): Omit<FigureView, 'isEmpty'> {
   const lines = [{ label: i18n.t('reports:figure.calendar'), text: formatDuration(calendar) }];
   if (sla !== undefined) {
     lines.push({ label: i18n.t('reports:figure.sla'), text: formatDuration(sla) });
@@ -81,7 +83,14 @@ function durationView(figure: ReportFigure, calendar: number, sla: number | unde
   return { noData: false, headline: null, lines, note: sampleNote(figure) };
 }
 
+/** A figure has records behind it unless its value is missing, a count is zero or a ratio has nothing to divide by. */
+const isEmptyFigure = (figure: ReportFigure) => figure.value === null || figure.denominator === 0 || (figure.shape === 'count' && figure.value === 0);
+
 export function describeFigure(figure: ReportFigure): FigureView {
+  return { ...describeValue(figure), isEmpty: isEmptyFigure(figure) };
+}
+
+function describeValue(figure: ReportFigure): Omit<FigureView, 'isEmpty'> {
   if (figure.value === null) {
     return { noData: true, headline: null, lines: [], note: null };
   }

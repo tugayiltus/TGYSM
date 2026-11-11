@@ -10,7 +10,7 @@ const SECONDS_PER_DAY = 86_400;
 
 describe('formatMetric', () => {
   it('shows "Veri yok" data state for a null value', () => {
-    expect(describeFigure(FIRST_RESPONSE_NO_DATA)).toEqual({ noData: true, headline: null, lines: [], note: null });
+    expect(describeFigure(FIRST_RESPONSE_NO_DATA)).toEqual({ noData: true, isEmpty: true, headline: null, lines: [], note: null });
   });
 
   it('formats a ratio as a percent with numerator / denominator', () => {
@@ -59,5 +59,15 @@ describe('formatMetric', () => {
     expect(bucketLabel(TEAM_LOAD.metric, { key: 'x', label: 'Ağ Ekibi' })).toBe('Ağ Ekibi');
     expect(bucketLabel('by_status', { key: 'retired', label: null })).toBe('Kullanım dışı');
     expect(bucketLabel('hold_reasons', { key: 'none', label: null })).toBe('Belirtilmemiş');
+  });
+});
+
+describe('empty figures', () => {
+  it('counts a figure without data, a zero count and a zero denominator as empty', () => {
+    expect(describeFigure(FIRST_RESPONSE_NO_DATA).isEmpty).toBe(true);
+    expect(describeFigure({ ...VOLUME, value: 0 }).isEmpty).toBe(true);
+    expect(describeFigure({ ...SLA_COMPLIANCE, value: null, numerator: 0, denominator: 0 }).isEmpty).toBe(true);
+    expect(describeFigure(VOLUME).isEmpty).toBe(false);
+    expect(describeFigure(SLA_COMPLIANCE).isEmpty).toBe(false);
   });
 });

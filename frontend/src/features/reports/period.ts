@@ -1,4 +1,5 @@
-import { APP_TIME_ZONE } from '../../shared/lib/format';
+import i18n from '../../shared/i18n';
+import { APP_TIME_ZONE, formatDate } from '../../shared/lib/format';
 
 import type { ReportName } from './api';
 
@@ -54,4 +55,13 @@ export function matchPreset(period: Partial<Period>, today: string): PeriodPrese
     const candidate = presetPeriod(preset, today);
     return candidate.from === period.from && candidate.to === period.to;
   }) ?? null;
+}
+
+/** The period in words: a matching preset's name ("Son 30 gün") or both days; null unless both days are set. */
+export function periodText(period: Partial<Period>, today: string): string | null {
+  if (period.from === undefined || period.to === undefined) {
+    return null;
+  }
+  const preset = matchPreset(period, today);
+  return preset === null ? `${formatDate(period.from)} – ${formatDate(period.to)}` : i18n.t(`reports:period.${preset}`);
 }
