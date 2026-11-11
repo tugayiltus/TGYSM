@@ -24,6 +24,8 @@
   },
   "filters": {
     "label": "Rapor filtreleri",
+    "more": "Diğer filtreler",
+    "moreCount": "Diğer filtreler ({{count}})",
     "from": "Başlangıç tarihi",
     "to": "Bitiş tarihi",
     "kind": "Kayıt türü",

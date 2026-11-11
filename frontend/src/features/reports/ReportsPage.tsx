@@ -6,6 +6,7 @@
 import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { Grid } from '@astryxdesign/core/Grid';
+import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { Tab, TabList } from '@astryxdesign/core/TabList';
 import { Text } from '@astryxdesign/core/Text';
@@ -15,6 +16,7 @@ import { Navigate, useParams, useSearchParams } from 'react-router';
 
 import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
 import { ListToolbar } from '../../shared/list/ListToolbar';
+import { useIsPhone } from '../../shared/list/useIsPhone';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { SectionCard } from '../../shared/page/SectionCard';
@@ -56,19 +58,26 @@ function ReportView({ report }: { report: ReportName }) {
   const { t } = useTranslation('reports');
   const { filter, setFilter, setPeriod, clear, periodic, today, reversedRange } = useReportFilter(report);
   const result = useReport(report, filter);
+  const { t: tc } = useTranslation();
+  const isPhone = useIsPhone();
+  const activeCount = activeFilterKeys(filter).length;
+  const filterBar = <ReportFilterBar report={report} filter={filter} onChange={setFilter} />;
 
   return (
     <>
       <SectionCard title={t('filters.panel')}>
         {periodic && <PeriodPicker period={filter} today={today} onChange={setPeriod} />}
         {reversedRange && <Banner status="warning" title={t('page.reversedRange')} />}
-        <ListToolbar
-          title={t('filters.panel')}
-          filters={<ReportFilterBar report={report} filter={filter} onChange={setFilter} />}
-          activeCount={activeFilterKeys(filter).length}
-          onClear={clear}
-        />
-        <ActiveFilterChips filter={filter} onRemove={(key) => setFilter(key, '')} />
+        {isPhone ? (
+          <ListToolbar title={t('filters.panel')} filters={filterBar} activeCount={activeCount} onClear={clear} />
+        ) : (
+          // Wide screens: the filters take the card's width; the toolbar row would squeeze them into one column.
+          filterBar
+        )}
+        <HStack gap={2} wrap="wrap" vAlign="center">
+          <ActiveFilterChips filter={filter} onRemove={(key) => setFilter(key, '')} />
+          {!isPhone && activeCount > 0 && <Button label={tc('filters.clear')} variant="ghost" onClick={clear} />}
+        </HStack>
       </SectionCard>
       {result.isPending && <LoadingState />}
       {result.isError && <ErrorState error={result.error} onRetry={() => void result.refetch()} />}

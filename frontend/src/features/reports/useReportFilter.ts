@@ -73,6 +73,15 @@ export const REPORT_FILTER_FIELDS: Record<ReportName, readonly ReportFilterKey[]
   warranty: ['from', 'to', ...ASSET_FIELDS],
 };
 
+/** Filters shown on first view; the rest of a report's filters sit under "Diğer filtreler". */
+export const MAIN_FILTER_KEYS: readonly ReportFilterKey[] = ['from', 'to', 'priority', 'status', 'teamId', 'assetType', 'assetStatus'];
+
+/** A report's filters split into the main ones (in `MAIN_FILTER_KEYS` order) and the rest (in the report's order). */
+export function splitFilterFields(report: ReportName): { main: ReportFilterKey[]; other: ReportFilterKey[] } {
+  const fields = REPORT_FILTER_FIELDS[report];
+  return { main: MAIN_FILTER_KEYS.filter((key) => fields.includes(key)), other: fields.filter((key) => !MAIN_FILTER_KEYS.includes(key)) };
+}
+
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ISO_DAY_LENGTH = 10;

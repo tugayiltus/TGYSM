@@ -14,6 +14,24 @@ const DRILLDOWN_URL = /\/reports\/incidents\/list\?/;
 const EXPORT_READY_TIMEOUT_MS = 30_000;
 /** Seeding, a synchronous export and waiting up to EXPORT_READY_TIMEOUT_MS for the background one exceed the 30 s default. */
 const REPORTS_TEST_TIMEOUT_MS = 90_000;
+const REPORT_PATHS = ['incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty'] as const;
+/** Two rows of fields with "Diğer filtreler" closed; ten fields in one column measured 668 px before the fix. */
+const FILTER_AREA_MAX_HEIGHT_PX = 200;
+/** At 1280 px the filters measured about 200 px wide before the fix; the card is about 1000 px wide. */
+const FILTER_AREA_MIN_WIDTH_PX = 700;
+
+test('reports: the filters use the card width and stay within two rows on wide screens', async ({ browser }, info) => {
+  test.skip(info.project.name !== 'desktop', 'The filters sit in a drawer below 768 px.');
+  const admin = await adminSession(browser);
+  for (const report of REPORT_PATHS) {
+    await admin.page.goto(`/reports/${report}`);
+    const form = admin.page.getByRole('form', { name: 'Rapor filtreleri' });
+    await expect(form).toBeVisible();
+    const box = await form.boundingBox();
+    expect(box?.height, report).toBeLessThanOrEqual(FILTER_AREA_MAX_HEIGHT_PX);
+    expect(box?.width, report).toBeGreaterThanOrEqual(FILTER_AREA_MIN_WIDTH_PX);
+  }
+});
 
 test('reports: admin drills into an incident figure, exports it and downloads a background export', async ({ browser }, testInfo) => {
   test.setTimeout(REPORTS_TEST_TIMEOUT_MS);
@@ -30,11 +48,15 @@ test('reports: admin drills into an incident figure, exports it and downloads a 
   // The department is unique to this world, so the figure counts exactly the incidents seeded above.
   // On phones the filters sit behind the "Filtreler (n)" button in a drawer; filters apply as they change.
   const filtersButton = page.getByRole('button', { name: /^Filtreler \(\d+\)$/ });
+  // Departman is a minor filter: it sits under the collapsed "Diğer filtreler" in both layouts.
   if (await filtersButton.isVisible()) {
     await filtersButton.click();
-    await chooseOption(page.getByRole('dialog', { name: 'Filtreler' }), 'Departman', world.departmentName);
+    const drawer = page.getByRole('dialog', { name: 'Filtreler' });
+    await drawer.getByRole('button', { name: /^Diğer filtreler/ }).click();
+    await chooseOption(drawer, 'Departman', world.departmentName);
     await page.keyboard.press('Escape');
   } else {
+    await page.getByRole('button', { name: /^Diğer filtreler/ }).click();
     await chooseOption(page, 'Departman', world.departmentName);
   }
   // The card is described by its headline value only, so other numbers on it cannot satisfy the check.

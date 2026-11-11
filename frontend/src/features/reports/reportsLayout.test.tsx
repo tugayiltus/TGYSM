@@ -8,6 +8,8 @@ import { INCIDENTS, REFERENCE_ROUTES, reportResult } from '../../test/reportData
 import { chooseOption } from '../../test/select';
 import { stubPhoneViewport } from '../../test/viewport';
 
+import { splitFilterFields } from './useReportFilter';
+
 const MS_PER_DAY = 86_400_000;
 const LAST_30_SPAN_DAYS = 29;
 
@@ -82,6 +84,34 @@ describe('report filters', () => {
     const chips = screen.getByRole('list', { name: 'Etkin filtreler' });
     await user.click(within(chips).getByRole('button', { name: /Öncelik/ }));
     await waitFor(() => expect(new URLSearchParams(router.state.location.search).has('priority')).toBe(false));
+  });
+});
+
+describe('report filter layout', () => {
+  const CATEGORY = '00000000-0000-7000-8000-00000000ca71';
+
+  it('puts period, priority, status and team first and keeps the rest in report order', () => {
+    expect(splitFilterFields('incidents')).toEqual({
+      main: ['from', 'to', 'priority', 'status', 'teamId'],
+      other: ['categoryId', 'assigneeId', 'departmentId', 'locationId', 'slaState'],
+    });
+    expect(splitFilterFields('operations').other[0]).toBe('kind');
+    expect(splitFilterFields('assets')).toEqual({ main: ['assetType', 'assetStatus'], other: ['departmentId', 'locationId'] });
+  });
+
+  it('keeps minor filters under a closed "Diğer filtreler" that counts an active one from the URL', async () => {
+    mockApi(routes());
+    const { user } = renderRoute(`/reports/incidents?categoryId=${CATEGORY}`);
+    const more = await screen.findByRole('button', { name: 'Diğer filtreler (1)' });
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('combobox', { name: 'Öncelik' })).toBeVisible();
+    expect(within(screen.getByRole('list', { name: 'Etkin filtreler' })).getByRole('button', { name: /Kategori/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Temizle' })).toBeVisible();
+
+    // jsdom loads no StyleX CSS, so the collapsed state is checked on the trigger; E2E checks the height.
+    await user.click(more);
+    expect(more).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('combobox', { name: 'Kategori' })).toBeInTheDocument();
   });
 });
 
