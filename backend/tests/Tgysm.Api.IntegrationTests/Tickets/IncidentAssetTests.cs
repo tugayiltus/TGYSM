@@ -68,19 +68,56 @@ public sealed class IncidentAssetTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_device_that_is_not_assigned_to_me_is_refused_and_no_ticket_is_created()
+    public async Task A_device_assigned_to_someone_else_can_be_named_on_a_new_incident()
     {
         var world = await TicketWorld.CreateAsync(factory);
         var other = await TestUsers.CreateAsync(factory, UserRole.Employee, "baska@example.com");
-        var someoneElses = await AssetAsync(world, other.Id);
-        var inStock = await AssetAsync(world, assignTo: null);
+        var assetId = (await AssetAsync(world, other.Id)).GetProperty("id").GetGuid();
 
-        using var foreign = await world.Employee.PostAsync(IncidentsPath, new { subject = "Ekran", description = "x", assetId = someoneElses.GetProperty("id").GetGuid() });
-        using var stock = await world.Employee.PostAsync(IncidentsPath, new { subject = "Ekran", description = "x", assetId = inStock.GetProperty("id").GetGuid() });
+        using var response = await world.Employee.PostAsync(IncidentsPath, new { subject = "Yazıcı", description = "Kağıt sıkışıyor", assetId });
 
-        Assert.Equal(ErrorCodes.TicketAssetNotAssignedToRequester, await ApiClient.ReadCodeAsync(foreign));
-        Assert.Equal(ErrorCodes.TicketAssetNotAssignedToRequester, await ApiClient.ReadCodeAsync(stock));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var ticketId = (await world.Employee.ReadJsonAsync<JsonElement>(response)).GetProperty("id").GetGuid();
+        await using var db = factory.Database.CreateDbContext();
+        Assert.True(await db.TicketAssets.AnyAsync(l => l.AssetId == assetId && l.TicketId == ticketId, Ct));
+    }
+
+    [Fact]
+    public async Task An_in_stock_device_can_be_named_on_a_new_incident()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var assetId = (await AssetAsync(world, assignTo: null)).GetProperty("id").GetGuid();
+
+        using var response = await world.Employee.PostAsync(IncidentsPath, new { subject = "Ekran", description = "x", assetId });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("lost")]
+    [InlineData("retire")]
+    public async Task A_lost_or_retired_device_is_refused_and_no_ticket_is_created(string operation)
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var asset = await AssetAsync(world, assignTo: null);
+        var assetId = asset.GetProperty("id").GetGuid();
+        using var change = await world.Desk.PostAsync($"{AssetCatalogueTests.AssetsPath}/{assetId}/{operation}", new { version = asset.GetProperty("version").GetUInt32(), reason = "Test" });
+        Assert.Equal(HttpStatusCode.OK, change.StatusCode);
+
+        using var response = await world.Employee.PostAsync(IncidentsPath, new { subject = "Ekran", description = "x", assetId });
+
+        Assert.Equal(ErrorCodes.TicketAssetNotReportable, await ApiClient.ReadCodeAsync(response));
         await using var db = factory.Database.CreateDbContext();
         Assert.Equal(0, await db.Tickets.CountAsync(Ct));
+    }
+
+    [Fact]
+    public async Task An_unknown_device_is_refused()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+
+        using var response = await world.Employee.PostAsync(IncidentsPath, new { subject = "Ekran", description = "x", assetId = Guid.CreateVersion7() });
+
+        Assert.Equal(ErrorCodes.TicketAssetNotReportable, await ApiClient.ReadCodeAsync(response));
     }
 }

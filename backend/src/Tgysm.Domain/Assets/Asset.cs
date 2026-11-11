@@ -37,6 +37,9 @@ public sealed class Asset : Entity
     public DateTimeOffset UpdatedAt { get; private set; }
 
     /// <summary>Asset tags compare without whitespace and case ("dt 0001" = "DT0001").</summary>
+    /// <summary>A new incident may name the device unless it is lost or retired (ADR-0028).</summary>
+    public static bool CanBeReported(AssetStatus status) => status is AssetStatus.InStock or AssetStatus.Assigned or AssetStatus.Maintenance;
+
     public static string NormalizeTag(string tag) => RemoveWhitespace(tag).ToUpperInvariant();
 
     /// <summary>Unknown serial numbers are null, never a placeholder.</summary>

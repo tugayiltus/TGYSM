@@ -11,8 +11,11 @@ mkdir -p frontend/openapi
 export App__PublicBaseUrl="http://tgysm.localhost:5310"
 # ...and requires Files:RootPath outside Development; the generator never writes files, so a throwaway folder is enough.
 FILES_ROOT="$(mktemp -d)"
-trap 'rm -rf "$FILES_ROOT"' EXIT
+# The build-time OpenAPI run starts the host outside Development, which requires a Data Protection key folder (ADR-0024).
+KEYS_ROOT="$(mktemp -d)"
+trap 'rm -rf "$FILES_ROOT" "$KEYS_ROOT"' EXIT
 export Files__RootPath="$FILES_ROOT"
+export DataProtection__KeysPath="$KEYS_ROOT"
 dotnet build backend/src/Tgysm.Api --nologo -p:OpenApiGenerateDocuments=true
 cd frontend
 npx openapi-typescript "$OPENAPI_FILE" -o "$SCHEMA_FILE"

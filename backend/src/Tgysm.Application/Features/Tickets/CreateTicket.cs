@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Application.Sla;
+using Tgysm.Domain.Assets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
@@ -10,7 +11,7 @@ using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
 
-/// <param name="AssetId">Optional device the incident is about; must be assigned to the requester right now (UX-10).</param>
+/// <param name="AssetId">Optional device the incident is about: any device that is not lost or retired, so a scanned QR label can name it (ADR-0028).</param>
 public sealed record CreateIncidentCommand(string Subject, string Description, Guid? CategoryId, Guid? LocationId, Guid? AssetId = null);
 
 public sealed record CreateRequestCommand(string Subject, string Description, Guid RequestTypeId, Guid? CategoryId, Guid? LocationId);
@@ -90,7 +91,7 @@ public sealed class TicketFactory(
 
 public sealed class CreateIncidentHandler(IAppDbContext db, IValidator<CreateIncidentCommand> validator, TicketFactory factory, IAuditLog audit)
 {
-    private const string NotAssignedMessage = "The device is not assigned to the requester.";
+    private const string NotReportableMessage = "The device does not exist or is lost or retired.";
 
     public async Task<TicketDetail> HandleAsync(CreateIncidentCommand command, CancellationToken cancellationToken)
     {
@@ -101,9 +102,10 @@ public sealed class CreateIncidentHandler(IAppDbContext db, IValidator<CreateInc
             if (command.AssetId is { } assetId)
             {
                 // Checked inside the creating transaction: the link is saved with the ticket or not at all.
-                if (!await db.AssetAssignments.AnyAsync(a => a.AssetId == assetId && a.UserId == requester && a.ReturnedAt == null, cancellationToken))
+                var status = await db.Assets.Where(a => a.Id == assetId).Select(a => (AssetStatus?)a.Status).SingleOrDefaultAsync(cancellationToken);
+                if (status is not { } current || !Asset.CanBeReported(current))
                 {
-                    throw new DomainException(ErrorCodes.TicketAssetNotAssignedToRequester, NotAssignedMessage);
+                    throw new DomainException(ErrorCodes.TicketAssetNotReportable, NotReportableMessage);
                 }
 
                 db.TicketAssets.Add(TicketAsset.Create(ticket.Id, assetId, now));

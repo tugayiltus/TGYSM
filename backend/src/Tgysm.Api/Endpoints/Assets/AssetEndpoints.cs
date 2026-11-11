@@ -76,6 +76,11 @@ internal static class AssetEndpoints
     {
         api.MapGet(ApiRoutes.MyAssets, async (ListMyAssetsHandler handler, CancellationToken ct) => TypedResults.Ok(await handler.HandleAsync(ct)))
             .WithTags(Tag);
+        // Any signed-in user: an employee who scans a QR label reports a fault on the device (ADR-0028).
+        api.MapGet($"{ApiRoutes.ScanAssets}/{{id:guid}}", async (Guid id, GetScannedAssetHandler handler, CancellationToken ct) => TypedResults.Ok(await handler.HandleAsync(id, ct)))
+            .WithTags(Tag)
+            .RequireAuthorization()
+            .ProducesProblem(StatusCodes.Status404NotFound);
         return api;
     }
 

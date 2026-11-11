@@ -390,6 +390,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scan/assets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ScannedAssetDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -7363,6 +7409,15 @@ export interface components {
             version: number;
             /** Format: uuid */
             locationId: string;
+        };
+        ScannedAssetDto: {
+            /** Format: uuid */
+            id: string;
+            assetTag: string;
+            type: components["schemas"]["AssetType"];
+            brand: string;
+            model: string;
+            canReport: boolean;
         };
         /** @enum {unknown} */
         ScanStatus: "pending" | "clean" | "rejected";
