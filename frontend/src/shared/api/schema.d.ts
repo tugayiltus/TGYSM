@@ -3303,6 +3303,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assets/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GetAssetLabelsQuery"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetLabelsDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assets/{id}": {
         parameters: {
             query?: never;
@@ -6706,6 +6754,18 @@ export interface components {
             /** Format: uint32 */
             version: number;
         };
+        AssetLabelItem: {
+            /** Format: uuid */
+            id: string;
+            assetTag: string;
+            brand: string;
+            model: string;
+            serialNumber: null | string;
+        };
+        AssetLabelsDto: {
+            publicBaseUrl: string;
+            items: components["schemas"]["AssetLabelItem"][];
+        };
         AssetLocationRequest: {
             /** Format: uint32 */
             version: number;
@@ -7055,6 +7115,9 @@ export interface components {
         ExportJobStatus: "pending" | "running" | "ready" | "failed" | "expired";
         ForgotPasswordRequest: {
             email: string;
+        };
+        GetAssetLabelsQuery: {
+            ids: string[];
         };
         HealthResponse: {
             status: string;

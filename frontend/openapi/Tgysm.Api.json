@@ -3262,6 +3262,45 @@
         }
       }
     },
+    "/api/v1/assets/labels": {
+      "post": {
+        "tags": [
+          "Assets"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetAssetLabelsQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetLabelsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/assets/{id}": {
       "get": {
         "tags": [
@@ -7142,6 +7181,55 @@
           }
         }
       },
+      "AssetLabelItem": {
+        "required": [
+          "id",
+          "assetTag",
+          "brand",
+          "model",
+          "serialNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assetTag": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "serialNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "AssetLabelsDto": {
+        "required": [
+          "publicBaseUrl",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "publicBaseUrl": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssetLabelItem"
+            }
+          }
+        }
+      },
       "AssetLocationRequest": {
         "required": [
           "version",
@@ -8458,6 +8546,21 @@
         "properties": {
           "email": {
             "type": "string"
+          }
+        }
+      },
+      "GetAssetLabelsQuery": {
+        "required": [
+          "ids"
+        ],
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },

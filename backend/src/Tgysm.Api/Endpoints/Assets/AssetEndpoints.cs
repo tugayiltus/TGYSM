@@ -45,6 +45,9 @@ internal static class AssetEndpoints
         assets.MapGet("", ListAsync).ProducesProblem(StatusCodes.Status400BadRequest);
         // Under /assets/catalog: static segment, so it never matches the {id:guid} routes.
         assets.MapGet("/catalog", async (GetAssetCatalogHandler h, CancellationToken ct) => TypedResults.Ok(await h.HandleAsync(ct)));
+        // POST, not GET: up to MaxLabelsPerRequest ids would exceed the request line limit in a query string.
+        assets.MapPost("/labels", async (GetAssetLabelsQuery q, GetAssetLabelsHandler h, CancellationToken ct) => TypedResults.Ok(await h.HandleAsync(q, ct)))
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         assets.MapGet("/{id:guid}", GetAsync).ProducesProblem(StatusCodes.Status404NotFound);
         assets.MapGet("/{id:guid}/history", GetHistoryAsync).ProducesProblem(StatusCodes.Status404NotFound);
         assets.MapGet("/{id:guid}/tickets", async (Guid id, Application.Features.Tickets.ListAssetTicketsHandler h, CancellationToken ct) =>
