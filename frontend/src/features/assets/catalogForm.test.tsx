@@ -108,3 +108,73 @@ describe('asset form catalog', () => {
     await waitFor(() => expect(posted.modelId).toBe('m-old'));
   });
 });
+
+describe('asset form order: type, brand, model', () => {
+  const DELL = { id: 'b-3', name: 'Dell', models: [{ id: 'm-4', type: 'desktop', name: 'OptiPlex 7010' }] };
+  const TWO_BRANDS = [...CATALOG, DELL];
+  const openNew = async (catalog: unknown = TWO_BRANDS) => {
+    mockApi(routes(IT_ME, { 'GET /api/v1/assets/catalog': { status: 200, body: catalog } }) as never);
+    const { user } = renderRoute('/assets');
+    await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
+    return { user, dialog: await screen.findByRole('dialog') };
+  };
+  const optionsOf = async (user: Awaited<ReturnType<typeof openNew>>['user'], label: string, dialog: HTMLElement) => {
+    await user.click(await findSelect(label, dialog));
+    const names = (await screen.findAllByRole('option')).map((o) => o.textContent);
+    await user.keyboard('{Escape}');
+    return names;
+  };
+
+  it('shows type, brand and model in that order and enables each after the one before', async () => {
+    const { user, dialog } = await openNew();
+    const [type, brand, model] = await Promise.all(['Tür', 'Marka', 'Model'].map((label) => findSelect(label, dialog)));
+    expect(type!.compareDocumentPosition(brand!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(brand!.compareDocumentPosition(model!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(brand).toHaveAttribute('aria-disabled', 'true');
+    expect(model).toHaveAttribute('aria-disabled', 'true');
+    await chooseOption(user, 'Tür', 'Masaüstü', dialog);
+    expect(await findSelect('Marka', dialog)).not.toHaveAttribute('aria-disabled', 'true');
+    expect(await findSelect('Model', dialog)).toHaveAttribute('aria-disabled', 'true');
+    await chooseOption(user, 'Marka', 'Dell', dialog);
+    expect(await findSelect('Model', dialog)).not.toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('says why the brand list is empty for a type without active brands', async () => {
+    const { user, dialog } = await openNew();
+    await chooseOption(user, 'Tür', 'Tablet', dialog);
+    await user.click(await findSelect('Marka', dialog));
+    expect(await screen.findByText('Bu tür için aktif marka yok.')).toBeInTheDocument();
+  });
+
+  it('clears the model when the brand changes and lists only the new brand models of the type', async () => {
+    const { user, dialog } = await openNew();
+    await chooseOption(user, 'Tür', 'Masaüstü', dialog);
+    await chooseOption(user, 'Marka', 'Lenovo', dialog);
+    await chooseOption(user, 'Model', 'M70q', dialog);
+    await chooseOption(user, 'Marka', 'Dell', dialog);
+    expect(await findSelect('Model', dialog)).toHaveTextContent('Model seçin');
+    expect(await optionsOf(user, 'Model', dialog)).toEqual(['OptiPlex 7010']);
+  });
+
+  it('offers an edited asset its inactive model only while its own type and brand are chosen', async () => {
+    const old = { ...LAPTOP, type: 'desktop', modelId: 'm-old', brand: 'Lenovo', model: 'M90' };
+    mockApi(
+      routes(IT_ME, {
+        'GET /api/v1/assets/catalog': { status: 200, body: TWO_BRANDS },
+        [`GET /api/v1/assets/${LAPTOP.id}`]: { status: 200, body: old },
+        [`GET /api/v1/assets/${LAPTOP.id}/history`]: { status: 200, body: { movements: [] } },
+      }) as never,
+    );
+    const { user } = renderRoute(`/assets/${LAPTOP.id}`);
+    await user.click(await screen.findByRole('button', { name: 'Düzenle' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('combobox', { name: 'Model' })).toHaveTextContent('M90');
+    await chooseOption(user, 'Marka', 'Dell', dialog);
+    expect(await optionsOf(user, 'Model', dialog)).toEqual(['OptiPlex 7010']);
+    await chooseOption(user, 'Marka', 'Lenovo', dialog);
+    expect(await optionsOf(user, 'Model', dialog)).toEqual(['M70q', 'M90']);
+    await chooseOption(user, 'Tür', 'Dizüstü', dialog);
+    await chooseOption(user, 'Marka', 'Lenovo', dialog);
+    expect(await optionsOf(user, 'Model', dialog)).toEqual(['T14']);
+  });
+});

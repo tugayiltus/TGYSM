@@ -118,6 +118,15 @@ export interface SeededArticle {
 }
 
 /** Creates and publishes an article as the session's user (IT staff or admin). */
+/** A new brand with one model of the type; returns the brand name (unique per call). */
+export async function seedBrandWithModel(admin: Session, brandPrefix: string, type: string, modelName: string): Promise<string> {
+  const request = admin.context.request;
+  const name = `${brandPrefix} ${Date.now().toString()}`;
+  const brand = await send(request, 'POST', '/api/v1/admin/brands', { name });
+  await send(request, 'POST', '/api/v1/admin/models', { brandId: brand.id, type, name: modelName });
+  return name;
+}
+
 export async function seedPublishedArticle(author: Session, title: string, visibility: ArticleVisibility): Promise<SeededArticle> {
   const request = author.context.request;
   const created = await send(request, 'POST', '/api/v1/kb/articles', { title, summary: `${title} özeti`, body: `${title} adımları`, categoryId: null, visibility });

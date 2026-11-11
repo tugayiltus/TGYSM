@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { chooseFirstOption, chooseOption, expectNoHorizontalScroll, visibleEntry } from './helpers';
-import { adminSession, seedWorld, userSession } from './world';
+import { adminSession, seedBrandWithModel, seedWorld, userSession } from './world';
 
 const GENERATED_TAG = /^Cihaz kaydedildi: DMR-\d{6,}$/;
 
@@ -41,4 +41,23 @@ test('admin adds a brand and model; IT registers a device with them and gets a g
   // The inventory list with a device, its filters and paging stays inside a phone screen.
   await expect(visibleEntry(it.page, world.assetTag)).toBeVisible();
   await expectNoHorizontalScroll(it.page);
+});
+
+test('the asset form keeps type, brand and model in order and switches models with the brand', async ({ browser }) => {
+  const admin = await adminSession(browser);
+  const first = await seedBrandWithModel(admin, 'Acer', 'desktop', 'Veriton X');
+  const second = await seedBrandWithModel(admin, 'HP', 'desktop', 'ProDesk 400');
+  const page = admin.page;
+
+  await page.goto('/assets');
+  await page.getByRole('button', { name: 'Yeni cihaz' }).click();
+  const form = page.getByRole('dialog');
+  await chooseOption(form, 'Tür', 'Masaüstü');
+  await chooseOption(form, 'Marka', first);
+  await chooseOption(form, 'Model', 'Veriton X');
+  await chooseOption(form, 'Marka', second);
+  await expect(form.getByRole('combobox', { name: 'Model' })).toContainText('Model seçin');
+  await form.getByRole('combobox', { name: 'Model' }).click();
+  await expect(page.getByRole('option', { name: 'ProDesk 400' })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Veriton X' })).toHaveCount(0);
 });

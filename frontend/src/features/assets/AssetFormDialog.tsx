@@ -24,6 +24,7 @@ import { ERROR_CODES } from '../../shared/api/errors';
 import { FormAlert } from '../../shared/feedback/FormAlert';
 import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
 import { FormDateInput, FormSelector, FormTextInput } from '../../shared/form/formFields';
+import { TURKISH_LOCALE } from '../../shared/lib/turkish';
 import { ROUTES } from '../../shared/routes';
 import { withCurrentOption } from '../admin/shared/referenceOptions';
 import { useSession } from '../auth/session';
@@ -35,6 +36,8 @@ const NAME_MAX_LENGTH = 100;
 const ADMIN_ROLE = 'admin';
 const NOTES_MAX_LENGTH = 1000;
 const NO_SELECTION = '';
+/** Choice value of an edited asset's brand that is no longer in the active catalog. */
+const OWN_BRAND = 'own-brand';
 const DIALOG_WIDTH = 640;
 /** Paired fields sit side by side from this width. */
 const FIELD_COLUMNS = { minWidth: 240 } as const;
@@ -111,21 +114,35 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
 
   const type = useWatch({ control, name: 'type' });
   const brandIdValue = useWatch({ control, name: 'brandId' });
-  const brands = useMemo(() => (catalog.data ?? []).filter((b) => b.models.some((m) => m.type === type)), [catalog.data, type]);
-  // An edited asset starts on its own brand; its model may have left the active catalog and is then shown as is.
-  // Both apply only while the asset's own type is chosen: the type comes from the model.
+  // An edited asset keeps its own brand and (possibly inactive) model as choices, but only while its own type
+  // and brand are both chosen: a model belongs to one brand and one type. Its brand may have left the active
+  // catalog, so the brand is found by model, then by name, else kept as a choice of its own.
   const ownType = asset !== null && type === asset.type;
-  const brandId =
-    brandIdValue !== NO_SELECTION || !ownType ? brandIdValue : (catalog.data?.find((b) => b.models.some((m) => m.id === asset.modelId))?.id ?? NO_SELECTION);
+  const ownBrandId =
+    asset === null
+      ? NO_SELECTION
+      : (catalog.data?.find((b) => b.models.some((m) => m.id === asset.modelId))?.id ?? catalog.data?.find((b) => b.name === asset.brand)?.id ?? OWN_BRAND);
+  const brandId = brandIdValue !== NO_SELECTION || !ownType ? brandIdValue : ownBrandId;
+  const brandOptions = useMemo(
+    () =>
+      withCurrentOption(
+        (catalog.data ?? []).filter((b) => b.models.some((m) => m.type === type)).map((b) => ({ value: b.id, label: b.name })),
+        ownType ? ownBrandId : undefined,
+        ownType ? asset.brand : undefined,
+      ),
+    [catalog.data, type, asset, ownType, ownBrandId],
+  );
+  const ownBrand = ownType && brandId === ownBrandId;
   const modelOptions = useMemo(
     () =>
       withCurrentOption(
         (catalog.data?.find((b) => b.id === brandId)?.models ?? []).filter((m) => m.type === type).map((m) => ({ value: m.id, label: m.name })),
-        ownType ? asset.modelId : undefined,
-        ownType ? asset.model : undefined,
+        ownBrand ? asset.modelId : undefined,
+        ownBrand ? asset.model : undefined,
       ),
-    [catalog.data, brandId, type, asset, ownType],
+    [catalog.data, brandId, type, asset, ownBrand],
   );
+  const typeName = (typeOptions.find((option) => option.value === type)?.label ?? '').toLocaleLowerCase(TURKISH_LOCALE);
 
   const onSubmit = handleSubmit((values) => {
     const body = {
@@ -182,12 +199,14 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
                       render={({ field }) => (
                         <Selector
                           label={t('fields.brand')}
-                          options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                          options={brandOptions}
                           value={field.value === NO_SELECTION ? brandId : field.value}
                           placeholder={t('form.selectBrand')}
                           hasSearch
                           searchPlaceholder={t('form.searchBrand')}
                           emptyText={t('form.brandEmpty')}
+                          isDisabled={type === NO_SELECTION}
+                          disabledMessage={t('form.selectTypeFirst')}
                           status={fieldError(errors.brandId) === undefined ? undefined : { type: 'error', message: fieldError(errors.brandId) }}
                           onChange={(value) => {
                             field.onChange(value);
@@ -196,7 +215,16 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
                         />
                       )}
                     />
-                    <FormSelector control={control} name="modelId" label={t('fields.model')} options={modelOptions} placeholder={t('form.selectModel')} />
+                    <FormSelector
+                      control={control}
+                      name="modelId"
+                      label={t('fields.model')}
+                      options={modelOptions}
+                      placeholder={t('form.selectModel')}
+                      emptyText={t('form.modelEmpty', { type: typeName })}
+                      isDisabled={brandId === NO_SELECTION}
+                      disabledMessage={t('form.selectBrandFirst')}
+                    />
                   </Grid>
                   <HStack gap={1} wrap="wrap">
                     <Text type="supporting">{t('form.catalogMissing')}</Text>
