@@ -12,6 +12,7 @@ import { useId, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FormAlert } from './FormAlert';
+import { useDiscardGuard } from './useDiscardGuard';
 
 const DEFAULT_WIDTH = 520;
 
@@ -23,20 +24,24 @@ export interface FormDialogProps {
   alert: string | null;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
+  /** The form has unsaved changes: closing it asks first. */
+  isDirty?: boolean;
   width?: number;
   children: ReactNode;
 }
 
 /** The submit button sits in the footer, outside the form, so it names the form by id. The parent removes the dialog on close. */
-export function FormDialog({ title, submitLabel, isPending, alert, onSubmit, onClose, width = DEFAULT_WIDTH, children }: FormDialogProps) {
+export function FormDialog({ title, submitLabel, isPending, alert, onSubmit, onClose, isDirty = false, width = DEFAULT_WIDTH, children }: FormDialogProps) {
   const { t } = useTranslation();
   const formId = useId();
+  const { requestClose, confirm } = useDiscardGuard(isDirty && !isPending, onClose);
   const close = (open: boolean) => {
     if (!open) {
-      onClose();
+      requestClose();
     }
   };
   return (
+    <>
     <Dialog isOpen onOpenChange={close} width={width} purpose="form">
       <Layout
         header={<DialogHeader title={title} onOpenChange={close} />}
@@ -53,12 +58,14 @@ export function FormDialog({ title, submitLabel, isPending, alert, onSubmit, onC
         footer={
           <LayoutFooter>
             <HStack gap={2} hAlign="end">
-              <Button label={t('actions.cancel')} variant="secondary" onClick={onClose} />
+              <Button label={t('actions.cancel')} variant="secondary" onClick={requestClose} />
               <Button type="submit" form={formId} label={submitLabel} variant="primary" isLoading={isPending} />
             </HStack>
           </LayoutFooter>
         }
       />
     </Dialog>
+    {confirm}
+    </>
   );
 }

@@ -83,7 +83,12 @@ function CategoryFormDialog({ category, all, onClose }: { category: CategoryItem
     () => all.filter((c) => c.parentId === null && c.isActive && c.id !== category?.id).map((c) => ({ value: c.id, label: c.name })),
     [all, category],
   );
-  const { control, handleSubmit, setError } = useForm<Values>({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { name: category?.name ?? '', parentId: category?.parentId ?? NO_PARENT, scope: category?.scope ?? 'both' },
   });
@@ -97,6 +102,7 @@ function CategoryFormDialog({ category, all, onClose }: { category: CategoryItem
 
   return (
     <FormDialog
+      isDirty={isDirty}
       title={category === null ? t('categories.new') : t('categories.edit')}
       submitLabel={category === null ? tc('actions.create') : tc('actions.save')}
       isPending={save.isPending}

@@ -33,7 +33,12 @@ export function TeamFormDialog({ team, onClose }: { team: TeamItem | null; onClo
   const create = useCreateTeam();
   const update = useUpdateTeam();
   const mutation = team === null ? create : update;
-  const { control, handleSubmit, setError } = useForm<TeamFormValues>({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<TeamFormValues>({
     resolver: zodResolver(teamSchema),
     defaultValues: { name: team?.name ?? '', isDefaultIntake: team?.isDefaultIntake ?? false },
   });
@@ -51,6 +56,7 @@ export function TeamFormDialog({ team, onClose }: { team: TeamItem | null; onClo
 
   return (
     <FormDialog
+      isDirty={isDirty}
       title={team === null ? t('teams.new') : t('teams.edit')}
       submitLabel={team === null ? tc('actions.create') : tc('actions.save')}
       isPending={mutation.isPending}

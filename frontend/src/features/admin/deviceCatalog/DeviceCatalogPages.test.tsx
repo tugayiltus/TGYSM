@@ -37,6 +37,9 @@ describe('BrandsPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
     expect(await within(dialog).findByText('Bu ad zaten kayıtlı. Mevcut tanımı kullanın.')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Vazgeç' }));
+    // The typed name is unsaved, so closing asks first.
+    await user.click(within(await screen.findByRole('dialog', { name: 'Değişiklikler kaydedilmedi' })).getByRole('button', { name: 'Değişiklikleri at' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
     await user.click(within(table).getByRole('button', { name: /Pasifleştir.*Lenovo/ }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Onayla' }));

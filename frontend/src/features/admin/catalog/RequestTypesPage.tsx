@@ -59,7 +59,12 @@ function RequestTypeFormDialog({ type, onClose }: { type: RequestTypeItem | null
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
   const save = useSaveRequestType();
-  const { control, handleSubmit, setError } = useForm<Values>({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { name: type?.name ?? '', requiresApproval: type?.requiresApproval ?? false },
   });
@@ -73,6 +78,7 @@ function RequestTypeFormDialog({ type, onClose }: { type: RequestTypeItem | null
 
   return (
     <FormDialog
+      isDirty={isDirty}
       title={type === null ? t('requestTypes.new') : t('requestTypes.edit')}
       submitLabel={type === null ? tc('actions.create') : tc('actions.save')}
       isPending={save.isPending}

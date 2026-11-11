@@ -37,7 +37,12 @@ export function DepartmentFormDialog({ department, onClose }: { department: Depa
   const create = useCreateDepartment();
   const update = useUpdateDepartment();
   const mutation = department === null ? create : update;
-  const { control, handleSubmit, setError } = useForm<DepartmentFormValues>({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentSchema),
     defaultValues: { name: department?.name ?? '', approverUserId: department?.approverUserId ?? NO_SELECTION },
   });
@@ -56,6 +61,7 @@ export function DepartmentFormDialog({ department, onClose }: { department: Depa
 
   return (
     <FormDialog
+      isDirty={isDirty}
       title={department === null ? t('departments.new') : t('departments.edit')}
       submitLabel={department === null ? tc('actions.create') : tc('actions.save')}
       isPending={mutation.isPending}

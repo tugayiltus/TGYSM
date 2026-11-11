@@ -45,7 +45,12 @@ function BrandFormDialog({ brand, onClose }: { brand: BrandItem | null; onClose:
   const { t } = useTranslation('admin');
   const { t: tc } = useTranslation();
   const save = useSaveBrand();
-  const { control, handleSubmit, setError } = useForm<NameValues>({ resolver: zodResolver(nameSchema), defaultValues: { name: brand?.name ?? '' } });
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<NameValues>({ resolver: zodResolver(nameSchema), defaultValues: { name: brand?.name ?? '' } });
   const onSubmit = handleSubmit((v) =>
     save.mutate(
       { id: brand?.id ?? null, version: brand?.version ?? 0, name: v.name },
@@ -55,6 +60,7 @@ function BrandFormDialog({ brand, onClose }: { brand: BrandItem | null; onClose:
   const alert = save.error && !isHandledByFields(save.error, NAME_FIELDS, NAME_CODE_FIELDS) ? describeError(save.error) : null;
   return (
     <FormDialog
+      isDirty={isDirty}
       title={brand === null ? t('deviceCatalog.brands.new') : t('deviceCatalog.brands.edit')}
       submitLabel={brand === null ? tc('actions.create') : tc('actions.save')}
       isPending={save.isPending}

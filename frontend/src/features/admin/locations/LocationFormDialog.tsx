@@ -54,7 +54,12 @@ export function LocationFormDialog({ roots, target, onClose }: { roots: readonly
     currentParentId ? findLocationNode(roots, currentParentId)?.path : undefined,
   );
 
-  const { control, handleSubmit, setError } = useForm<LocationFormValues>({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<LocationFormValues>({
     resolver: zodResolver(locationSchema),
     defaultValues: { name: target.kind === 'edit' ? target.node.item.name : '', parentId: currentParentId ?? NO_PARENT },
   });
@@ -73,6 +78,7 @@ export function LocationFormDialog({ roots, target, onClose }: { roots: readonly
 
   return (
     <FormDialog
+      isDirty={isDirty}
       title={target.kind === 'create' ? t('locations.new') : t('locations.edit')}
       submitLabel={target.kind === 'create' ? tc('actions.create') : tc('actions.save')}
       isPending={mutation.isPending}

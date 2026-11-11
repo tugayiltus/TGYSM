@@ -39,7 +39,12 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
   const create = useCreateUser();
   const update = useUpdateUser();
   const mutation = user === null ? create : update;
-  const { control, handleSubmit, setError } = useForm<UserFormValues>({ resolver: zodResolver(userFormSchema), defaultValues: toFormValues(user) });
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<UserFormValues>({ resolver: zodResolver(userFormSchema), defaultValues: toFormValues(user) });
 
   // Closing while a create is in flight would unmount the dialog and lose the one-time temporary password.
   const close = () => {
@@ -63,6 +68,7 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
 
   return (
     <FormDialog
+      isDirty={isDirty}
       title={user === null ? t('users.new') : t('users.edit')}
       submitLabel={user === null ? tc('actions.create') : tc('actions.save')}
       isPending={mutation.isPending}

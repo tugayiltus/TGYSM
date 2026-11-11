@@ -47,7 +47,12 @@ export function EmailTemplateEditor({ template, onClose }: EmailTemplateEditorPr
   const { t: tc } = useTranslation();
   const variablesId = useId();
   const update = useUpdateEmailTemplate();
-  const { control, handleSubmit, setError } = useForm<TemplateValues>({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<TemplateValues>({
     resolver: zodResolver(templateSchema),
     defaultValues: { subject: template.subject, body: template.body },
   });
@@ -70,6 +75,7 @@ export function EmailTemplateEditor({ template, onClose }: EmailTemplateEditorPr
 
   return (
     <FormDialog
+      isDirty={isDirty}
       title={`${t('emailTemplates.edit')}: ${title}`}
       submitLabel={tc('actions.save')}
       isPending={update.isPending}

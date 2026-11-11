@@ -65,7 +65,12 @@ function ModelFormDialog({ model, initialBrandId, onClose }: { model: AssetModel
   const { t: tc } = useTranslation();
   const save = useSaveAssetModel();
   const brands = useBrands();
-  const { control, handleSubmit, setError } = useForm<CreateValues>({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { isDirty },
+  } = useForm<CreateValues>({
     resolver: zodResolver(model === null ? createSchema : editSchema),
     defaultValues: { brandId: model?.brandId ?? initialBrandId ?? '', type: model?.type ?? '', name: model?.name ?? '' },
   });
@@ -80,6 +85,7 @@ function ModelFormDialog({ model, initialBrandId, onClose }: { model: AssetModel
   const fixed = model !== null;
   return (
     <FormDialog
+      isDirty={isDirty}
       title={model === null ? t('deviceCatalog.models.new') : t('deviceCatalog.models.edit')}
       submitLabel={model === null ? tc('actions.create') : tc('actions.save')}
       isPending={save.isPending}

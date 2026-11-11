@@ -63,6 +63,11 @@
     "search": "Ara",
     "status": "Durum"
   },
+  "discard": {
+    "title": "Değişiklikler kaydedilmedi",
+    "message": "Formda kaydetmediğiniz değişiklikler var. Kapatırsanız kaybolur.",
+    "confirm": "Değişiklikleri at"
+  },
   "unsaved": {
     "title": "Kaydedilmemiş değişiklikler",
     "message": "Bu sayfada kaydetmediğiniz değişiklikler var. Sayfadan çıkarsanız kaybolur.",

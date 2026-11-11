@@ -23,6 +23,7 @@ import { applyServerErrors, describeError, fieldError, isHandledByFields } from 
 import { ERROR_CODES } from '../../shared/api/errors';
 import { FormAlert } from '../../shared/feedback/FormAlert';
 import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
+import { useDiscardGuard } from '../../shared/feedback/useDiscardGuard';
 import { FormDateInput, FormSelector, FormTextInput } from '../../shared/form/formFields';
 import { TURKISH_LOCALE } from '../../shared/lib/turkish';
 import { ROUTES } from '../../shared/routes';
@@ -168,9 +169,10 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
 
   const alert = mutation.error && !isHandledByFields(mutation.error, FORM_FIELDS, CODE_FIELDS) ? describeError(mutation.error) : null;
 
+  const { requestClose, confirm } = useDiscardGuard(isDirty && !mutation.isPending, onClose);
   const close = (open: boolean) => {
     if (!open) {
-      onClose();
+      requestClose();
     }
   };
   // Brands and models are listed per type, so a choice made for another type no longer applies.
@@ -245,13 +247,14 @@ export function AssetFormDialog({ asset, onClose }: { asset: AssetItem | null; o
           footer={
             <LayoutFooter>
               <HStack gap={2} hAlign="end">
-                <Button label={tc('actions.cancel')} variant="secondary" onClick={onClose} />
+                <Button label={tc('actions.cancel')} variant="secondary" onClick={requestClose} />
                 <Button type="submit" form={formId} label={asset === null ? tc('actions.create') : tc('actions.save')} variant="primary" isLoading={mutation.isPending} />
               </HStack>
             </LayoutFooter>
           }
         />
       </Dialog>
+      {confirm}
     </>
   );
 }
