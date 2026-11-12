@@ -143,6 +143,14 @@ function runAction(task: TaskDetail, action: TaskAction) {
 }
 
 export function useTaskAction(task: TaskDetail) {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateWork();
-  return useMutation({ mutationFn: (action: TaskAction) => unwrap(runAction(task, action)), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: (action: TaskAction) => unwrap(runAction(task, action)),
+    // The answer carries the new version: store it at once, so the next action does not send the old one and get 409.
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(taskKeys.detail(updated.number), updated);
+      await invalidate();
+    },
+  });
 }

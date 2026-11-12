@@ -30,6 +30,23 @@ describe('TaskDetailPage', () => {
     await waitFor(() => expect(posted).toEqual({ version: 7 }));
   });
 
+  it('shows the action answer at once, without waiting for the refetch', async () => {
+    let loads = 0;
+    mockApi(
+      taskRoutes(TASK, {
+        [`POST ${BASE}/claim`]: { status: 200, body: { ...TASK, assigneeId: 'u-2', assigneeName: 'Deniz Yıldız', version: 8 } },
+        // Only the first load answers; the refetch after the action never does.
+        [`GET ${BASE}`]: () => (loads++ === 0 ? { status: 200, body: TASK } : new Promise(() => undefined)),
+      }) as never,
+    );
+    const { user } = renderRoute(`/tasks/${TASK.number}`);
+    await user.click(await screen.findByRole('button', { name: 'Üstlen' }));
+
+    // The next action then sends version 8; an old version would come back as 409.
+    expect(await screen.findByText('Deniz Yıldız')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Üstlen' })).not.toBeInTheDocument();
+  });
+
   it('requires a result note to complete', async () => {
     let posted: unknown;
     mockApi(
