@@ -26,7 +26,10 @@
     "password_same_as_old": "Yeni şifre mevcut şifreyle aynı olamaz.",
     "rate_limited": "Çok fazla deneme yapıldı. Lütfen bir dakika sonra tekrar deneyin.",
     "token_invalid": "Bağlantı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin.",
-    "method_not_tested": "Önce bağlantıyı test edin; test başarılı olmadan bu yöntem açılamaz."
+    "method_not_tested": "Önce bağlantıyı test edin; test başarılı olmadan bu yöntem açılamaz.",
+    "directory_unavailable": "Dizin sunucusuna ulaşılamıyor. Daha sonra yeniden deneyin.",
+    "ldap_bind_failed": "Servis hesabı ile bağlanılamadı. Bağlanma DN'ini ve şifresini kontrol edin.",
+    "ldap_base_dn_not_found": "Arama kökü (Base DN) dizinde bulunamadı."
   },
   "setup": {
     "already_completed": "Kurulum zaten tamamlanmış."

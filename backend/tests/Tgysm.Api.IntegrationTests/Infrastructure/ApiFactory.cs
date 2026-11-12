@@ -32,6 +32,9 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// </summary>
     public FakeEmailSender EmailSender { get; } = new();
 
+    /// <summary>Replaces the real LDAP client: tests program users and outages on it (ADR-0030).</summary>
+    public FakeLdapDirectory LdapDirectory { get; } = new();
+
     /// <summary>High by default so tests that log in many times never hit the rate limit.</summary>
     protected virtual int LoginPermitLimitPerMinute => GenerousLoginLimit;
 
@@ -83,6 +86,10 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Email:Mode", "Pickup");
         builder.UseSetting("Email:From", "TGYSM <no-reply@tgysm.local>");
         builder.UseSetting("Email:PickupFolder", EmailPickupFolder);
-        builder.ConfigureTestServices(services => services.AddScoped<IEmailSender>(_ => EmailSender));
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddScoped<IEmailSender>(_ => EmailSender);
+            services.AddSingleton<ILdapDirectory>(LdapDirectory);
+        });
     }
 }

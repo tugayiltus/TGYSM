@@ -6,6 +6,7 @@ using Tgysm.Api.Contracts;
 using Tgysm.Api.Http;
 using Tgysm.Api.Security;
 using Tgysm.Application.Features.Auth;
+using Tgysm.Application.Features.Auth.Directory;
 
 namespace Tgysm.Api.Endpoints;
 
@@ -18,6 +19,8 @@ internal static class AuthEndpoints
         var auth = api.MapGroup(ApiRoutes.Auth).WithTags(Tag);
 
         auth.MapGet("/csrf", GetCsrfToken).AllowAnonymous();
+        auth.MapPost("/login/ldap", LdapLoginAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.Login)
+            .ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status503ServiceUnavailable);
         auth.MapPost("/login", LoginAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.Login)
             .ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status429TooManyRequests);
         auth.MapPost("/logout", (Delegate)LogoutAsync).RequireAuthorization(Policies.PasswordChangePending);
@@ -39,6 +42,13 @@ internal static class AuthEndpoints
     private static async Task<Ok<LoginResponse>> LoginAsync(LoginRequest request, LoginHandler handler, HttpContext context, CancellationToken cancellationToken)
     {
         var session = await handler.HandleAsync(new LoginCommand(request.Email, request.Password), cancellationToken);
+        await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, SessionClaims.CreatePrincipal(session));
+        return TypedResults.Ok(new LoginResponse(session.MustChangePassword));
+    }
+
+    private static async Task<Ok<LoginResponse>> LdapLoginAsync(LdapLoginRequest request, LdapLoginHandler handler, HttpContext context, CancellationToken cancellationToken)
+    {
+        var session = await handler.HandleAsync(new LdapLoginCommand(request.Identifier, request.Password), cancellationToken);
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, SessionClaims.CreatePrincipal(session));
         return TypedResults.Ok(new LoginResponse(session.MustChangePassword));
     }

@@ -2649,6 +2649,27 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("asset_tag_counters", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Infrastructure.Persistence.LdapSignInFailure", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(262)
+                        .HasColumnType("character varying(262)")
+                        .HasColumnName("key");
+
+                    b.Property<int>("FailedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("failed_count");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lockout_end");
+
+                    b.HasKey("Key")
+                        .HasName("pk_ldap_sign_in_failures");
+
+                    b.ToTable("ldap_sign_in_failures", (string)null);
+                });
+
             modelBuilder.Entity("Tgysm.Infrastructure.Persistence.TicketCounter", b =>
                 {
                     b.Property<string>("Kind")

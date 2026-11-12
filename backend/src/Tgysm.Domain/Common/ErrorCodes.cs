@@ -52,6 +52,9 @@ public static class ErrorCodes
     public const string ImportCatalogMissing = "assets.import_catalog_missing";
     public const string TicketAssetNotAssignedToRequester = "tickets.asset_not_assigned_to_requester";
     public const string AuthMethodNotTested = "auth.method_not_tested";
+    public const string AuthDirectoryUnavailable = "auth.directory_unavailable";
+    public const string AuthLdapBindFailed = "auth.ldap_bind_failed";
+    public const string AuthLdapBaseDnNotFound = "auth.ldap_base_dn_not_found";
     public const string TicketAssetNotReportable = "tickets.asset_not_reportable";
 
     public const string ImportInvalidHeader = "imports.invalid_header";

@@ -21,6 +21,9 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) :
             case BadHttpRequestException:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status400BadRequest, ErrorCodes.ValidationFailed);
                 break;
+            case DirectoryUnavailableException:
+                await ApiProblem.WriteAsync(context, StatusCodes.Status503ServiceUnavailable, ErrorCodes.AuthDirectoryUnavailable);
+                break;
             case AuthenticationFailedException:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status401Unauthorized, ErrorCodes.InvalidCredentials);
                 break;

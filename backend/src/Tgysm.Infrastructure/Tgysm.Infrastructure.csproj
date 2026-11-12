@@ -18,6 +18,8 @@
     </PackageReference>
     <!-- SMTP transport (ADR-0015); MimeKit arrives as its transitive dependency. -->
     <PackageReference Include="MailKit" />
+    <!-- Managed LDAP client for Active Directory sign-in; no native library in the Linux image (ADR-0030). -->
+    <PackageReference Include="Novell.Directory.Ldap.NETStandard" />
     <!-- Excel report export (spec §7.3). -->
     <PackageReference Include="ClosedXML" />
   </ItemGroup>

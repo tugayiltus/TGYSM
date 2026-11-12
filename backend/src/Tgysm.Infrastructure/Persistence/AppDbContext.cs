@@ -48,6 +48,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<TicketCounter> TicketCounters => Set<TicketCounter>();
     public DbSet<AssetTagCounter> AssetTagCounters => Set<AssetTagCounter>();
     public DbSet<AuthSettings> AuthSettings => Set<AuthSettings>();
+    public DbSet<LdapSignInFailure> LdapSignInFailures => Set<LdapSignInFailure>();
     public DbSet<WorkerHeartbeat> WorkerHeartbeats => Set<WorkerHeartbeat>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();

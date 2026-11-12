@@ -44,6 +44,8 @@ public static class DependencyInjection
         services.AddTgysmDataProtection();
         services.AddSingleton<IAccountLinkProtector, AccountLinkProtector>();
         services.AddSingleton<IAuthSecretProtector, AuthSecretProtector>();
+        services.AddSingleton<ILdapDirectory, Identity.NovellLdapDirectory>();
+        services.AddScoped<ILdapSignInThrottle, LdapSignInThrottle>();
 
         // Email:Mode picks the transport (spec §3.5); resolving IEmailSender with a missing/unrecognized Mode
         // throws immediately ("fail fast when missing"). Tgysm.Worker additionally marks EmailOptions

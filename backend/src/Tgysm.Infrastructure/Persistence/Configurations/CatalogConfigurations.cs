@@ -50,3 +50,16 @@ internal sealed class AssetTagCounterConfiguration : IEntityTypeConfiguration<As
         builder.Property(c => c.Year).ValueGeneratedNever();
     }
 }
+
+internal sealed class LdapSignInFailureConfiguration : IEntityTypeConfiguration<LdapSignInFailure>
+{
+    public void Configure(EntityTypeBuilder<LdapSignInFailure> builder)
+    {
+        builder.ToTable(LdapSignInThrottle.TableName);
+        builder.HasKey(f => f.Key);
+        builder.Property(f => f.Key).HasMaxLength(Domain.Users.User.EmailMaxLength + LdapKeyPrefixLength);
+    }
+
+    /// <summary>Room for the <c>ldap:</c> prefix of the throttle key.</summary>
+    private const int LdapKeyPrefixLength = 8;
+}

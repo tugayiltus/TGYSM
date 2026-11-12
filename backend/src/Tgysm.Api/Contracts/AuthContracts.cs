@@ -4,6 +4,8 @@ public sealed record CsrfTokenResponse(string Token);
 
 public sealed record LoginRequest(string Email, string Password);
 
+public sealed record LdapLoginRequest(string Identifier, string Password);
+
 public sealed record LoginResponse(bool MustChangePassword);
 
 public sealed record ForgotPasswordRequest(string Email);
