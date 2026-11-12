@@ -18,10 +18,29 @@ public sealed class DirectorySignInHandler(IAppDbContext db, IAuditLog audit, Ti
     {
         var now = clock.GetUtcNow();
         var email = User.NormalizeEmail(identity.Email);
+        if (identity.Source == LoginMethod.Ldap && !Guid.TryParse(identity.ExternalId, out _))
+        {
+            await RefuseAsync(userId: null, identity.Source, cancellationToken);
+        }
+
+        // Every check runs before any change, so a refused sign-in never links or creates an account.
         var user = await FindLinkedAsync(identity, cancellationToken);
-        if (user is null)
+        if (user is not null)
+        {
+            if (!user.CanSignIn(now) || await EmailHeldByAnotherAsync(user, email, cancellationToken))
+            {
+                await RefuseAsync(user.Id, identity.Source, cancellationToken);
+            }
+        }
+        else
         {
             user = await db.Users.SingleOrDefaultAsync(u => u.NormalizedEmail == email, cancellationToken);
+            if (user is not null && (LinkedToAnother(user, identity) || !user.CanSignIn(now)))
+            {
+                // A different directory account with this email must not take over the linked one; an admin resolves it.
+                await RefuseAsync(user.Id, identity.Source, cancellationToken);
+            }
+
             if (user is null)
             {
                 user = User.CreateFromDirectory(identity.FirstName, identity.LastName, identity.Email, now);
@@ -33,23 +52,23 @@ public sealed class DirectorySignInHandler(IAppDbContext db, IAuditLog audit, Ti
             Link(user, identity, now);
         }
 
-        if (!user.CanSignIn(now))
-        {
-            await RefuseAsync(user.Id, identity.Source, cancellationToken);
-        }
-
-        // An email the directory moved to another TGYSM user would merge two people; refuse until an admin resolves it.
-        if (user.NormalizedEmail != email && await db.Users.AnyAsync(u => u.Id != user.Id && u.NormalizedEmail == email, cancellationToken))
-        {
-            await RefuseAsync(user.Id, identity.Source, cancellationToken);
-        }
-
         user.RefreshFromDirectory(identity.FirstName, identity.LastName, identity.Email, now);
         user.RegisterSuccessfulSignIn(now);
         audit.Record(AuditActions.DirectorySignIn, AuditEntityTypes.User, user.Id, actorUserId: user.Id, newValues: new { Source = identity.Source });
         await db.SaveChangesAsync(cancellationToken);
         return SessionUser.From(user);
     }
+
+    /// <summary>An email the directory moved to another TGYSM user would merge two people; refuse until an admin resolves it.</summary>
+    private Task<bool> EmailHeldByAnotherAsync(User user, string email, CancellationToken cancellationToken) =>
+        user.NormalizedEmail == email ? Task.FromResult(false) : db.Users.AnyAsync(u => u.Id != user.Id && u.NormalizedEmail == email, cancellationToken);
+
+    private static bool LinkedToAnother(User user, DirectoryIdentity identity) => identity.Source switch
+    {
+        LoginMethod.Entra => user.EntraObjectId is { } oid && oid != identity.ExternalId,
+        LoginMethod.Ldap => user.LdapObjectGuid is { } guid && (!Guid.TryParse(identity.ExternalId, out var incoming) || guid != incoming),
+        _ => true,
+    };
 
     private Task<User?> FindLinkedAsync(DirectoryIdentity identity, CancellationToken cancellationToken) => identity.Source switch
     {
@@ -70,7 +89,7 @@ public sealed class DirectorySignInHandler(IAppDbContext db, IAuditLog audit, Ti
         }
     }
 
-    private async Task RefuseAsync(Guid userId, LoginMethod source, CancellationToken cancellationToken)
+    private async Task RefuseAsync(Guid? userId, LoginMethod source, CancellationToken cancellationToken)
     {
         audit.Record(AuditActions.LoginFailed, AuditEntityTypes.User, userId, newValues: new { Source = source });
         await db.SaveChangesAsync(cancellationToken);

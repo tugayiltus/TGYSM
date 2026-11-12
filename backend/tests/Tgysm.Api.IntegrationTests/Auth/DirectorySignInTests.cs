@@ -110,4 +110,39 @@ public sealed class DirectorySignInTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal("ahmet@sirket.com", (await UserAsync(first.UserId)).Email);
     }
+
+    [Fact]
+    public async Task A_user_linked_to_another_directory_account_is_not_relinked_by_email()
+    {
+        var first = await SignInAsync(Entra("ahmet@sirket.com", oid: "oid-A"));
+
+        await Assert.ThrowsAsync<AuthenticationFailedException>(() => SignInAsync(Entra("ahmet@sirket.com", oid: "oid-B")));
+
+        Assert.Equal("oid-A", (await UserAsync(first.UserId)).EntraObjectId);
+    }
+
+    [Fact]
+    public async Task A_refused_sign_in_does_not_link_the_account()
+    {
+        var existing = await TestUsers.CreateAsync(factory, UserRole.Employee, "ahmet@sirket.com");
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            var user = await db.Users.SingleAsync(u => u.Id == existing.Id, Ct);
+            user.Deactivate(DateTimeOffset.UtcNow);
+            await db.SaveChangesAsync(Ct);
+        }
+
+        await Assert.ThrowsAsync<AuthenticationFailedException>(() => SignInAsync(Entra("ahmet@sirket.com")));
+
+        Assert.Null((await UserAsync(existing.Id)).EntraObjectId);
+    }
+
+    [Fact]
+    public async Task An_ldap_identity_without_a_guid_is_refused()
+    {
+        await TestUsers.CreateAsync(factory, UserRole.Employee, "ahmet@sirket.com");
+
+        await Assert.ThrowsAsync<AuthenticationFailedException>(
+            () => SignInAsync(new DirectoryIdentity(LoginMethod.Ldap, "not-a-guid", "ahmet@sirket.com", "Ahmet", "Yılmaz")));
+    }
 }
