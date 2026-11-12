@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Sla;
+using Tgysm.Application.Features.Tasks;
 using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 
@@ -39,7 +40,7 @@ internal static class TicketQueries
         var related = await VisibleTicketsAsync(db, relatedIds, viewer, cancellationToken);
 
         var sla = await slaReader.LoadAsync(t.Id, cancellationToken);
-        IReadOnlyList<TicketTaskItem> tasks = viewer.SeesInternal ? await TasksAsync(db, t.Id, cancellationToken) : [];
+        var (openTaskCount, tasks) = viewer.SeesInternal ? await TasksAsync(db, t.Id, viewer, cancellationToken) : (0, []);
 
         return new TicketDetail(
             t.Id, t.Number, t.Kind, t.Subject, t.Description, t.Status, t.HoldReason, t.HoldNote, t.Impact, t.Urgency, t.Priority,
@@ -47,16 +48,30 @@ internal static class TicketQueries
             t.RequestTypeId, requestType, t.RequiresApproval,
             viewer.SeesInternal ? t.RootCause : null,
             t.Resolution, t.Outcome, t.CancelReason, t.CreatedAt, t.UpdatedAt, t.CompletedAt, approval, related, viewer.CanWork(t), t.Version, sla,
-            tasks.Count(x => x.Status is not (WorkTaskStatus.Completed or WorkTaskStatus.Cancelled)), tasks);
+            openTaskCount, tasks);
     }
 
-    private static async Task<IReadOnlyList<TicketTaskItem>> TasksAsync(IAppDbContext db, Guid ticketId, CancellationToken cancellationToken) =>
-        await db.WorkTasks.AsNoTracking().Where(x => x.TicketId == ticketId).OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
-            .Select(x => new TicketTaskItem(
-                x.Number, x.Title, x.Status,
-                db.Teams.Where(team => team.Id == x.TeamId).Select(team => team.Name).First(),
-                db.Users.Where(u => u.Id == x.AssigneeId).Select(u => u.FirstName + NameSeparator + u.LastName).FirstOrDefault()))
+    /// <summary>
+    /// The open-task count covers every task of the ticket (the completion warning needs only the number). The list
+    /// holds only tasks inside the viewer's task scope, so no title leaks to another team (ADR-0031).
+    /// </summary>
+    private static async Task<(int OpenCount, IReadOnlyList<TicketTaskItem> Items)> TasksAsync(
+        IAppDbContext db, Guid ticketId, TicketViewer viewer, CancellationToken cancellationToken)
+    {
+        var taskViewer = new TaskViewer(viewer.UserId, viewer.Role, viewer.TeamIds);
+        var rows = await db.WorkTasks.AsNoTracking().Where(x => x.TicketId == ticketId).OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
+            .Select(x => new
+            {
+                Task = x,
+                Team = db.Teams.Where(team => team.Id == x.TeamId).Select(team => team.Name).First(),
+                Assignee = db.Users.Where(u => u.Id == x.AssigneeId).Select(u => u.FirstName + NameSeparator + u.LastName).FirstOrDefault(),
+            })
             .ToListAsync(cancellationToken);
+        var visible = rows.Where(r => taskViewer.CanSee(r.Task))
+            .Select(r => new TicketTaskItem(r.Task.Number, r.Task.Title, r.Task.Status, r.Team, r.Assignee))
+            .ToList();
+        return (rows.Count(r => r.Task.IsOpen), visible);
+    }
 
     /// <summary>Tickets by id, keeping only those the viewer may see (relations and asset links respect scope).</summary>
     public static async Task<IReadOnlyList<RelatedTicketItem>> VisibleTicketsAsync(IAppDbContext db, IReadOnlyCollection<Guid> ids, TicketViewer viewer, CancellationToken cancellationToken)

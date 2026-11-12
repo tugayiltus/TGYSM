@@ -31,6 +31,20 @@ public sealed class TicketTaskSummaryTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Tasks_outside_the_viewers_task_scope_are_counted_but_not_listed()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var incident = await TicketWorld.CreateIncidentAsync(world.Employee);
+        var claimed = await TicketWorld.ReadAsync(world.Desk, TicketWorld.PathOf(incident));
+        await TaskWorld.CreateForTeamAsync(world.Admin, world.FieldTeam.Id, ticketNumber: TicketWorld.NumberOf(claimed));
+
+        var detail = await TicketWorld.ReadAsync(world.Desk, TicketWorld.PathOf(incident));
+
+        Assert.Equal(1, detail.GetProperty("openTaskCount").GetInt32());
+        Assert.Empty(detail.GetProperty("tasks").EnumerateArray());
+    }
+
+    [Fact]
     public async Task Requester_does_not_see_tasks()
     {
         var world = await TicketWorld.CreateAsync(factory);
