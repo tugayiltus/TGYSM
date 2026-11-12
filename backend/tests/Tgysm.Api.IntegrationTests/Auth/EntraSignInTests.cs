@@ -18,7 +18,7 @@ public sealed class EntraSignInTests(ApiFactory factory) : IAsyncLifetime
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     private static ClaimsPrincipal Token(string tenant, string email) => new(new ClaimsIdentity(
-        [new Claim("tid", tenant), new Claim("oid", "oid-1"), new Claim("email", email), new Claim("given_name", "Ahmet"), new Claim("family_name", "Yılmaz")], "entra"));
+        [new Claim("tid", tenant), new Claim("oid", "oid-1"), new Claim("preferred_username", email), new Claim("given_name", "Ahmet"), new Claim("family_name", "Yılmaz")], "entra"));
 
     private async Task SignInAsync(ClaimsPrincipal principal)
     {
