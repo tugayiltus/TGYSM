@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Tgysm.Api.Contracts;
 using Tgysm.Api.Http;
+using Tgysm.Application.Common.Paging;
 using Tgysm.Application.Features.Tasks;
+using Tgysm.Application.Features.Work;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Api.Endpoints.Tasks;
@@ -22,17 +25,44 @@ internal static class TaskEndpoints
 {
     private const string Tag = "Tasks";
     private const string NumberRoute = "/{number}";
+    private const string QueueParameter = "queue";
+    private const string StatusParameter = "status";
+    private const string PriorityParameter = "priority";
 
     public static RouteGroupBuilder MapTaskEndpoints(this RouteGroupBuilder api)
     {
         var tasks = api.MapGroup(ApiRoutes.Tasks).WithTags(Tag).RequireAuthorization();
         tasks.MapPost("", async (CreateTaskCommand command, CreateTaskHandler handler, CancellationToken ct) => Created(await handler.HandleAsync(command, ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        tasks.MapGet("", ListAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound);
         tasks.MapGet(NumberRoute, async (string number, GetTaskHandler handler, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleAsync(new GetTaskQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
         MapActions(tasks);
+        api.MapGroup(ApiRoutes.WorkItems).WithTags(Tag).RequireAuthorization()
+            .MapGet("", ListWorkItemsAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound);
         return tasks;
     }
+
+    private static async Task<Ok<PagedResult<TaskListItem>>> ListAsync(
+        string? queue, string? status, string? priority, Guid? teamId, string? search, int? page, int? pageSize,
+        ListTasksHandler handler, CancellationToken cancellationToken)
+    {
+        var query = new ListTasksQuery(
+            QueryParsing.ParseEnum<TaskQueue>(queue, QueueParameter),
+            QueryParsing.ParseEnum<WorkTaskStatus>(status, StatusParameter),
+            QueryParsing.ParseEnum<Priority>(priority, PriorityParameter),
+            teamId,
+            search,
+            page ?? PageRequest.FirstPage,
+            pageSize ?? PageRequest.DefaultPageSize);
+        return TypedResults.Ok(await handler.HandleAsync(query, cancellationToken));
+    }
+
+    private static async Task<Ok<PagedResult<WorkItemRow>>> ListWorkItemsAsync(
+        string? queue, int? page, int? pageSize, ListWorkItemsHandler handler, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await handler.HandleAsync(
+            new ListWorkItemsQuery(QueryParsing.ParseEnum<WorkQueue>(queue, QueueParameter), page ?? PageRequest.FirstPage, pageSize ?? PageRequest.DefaultPageSize),
+            cancellationToken));
 
     private static void MapActions(RouteGroupBuilder tasks)
     {

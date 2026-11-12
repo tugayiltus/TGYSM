@@ -23,6 +23,7 @@ internal static class ApiRoutes
     public const string Reference = "/reference";
     public const string Tickets = "/tickets";
     public const string Tasks = "/tasks";
+    public const string WorkItems = "/work-items";
     public const string Approvals = "/approvals";
     public const string Knowledge = "/kb";
     public const string EmailTemplates = "/email-templates";

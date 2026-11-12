@@ -37,6 +37,8 @@ export const INCIDENT: TicketDetail = {
   canWork: false,
   version: 11,
   sla: [],
+  openTaskCount: 0,
+  tasks: [],
 };
 
 export const LIST_ITEM: TicketListItem = {

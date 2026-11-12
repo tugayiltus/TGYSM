@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Sla;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Features.Tickets;
@@ -38,14 +39,24 @@ internal static class TicketQueries
         var related = await VisibleTicketsAsync(db, relatedIds, viewer, cancellationToken);
 
         var sla = await slaReader.LoadAsync(t.Id, cancellationToken);
+        IReadOnlyList<TicketTaskItem> tasks = viewer.SeesInternal ? await TasksAsync(db, t.Id, cancellationToken) : [];
 
         return new TicketDetail(
             t.Id, t.Number, t.Kind, t.Subject, t.Description, t.Status, t.HoldReason, t.HoldNote, t.Impact, t.Urgency, t.Priority,
             t.CategoryId, category, t.LocationId, location, t.RequesterId, UserName(t.RequesterId)!, t.TeamId, team, t.AssigneeId, UserName(t.AssigneeId),
             t.RequestTypeId, requestType, t.RequiresApproval,
             viewer.SeesInternal ? t.RootCause : null,
-            t.Resolution, t.Outcome, t.CancelReason, t.CreatedAt, t.UpdatedAt, t.CompletedAt, approval, related, viewer.CanWork(t), t.Version, sla);
+            t.Resolution, t.Outcome, t.CancelReason, t.CreatedAt, t.UpdatedAt, t.CompletedAt, approval, related, viewer.CanWork(t), t.Version, sla,
+            tasks.Count(x => x.Status is not (WorkTaskStatus.Completed or WorkTaskStatus.Cancelled)), tasks);
     }
+
+    private static async Task<IReadOnlyList<TicketTaskItem>> TasksAsync(IAppDbContext db, Guid ticketId, CancellationToken cancellationToken) =>
+        await db.WorkTasks.AsNoTracking().Where(x => x.TicketId == ticketId).OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
+            .Select(x => new TicketTaskItem(
+                x.Number, x.Title, x.Status,
+                db.Teams.Where(team => team.Id == x.TeamId).Select(team => team.Name).First(),
+                db.Users.Where(u => u.Id == x.AssigneeId).Select(u => u.FirstName + NameSeparator + u.LastName).FirstOrDefault()))
+            .ToListAsync(cancellationToken);
 
     /// <summary>Tickets by id, keeping only those the viewer may see (relations and asset links respect scope).</summary>
     public static async Task<IReadOnlyList<RelatedTicketItem>> VisibleTicketsAsync(IAppDbContext db, IReadOnlyCollection<Guid> ids, TicketViewer viewer, CancellationToken cancellationToken)
