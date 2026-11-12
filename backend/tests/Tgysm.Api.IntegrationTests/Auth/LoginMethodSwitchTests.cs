@@ -173,4 +173,19 @@ public sealed class LoginMethodSwitchTests(ApiFactory factory) : IAsyncLifetime
         Assert.False(user.HasLocalPassword);
         Assert.False(await db.PasswordTokens.AnyAsync(t => t.UserId == user.Id, Ct));
     }
+
+    [Fact]
+    public async Task Settings_of_the_active_method_are_tested_before_they_go_live()
+    {
+        var admin = await LdapActiveAsync();
+        factory.LdapDirectory.TestResult = new(false, ErrorCodes.AuthLdapBindFailed);
+
+        using var put = await admin.PutAsync($"{SettingsPath}/ldap", new { host = "yazim-hatasi.local", port = 636, security = "ldaps", baseDn = "DC=sirket,DC=local", bindDn = "CN=svc,DC=sirket,DC=local", bindPassword = (string?)null, userFilter = (string?)null, version = await VersionAsync(admin) });
+
+        Assert.Equal(ErrorCodes.AuthLdapBindFailed, await ApiClient.ReadCodeAsync(put));
+        await using var db = factory.Database.CreateDbContext();
+        Assert.Equal("dc1.sirket.local", (await db.AuthSettings.SingleAsync(Ct)).LdapHost);
+        using var login = await ApiClient.Create(factory).PostAsync("/api/v1/auth/login/ldap", new { identifier = "ahmet.yilmaz", password = LdapPassword });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+    }
 }

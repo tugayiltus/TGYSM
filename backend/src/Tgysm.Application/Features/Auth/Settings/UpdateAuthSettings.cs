@@ -6,6 +6,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Auth;
+using Tgysm.Domain.Common;
 
 namespace Tgysm.Application.Features.Auth.Settings;
 
@@ -58,6 +59,7 @@ public sealed class UpdateAuthSettingsHandler(
     IAuditLog audit,
     IOptionsMonitor<AppOptions> options,
     ILoginProviderCache providers,
+    LoginProviderTester tester,
     IValidator<UpdateEntraSettingsCommand> entraValidator,
     IValidator<UpdateLdapSettingsCommand> ldapValidator,
     TimeProvider clock)
@@ -70,7 +72,7 @@ public sealed class UpdateAuthSettingsHandler(
         // Secrets never go into audit: only which fields were sent.
         audit.Record(AuditActions.AuthSettingsUpdated, AuditEntityTypes.AuthSettings, settings.Id,
             newValues: new { Provider = LoginMethod.Entra, settings.EntraTenantId, settings.EntraClientId, settings.EntraAllowedDomains, ClientSecretChanged = command.ClientSecret is not null });
-        return await SaveAsync(settings, cancellationToken);
+        return await SaveAsync(settings, LoginMethod.Entra, cancellationToken);
     }
 
     public async Task<AuthSettingsDto> HandleAsync(UpdateLdapSettingsCommand command, CancellationToken cancellationToken)
@@ -80,7 +82,7 @@ public sealed class UpdateAuthSettingsHandler(
         settings.UpdateLdap(command.Host, command.Port, command.Security, command.BaseDn, command.BindDn, Protect(command.BindPassword), command.UserFilter, clock.GetUtcNow());
         audit.Record(AuditActions.AuthSettingsUpdated, AuditEntityTypes.AuthSettings, settings.Id,
             newValues: new { Provider = LoginMethod.Ldap, settings.LdapHost, settings.LdapPort, settings.LdapSecurity, settings.LdapBaseDn, settings.LdapBindDn, settings.LdapUserFilter, BindPasswordChanged = command.BindPassword is not null });
-        return await SaveAsync(settings, cancellationToken);
+        return await SaveAsync(settings, LoginMethod.Ldap, cancellationToken);
     }
 
     private string? Protect(string? secret) => string.IsNullOrEmpty(secret) ? null : secrets.Protect(secret);
@@ -92,8 +94,23 @@ public sealed class UpdateAuthSettingsHandler(
         return settings;
     }
 
-    private async Task<AuthSettingsDto> SaveAsync(AuthSettings settings, CancellationToken cancellationToken)
+    /// <summary>
+    /// Settings of the active method go live on save, so they must pass a connection test first; a failing test refuses the
+    /// save and the last working settings stay in use. Settings of an inactive method are saved untested (ADR-0030).
+    /// </summary>
+    private async Task<AuthSettingsDto> SaveAsync(AuthSettings settings, LoginMethod provider, CancellationToken cancellationToken)
     {
+        if (settings.Method == provider)
+        {
+            var test = await tester.TestAsync(settings, provider, cancellationToken);
+            if (!test.Ok)
+            {
+                throw new DomainException(test.ErrorCode ?? ErrorCodes.AuthDirectoryUnavailable, "The new settings of the active login method failed the connection test.");
+            }
+
+            settings.MarkTested(provider);
+        }
+
         await db.SaveChangesAsync(cancellationToken);
         providers.Invalidate();
         var saved = await db.AuthSettings.AsNoTracking().SingleAsync(cancellationToken);
