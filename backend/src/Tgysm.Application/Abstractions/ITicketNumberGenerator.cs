@@ -9,4 +9,7 @@ public interface ITicketNumberGenerator
     /// so concurrent creators get distinct, sequential values (ADR-0011).
     /// </summary>
     Task<long> NextAsync(TicketKind kind, int year, CancellationToken cancellationToken);
+
+    /// <summary>Same as the ticket overload for another counter kind, such as <c>task</c> (ADR-0031).</summary>
+    Task<long> NextAsync(string counterKind, int year, CancellationToken cancellationToken);
 }

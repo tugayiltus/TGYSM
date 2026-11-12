@@ -18,6 +18,10 @@ public static class TemplateVariables
     public const string ExpiresAt = "expiresAt";
     public const string SlaMetric = "slaMetric";
     public const string DueAt = "dueAt";
+    public const string TaskNumber = "taskNumber";
+    public const string TaskUrl = "taskUrl";
+    public const string TeamName = "teamName";
+    public const string DueDate = "dueDate";
 
     private static readonly IReadOnlySet<string> TicketCommon = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -28,6 +32,11 @@ public static class TemplateVariables
 
     private static readonly IReadOnlySet<string> SlaSet = Union(TicketCommon, SlaMetric, DueAt);
 
+    private static readonly IReadOnlySet<string> TaskSet = new HashSet<string>(StringComparer.Ordinal)
+    {
+        TaskNumber, Subject, Status, TeamName, DueDate, TaskUrl, RecipientName,
+    };
+
     private static readonly IReadOnlySet<string> AccountSet = new HashSet<string>(StringComparer.Ordinal)
     {
         RecipientName, ActionUrl, ExpiresAt,
@@ -37,6 +46,7 @@ public static class TemplateVariables
     {
         [NotificationEventTypes.TicketCreated] = TicketCommon,
         [NotificationEventTypes.TicketAssigned] = TicketCommon,
+        [NotificationEventTypes.TaskAssigned] = TaskSet,
         [NotificationEventTypes.PublicReply] = TicketCommon,
         [NotificationEventTypes.ApprovalRequested] = TicketCommon,
         [NotificationEventTypes.ApprovalDecided] = TicketCommon,
@@ -51,6 +61,7 @@ public static class TemplateVariables
     public static readonly IReadOnlySet<string> AllVariables = new HashSet<string>(StringComparer.Ordinal)
     {
         TicketNumber, Subject, Status, Resolution, CompletedAt, TicketUrl, RecipientName, ActionUrl, ExpiresAt, SlaMetric, DueAt,
+        TaskNumber, TaskUrl, TeamName, DueDate,
     };
 
     /// <summary>The variable names an admin may use for <paramref name="eventType"/> (one of <see cref="NotificationEventTypes"/>).</summary>

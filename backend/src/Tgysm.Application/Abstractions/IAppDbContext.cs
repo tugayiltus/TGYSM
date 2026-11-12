@@ -3,6 +3,7 @@ using Tgysm.Domain.Assets;
 using Tgysm.Domain.Auth;
 using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Knowledge;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
@@ -36,6 +37,9 @@ public interface IAppDbContext
     DbSet<TicketComment> TicketComments { get; }
     DbSet<TicketAttachment> TicketAttachments { get; }
     DbSet<TicketEvent> TicketEvents { get; }
+    DbSet<WorkTask> WorkTasks { get; }
+    DbSet<TaskEvent> TaskEvents { get; }
+    DbSet<TaskAssignment> TaskAssignments { get; }
     DbSet<TicketRelation> TicketRelations { get; }
     DbSet<TicketAsset> TicketAssets { get; }
     DbSet<TicketArticle> TicketArticles { get; }

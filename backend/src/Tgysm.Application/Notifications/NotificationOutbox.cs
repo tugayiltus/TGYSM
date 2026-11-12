@@ -19,7 +19,13 @@ internal sealed class NotificationOutbox(IAppDbContext db, ICurrentActor actor, 
         Guid? ticketId,
         Guid? userId,
         IReadOnlyDictionary<string, string>? data = null,
-        string? protectedSecret = null)
+        string? protectedSecret = null) =>
+        db.OutboxEvents.Add(OutboxEvent.Create(eventType, ticketId, userId, PayloadOf(data), protectedSecret, clock.GetUtcNow()));
+
+    public void AddForSubject(string eventType, string subjectType, Guid subjectId, Guid? userId, IReadOnlyDictionary<string, string>? data = null) =>
+        db.OutboxEvents.Add(OutboxEvent.CreateForSubject(eventType, subjectType, subjectId, userId, PayloadOf(data), clock.GetUtcNow()));
+
+    private string PayloadOf(IReadOnlyDictionary<string, string>? data)
     {
         var payload = new Dictionary<string, string>(data ?? Empty);
         if (actor.UserId is { } actorId)
@@ -27,6 +33,6 @@ internal sealed class NotificationOutbox(IAppDbContext db, ICurrentActor actor, 
             payload[OutboxEvent.ActorIdKey] = actorId.ToString();
         }
 
-        db.OutboxEvents.Add(OutboxEvent.Create(eventType, ticketId, userId, JsonSerializer.Serialize(payload), protectedSecret, clock.GetUtcNow()));
+        return JsonSerializer.Serialize(payload);
     }
 }

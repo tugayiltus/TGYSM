@@ -21,7 +21,9 @@ internal sealed class OutboxEventConfiguration : IEntityTypeConfiguration<Outbox
         builder.Property(e => e.Status).HasEnumName();
 
         // No FK on ticket_id/user_id: an event must survive the ticket or user it names being changed further.
+        builder.Property(e => e.SubjectType).HasMaxLength(OutboxSubjectTypes.MaxLength);
         builder.HasIndex(e => e.TicketId);
+        builder.HasIndex(e => new { e.SubjectType, e.SubjectId });
         builder.HasIndex(e => e.Status);
 
         // RowLease.ClaimAsync (ADR-0014) requires a nullable locked_until timestamptz column on the claimed type.

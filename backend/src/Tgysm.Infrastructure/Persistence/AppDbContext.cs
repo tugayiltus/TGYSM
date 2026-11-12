@@ -6,6 +6,7 @@ using Tgysm.Domain.Assets;
 using Tgysm.Domain.Auth;
 using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Knowledge;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
@@ -38,6 +39,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<TicketComment> TicketComments => Set<TicketComment>();
     public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
     public DbSet<TicketEvent> TicketEvents => Set<TicketEvent>();
+    public DbSet<WorkTask> WorkTasks => Set<WorkTask>();
+    public DbSet<TaskEvent> TaskEvents => Set<TaskEvent>();
+    public DbSet<TaskAssignment> TaskAssignments => Set<TaskAssignment>();
     public DbSet<TicketRelation> TicketRelations => Set<TicketRelation>();
     public DbSet<TicketAsset> TicketAssets => Set<TicketAsset>();
     public DbSet<TicketArticle> TicketArticles => Set<TicketArticle>();

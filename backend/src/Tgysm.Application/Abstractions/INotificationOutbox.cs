@@ -13,4 +13,7 @@ public interface INotificationOutbox
         Guid? userId,
         IReadOnlyDictionary<string, string>? data = null,
         string? protectedSecret = null);
+
+    /// <summary>Same as <see cref="Add"/> for an event about a record that is not a ticket, such as a task (ADR-0031).</summary>
+    void AddForSubject(string eventType, string subjectType, Guid subjectId, Guid? userId, IReadOnlyDictionary<string, string>? data = null);
 }

@@ -66,6 +66,11 @@ public sealed class OutboxEvent
 
     public Guid? TicketId { get; private init; }
 
+    /// <summary>One of <see cref="OutboxSubjectTypes"/>, or null for account events (ADR-0031).</summary>
+    public string? SubjectType { get; private init; }
+
+    public Guid? SubjectId { get; private init; }
+
     /// <summary>The user this event is about (e.g. the new assignee, the reply's author); recipients are resolved separately.</summary>
     public Guid? UserId { get; private init; }
 
@@ -96,9 +101,23 @@ public sealed class OutboxEvent
         {
             EventType = eventType,
             TicketId = ticketId,
+            SubjectType = ticketId is null ? null : OutboxSubjectTypes.Ticket,
+            SubjectId = ticketId,
             UserId = userId,
             Payload = payload,
             ProtectedSecret = protectedSecret,
+            CreatedAt = now,
+        };
+
+    /// <summary>An event about a record that is not a ticket, such as a task; <see cref="TicketId"/> stays null.</summary>
+    public static OutboxEvent CreateForSubject(string eventType, string subjectType, Guid subjectId, Guid? userId, string payload, DateTimeOffset now) =>
+        new()
+        {
+            EventType = eventType,
+            SubjectType = subjectType,
+            SubjectId = subjectId,
+            UserId = userId,
+            Payload = payload,
             CreatedAt = now,
         };
 

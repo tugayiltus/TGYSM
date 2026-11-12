@@ -1056,6 +1056,15 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
+                    b.Property<Guid?>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("SubjectType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("subject_type");
+
                     b.Property<Guid?>("TicketId")
                         .HasColumnType("uuid")
                         .HasColumnName("ticket_id");
@@ -1072,6 +1081,9 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TicketId")
                         .HasDatabaseName("ix_notification_outbox_ticket_id");
+
+                    b.HasIndex("SubjectType", "SubjectId")
+                        .HasDatabaseName("ix_notification_outbox_subject_type_subject_id");
 
                     b.ToTable("notification_outbox", null, t =>
                         {
@@ -1824,6 +1836,265 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_sla_targets_priority", "priority IN ('p1', 'p2', 'p3', 'p4')");
 
                             t.HasCheckConstraint("ck_sla_targets_warning", "warning_percent BETWEEN 1 AND 99");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tasks.TaskAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<Guid?>("FromAssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_assignee_id");
+
+                    b.Property<Guid>("FromTeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_team_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("task_id");
+
+                    b.Property<Guid?>("ToAssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_assignee_id");
+
+                    b.Property<Guid>("ToTeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_team_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_task_assignments");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_task_assignments_actor_user_id");
+
+                    b.HasIndex("FromAssigneeId")
+                        .HasDatabaseName("ix_task_assignments_from_assignee_id");
+
+                    b.HasIndex("FromTeamId")
+                        .HasDatabaseName("ix_task_assignments_from_team_id");
+
+                    b.HasIndex("ToAssigneeId")
+                        .HasDatabaseName("ix_task_assignments_to_assignee_id");
+
+                    b.HasIndex("ToTeamId")
+                        .HasDatabaseName("ix_task_assignments_to_team_id");
+
+                    b.HasIndex("TaskId", "OccurredAt")
+                        .HasDatabaseName("ix_task_assignments_task_id_occurred_at");
+
+                    b.ToTable("task_assignments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_task_assignments_reason", "reason IN ('expertise_needed', 'wrong_assignment', 'other_team_responsibility', 'authorization_needed', 'workload', 'escalation', 'location', 'other')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tasks.TaskEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("task_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_task_events");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_task_events_actor_user_id");
+
+                    b.HasIndex("TaskId", "OccurredAt")
+                        .HasDatabaseName("ix_task_events_task_id_occurred_at");
+
+                    b.ToTable("task_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_task_events_kind", "kind IN ('created', 'assigned', 'transferred', 'started', 'held', 'resumed', 'completed', 'cancelled', 'reopened', 'commented')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tasks.WorkTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assignee_id");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("cancel_reason");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<string>("HoldNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("hold_note");
+
+                    b.Property<string>("HoldReason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("number");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("priority");
+
+                    b.Property<string>("ResultNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("result_note");
+
+                    b.Property<string>("SearchText")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("search_text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<Guid?>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_work_tasks");
+
+                    b.HasIndex("CreatedById")
+                        .HasDatabaseName("ix_work_tasks_created_by_id");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_work_tasks_number");
+
+                    b.HasIndex("TicketId")
+                        .HasDatabaseName("ix_work_tasks_ticket_id");
+
+                    b.HasIndex("AssigneeId", "Status")
+                        .HasDatabaseName("ix_work_tasks_assignee_id_status");
+
+                    b.HasIndex("TeamId", "Status")
+                        .HasDatabaseName("ix_work_tasks_team_id_status");
+
+                    b.HasIndex(new[] { "SearchText" }, "ix_work_tasks_search_text_trgm")
+                        .HasDatabaseName("ix_work_tasks_search_text");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "SearchText" }, "ix_work_tasks_search_text_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "SearchText" }, "ix_work_tasks_search_text_trgm"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex(new[] { "UpdatedAt", "Id" }, "ix_work_tasks_updated_at_id")
+                        .IsDescending()
+                        .HasDatabaseName("ix_work_tasks_updated_at_id");
+
+                    b.ToTable("work_tasks", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_work_tasks_cancel_reason", "status <> 'cancelled' OR cancel_reason IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_work_tasks_hold", "(status = 'on_hold') = (hold_reason IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_work_tasks_hold_reason", "hold_reason IN ('user', 'manager_approval', 'vendor', 'technical_team', 'third_party', 'scheduled_date', 'other')");
+
+                            t.HasCheckConstraint("ck_work_tasks_priority", "priority IN ('p1', 'p2', 'p3', 'p4')");
+
+                            t.HasCheckConstraint("ck_work_tasks_result", "status <> 'completed' OR result_note IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_work_tasks_status", "status IN ('open', 'in_progress', 'on_hold', 'completed', 'cancelled')");
                         });
                 });
 
@@ -2938,6 +3209,94 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RequestTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_sla_targets_request_types_request_type_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tasks.TaskAssignment", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_task_assignments_users_actor_user_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("FromAssigneeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_task_assignments_users_from_assignee_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Team", null)
+                        .WithMany()
+                        .HasForeignKey("FromTeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_task_assignments_teams_from_team_id");
+
+                    b.HasOne("Tgysm.Domain.Tasks.WorkTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_task_assignments_work_tasks_task_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ToAssigneeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_task_assignments_users_to_assignee_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Team", null)
+                        .WithMany()
+                        .HasForeignKey("ToTeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_task_assignments_teams_to_team_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tasks.TaskEvent", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_task_events_users_actor_user_id");
+
+                    b.HasOne("Tgysm.Domain.Tasks.WorkTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_task_events_work_tasks_task_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Tasks.WorkTask", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_work_tasks_users_assignee_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_tasks_users_created_by_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_tasks_teams_team_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_work_tasks_tickets_ticket_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Tickets.Approval", b =>
