@@ -33,3 +33,4 @@ Template: `~/.claude/templates/adr-template.md`. File names: `NNNN-kebab-case-ti
 | [0027](0027-astryx-design-system.md) | Astryx Design System Replaces CoreUI | accepted | 2026-11-10 |
 | [0028](0028-incident-device-from-qr-scan.md) | A New Incident May Name Any Reportable Device (QR Scan) | accepted | 2026-11-12 |
 | [0029](0029-yearly-asset-tags.md) | Yearly Asset Tags (ASSET-YYYY-NNNN) | accepted | 2026-11-12 |
+| [0030](0030-login-method-chosen-in-the-admin-panel.md) | Login Method Chosen in the Admin Panel (Local, Microsoft Entra ID or Active Directory) | accepted | 2026-11-12 |
