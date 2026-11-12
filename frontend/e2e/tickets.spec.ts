@@ -90,3 +90,24 @@ test('request: admin approves, IT hands over a device, employee sees it under Zi
 
   await Promise.all([admin.context.close(), employee.context.close(), it.context.close()]);
 });
+
+test('a scanned device label opens a prefilled incident for employees and the device for IT', async ({ browser }) => {
+  const admin = await adminSession(browser);
+  const world = await seedWorld(admin);
+  const employee = await userSession(browser, world.employeeEmail, world.employeePassword);
+  const it = await userSession(browser, world.itEmail, world.itPassword);
+
+  // The device is in stock, not assigned to the employee: a scan still names it (ADR-0028).
+  await employee.page.goto(`/scan/asset/${world.assetId}`);
+  await expect(employee.page).toHaveURL(/\/tickets\/new\/incident\?asset=/);
+  await expect(employee.page.getByRole('combobox', { name: 'İlgili cihaz' })).toContainText(world.assetTag);
+  await employee.page.getByLabel(/^Konu/).fill('Ekran titriyor');
+  await employee.page.getByLabel(/^Açıklama/).fill('Okutulan cihazda ekran titriyor.');
+  await employee.page.getByRole('button', { name: 'Gönder' }).click();
+  await expect(employee.page).toHaveURL(TICKET_URL);
+  await expect(employee.page.getByText(world.assetTag).first()).toBeVisible();
+
+  await it.page.goto(`/scan/asset/${world.assetId}`);
+  await expect(it.page).toHaveURL(new RegExp(`/assets/${world.assetId}$`));
+  await expect(it.page.getByRole('region', { name: 'QR kod' }).getByRole('img', { name: `${world.assetTag} etiketi` })).toBeVisible();
+});

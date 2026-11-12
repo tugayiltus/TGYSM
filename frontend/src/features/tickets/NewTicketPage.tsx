@@ -15,7 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { z } from 'zod';
 
 import { applyServerErrors, describeError, isHandledByFields } from '../../shared/api/errorMessage';
@@ -25,9 +25,9 @@ import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
 import { FormSelector, FormTextArea, FormTextInput } from '../../shared/form/formFields';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
-import { ticketPath } from '../../shared/routes';
+import { SCANNED_ASSET_PARAM, ticketPath } from '../../shared/routes';
 import { Icons } from '../../shared/ui/icons';
-import { useMyAssets, useReferenceLocations } from '../assets/api';
+import { useMyAssets, useReferenceLocations, useScannedAsset } from '../assets/api';
 
 import { useAddComment, useCreateTicket, useReferenceCategories, useReferenceRequestTypes, type TicketKind } from './api';
 import { AttachmentInput } from './AttachmentInput';
@@ -68,6 +68,11 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
   const locations = useReferenceLocations();
   const requestTypes = useReferenceRequestTypes();
   const myAssets = useMyAssets(kind === 'incident');
+  const [params] = useSearchParams();
+  const scannedId = kind === 'incident' ? params.get(SCANNED_ASSET_PARAM) : null;
+  const scanned = useScannedAsset(scannedId);
+  // A scanned device is chosen only when it can be reported; otherwise the form starts without a device.
+  const scannedChoice = scanned.data?.canReport === true ? scanned.data : undefined;
   const create = useCreateTicket();
   const upload = useAddComment();
   const [files, setFiles] = useState<File[]>([]);
@@ -80,7 +85,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
     formState: { isDirty },
   } = useForm<TicketFormValues>({
     resolver: zodResolver(isRequest ? requestSchema : ticketSchema),
-    defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION, assetId: NO_SELECTION },
+    defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION, assetId: scannedId ?? NO_SELECTION },
   });
   const hasChanges = isDirty || files.length > 0;
   const requestTypeId = useWatch({ control, name: 'requestTypeId' });
@@ -88,7 +93,13 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
 
   const categoryOptions = useMemo(() => (categories.data ?? []).map((c) => ({ value: c.id, label: c.path })), [categories.data]);
   const locationOptions = useMemo(() => (locations.data ?? []).map((l) => ({ value: l.id, label: l.path })), [locations.data]);
-  const assetOptions = useMemo(() => (myAssets.data ?? []).map((a) => ({ value: a.id, label: `${a.assetTag} · ${a.brand} ${a.model}` })), [myAssets.data]);
+  const assetOptions = useMemo(() => {
+    const own = (myAssets.data ?? []).map((a) => ({ value: a.id, label: `${a.assetTag} · ${a.brand} ${a.model}` }));
+    return scannedChoice === undefined || own.some((o) => o.value === scannedChoice.id)
+      ? own
+      : [{ value: scannedChoice.id, label: `${scannedChoice.assetTag} · ${scannedChoice.brand} ${scannedChoice.model}` }, ...own];
+  }, [myAssets.data, scannedChoice]);
+  const scanProblem = scanned.isError ? t('new.assetNotFound') : scanned.data?.canReport === false ? t('new.assetNotReportable') : null;
   const typeOptions = useMemo(() => (requestTypes.data ?? []).map((r) => ({ value: r.id, label: r.name })), [requestTypes.data]);
 
   const onSubmit = handleSubmit((values) => {
@@ -100,7 +111,8 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
         categoryId: nullIfEmpty(values.categoryId),
         locationId: nullIfEmpty(values.locationId),
         requestTypeId: isRequest ? values.requestTypeId : null,
-        assetId: isRequest ? null : nullIfEmpty(values.assetId),
+        // A scanned device that cannot be reported stays out of the request even though the field still holds its id.
+        assetId: isRequest || (scanProblem !== null && values.assetId === scannedId) ? null : nullIfEmpty(values.assetId),
       },
       {
         onError: (error) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS),
@@ -131,6 +143,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
           <VStack gap={5}>
             <Text type="supporting">{isRequest ? t('new.requestIntro') : t('new.incidentIntro')}</Text>
             <FormAlert message={alert} />
+            {scanProblem !== null && <Banner status="warning" title={scanProblem} />}
             {isRequest && (
               <VStack gap={3}>
                 <FormSelector control={control} name="requestTypeId" label={t('new.requestType')} options={typeOptions} placeholder={t('new.selectRequestType')} isRequired />

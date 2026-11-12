@@ -182,3 +182,13 @@ export function useAssetLabels(ids: readonly string[]) {
     enabled: ids.length > 0,
   });
 }
+
+/** The device behind a scanned QR label; readable by every signed-in user (ADR-0028). */
+export function useScannedAsset(id: string | null) {
+  return useQuery({
+    queryKey: ['assets', 'scan', id],
+    queryFn: () => unwrap(api.GET('/api/v1/scan/assets/{id}', { params: { path: { id: id ?? '' } } })),
+    enabled: id !== null,
+    retry: false,
+  });
+}

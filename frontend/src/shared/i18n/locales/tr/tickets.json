@@ -87,6 +87,8 @@
     "submit": "Gönder",
     "filesFailed": "Kayıt oluşturuldu ancak dosyalar yüklenemedi: {{message}}",
     "asset": "İlgili cihaz",
+    "assetNotReportable": "Bu cihaz için arıza kaydı açılamaz.",
+    "assetNotFound": "Cihaz bulunamadı.",
     "noAsset": "Cihaz seçmeyin",
     "assetHint": "Sorun size zimmetli bir cihazdaysa seçin."
   },

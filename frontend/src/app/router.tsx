@@ -69,6 +69,7 @@ const appRoutes: RouteObject[] = [
             ],
           },
           { id: 'kbArticle', path: `${ROUTES.kb}/:id`, lazy: async () => ({ Component: (await import('../features/kb/ArticlePage')).ArticlePage }) },
+          { id: 'scanAsset', path: ROUTES.scanAsset, lazy: async () => ({ Component: (await import('../features/assets/labels/ScanAssetPage')).ScanAssetPage }) },
           { id: 'myAssets', path: ROUTES.myAssets, lazy: async () => ({ Component: (await import('../features/assets/MyAssetsPage')).MyAssetsPage }) },
           {
             element: (

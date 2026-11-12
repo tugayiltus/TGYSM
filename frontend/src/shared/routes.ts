@@ -39,6 +39,9 @@ export const ROUTES = {
 } as const;
 
 export const assetPath = (id: string) => `${ROUTES.assets}/${id}`;
+export const SCANNED_ASSET_PARAM = 'asset';
+/** New incident with a scanned device chosen (ADR-0028). */
+export const newIncidentPath = (assetId: string) => `${ROUTES.newIncident}?${new URLSearchParams({ [SCANNED_ASSET_PARAM]: assetId }).toString()}`;
 /** Print view of one asset's label; a bulk print passes its ids in navigation state (a long list does not fit a URL). */
 export const assetLabelsPath = (id: string) => `${ROUTES.assetLabels}?${new URLSearchParams({ ids: id }).toString()}`;
 
