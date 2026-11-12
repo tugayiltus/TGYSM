@@ -22,6 +22,10 @@ public sealed class TaskAssignment
     public Guid ActorUserId { get; private init; }
     public DateTimeOffset OccurredAt { get; private init; }
 
+    /// <summary>History row of a claim, which is written by a conditional update outside the aggregate.</summary>
+    public static TaskAssignment Claim(Guid taskId, Guid teamId, Guid assigneeId, DateTimeOffset now) =>
+        Record(taskId, teamId, teamId, null, assigneeId, null, null, assigneeId, now);
+
     internal static TaskAssignment Record(
         Guid taskId, Guid fromTeamId, Guid toTeamId, Guid? fromAssigneeId, Guid? toAssigneeId, TransferReason? reason, string? note, Guid actorUserId, DateTimeOffset now) =>
         new()

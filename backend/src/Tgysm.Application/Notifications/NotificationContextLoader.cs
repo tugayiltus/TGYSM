@@ -18,6 +18,8 @@ namespace Tgysm.Application.Notifications;
 public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock clock, IOptionsMonitor<AppOptions> options)
 {
     private const string TicketUrlPathFormat = "/tickets/{0}";
+    private const string TaskUrlPathFormat = "/tasks/{0}";
+    private const string DateFormat = "dd.MM.yyyy";
 
     public async Task<IReadOnlyDictionary<string, string>> LoadAsync(OutboxEvent outboxEvent, Recipient recipient, CancellationToken cancellationToken)
     {
@@ -45,6 +47,18 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
             Set(TemplateVariables.CompletedAt, ticket.CompletedAt is { } completedAt ? clock.Format(completedAt) : null);
         }
 
+        if (outboxEvent.SubjectType == OutboxSubjectTypes.Task && outboxEvent.SubjectId is { } taskId)
+        {
+            var task = await db.WorkTasks.AsNoTracking().SingleAsync(t => t.Id == taskId, cancellationToken);
+            Set(TemplateVariables.TaskNumber, task.Number);
+            Set(TemplateVariables.Subject, task.Title);
+            Set(TemplateVariables.Status, TaskStatusLabels.Of(task.Status));
+            Set(TemplateVariables.TeamName, await db.Teams.Where(t => t.Id == task.TeamId).Select(t => t.Name).SingleAsync(cancellationToken));
+            // A task without a due date renders an empty value, not a placeholder.
+            Set(TemplateVariables.DueDate, task.DueDate?.ToString(DateFormat, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty);
+            Set(TemplateVariables.TaskUrl, PublicUrl(TaskUrlPathFormat, task.Number));
+        }
+
         // sla_warning/sla_breached: metric and due time come from the event's own payload (ids and reason codes
         // only, per OutboxEvent.Payload) once the SLA monitor (a later task) starts writing them.
         Set(TemplateVariables.SlaMetric, PayloadString(outboxEvent, OutboxEvent.SlaMetricKey) is { } metricKey ? SlaMetricLabels.LabelOfKey(metricKey) : null);
@@ -58,8 +72,10 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
         return values;
     }
 
-    private string TicketUrl(string number) =>
-        options.CurrentValue.PublicBaseUrl.TrimEnd('/') + string.Format(System.Globalization.CultureInfo.InvariantCulture, TicketUrlPathFormat, number);
+    private string TicketUrl(string number) => PublicUrl(TicketUrlPathFormat, number);
+
+    private string PublicUrl(string pathFormat, string number) =>
+        options.CurrentValue.PublicBaseUrl.TrimEnd('/') + string.Format(System.Globalization.CultureInfo.InvariantCulture, pathFormat, number);
 
     private static string? PayloadString(OutboxEvent outboxEvent, string key)
     {

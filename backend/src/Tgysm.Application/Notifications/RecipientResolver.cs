@@ -18,7 +18,7 @@ public sealed class RecipientResolver(IAppDbContext db)
 {
     private static readonly IReadOnlySet<string> ActorExcludedEvents = new HashSet<string>(StringComparer.Ordinal)
     {
-        NotificationEventTypes.TicketAssigned, NotificationEventTypes.PublicReply,
+        NotificationEventTypes.TicketAssigned, NotificationEventTypes.PublicReply, NotificationEventTypes.TaskAssigned,
     };
 
     public async Task<IReadOnlyList<Recipient>> ResolveAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
@@ -74,6 +74,8 @@ public sealed class RecipientResolver(IAppDbContext db)
             case NotificationEventTypes.SlaBreached:
                 return await AssigneeOrTeamIdsAsync(ticket!, cancellationToken);
 
+            case NotificationEventTypes.TaskAssigned:
+                return outboxEvent.UserId is { } taskAssignee ? [taskAssignee] : await TaskTeamIdsAsync(outboxEvent, cancellationToken);
             case NotificationEventTypes.AccountActivation:
             case NotificationEventTypes.PasswordReset:
                 return outboxEvent.UserId is { } user ? [user] : [];
@@ -85,6 +87,13 @@ public sealed class RecipientResolver(IAppDbContext db)
 
     private async Task<IReadOnlyList<Guid>> AssigneeOrTeamIdsAsync(Ticket ticket, CancellationToken cancellationToken) =>
         ticket.AssigneeId is { } assignee ? [assignee] : await TeamMemberIdsAsync(ticket.TeamId, cancellationToken);
+
+    /// <summary>A task event without an assignee goes to the active members of the task's current team.</summary>
+    private async Task<IReadOnlyList<Guid>> TaskTeamIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
+    {
+        var teamId = await db.WorkTasks.Where(t => t.Id == outboxEvent.SubjectId).Select(t => t.TeamId).SingleAsync(cancellationToken);
+        return await TeamMemberIdsAsync(teamId, cancellationToken);
+    }
 
     private Task<List<Guid>> TeamMemberIdsAsync(Guid teamId, CancellationToken cancellationToken) =>
         (from m in db.TeamMemberships

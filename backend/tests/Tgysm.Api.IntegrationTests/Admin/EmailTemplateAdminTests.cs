@@ -42,7 +42,7 @@ public sealed class EmailTemplateAdminTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Admin_lists_the_ten_seeded_templates()
+    public async Task Admin_lists_a_seeded_template_for_every_event()
     {
         var admin = await AdminAsync();
 
@@ -50,14 +50,14 @@ public sealed class EmailTemplateAdminTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var items = (await admin.ReadJsonAsync<JsonElement>(response)).EnumerateArray().ToList();
-        Assert.Equal(10, items.Count);
+        Assert.Equal(11, items.Count);
         var eventTypes = items.Select(t => t.GetProperty("eventType").GetString()!).ToHashSet(StringComparer.Ordinal);
         var expectedEventTypes = new HashSet<string>(StringComparer.Ordinal)
         {
             NotificationEventTypes.TicketCreated, NotificationEventTypes.TicketAssigned, NotificationEventTypes.PublicReply,
             NotificationEventTypes.ApprovalRequested, NotificationEventTypes.ApprovalDecided, NotificationEventTypes.TicketCompleted,
             NotificationEventTypes.SlaWarning, NotificationEventTypes.SlaBreached, NotificationEventTypes.AccountActivation,
-            NotificationEventTypes.PasswordReset,
+            NotificationEventTypes.PasswordReset, NotificationEventTypes.TaskAssigned,
         };
         Assert.Equal(expectedEventTypes, eventTypes);
         Assert.All(items, t => Assert.False(string.IsNullOrWhiteSpace(t.GetProperty("subject").GetString())));
