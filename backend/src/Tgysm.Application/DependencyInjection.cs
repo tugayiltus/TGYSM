@@ -52,6 +52,8 @@ public static class DependencyInjection
         services.AddScoped<Reports.ReportRowSource>();
         services.AddScoped<Features.Tickets.TicketFactory>();
         services.AddScoped<Features.Tickets.TicketWork>();
+        services.AddScoped<Features.Tasks.TaskScope>();
+        services.AddScoped<Features.Tasks.TaskWork>();
         return services;
     }
 }

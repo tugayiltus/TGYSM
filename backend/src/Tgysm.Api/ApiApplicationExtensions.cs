@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Tgysm.Api.Endpoints;
 using Tgysm.Api.Endpoints.Admin;
 using Tgysm.Api.Endpoints.Assets;
+using Tgysm.Api.Endpoints.Tasks;
 using Tgysm.Api.Endpoints.Tickets;
 using Tgysm.Api.Http;
 using Tgysm.Api.Security;
@@ -61,6 +62,7 @@ internal static class ApiApplicationExtensions
         api.MapAssetImportEndpoints();
         api.MapReferenceEndpoints();
         api.MapTicketEndpoints();
+        api.MapTaskEndpoints();
         api.MapApprovalEndpoints();
         api.MapKnowledgeEndpoints();
         api.MapReportEndpoints();
