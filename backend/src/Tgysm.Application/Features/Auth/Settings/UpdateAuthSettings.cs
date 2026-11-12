@@ -32,6 +32,8 @@ internal sealed class UpdateEntraSettingsValidator : AbstractValidator<UpdateEnt
         RuleFor(c => c.TenantId).Must(t => Guid.TryParse(t, out _));
         RuleFor(c => c.ClientId).NotEmpty().MaximumLength(AuthSettings.TextMaxLength);
         RuleFor(c => c.ClientSecret).MaximumLength(AuthSettings.TextMaxLength);
+        // The allowed domains are what keep invited guests out (ADR-0030), so at least one is required.
+        RuleFor(c => c.AllowedDomains).NotEmpty();
         RuleForEach(c => c.AllowedDomains).Must(AuthSettingsRules.IsDomain);
     }
 }

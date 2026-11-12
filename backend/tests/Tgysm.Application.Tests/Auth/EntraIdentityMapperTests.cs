@@ -47,8 +47,8 @@ public sealed class EntraIdentityMapperTests
         Assert.Null(EntraIdentityMapper.Map(Principal([.. Base(), ("preferred_username", "ahmet@baska.com")]), Tenant, Allowed));
 
     [Fact]
-    public void An_empty_allowed_list_accepts_any_domain_of_the_tenant() =>
-        Assert.NotNull(EntraIdentityMapper.Map(Principal([.. Base(), ("preferred_username", "ahmet@baska.com")]), Tenant, []));
+    public void An_empty_allowed_list_accepts_no_one_so_invited_guests_never_get_in() =>
+        Assert.Null(EntraIdentityMapper.Map(Principal([.. Base(), ("preferred_username", "ahmet@baska.com")]), Tenant, []));
 
     [Fact]
     public void Names_fall_back_to_splitting_the_display_name()

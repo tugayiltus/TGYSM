@@ -7,8 +7,8 @@ namespace Tgysm.Application.Features.Auth.Directory;
 /// Reads a verified Microsoft Entra ID token (ADR-0030). Only members of the configured tenant are accepted: guests from
 /// another organization (an <c>idp</c> claim) are refused. The sign-in name (<c>preferred_username</c>, else <c>upn</c>)
 /// comes from the tenant's verified domains and is used as the email; the <c>email</c> claim is never used, because it is
-/// not verified and could name another person's account (nOAuth). Its domain must be in the allowed list (an empty list
-/// accepts every domain of the tenant). Returns null when any check fails.
+/// not verified and could name another person's account (nOAuth). Its domain must be in the allowed list; an empty list accepts no
+/// one, because an invited guest's sign-in name is their home address and the list is what keeps guests out. Returns null when any check fails.
 /// </summary>
 public static class EntraIdentityMapper
 {
@@ -42,7 +42,7 @@ public static class EntraIdentityMapper
 
         var at = email.LastIndexOf(DomainSeparator);
         var domain = at < 0 ? string.Empty : email[(at + 1)..].ToLowerInvariant();
-        if (domain.Length == 0 || (allowedDomains.Count > 0 && !allowedDomains.Contains(domain)))
+        if (domain.Length == 0 || !allowedDomains.Contains(domain))
         {
             return null;
         }

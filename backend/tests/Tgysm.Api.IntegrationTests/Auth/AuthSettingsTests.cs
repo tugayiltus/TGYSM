@@ -110,4 +110,14 @@ public sealed class AuthSettingsTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Forbidden, get.StatusCode);
     }
+
+    [Fact]
+    public async Task Entra_needs_at_least_one_allowed_domain()
+    {
+        var (admin, _) = await AdminAsync();
+
+        using var response = await admin.PutAsync($"{SettingsPath}/entra", new { tenantId = TenantId, clientId = "istemci-1", clientSecret = "x", allowedDomains = Array.Empty<string>(), version = await VersionAsync(admin) });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

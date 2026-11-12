@@ -426,7 +426,7 @@
       "clientId": "Uygulama (Client) ID",
       "clientSecret": "İstemci sırrı (Client secret)",
       "allowedDomains": "İzinli e-posta alan adları",
-      "allowedDomainsHint": "Virgülle ayırın, ör. sirket.com, sirket.com.tr. Boş bırakırsanız kiracının tüm alan adları kabul edilir.",
+      "allowedDomainsHint": "Virgülle ayırın, ör. sirket.com, sirket.com.tr. En az bir alan adı zorunludur; başka alan adından davet edilen misafirler giremez.",
       "redirectUri": "Yönlendirme adresi (Entra'ya kaydedin)",
       "host": "Sunucu",
       "port": "Port",
