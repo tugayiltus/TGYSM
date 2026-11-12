@@ -32,6 +32,10 @@ public sealed class User : Entity
     public bool IsActive { get; private set; }
     public bool MustChangePassword { get; private set; }
     public string PasswordHash { get; private set; } = string.Empty;
+    /// <summary>Microsoft Entra object id (<c>oid</c>) once linked (ADR-0030).</summary>
+    public string? EntraObjectId { get; private set; }
+    /// <summary>Active Directory <c>objectGUID</c> once linked (ADR-0030).</summary>
+    public Guid? LdapObjectGuid { get; private set; }
     public string SecurityStamp { get; private set; } = string.Empty;
     public int AccessFailedCount { get; private set; }
     public DateTimeOffset? LockoutEnd { get; private set; }
@@ -56,6 +60,34 @@ public sealed class User : Entity
         user.SetTemporaryPassword(temporaryPasswordHash, now);
         return user;
     }
+
+    /// <summary>A user created on first directory sign-in: employee, no local password, no department or location (ADR-0030).</summary>
+    public static User CreateFromDirectory(string firstName, string lastName, string email, DateTimeOffset now)
+    {
+        var user = new User { Role = UserRole.Employee, IsActive = true, CreatedAt = now };
+        user.SetProfile(firstName, lastName, email, departmentId: null, locationId: null, now);
+        user.TouchAndRotateStamp(now);
+        return user;
+    }
+
+    /// <summary>False for a user who signs in only through the directory.</summary>
+    public bool HasLocalPassword => PasswordHash.Length > 0;
+
+    public void LinkEntra(string objectId, DateTimeOffset now)
+    {
+        EntraObjectId = objectId;
+        UpdatedAt = now;
+    }
+
+    public void LinkLdap(Guid objectGuid, DateTimeOffset now)
+    {
+        LdapObjectGuid = objectGuid;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Names and email follow the directory; role, organization and password stay as TGYSM has them.</summary>
+    public void RefreshFromDirectory(string firstName, string lastName, string email, DateTimeOffset now) =>
+        SetProfile(firstName, lastName, email, DepartmentId, LocationId, now);
 
     public void UpdateProfile(string firstName, string lastName, string email, Guid? departmentId, Guid? locationId, DateTimeOffset now)
     {

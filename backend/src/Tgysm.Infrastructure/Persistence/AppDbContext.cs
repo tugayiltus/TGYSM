@@ -3,6 +3,7 @@ using Npgsql;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Auth;
 using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Knowledge;
 using Tgysm.Domain.Tickets;
@@ -46,6 +47,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<RequestType> RequestTypes => Set<RequestType>();
     public DbSet<TicketCounter> TicketCounters => Set<TicketCounter>();
     public DbSet<AssetTagCounter> AssetTagCounters => Set<AssetTagCounter>();
+    public DbSet<AuthSettings> AuthSettings => Set<AuthSettings>();
     public DbSet<WorkerHeartbeat> WorkerHeartbeats => Set<WorkerHeartbeat>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();

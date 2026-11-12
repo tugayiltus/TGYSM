@@ -139,4 +139,30 @@ public sealed class UserTests
         user.Reactivate(Now);
         Assert.Equal(created + 4, user.Version);
     }
+
+    [Fact]
+    public void A_directory_user_is_an_employee_without_a_local_password()
+    {
+        var user = User.CreateFromDirectory("Ahmet", "Yılmaz", "Ahmet.Yilmaz@Sirket.com", Now);
+
+        Assert.Equal(UserRole.Employee, user.Role);
+        Assert.True(user.IsActive);
+        Assert.False(user.HasLocalPassword);
+        Assert.False(user.MustChangePassword);
+        Assert.Equal("ahmet.yilmaz@sirket.com", user.NormalizedEmail);
+        Assert.Null(user.DepartmentId);
+    }
+
+    [Fact]
+    public void Refreshing_from_the_directory_keeps_role_and_password()
+    {
+        var user = NewUser(UserRole.Admin);
+        var hash = user.PasswordHash;
+
+        user.LinkEntra("oid-1", Now);
+        user.RefreshFromDirectory("Ahmet", "Yılmaz", "ahmet@sirket.com", Now);
+
+        Assert.Equal((UserRole.Admin, hash, "oid-1", "ahmet@sirket.com"), (user.Role, user.PasswordHash, user.EntraObjectId, user.Email));
+        Assert.True(user.HasLocalPassword);
+    }
 }

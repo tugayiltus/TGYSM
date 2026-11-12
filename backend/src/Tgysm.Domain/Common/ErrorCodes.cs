@@ -51,6 +51,7 @@ public static class ErrorCodes
     public const string AssetModelInactive = "assets.model_inactive";
     public const string ImportCatalogMissing = "assets.import_catalog_missing";
     public const string TicketAssetNotAssignedToRequester = "tickets.asset_not_assigned_to_requester";
+    public const string AuthMethodNotTested = "auth.method_not_tested";
     public const string TicketAssetNotReportable = "tickets.asset_not_reportable";
 
     public const string ImportInvalidHeader = "imports.invalid_header";

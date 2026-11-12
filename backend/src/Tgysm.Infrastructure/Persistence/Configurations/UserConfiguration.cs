@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Tgysm.Domain.Auth;
 using Tgysm.Domain.Organization;
 using Tgysm.Domain.Users;
 using Tgysm.Infrastructure.Persistence.Converters;
@@ -30,6 +31,9 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.SecurityStamp).HasMaxLength(User.SecurityStampMaxLength).IsRequired();
 
         builder.HasIndex(u => u.NormalizedEmail).IsUnique();
+        builder.HasIndex(u => u.EntraObjectId).IsUnique().HasFilter("entra_object_id IS NOT NULL");
+        builder.HasIndex(u => u.LdapObjectGuid).IsUnique().HasFilter("ldap_object_guid IS NOT NULL");
+        builder.Property(u => u.EntraObjectId).HasMaxLength(AuthSettings.TextMaxLength);
 
         builder.HasOne<Department>().WithMany().HasForeignKey(u => u.DepartmentId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Location>().WithMany().HasForeignKey(u => u.LocationId).OnDelete(DeleteBehavior.Restrict);

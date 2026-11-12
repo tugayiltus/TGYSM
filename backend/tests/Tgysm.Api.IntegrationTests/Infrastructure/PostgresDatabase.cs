@@ -18,6 +18,10 @@ public sealed class PostgresDatabase : IAsyncLifetime
     private const string TruncateAllSql =
         "SET session_replication_role = replica; "
         + "TRUNCATE export_jobs, sla_events, sla_pauses, sla_instances, sla_pause_rules, sla_targets, sla_policy_versions, holidays, business_hours, business_calendar, worker_heartbeats, password_tokens, email_deliveries, notification_outbox, ticket_assets, ticket_relations, ticket_events, ticket_attachments, ticket_comments, ticket_assignments, approvals, tickets, ticket_counters, asset_tag_counters, request_types, categories, import_jobs, asset_movements, asset_assignments, assets, asset_models, brands, team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE; "
+        // The single login settings row goes back to its migration default: method local, nothing configured (ADR-0030).
+        + "TRUNCATE auth_settings; "
+        + "INSERT INTO auth_settings (id, method, entra_tenant_id, entra_client_id, entra_allowed_domains, ldap_host, ldap_port, ldap_security, ldap_base_dn, ldap_bind_dn, updated_at) "
+        + "VALUES ('00000000-0000-7000-8000-00000000a07e', 'local', '', '', '{{}}', '', 636, 'ldaps', '', '', now()); "
         + "SET session_replication_role = origin;";
 
     // Email templates are migration-seeded rows that tests edit; a copy taken right after migrating restores them.
