@@ -58,7 +58,8 @@ export function TaskActions({ task }: { task: TaskDetail }) {
   const [dialog, setDialog] = useState<TaskDialogKind | null>(null);
   const actions = availableActions(task);
   // Every action sends the version shown here; wait for a refetch so a dialog does not open with an old version.
-  const refreshing = useIsFetching({ queryKey: taskKeys.detail(task.number) }) > 0;
+  // A running action changes the version too, so the other buttons wait for its answer.
+  const busy = useIsFetching({ queryKey: taskKeys.detail(task.number) }) > 0 || direct.isPending;
   if (actions.direct.length === 0 && actions.dialogs.length === 0) {
     return null;
   }
@@ -73,7 +74,7 @@ export function TaskActions({ task }: { task: TaskDetail }) {
             key={kind}
             label={t(`actions.${kind}`)}
             variant={index === 0 ? 'primary' : 'secondary'}
-            isDisabled={refreshing}
+            isDisabled={busy}
             isLoading={direct.isPending && direct.variables?.kind === kind}
             onClick={() => direct.mutate({ kind })}
           />
@@ -83,7 +84,7 @@ export function TaskActions({ task }: { task: TaskDetail }) {
             key={kind}
             label={t(`actions.${kind}`)}
             variant={kind === 'cancel' ? 'destructive' : 'secondary'}
-            isDisabled={refreshing}
+            isDisabled={busy}
             onClick={() => {
               direct.reset();
               setDialog(kind);

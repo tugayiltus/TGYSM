@@ -47,6 +47,18 @@ describe('TaskDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'Üstlen' })).not.toBeInTheDocument();
   });
 
+  it('locks the other actions while one is running', async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    mockApi(taskRoutes(TASK, { [`POST ${BASE}/claim`]: () => new Promise((resolve) => (answer = resolve)) }) as never);
+    const { user } = renderRoute(`/tasks/${TASK.number}`);
+    await user.click(await screen.findByRole('button', { name: 'Üstlen' }));
+
+    // A second action now would send the version the first one is about to change.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Başla' })).toHaveAttribute('aria-disabled', 'true'));
+    expect(screen.getByRole('button', { name: 'Tamamla' })).toHaveAttribute('aria-disabled', 'true');
+    answer({ status: 200, body: { ...TASK, assigneeId: 'u-2', version: 8 } });
+  });
+
   it('requires a result note to complete', async () => {
     let posted: unknown;
     mockApi(
