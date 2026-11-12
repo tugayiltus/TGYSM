@@ -61,4 +61,21 @@ public sealed class EntraIdentityMapperTests
     [Fact]
     public void Missing_object_id_is_refused() =>
         Assert.Null(EntraIdentityMapper.Map(Principal(("tid", Tenant), ("preferred_username", "ahmet@sirket.com")), Tenant, Allowed));
+
+    [Fact]
+    public void A_guest_marked_by_acct_or_an_ext_sign_in_name_is_refused()
+    {
+        Assert.Null(EntraIdentityMapper.Map(Principal([.. Base(), ("preferred_username", "ahmet@sirket.com"), ("acct", "1")]), Tenant, Allowed));
+        Assert.Null(EntraIdentityMapper.Map(Principal([.. Base(), ("upn", "ahmet_baska.com#EXT#@sirket.com")]), Tenant, Allowed));
+    }
+
+    [Fact]
+    public void The_identity_provider_must_be_the_tenant_itself_not_a_lookalike() =>
+        Assert.Null(EntraIdentityMapper.Map(
+            Principal([.. Base(), ("preferred_username", "ahmet@sirket.com"), ("idp", $"https://evil.example/{Tenant}/")]), Tenant, Allowed));
+
+    [Fact]
+    public void A_member_with_the_tenant_as_identity_provider_is_accepted() =>
+        Assert.NotNull(EntraIdentityMapper.Map(
+            Principal([.. Base(), ("preferred_username", "ahmet@sirket.com"), ("idp", $"https://sts.windows.net/{Tenant}/"), ("acct", "0")]), Tenant, Allowed));
 }
