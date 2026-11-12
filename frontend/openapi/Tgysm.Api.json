@@ -24,6 +24,18 @@
         }
       }
     },
+    "/api/v1/auth/oidc/start": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/auth/login/ldap": {
       "post": {
         "tags": [

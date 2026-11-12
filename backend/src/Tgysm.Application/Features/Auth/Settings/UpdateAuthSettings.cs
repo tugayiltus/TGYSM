@@ -55,6 +55,7 @@ public sealed class UpdateAuthSettingsHandler(
     IAuthSecretProtector secrets,
     IAuditLog audit,
     IOptionsMonitor<AppOptions> options,
+    ILoginProviderCache providers,
     IValidator<UpdateEntraSettingsCommand> entraValidator,
     IValidator<UpdateLdapSettingsCommand> ldapValidator,
     TimeProvider clock)
@@ -92,6 +93,7 @@ public sealed class UpdateAuthSettingsHandler(
     private async Task<AuthSettingsDto> SaveAsync(AuthSettings settings, CancellationToken cancellationToken)
     {
         await db.SaveChangesAsync(cancellationToken);
+        providers.Invalidate();
         var saved = await db.AuthSettings.AsNoTracking().SingleAsync(cancellationToken);
         return AuthSettingsMapping.ToDto(saved, options.CurrentValue.PublicBaseUrl);
     }

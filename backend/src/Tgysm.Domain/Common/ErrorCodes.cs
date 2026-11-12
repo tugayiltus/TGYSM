@@ -54,6 +54,9 @@ public static class ErrorCodes
     public const string AuthMethodNotTested = "auth.method_not_tested";
     public const string AuthDirectoryUnavailable = "auth.directory_unavailable";
     public const string AuthLdapBindFailed = "auth.ldap_bind_failed";
+    public const string AuthEntraTenantNotFound = "auth.entra_tenant_not_found";
+    public const string AuthEntraClientInvalid = "auth.entra_client_invalid";
+    public const string AuthEntraSecretInvalid = "auth.entra_secret_invalid";
     public const string AuthLdapBaseDnNotFound = "auth.ldap_base_dn_not_found";
     public const string TicketAssetNotReportable = "tickets.asset_not_reportable";
 

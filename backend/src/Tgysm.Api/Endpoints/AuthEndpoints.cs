@@ -1,3 +1,7 @@
+using Tgysm.Domain.Auth;
+using Tgysm.Application.Abstractions;
+using Tgysm.Api.Auth;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -19,6 +23,7 @@ internal static class AuthEndpoints
         var auth = api.MapGroup(ApiRoutes.Auth).WithTags(Tag);
 
         auth.MapGet("/csrf", GetCsrfToken).AllowAnonymous();
+        auth.MapGet("/oidc/start", StartEntraAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.Login);
         auth.MapPost("/login/ldap", LdapLoginAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.Login)
             .ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status503ServiceUnavailable);
         auth.MapPost("/login", LoginAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.Login)
@@ -44,6 +49,15 @@ internal static class AuthEndpoints
         var session = await handler.HandleAsync(new LoginCommand(request.Email, request.Password), cancellationToken);
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, SessionClaims.CreatePrincipal(session));
         return TypedResults.Ok(new LoginResponse(session.MustChangePassword));
+    }
+
+    /// <summary>"Microsoft ile giriş yap": a full-page navigation that redirects to Microsoft; 404 unless Entra is the method.</summary>
+    private static async Task<IResult> StartEntraAsync(IAppDbContext db, CancellationToken cancellationToken)
+    {
+        var settings = await db.AuthSettings.AsNoTracking().SingleAsync(cancellationToken);
+        return settings.Method == LoginMethod.Entra
+            ? Results.Challenge(new AuthenticationProperties { RedirectUri = "/" }, [EntraAuthentication.Scheme])
+            : Results.NotFound();
     }
 
     private static async Task<Ok<LoginResponse>> LdapLoginAsync(LdapLoginRequest request, LdapLoginHandler handler, HttpContext context, CancellationToken cancellationToken)

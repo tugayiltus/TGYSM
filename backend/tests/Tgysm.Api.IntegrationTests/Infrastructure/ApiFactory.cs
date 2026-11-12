@@ -1,3 +1,6 @@
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -90,6 +93,14 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             services.AddScoped<IEmailSender>(_ => EmailSender);
             services.AddSingleton<ILdapDirectory>(LdapDirectory);
+            // No network in tests: Microsoft's metadata is replaced by endpoints derived from the configured authority,
+            // so the tenant in the redirect still comes from the login settings (ADR-0030).
+            services.PostConfigure<OpenIdConnectOptions>("entra", options =>
+                options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(new OpenIdConnectConfiguration
+                {
+                    AuthorizationEndpoint = options.Authority!.Replace("/v2.0", "/oauth2/v2.0/authorize", StringComparison.Ordinal),
+                    TokenEndpoint = options.Authority.Replace("/v2.0", "/oauth2/v2.0/token", StringComparison.Ordinal),
+                }));
         });
     }
 }

@@ -36,5 +36,7 @@ public static class LoginMethods
         settings.MarkTested(LoginMethod.Entra);
         settings.SwitchTo(LoginMethod.Entra, now);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        // The settings handler drops cached provider options after a change; this direct write must do the same.
+        scope.ServiceProvider.GetRequiredService<ILoginProviderCache>().Invalidate();
     }
 }

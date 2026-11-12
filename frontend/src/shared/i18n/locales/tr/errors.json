@@ -29,7 +29,10 @@
     "method_not_tested": "Önce bağlantıyı test edin; test başarılı olmadan bu yöntem açılamaz.",
     "directory_unavailable": "Dizin sunucusuna ulaşılamıyor. Daha sonra yeniden deneyin.",
     "ldap_bind_failed": "Servis hesabı ile bağlanılamadı. Bağlanma DN'ini ve şifresini kontrol edin.",
-    "ldap_base_dn_not_found": "Arama kökü (Base DN) dizinde bulunamadı."
+    "ldap_base_dn_not_found": "Arama kökü (Base DN) dizinde bulunamadı.",
+    "entra_tenant_not_found": "Bu kiracı kimliği (Tenant ID) Microsoft'ta bulunamadı.",
+    "entra_client_invalid": "Uygulama (Client ID) bu kiracıda bulunamadı.",
+    "entra_secret_invalid": "İstemci sırrı (Client secret) hatalı veya süresi dolmuş."
   },
   "setup": {
     "already_completed": "Kurulum zaten tamamlanmış."

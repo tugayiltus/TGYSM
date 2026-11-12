@@ -1,3 +1,4 @@
+using Tgysm.Api.Auth;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
@@ -72,7 +73,8 @@ internal static class ApiServiceCollectionExtensions
                 options.Events.OnValidatePrincipal = SessionValidator.ValidateAsync;
                 options.Events.OnRedirectToLogin = context => ApiProblem.WriteAsync(context.HttpContext, StatusCodes.Status401Unauthorized, ErrorCodes.Unauthenticated);
                 options.Events.OnRedirectToAccessDenied = context => ApiProblem.WriteAsync(context.HttpContext, StatusCodes.Status403Forbidden, ErrorCodes.Forbidden);
-            });
+            })
+            .AddEntra();
         services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
             .Configure<IOptions<SecurityOptions>>((cookie, security) => cookie.ExpireTimeSpan = TimeSpan.FromHours(security.Value.SessionHours));
 
