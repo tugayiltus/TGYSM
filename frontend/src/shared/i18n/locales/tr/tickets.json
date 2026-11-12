@@ -89,6 +89,7 @@
     "asset": "İlgili cihaz",
     "assetNotReportable": "Bu cihaz için arıza kaydı açılamaz.",
     "assetNotFound": "Cihaz bulunamadı.",
+    "assetLoadFailed": "Okutulan cihaz yüklenemedi. Cihazı açıklamada belirtin.",
     "noAsset": "Cihaz seçmeyin",
     "assetHint": "Sorun size zimmetli bir cihazdaysa seçin."
   },

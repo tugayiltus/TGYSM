@@ -3,7 +3,6 @@
  * @output One 50×30 mm label per page, then the browser print dialog.
  * @position `/assets/labels`, outside the app shell so only the labels print (IT staff and admins).
  */
-import { Thumbnail } from '@astryxdesign/core/Thumbnail';
 import { VStack } from '@astryxdesign/core/VStack';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -57,8 +56,10 @@ export function AssetLabelsPrintPage() {
       <style>{PRINT_STYLE}</style>
       {error !== null && <ErrorState error={error} onRetry={() => void labels.refetch()} />}
       {ids.length === 0 && <EmptyState message={t('labels.none')} />}
+      {images.data?.length === 0 && <EmptyState message={t('labels.notFound')} />}
       {ids.length > 0 && error === null && images.data === undefined && <LoadingState />}
-      {images.data?.map((image) => <Thumbnail key={image.item.id} src={image.src} alt={t('labels.image', { tag: image.item.assetTag })} />)}
+      {/* A plain image: Astryx Thumbnail crops to a square, and the print rule above sizes each image to the label. */}
+      {images.data?.map((image) => <img key={image.item.id} src={image.src} alt={t('labels.image', { tag: image.item.assetTag })} />)}
     </VStack>
   );
 }

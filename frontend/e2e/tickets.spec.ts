@@ -111,3 +111,34 @@ test('a scanned device label opens a prefilled incident for employees and the de
   await expect(it.page).toHaveURL(new RegExp(`/assets/${world.assetId}$`));
   await expect(it.page.getByRole('region', { name: 'QR kod' }).getByRole('img', { name: `${world.assetTag} etiketi` })).toBeVisible();
 });
+
+/** 96 CSS pixels per inch, 25.4 mm per inch. */
+const PX_PER_MM = 96 / 25.4;
+const LABEL_MM = { width: 50, height: 30 } as const;
+const SIZE_TOLERANCE_PX = 2;
+
+test('the label prints at 50×30 mm with the whole drawing, and the preview keeps its shape', async ({ browser }) => {
+  const admin = await adminSession(browser);
+  const world = await seedWorld(admin);
+  const page = admin.page;
+
+  await page.goto(`/assets/${world.assetId}`);
+  const preview = page.getByRole('region', { name: 'QR kod' }).getByRole('img', { name: `${world.assetTag} etiketi` });
+  await expect(preview).toBeVisible();
+  const previewBox = await preview.boundingBox();
+  expect((previewBox?.width ?? 0) / (previewBox?.height ?? 1)).toBeCloseTo(LABEL_MM.width / LABEL_MM.height, 1);
+
+  await page.addInitScript(() => {
+    window.print = () => undefined;
+  });
+  await page.goto(`/assets/labels?ids=${world.assetId}`);
+  const label = page.getByRole('img', { name: `${world.assetTag} etiketi` });
+  await expect(label).toBeVisible();
+  // The drawing is the whole label, not a crop: same 5:3 shape as the paper.
+  const natural = await label.evaluate((img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight }));
+  expect(natural.width / natural.height).toBeCloseTo(LABEL_MM.width / LABEL_MM.height, 1);
+  await page.emulateMedia({ media: 'print' });
+  const box = await label.boundingBox();
+  expect(Math.abs((box?.width ?? 0) - LABEL_MM.width * PX_PER_MM)).toBeLessThanOrEqual(SIZE_TOLERANCE_PX);
+  expect(Math.abs((box?.height ?? 0) - LABEL_MM.height * PX_PER_MM)).toBeLessThanOrEqual(SIZE_TOLERANCE_PX);
+});

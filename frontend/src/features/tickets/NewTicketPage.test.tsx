@@ -155,6 +155,20 @@ describe('incident from a scanned device label', () => {
     expect(await screen.findByText('Cihaz bulunamadı.')).toBeInTheDocument();
     expect(screen.getByLabelText(/^Konu/)).toBeEnabled();
   });
+
+  it('leaves the device field empty when the scanned device cannot be used', async () => {
+    mockApi(scanRoutes({ code: 'not_found' }, 404));
+    renderRoute(`/tickets/new/incident?asset=${SCANNED.id}`);
+    await screen.findByText('Cihaz bulunamadı.');
+    expect(screen.getByRole('combobox', { name: 'İlgili cihaz' })).toHaveTextContent('Cihaz seçmeyin');
+  });
+
+  it('does not call a server failure "not found"', async () => {
+    mockApi(scanRoutes({ code: 'internal' }, 500));
+    renderRoute(`/tickets/new/incident?asset=${SCANNED.id}`);
+    expect(await screen.findByText('Okutulan cihaz yüklenemedi. Cihazı açıklamada belirtin.')).toBeInTheDocument();
+    expect(screen.queryByText('Cihaz bulunamadı.')).not.toBeInTheDocument();
+  });
 });
 
 describe('scan route', () => {

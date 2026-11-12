@@ -6,7 +6,7 @@
 import { Button } from '@astryxdesign/core/Button';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
-import { Thumbnail } from '@astryxdesign/core/Thumbnail';
+import { Skeleton } from '@astryxdesign/core/Skeleton';
 import { useTranslation } from 'react-i18next';
 
 import { ErrorState } from '../../../shared/feedback/States';
@@ -15,7 +15,12 @@ import { assetLabelsPath } from '../../../shared/routes';
 import { Icons } from '../../../shared/ui/icons';
 import { useAssetLabels } from '../api';
 
+import { LABEL_HEIGHT_MM, LABEL_WIDTH_MM } from './scanLink';
 import { useLabelImages } from './useLabelImages';
+
+/** Preview width on screen; the height keeps the label's 5:3 shape. */
+const PREVIEW_WIDTH = 250;
+const PREVIEW_HEIGHT = Math.round((PREVIEW_WIDTH * LABEL_HEIGHT_MM) / LABEL_WIDTH_MM);
 
 /** Saves a data URL as a file; the anchor exists only for the click. */
 function saveFile(src: string, fileName: string) {
@@ -37,7 +42,12 @@ export function AssetQrCard({ assetId, assetTag }: { assetId: string; assetTag: 
       {error !== null ? (
         <ErrorState error={error} onRetry={() => void labels.refetch()} />
       ) : (
-        <Thumbnail src={image?.src} alt={t('labels.image', { tag: assetTag })} isLoading={image === undefined} />
+        // A plain image keeps the label's shape; Astryx Thumbnail crops to a square.
+        image === undefined ? (
+          <Skeleton width={PREVIEW_WIDTH} height={PREVIEW_HEIGHT} />
+        ) : (
+          <img src={image.src} alt={t('labels.image', { tag: assetTag })} width={PREVIEW_WIDTH} height={PREVIEW_HEIGHT} />
+        )
       )}
       <HStack gap={2} wrap="wrap">
         <Button

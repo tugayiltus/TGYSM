@@ -12,14 +12,14 @@ import { Icon } from '@astryxdesign/core/Icon';
 import { Text } from '@astryxdesign/core/Text';
 import { VStack } from '@astryxdesign/core/VStack';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
 import { z } from 'zod';
 
 import { applyServerErrors, describeError, isHandledByFields } from '../../shared/api/errorMessage';
-import { ERROR_CODES } from '../../shared/api/errors';
+import { ApiError, ERROR_CODES } from '../../shared/api/errors';
 import { FormAlert } from '../../shared/feedback/FormAlert';
 import { UnsavedChangesGuard } from '../../shared/feedback/UnsavedChangesGuard';
 import { FormSelector, FormTextArea, FormTextInput } from '../../shared/form/formFields';
@@ -59,6 +59,9 @@ type TicketFormValues = z.infer<typeof ticketSchema>;
 const FORM_FIELDS = ['subject', 'description', 'categoryId', 'locationId', 'requestTypeId'] as const;
 const CODE_FIELDS = { [ERROR_CODES.referenceInactive]: 'categoryId' } as const;
 
+/** A scan link to an asset that does not exist; other failures are not called "not found". */
+const HTTP_NOT_FOUND = 404;
+
 const nullIfEmpty = (value: string) => (value === NO_SELECTION ? null : value);
 
 export function NewTicketPage({ kind }: { kind: TicketKind }) {
@@ -82,10 +85,11 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
     control,
     handleSubmit,
     setError,
+    setValue,
     formState: { isDirty },
   } = useForm<TicketFormValues>({
     resolver: zodResolver(isRequest ? requestSchema : ticketSchema),
-    defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION, assetId: scannedId ?? NO_SELECTION },
+    defaultValues: { subject: '', description: '', categoryId: NO_SELECTION, locationId: NO_SELECTION, requestTypeId: NO_SELECTION, assetId: NO_SELECTION },
   });
   const hasChanges = isDirty || files.length > 0;
   const requestTypeId = useWatch({ control, name: 'requestTypeId' });
@@ -99,7 +103,18 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
       ? own
       : [{ value: scannedChoice.id, label: `${scannedChoice.assetTag} · ${scannedChoice.brand} ${scannedChoice.model}` }, ...own];
   }, [myAssets.data, scannedChoice]);
-  const scanProblem = scanned.isError ? t('new.assetNotFound') : scanned.data?.canReport === false ? t('new.assetNotReportable') : null;
+  const scanProblem = scanned.isError
+    ? t(scanned.error instanceof ApiError && scanned.error.status === HTTP_NOT_FOUND ? 'new.assetNotFound' : 'new.assetLoadFailed')
+    : scanned.data?.canReport === false
+      ? t('new.assetNotReportable')
+      : null;
+  const scannedChoiceId = scannedChoice?.id;
+  // Synchronizes the form with the scanned-device query: only a device that can be reported is chosen.
+  useEffect(() => {
+    if (scannedChoiceId !== undefined) {
+      setValue('assetId', scannedChoiceId);
+    }
+  }, [scannedChoiceId, setValue]);
   const typeOptions = useMemo(() => (requestTypes.data ?? []).map((r) => ({ value: r.id, label: r.name })), [requestTypes.data]);
 
   const onSubmit = handleSubmit((values) => {
@@ -111,8 +126,7 @@ export function NewTicketPage({ kind }: { kind: TicketKind }) {
         categoryId: nullIfEmpty(values.categoryId),
         locationId: nullIfEmpty(values.locationId),
         requestTypeId: isRequest ? values.requestTypeId : null,
-        // A scanned device that cannot be reported stays out of the request even though the field still holds its id.
-        assetId: isRequest || (scanProblem !== null && values.assetId === scannedId) ? null : nullIfEmpty(values.assetId),
+        assetId: isRequest ? null : nullIfEmpty(values.assetId),
       },
       {
         onError: (error) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS),

@@ -82,7 +82,8 @@
     "print": "Etiketi yazdır",
     "printSelected": "Seçili cihazların etiketlerini yazdır",
     "image": "{{tag}} etiketi",
-    "none": "Yazdırılacak cihaz seçilmedi."
+    "none": "Yazdırılacak cihaz seçilmedi.",
+    "notFound": "Yazdırılacak cihaz bulunamadı."
   },
   "detail": {
     "facts": "Cihaz bilgileri",

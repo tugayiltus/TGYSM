@@ -16,6 +16,7 @@ const SCAN_PATH = '/scan/asset';
 /** The link stays valid as long as the asset exists: it is built from the id, nothing is stored. */
 export const scanLink = (publicBaseUrl: string, assetId: string): string => `${publicBaseUrl}${SCAN_PATH}/${assetId}`;
 
-/** Tag first (printed largest), then brand and model, then the serial number when there is one. */
+
+/** Tag first (printed largest), then brand and model, then the serial number when there is one; no company name. */
 export const labelLines = (item: AssetLabelItem): string[] =>
   [item.assetTag, `${item.brand} ${item.model}`, item.serialNumber ?? ''].filter((line) => line !== '');

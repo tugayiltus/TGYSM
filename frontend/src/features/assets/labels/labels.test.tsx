@@ -79,3 +79,13 @@ describe('bulk label print from Envanter', () => {
     expect(router.state.location.state).toEqual({ ids: [LAPTOP.id, DESKTOP.id] });
   });
 });
+
+describe('label print view without known assets', () => {
+  it('says so when none of the ids exist instead of printing a blank page', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+    mockApi(routes() as never);
+    renderRoute('/assets/labels?ids=gone-1,gone-2');
+    expect(await screen.findByText('Yazdırılacak cihaz bulunamadı.')).toBeInTheDocument();
+    expect(print).not.toHaveBeenCalled();
+  });
+});
