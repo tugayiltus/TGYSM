@@ -9,6 +9,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Application.Features.Auth.Directory;
 using Tgysm.Application.Features.Auth.Settings;
+using Tgysm.Infrastructure.Identity;
 using Tgysm.Infrastructure.Persistence;
 
 namespace Tgysm.Api.Auth;
@@ -31,8 +32,8 @@ internal static class EntraAuthentication
     public static AuthenticationBuilder AddEntra(this AuthenticationBuilder builder)
     {
         builder.Services.AddSingleton<IConfigureOptions<OpenIdConnectOptions>, EntraOptionsSetup>();
+        // Registered after AddInfrastructure, so it replaces the Worker's no-op cache in the API.
         builder.Services.AddSingleton<ILoginProviderCache, EntraOptionsCache>();
-        builder.Services.AddHttpClient<IEntraConnectionTester, EntraConnectionTester>();
         return builder.AddOpenIdConnect(Scheme, _ => { });
     }
 

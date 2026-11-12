@@ -45,6 +45,9 @@ public static class DependencyInjection
         services.AddSingleton<IAccountLinkProtector, AccountLinkProtector>();
         services.AddSingleton<IAuthSecretProtector, AuthSecretProtector>();
         services.AddSingleton<ILdapDirectory, Identity.NovellLdapDirectory>();
+        // One client for the occasional connection test; the Worker composes this too, so it lives here, not in Tgysm.Api.
+        services.AddSingleton<IEntraConnectionTester>(_ => new Identity.EntraConnectionTester(new HttpClient()));
+        services.AddSingleton<ILoginProviderCache, Identity.NoLoginProviderCache>();
         services.AddScoped<ILdapSignInThrottle, LdapSignInThrottle>();
 
         // Email:Mode picks the transport (spec §3.5); resolving IEmailSender with a missing/unrecognized Mode

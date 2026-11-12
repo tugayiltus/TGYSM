@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using Tgysm.Api.Auth;
+using Tgysm.Infrastructure.Identity;
 using Tgysm.Domain.Common;
 
 namespace Tgysm.Api.IntegrationTests.Auth;

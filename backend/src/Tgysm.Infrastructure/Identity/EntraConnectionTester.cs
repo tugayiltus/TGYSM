@@ -3,10 +3,10 @@ using System.Text.Json;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Common;
 
-namespace Tgysm.Api.Auth;
+namespace Tgysm.Infrastructure.Identity;
 
 /// <summary>Reads the tenant's OpenID metadata, then asks for an app token; Entra's error codes name the wrong field (ADR-0030).</summary>
-internal sealed class EntraConnectionTester(HttpClient http) : IEntraConnectionTester
+public sealed class EntraConnectionTester(HttpClient http) : IEntraConnectionTester
 {
     public const string Authority = "https://login.microsoftonline.com";
     private const string MetadataPath = "/v2.0/.well-known/openid-configuration";
