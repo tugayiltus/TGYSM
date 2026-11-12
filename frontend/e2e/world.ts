@@ -114,6 +114,26 @@ export async function seedWorld(admin: Session): Promise<World> {
   };
 }
 
+export interface SecondTeam {
+  teamName: string;
+  email: string;
+  password: string;
+}
+
+/** A second IT team with one member, for work handed between teams (ADR-0031). */
+export async function seedSecondTeam(admin: Session): Promise<SecondTeam> {
+  const request = admin.context.request;
+  const suffix = Date.now().toString();
+  const email = `db-${suffix}@example.com`;
+  const member = await send(request, 'POST', '/api/v1/admin/users', {
+    firstName: 'Deniz', lastName: 'Yıldız', email, role: 'it_staff', departmentId: null, locationId: null, delivery: TEMPORARY_PASSWORD_DELIVERY,
+  });
+  const teamName = `Veritabanı ${suffix}`;
+  const team = await send(request, 'POST', '/api/v1/admin/teams', { name: teamName });
+  await send(request, 'POST', `/api/v1/admin/teams/${String(team.id)}/members`, { userId: member.userId });
+  return { teamName, email, password: String(member.temporaryPassword) };
+}
+
 export type ArticleVisibility = 'employees' | 'internal';
 
 export interface SeededArticle {
