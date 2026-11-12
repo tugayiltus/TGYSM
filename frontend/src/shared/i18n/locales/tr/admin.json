@@ -157,6 +157,7 @@
     "knowledge_article": "Bilgi bankası makalesi",
     "report": "Rapor",
     "export_job": "Rapor dışa aktarımı",
+    "auth_settings": "Giriş yöntemi ayarları",
     "brand": "Marka",
     "asset_model": "Model"
   },
@@ -168,10 +169,15 @@
       "login_succeeded": "Başarılı giriş",
       "login_failed": "Başarısız giriş",
       "locked_out": "Hesap kilitlendi",
-      "password_changed": "Şifre değiştirildi"
+      "password_changed": "Şifre değiştirildi",
+      "settings_updated": "Giriş yöntemi ayarları değiştirildi",
+      "settings_tested": "Giriş yöntemi bağlantısı test edildi",
+      "method_changed": "Giriş yöntemi değiştirildi",
+      "directory_sign_in": "Şirket hesabıyla giriş"
     },
     "users": {
       "created": "Kullanıcı oluşturuldu",
+      "created_from_directory": "Kullanıcı şirket hesabından oluşturuldu",
       "updated": "Kullanıcı güncellendi",
       "role_changed": "Rol değiştirildi",
       "deactivated": "Kullanıcı pasifleştirildi",

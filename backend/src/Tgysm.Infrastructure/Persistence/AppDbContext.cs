@@ -109,6 +109,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         where TEntity : Entity =>
         Entry(entity).Property(e => e.Version).OriginalValue = expectedVersion;
 
+    public void SetExpectedVersion(AuthSettings settings, uint expectedVersion) =>
+        Entry(settings).Property(s => s.Version).OriginalValue = expectedVersion;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension(Configurations.TrigramIndex.Extension);

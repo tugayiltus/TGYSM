@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Auth;
 using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Knowledge;
 using Tgysm.Domain.Tickets;
@@ -17,6 +18,7 @@ namespace Tgysm.Application.Abstractions;
 public interface IAppDbContext
 {
     DbSet<User> Users { get; }
+    DbSet<AuthSettings> AuthSettings { get; }
     DbSet<Department> Departments { get; }
     DbSet<Location> Locations { get; }
     DbSet<Team> Teams { get; }
@@ -66,6 +68,9 @@ public interface IAppDbContext
     /// <summary>Makes the next save fail with a concurrency error unless the row still has <paramref name="expectedVersion"/>.</summary>
     void SetExpectedVersion<TEntity>(TEntity entity, uint expectedVersion)
         where TEntity : Entity;
+
+    /// <summary>The same check for the login settings row, which is not an <see cref="Entity"/> (fixed singleton id).</summary>
+    void SetExpectedVersion(AuthSettings settings, uint expectedVersion);
 
     /// <summary>Runs <paramref name="work"/> in one transaction (several saves commit together).</summary>
     Task RunInTransactionAsync(Func<CancellationToken, Task> work, CancellationToken cancellationToken);

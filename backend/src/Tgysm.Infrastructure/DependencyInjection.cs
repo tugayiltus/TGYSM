@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddOptions<KeyStorageOptions>().BindConfiguration(KeyStorageOptions.SectionName);
         services.AddTgysmDataProtection();
         services.AddSingleton<IAccountLinkProtector, AccountLinkProtector>();
+        services.AddSingleton<IAuthSecretProtector, AuthSecretProtector>();
 
         // Email:Mode picks the transport (spec §3.5); resolving IEmailSender with a missing/unrecognized Mode
         // throws immediately ("fail fast when missing"). Tgysm.Worker additionally marks EmailOptions

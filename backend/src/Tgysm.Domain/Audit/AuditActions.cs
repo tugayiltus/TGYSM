@@ -12,8 +12,13 @@ public static class AuditActions
     public const string LoginFailed = "auth.login_failed";
     public const string LockedOut = "auth.locked_out";
     public const string PasswordChanged = "auth.password_changed";
+    public const string AuthSettingsUpdated = "auth.settings_updated";
+    public const string AuthSettingsTested = "auth.settings_tested";
+    public const string LoginMethodChanged = "auth.method_changed";
+    public const string DirectorySignIn = "auth.directory_sign_in";
 
     public const string UserCreated = "users.created";
+    public const string UserCreatedFromDirectory = "users.created_from_directory";
     public const string UserUpdated = "users.updated";
     public const string UserRoleChanged = "users.role_changed";
     public const string UserDeactivated = "users.deactivated";

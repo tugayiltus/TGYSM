@@ -3098,6 +3098,123 @@
         }
       }
     },
+    "/api/v1/admin/auth-settings": {
+      "get": {
+        "tags": [
+          "Admin: Login method"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/auth-settings/entra": {
+      "put": {
+        "tags": [
+          "Admin: Login method"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEntraSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/auth-settings/ldap": {
+      "put": {
+        "tags": [
+          "Admin: Login method"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLdapSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/workers": {
       "get": {
         "tags": [
@@ -7531,6 +7648,34 @@
           }
         }
       },
+      "AuthSettingsDto": {
+        "required": [
+          "method",
+          "entra",
+          "ldap",
+          "redirectUri",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/LoginMethod"
+          },
+          "entra": {
+            "$ref": "#/components/schemas/EntraSettingsDto"
+          },
+          "ldap": {
+            "$ref": "#/components/schemas/LdapSettingsDto"
+          },
+          "redirectUri": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          }
+        }
+      },
       "BrandItem": {
         "required": [
           "id",
@@ -8477,6 +8622,36 @@
           }
         }
       },
+      "EntraSettingsDto": {
+        "required": [
+          "tenantId",
+          "clientId",
+          "hasClientSecret",
+          "allowedDomains",
+          "isTested"
+        ],
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "hasClientSecret": {
+            "type": "boolean"
+          },
+          "allowedDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isTested": {
+            "type": "boolean"
+          }
+        }
+      },
       "ExportJobItem": {
         "required": [
           "id",
@@ -8656,6 +8831,55 @@
           }
         }
       },
+      "LdapSecurity": {
+        "enum": [
+          "ldaps",
+          "start_tls"
+        ]
+      },
+      "LdapSettingsDto": {
+        "required": [
+          "host",
+          "port",
+          "security",
+          "baseDn",
+          "bindDn",
+          "hasBindPassword",
+          "userFilter",
+          "isTested"
+        ],
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "port": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "security": {
+            "$ref": "#/components/schemas/LdapSecurity"
+          },
+          "baseDn": {
+            "type": "string"
+          },
+          "bindDn": {
+            "type": "string"
+          },
+          "hasBindPassword": {
+            "type": "boolean"
+          },
+          "userFilter": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isTested": {
+            "type": "boolean"
+          }
+        }
+      },
       "Level": {
         "enum": [
           "high",
@@ -8719,6 +8943,13 @@
             "format": "uint32"
           }
         }
+      },
+      "LoginMethod": {
+        "enum": [
+          "local",
+          "entra",
+          "ldap"
+        ]
       },
       "LoginRequest": {
         "required": [
@@ -10824,6 +11055,87 @@
           }
         }
       },
+      "UpdateEntraSettingsRequest": {
+        "required": [
+          "tenantId",
+          "clientId",
+          "clientSecret",
+          "allowedDomains",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientSecret": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "allowedDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          }
+        }
+      },
+      "UpdateLdapSettingsRequest": {
+        "required": [
+          "host",
+          "port",
+          "security",
+          "baseDn",
+          "bindDn",
+          "bindPassword",
+          "userFilter",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "port": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "security": {
+            "$ref": "#/components/schemas/LdapSecurity"
+          },
+          "baseDn": {
+            "type": "string"
+          },
+          "bindDn": {
+            "type": "string"
+          },
+          "bindPassword": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "userFilter": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          }
+        }
+      },
       "UpdateLocationRequest": {
         "required": [
           "version",
@@ -11207,6 +11519,9 @@
     },
     {
       "name": "Admin: SLA"
+    },
+    {
+      "name": "Admin: Login method"
     },
     {
       "name": "Admin: System"

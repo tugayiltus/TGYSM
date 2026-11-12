@@ -3141,6 +3141,155 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/auth-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuthSettingsDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth-settings/entra": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEntraSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuthSettingsDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth-settings/ldap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateLdapSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuthSettingsDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/workers": {
         parameters: {
             query?: never;
@@ -6844,6 +6993,14 @@ export interface components {
             newValues: null | string;
             correlationId: string;
         };
+        AuthSettingsDto: {
+            method: components["schemas"]["LoginMethod"];
+            entra: components["schemas"]["EntraSettingsDto"];
+            ldap: components["schemas"]["LdapSettingsDto"];
+            redirectUri: string;
+            /** Format: uint32 */
+            version: number;
+        };
         BrandItem: {
             /** Format: uuid */
             id: string;
@@ -7097,6 +7254,13 @@ export interface components {
             version: number;
             allowedVariables: string[];
         };
+        EntraSettingsDto: {
+            tenantId: string;
+            clientId: string;
+            hasClientSecret: boolean;
+            allowedDomains: string[];
+            isTested: boolean;
+        };
         ExportJobItem: {
             /** Format: uuid */
             id: string;
@@ -7144,6 +7308,19 @@ export interface components {
             value: string[];
         };
         /** @enum {unknown} */
+        LdapSecurity: "ldaps" | "start_tls";
+        LdapSettingsDto: {
+            host: string;
+            /** Format: int32 */
+            port: number;
+            security: components["schemas"]["LdapSecurity"];
+            baseDn: string;
+            bindDn: string;
+            hasBindPassword: boolean;
+            userFilter: null | string;
+            isTested: boolean;
+        };
+        /** @enum {unknown} */
         Level: "high" | "medium" | "low";
         LinkArticleRequest: {
             /** Format: uuid */
@@ -7163,6 +7340,8 @@ export interface components {
             /** Format: uint32 */
             version: number;
         };
+        /** @enum {unknown} */
+        LoginMethod: "local" | "entra" | "ldap";
         LoginRequest: {
             email: string;
             password: string;
@@ -7722,6 +7901,26 @@ export interface components {
             version: number;
             subject: string;
             body: string;
+        };
+        UpdateEntraSettingsRequest: {
+            tenantId: string;
+            clientId: string;
+            clientSecret: null | string;
+            allowedDomains: string[];
+            /** Format: uint32 */
+            version: number;
+        };
+        UpdateLdapSettingsRequest: {
+            host: string;
+            /** Format: int32 */
+            port: number;
+            security: components["schemas"]["LdapSecurity"];
+            baseDn: string;
+            bindDn: string;
+            bindPassword: null | string;
+            userFilter: null | string;
+            /** Format: uint32 */
+            version: number;
         };
         UpdateLocationRequest: {
             /** Format: uint32 */

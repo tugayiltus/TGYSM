@@ -24,4 +24,5 @@ public static class AuditEntityTypes
     public const string KnowledgeArticle = "knowledge_article";
     public const string Report = "report";
     public const string ExportJob = "export_job";
+    public const string AuthSettings = "auth_settings";
 }

@@ -29,5 +29,6 @@ internal static class ApiRoutes
     public const string Sla = "/sla";
     public const string Reports = "/reports";
     public const string System = "/system";
+    public const string AuthSettings = "/auth-settings";
     public const string Health = "/health";
 }
