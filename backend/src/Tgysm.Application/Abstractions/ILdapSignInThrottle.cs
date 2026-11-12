@@ -6,9 +6,11 @@ namespace Tgysm.Application.Abstractions;
 /// </summary>
 public interface ILdapSignInThrottle
 {
-    Task<bool> IsLockedAsync(string key, DateTimeOffset now, CancellationToken cancellationToken);
-
-    Task RegisterFailureAsync(string key, DateTimeOffset now, CancellationToken cancellationToken);
+    /// <summary>
+    /// Counts one attempt atomically before the directory is asked, and says whether it may go ahead. The attempt that
+    /// reaches the limit starts the lockout, so parallel requests cannot exceed it. A success clears the count.
+    /// </summary>
+    Task<bool> TryAttemptAsync(string key, DateTimeOffset now, CancellationToken cancellationToken);
 
     Task ResetAsync(string key, CancellationToken cancellationToken);
 }

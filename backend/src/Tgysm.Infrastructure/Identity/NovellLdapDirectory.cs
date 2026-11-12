@@ -10,7 +10,7 @@ namespace Tgysm.Infrastructure.Identity;
 
 /// <summary>
 /// Active Directory over LDAPS or StartTLS with a managed client, so the Linux image needs no native LDAP library
-/// (ADR-0030). Searches with the service account, then binds as the found user to check the password. Certificates are
+/// (ADR-0030). Finds users with the service account; checks a password by binding as the found entry. Certificates are
 /// validated by the platform; a plain connection is never opened.
 /// </summary>
 internal sealed partial class NovellLdapDirectory(ILogger<NovellLdapDirectory> logger) : ILdapDirectory
@@ -22,34 +22,40 @@ internal sealed partial class NovellLdapDirectory(ILogger<NovellLdapDirectory> l
     private const string UserPrincipalName = "userPrincipalName";
     private static readonly string[] Attributes = [ObjectGuid, GivenName, Surname, Mail, UserPrincipalName];
 
-    public async Task<LdapResult> AuthenticateAsync(LdapConnectionSettings settings, string identifier, string password, CancellationToken cancellationToken)
+    public async Task<LdapEntryMatch> FindAsync(LdapConnectionSettings settings, string identifier, CancellationToken cancellationToken)
     {
         try
         {
             using var service = await ConnectAsync(settings, cancellationToken);
             await service.BindAsync(settings.BindDn, settings.BindPassword, cancellationToken);
             var entry = await FindUserAsync(service, settings, identifier, cancellationToken);
-            if (entry is null)
-            {
-                return LdapResult.Fail(LdapFailure.InvalidCredentials);
-            }
-
-            using var user = await ConnectAsync(settings, cancellationToken);
-            try
-            {
-                await user.BindAsync(entry.Dn, password, cancellationToken);
-            }
-            catch (LdapException e) when (e.ResultCode == LdapException.InvalidCredentials)
-            {
-                return LdapResult.Fail(LdapFailure.InvalidCredentials);
-            }
-
-            return ToIdentity(entry) is { } identity ? LdapResult.Success(identity) : LdapResult.Fail(LdapFailure.InvalidCredentials);
+            return entry is not null && ToIdentity(entry) is { } identity
+                ? new LdapEntryMatch(LdapStatus.Ok, entry.Dn, identity)
+                : new LdapEntryMatch(LdapStatus.NotFound, null, null);
         }
         catch (LdapException e)
         {
             LogUnavailable(logger, e.ResultCode, e.Message);
-            return LdapResult.Fail(LdapFailure.Unavailable);
+            return new LdapEntryMatch(LdapStatus.Unavailable, null, null);
+        }
+    }
+
+    public async Task<LdapStatus> CheckPasswordAsync(LdapConnectionSettings settings, string distinguishedName, string password, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var user = await ConnectAsync(settings, cancellationToken);
+            await user.BindAsync(distinguishedName, password, cancellationToken);
+            return LdapStatus.Ok;
+        }
+        catch (LdapException e) when (e.ResultCode == LdapException.InvalidCredentials)
+        {
+            return LdapStatus.InvalidCredentials;
+        }
+        catch (LdapException e)
+        {
+            LogUnavailable(logger, e.ResultCode, e.Message);
+            return LdapStatus.Unavailable;
         }
     }
 

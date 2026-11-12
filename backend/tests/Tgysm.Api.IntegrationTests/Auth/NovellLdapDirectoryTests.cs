@@ -35,16 +35,17 @@ public sealed class NovellLdapDirectoryTests
     }
 
     [Fact]
-    public async Task A_user_signs_in_by_name_and_a_wrong_password_fails()
+    public async Task A_user_is_found_by_name_and_only_the_right_password_binds()
     {
         var settings = Settings();
         Assert.SkipWhen(settings is null || Env("USER") is null, "No test directory configured.");
 
-        var good = await Directory().AuthenticateAsync(settings!, Env("USER")!, Env("PASSWORD")!, TestContext.Current.CancellationToken);
-        var wrong = await Directory().AuthenticateAsync(settings!, Env("USER")!, "yanlış-şifre", TestContext.Current.CancellationToken);
+        var match = await Directory().FindAsync(settings!, Env("USER")!, TestContext.Current.CancellationToken);
+        var good = await Directory().CheckPasswordAsync(settings!, match.DistinguishedName!, Env("PASSWORD")!, TestContext.Current.CancellationToken);
+        var wrong = await Directory().CheckPasswordAsync(settings!, match.DistinguishedName!, "yanlış-şifre", TestContext.Current.CancellationToken);
 
-        Assert.NotNull(good.Identity);
-        Assert.Equal(LdapFailure.InvalidCredentials, wrong.Failure);
+        Assert.NotNull(match.Identity);
+        Assert.Equal((LdapStatus.Ok, LdapStatus.InvalidCredentials), (good, wrong));
     }
 
     [Fact]
@@ -53,8 +54,8 @@ public sealed class NovellLdapDirectoryTests
         var settings = Settings();
         Assert.SkipWhen(settings is null, "No test directory configured.");
 
-        var result = await Directory().AuthenticateAsync(settings!, "*)(objectClass=*", "x", TestContext.Current.CancellationToken);
+        var result = await Directory().FindAsync(settings!, "*)(objectClass=*", TestContext.Current.CancellationToken);
 
-        Assert.Equal(LdapFailure.InvalidCredentials, result.Failure);
+        Assert.Equal(LdapStatus.NotFound, result.Status);
     }
 }

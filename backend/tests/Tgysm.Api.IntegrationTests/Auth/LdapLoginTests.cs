@@ -90,4 +90,37 @@ public sealed class LdapLoginTests(ApiFactory factory) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
     }
+
+    [Fact]
+    public async Task Switching_between_name_and_email_does_not_give_more_attempts()
+    {
+        await LoginMethods.EnableLdapAsync(factory);
+        var client = ApiClient.Create(factory);
+        string[] aliases = ["ahmet.yilmaz", "ahmet.yilmaz@sirket.com", "AHMET.YILMAZ"];
+        for (var i = 0; i < LockThreshold; i++)
+        {
+            using var wrong = await LoginAsync(client, aliases[i % aliases.Length], "yanlış");
+        }
+
+        using var right = await LoginAsync(client, "Ahmet.Yilmaz@sirket.com", Password);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, right.StatusCode);
+    }
+
+    [Fact]
+    public async Task Parallel_attempts_never_exceed_the_limit()
+    {
+        await LoginMethods.EnableLdapAsync(factory);
+        const int Parallel = 20;
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, Parallel).Select(_ => LoginAsync(ApiClient.Create(factory), "ahmet.yilmaz", "yanlış")));
+        using var right = await LoginAsync(ApiClient.Create(factory), "ahmet.yilmaz", Password);
+
+        Assert.True(factory.LdapDirectory.BindAttempts <= LockThreshold, $"{factory.LdapDirectory.BindAttempts} binds reached the directory.");
+        Assert.Equal(HttpStatusCode.Unauthorized, right.StatusCode);
+        foreach (var response in responses)
+        {
+            response.Dispose();
+        }
+    }
 }
