@@ -37,6 +37,23 @@ internal static class EntraAuthentication
         return builder.AddOpenIdConnect(Scheme, _ => { });
     }
 
+    /// <summary>Replaces Microsoft's principal with the TGYSM session principal, or ends at the login page with an error.</summary>
+    internal static async Task OnTicketReceivedAsync(TicketReceivedContext context)
+    {
+        var handler = context.HttpContext.RequestServices.GetRequiredService<EntraSignInHandler>();
+        try
+        {
+            var session = await handler.HandleAsync(context.Principal!, context.HttpContext.RequestAborted);
+            context.Principal = SessionClaims.CreatePrincipal(session);
+            context.ReturnUri = AfterSignIn;
+        }
+        catch (AuthenticationFailedException)
+        {
+            context.Response.Redirect(ErrorRedirect);
+            context.HandleResponse();
+        }
+    }
+
     private sealed class EntraOptionsSetup(IServiceScopeFactory scopes) : IConfigureNamedOptions<OpenIdConnectOptions>
     {
         public void Configure(OpenIdConnectOptions options) => Configure(Options.DefaultName, options);
@@ -85,23 +102,6 @@ internal static class EntraAuthentication
                 context.HandleResponse();
                 return Task.CompletedTask;
             };
-        }
-
-        /// <summary>Replaces Microsoft's principal with the TGYSM session principal, or ends at the login page with an error.</summary>
-        private static async Task OnTicketReceivedAsync(TicketReceivedContext context)
-        {
-            var handler = context.HttpContext.RequestServices.GetRequiredService<EntraSignInHandler>();
-            try
-            {
-                var session = await handler.HandleAsync(context.Principal!, context.HttpContext.RequestAborted);
-                context.Principal = SessionClaims.CreatePrincipal(session);
-                context.ReturnUri = AfterSignIn;
-            }
-            catch (AuthenticationFailedException)
-            {
-                context.Response.Redirect(ErrorRedirect);
-                context.HandleResponse();
-            }
         }
     }
 
