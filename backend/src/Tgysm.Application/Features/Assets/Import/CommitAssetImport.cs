@@ -15,7 +15,7 @@ public sealed record CommitAssetImportCommand(Guid JobId);
 /// Inserts every row of a previewed job in one transaction, with one movement per asset and one audit event.
 /// Committing a committed job returns its result and inserts nothing (serialized per commit).
 /// </summary>
-public sealed class CommitAssetImportHandler(IAppDbContext db, ICurrentActor actor, IAuditLog audit, IAssetTagGenerator tags, TimeProvider clock)
+public sealed class CommitAssetImportHandler(IAppDbContext db, ICurrentActor actor, IAuditLog audit, IAssetTagGenerator tags, ICompanyClock companyClock, TimeProvider clock)
 {
     private const string ReferenceInactiveMessage = "A location or department used by the import is no longer active.";
 
@@ -46,7 +46,7 @@ public sealed class CommitAssetImportHandler(IAppDbContext db, ICurrentActor act
             foreach (var row in rows)
             {
                 var (asset, movement) = Asset.Create(
-                    row.AssetTag ?? await tags.NextAsync(ct), models[row.ModelId], row.SerialNumber, row.LocationId, row.DepartmentId,
+                    await tags.NextAsync(AssetTagFormat.YearOf(now, companyClock.Zone), ct), models[row.ModelId], row.SerialNumber, row.LocationId, row.DepartmentId,
                     row.WarrantyEndsOn, row.PurchasedOn, row.Notes, now, row.Status, actorId);
                 db.Assets.Add(asset);
                 db.AssetMovements.Add(movement);
@@ -62,12 +62,6 @@ public sealed class CommitAssetImportHandler(IAppDbContext db, ICurrentActor act
     /// <summary>The inventory may have changed since the preview; any conflict refuses the whole commit.</summary>
     private async Task EnsureStillValidAsync(List<AssetImportRow> rows, CancellationToken cancellationToken)
     {
-        var legacyTags = rows.Select(r => r.AssetTag).OfType<string>().Select(Asset.NormalizeTag).ToList();
-        if (await db.Assets.AnyAsync(a => legacyTags.Contains(a.NormalizedAssetTag), cancellationToken))
-        {
-            throw new DomainException(ErrorCodes.AssetTagTaken, AssetRules.TagTakenMessage);
-        }
-
         var serials = rows.Select(r => Asset.NormalizeSerial(r.SerialNumber)).OfType<string>().ToList();
         if (await db.Assets.AnyAsync(a => a.NormalizedSerialNumber != null && serials.Contains(a.NormalizedSerialNumber), cancellationToken))
         {

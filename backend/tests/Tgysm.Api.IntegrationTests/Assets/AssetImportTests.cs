@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Api.IntegrationTests.Infrastructure;
+using Tgysm.Domain.Assets;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Users;
@@ -17,6 +18,8 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
     private const string TemplatePath = ImportPath + "/template";
     private const string CsvType = "text/csv";
     private const string FileName = "cihazlar.csv";
+    /// <summary>The template has no tag column; files made for the old format still start with "Demirbaş No", which is not read.</summary>
+    private const string TemplateHeader = "Tür,Marka,Model,Seri No,Konum,Departman,Durum,Garanti Bitiş,Satın Alma,Notlar";
     private const string Header = "Demirbaş No,Tür,Marka,Model,Seri No,Konum,Departman,Durum,Garanti Bitiş,Satın Alma,Notlar";
     private const int MaxRows = 5_000;
     private const int MaxBytes = 10 * 1024 * 1024;
@@ -84,7 +87,7 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
         Assert.StartsWith(CsvType, response.Content.Headers.ContentType?.ToString());
         Assert.Equal(Bom, bytes[..Bom.Length]);
         var lines = Encoding.UTF8.GetString(bytes[Bom.Length..]).Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(Header, lines[0]);
+        Assert.Equal(TemplateHeader, lines[0]);
         Assert.Equal(2, lines.Length);
     }
 
@@ -97,6 +100,8 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
 
         var job = await PreviewAsync(it, content);
 
+        // The system gives every asset tag (ADR-0029), so the template has no tag column.
+        Assert.DoesNotContain("Demirbaş No", Encoding.UTF8.GetString(content), StringComparison.Ordinal);
         Assert.Equal(0, job.GetProperty("errorRows").GetInt32());
         Assert.Equal(1, job.GetProperty("validRows").GetInt32());
     }
@@ -120,8 +125,9 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, commit.StatusCode);
         Assert.Equal("committed", committed.GetProperty("status").GetString());
         await using var db = factory.Database.CreateDbContext();
-        var tablet = await db.Assets.SingleAsync(a => a.AssetTag == "TB-1", Ct);
-        Assert.Equal("iPad, 10", tablet.Model);
+        var tablet = await db.Assets.SingleAsync(a => a.Model == "iPad, 10", Ct);
+        // The file's "TB-1" is not read: every tag is generated (ADR-0029).
+        Assert.StartsWith(AssetTagFormat.Prefix, tablet.AssetTag, StringComparison.Ordinal);
         Assert.Equal("Ekran \"çizik\"", tablet.Notes);
         Assert.Null(tablet.SerialNumber);
         Assert.Equal(2, await db.Assets.CountAsync(Ct));
@@ -151,12 +157,13 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Duplicates_in_the_file_and_in_the_database_are_reported()
+    public async Task Duplicate_serials_in_the_file_and_in_the_database_are_reported_and_an_old_tag_column_is_ignored()
     {
         var it = await ItAsync();
         var store = (await TestData.LocationAsync(factory, "Depo")).Id;
         await TestData.LegacyAssetAsync(factory, "DT-1", store, "SN-9");
 
+        // Files made for the old format still carry a "Demirbaş No" column; the system gives every number (ADR-0029).
         var job = await PreviewAsync(it, Csv(
             "dt-1,laptop,Lenovo,T14,,Depo,,in_stock,,,",
             "DT-2,laptop,Lenovo,T14,sn-9,Depo,,in_stock,,,",
@@ -164,11 +171,10 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
             "DT-3,laptop,Lenovo,T14,sn-3,Depo,,in_stock,,,"));
 
         var errors = ErrorsOf(job);
-        Assert.Contains((2, "assetTag", ErrorCodes.AssetTagTaken), errors);
         Assert.Contains((3, "serialNumber", ErrorCodes.AssetSerialTaken), errors);
-        Assert.Contains((5, "assetTag", ErrorCodes.ImportDuplicateInFile), errors);
         Assert.Contains((5, "serialNumber", ErrorCodes.ImportDuplicateInFile), errors);
-        Assert.DoesNotContain(errors, e => e.Row == 4);
+        Assert.DoesNotContain(errors, e => e.Field == "assetTag");
+        Assert.DoesNotContain(errors, e => e.Row is 2 or 4);
     }
 
     [Fact]
@@ -243,13 +249,13 @@ public sealed class AssetImportTests(ApiFactory factory) : IAsyncLifetime
     {
         var it = await ItAsync();
         var store = (await TestData.LocationAsync(factory, "Depo")).Id;
-        var job = await PreviewAsync(it, Csv("DT-1,laptop,Lenovo,T14,,Depo,,in_stock,,,", "DT-2,laptop,Lenovo,T14,,Depo,,in_stock,,,"));
-        await TestData.LegacyAssetAsync(factory, "DT-2", store);
+        var job = await PreviewAsync(it, Csv(",laptop,Lenovo,T14,SN-1,Depo,,in_stock,,,", ",laptop,Lenovo,T14,SN-2,Depo,,in_stock,,,"));
+        await TestData.LegacyAssetAsync(factory, "ESKI-2", store, "SN-2");
 
         using var commit = await it.PostAsync(CommitPath(job));
 
         Assert.Equal(HttpStatusCode.Conflict, commit.StatusCode);
-        Assert.Equal(ErrorCodes.AssetTagTaken, await ApiClient.ReadCodeAsync(commit));
+        Assert.Equal(ErrorCodes.AssetSerialTaken, await ApiClient.ReadCodeAsync(commit));
         await using var db = factory.Database.CreateDbContext();
         Assert.Equal(1, await db.Assets.CountAsync(Ct));
     }

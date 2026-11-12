@@ -19,7 +19,7 @@ public sealed class RecomputeCatalogNamesStep : IPostMigrationStep
     // Unique per row and never a real key (normalized names have no leading '~' from user input of this length).
     private static string TemporaryKey(Guid id) => TemporaryKeyPrefix + id.ToString("N");
 
-    public async Task RunAsync(AppDbContext db, CancellationToken cancellationToken)
+    public async Task RunAsync(AppDbContext db, TimeZoneInfo companyZone, CancellationToken cancellationToken)
     {
         var brands = await db.Brands.AsNoTracking().Select(b => new { b.Id, b.Name, b.NormalizedName }).ToListAsync(cancellationToken);
         var brandClash = brands.GroupBy(b => CatalogName.Normalize(b.Name)).FirstOrDefault(g => g.Count() > 1);

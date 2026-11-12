@@ -1,7 +1,7 @@
 namespace Tgysm.Application.Abstractions;
 
-/// <summary>Next server-generated asset tag (<see cref="Domain.Assets.AssetTagFormat"/>); numbers are never reused.</summary>
+/// <summary>Next server-generated asset tag of a company calendar year (<see cref="Domain.Assets.AssetTagFormat"/>); numbers are never reused.</summary>
 public interface IAssetTagGenerator
 {
-    Task<string> NextAsync(CancellationToken cancellationToken);
+    Task<string> NextAsync(int year, CancellationToken cancellationToken);
 }

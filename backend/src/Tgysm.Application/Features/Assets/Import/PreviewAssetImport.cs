@@ -64,7 +64,7 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             throw FileError(ErrorCodes.ImportTooManyRows, "The file has more than 5,000 rows.");
         }
 
-        var context = await RowContext.LoadAsync(db, dataRows.Select(r => Cell(r.Cells, columns, AssetCsvTemplate.AssetTag)), dataRows.Select(r => Cell(r.Cells, columns, AssetCsvTemplate.SerialNumber)), cancellationToken);
+        var context = await RowContext.LoadAsync(db, dataRows.Select(r => Cell(r.Cells, columns, AssetCsvTemplate.SerialNumber)), cancellationToken);
         var rows = new List<AssetImportRow>();
         var errors = new List<AssetImportError>();
         foreach (var (row, cells) in dataRows)
@@ -131,9 +131,6 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             return null;
         }
 
-        // Optional: an empty tag is generated at commit (the preview consumes no numbers); a filled one is a legacy tag.
-        var tag = Text(AssetCsvTemplate.AssetTag, Asset.TagMaxLength, required: false);
-        var tagRejected = false;
         var brand = Text(AssetCsvTemplate.Brand, CatalogName.MaxLength, required: true);
         var model = Text(AssetCsvTemplate.Model, CatalogName.MaxLength, required: true);
         var serial = Text(AssetCsvTemplate.SerialNumber, Asset.SerialMaxLength, required: false);
@@ -144,17 +141,6 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
         var status = ParseStatus(cell(AssetCsvTemplate.Status), Error);
         var location = ParseLocation(cell(AssetCsvTemplate.Location), context, Error);
         var department = ParseDepartment(cell(AssetCsvTemplate.Department), context, Error);
-
-        if (tag is not null && AssetTagFormat.IsReserved(tag))
-        {
-            // DMR- numbers come from the sequence; an imported one would collide with a later generated tag.
-            Error(AssetCsvTemplate.AssetTag, ErrorCodes.ImportReservedTag);
-            tagRejected = true;
-        }
-        else if (tag is not null)
-        {
-            context.CheckTag(tag, Error);
-        }
 
         // Brand and model must already be in the catalog (ADR-0023): no free text, so no spelling variants.
         AssetCatalogEntry? entry = null;
@@ -172,9 +158,10 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             context.CheckSerial(serial, Error);
         }
 
-        return tagRejected || entry is null || status is null || location is null
+        // Every tag is generated at commit (ADR-0029); a "Demirbaş No" column from an older file is not read.
+        return entry is null || status is null || location is null
             ? null
-            : new AssetImportRow(row, tag, entry.Type, entry.ModelId, entry.BrandName, entry.ModelName, serial, location.Id, location.Path, department?.Id, department?.Name, status.Value, warranty, purchased, notes);
+            : new AssetImportRow(row, entry.Type, entry.ModelId, entry.BrandName, entry.ModelName, serial, location.Id, location.Path, department?.Id, department?.Name, status.Value, warranty, purchased, notes);
     }
 
     private static AssetType? ParseType(string value, Action<string, string> error)
@@ -284,9 +271,7 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
     /// <summary>Reference data and duplicate tracking shared by every row of one file.</summary>
     private sealed class RowContext
     {
-        private readonly HashSet<string> _takenTags;
         private readonly HashSet<string> _takenSerials;
-        private readonly HashSet<string> _fileTags = [];
         private readonly HashSet<string> _fileSerials = [];
 
         private readonly Dictionary<(string Brand, AssetType Type, string Model), AssetCatalogEntry> _models;
@@ -294,14 +279,12 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
         private RowContext(
             LocationPaths locations,
             Dictionary<string, (Guid Id, string Name, bool IsActive)> departments,
-            HashSet<string> takenTags,
             HashSet<string> takenSerials,
             Dictionary<(string Brand, AssetType Type, string Model), AssetCatalogEntry> models)
         {
             _models = models;
             Locations = locations;
             Departments = departments;
-            _takenTags = takenTags;
             _takenSerials = takenSerials;
         }
 
@@ -309,11 +292,9 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
 
         public Dictionary<string, (Guid Id, string Name, bool IsActive)> Departments { get; }
 
-        public static async Task<RowContext> LoadAsync(IAppDbContext db, IEnumerable<string> tags, IEnumerable<string> serials, CancellationToken cancellationToken)
+        public static async Task<RowContext> LoadAsync(IAppDbContext db, IEnumerable<string> serials, CancellationToken cancellationToken)
         {
-            var normalizedTags = tags.Where(t => t.Length > 0).Select(Asset.NormalizeTag).Distinct().ToList();
             var normalizedSerials = serials.Select(Asset.NormalizeSerial).OfType<string>().Distinct().ToList();
-            var takenTags = await db.Assets.AsNoTracking().Where(a => normalizedTags.Contains(a.NormalizedAssetTag)).Select(a => a.NormalizedAssetTag).ToListAsync(cancellationToken);
             var takenSerials = await db.Assets.AsNoTracking().Where(a => a.NormalizedSerialNumber != null && normalizedSerials.Contains(a.NormalizedSerialNumber)).Select(a => a.NormalizedSerialNumber!).ToListAsync(cancellationToken);
             var departments = await db.Departments.AsNoTracking().Select(d => new { d.Id, d.Name, d.NormalizedName, d.IsActive }).ToListAsync(cancellationToken);
             var models = await (from m in db.AssetModels.AsNoTracking()
@@ -323,7 +304,6 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
             return new RowContext(
                 await LocationPaths.LoadAsync(db, cancellationToken),
                 departments.ToDictionary(d => d.NormalizedName, d => (d.Id, d.Name, d.IsActive), StringComparer.Ordinal),
-                [.. takenTags],
                 [.. takenSerials],
                 models.ToDictionary(m => (m.BrandKey, m.Entry.Type, m.ModelKey), m => m.Entry));
         }
@@ -331,19 +311,6 @@ public sealed class PreviewAssetImportHandler(IAppDbContext db, ICurrentActor ac
         /// <summary>The active catalog model with this brand, type and model name (compared by <see cref="CatalogName"/> key).</summary>
         public AssetCatalogEntry? FindModel(string brand, AssetType type, string model) =>
             _models.GetValueOrDefault((CatalogName.Normalize(brand), type, CatalogName.Normalize(model)));
-
-        public void CheckTag(string tag, Action<string, string> error)
-        {
-            var key = Asset.NormalizeTag(tag);
-            if (_takenTags.Contains(key))
-            {
-                error(AssetCsvTemplate.AssetTag, ErrorCodes.AssetTagTaken);
-            }
-            else if (!_fileTags.Add(key))
-            {
-                error(AssetCsvTemplate.AssetTag, ErrorCodes.ImportDuplicateInFile);
-            }
-        }
 
         public void CheckSerial(string serial, Action<string, string> error)
         {

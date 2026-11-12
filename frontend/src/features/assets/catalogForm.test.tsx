@@ -17,7 +17,7 @@ const routes = (me: object, extra: Record<string, unknown> = {}) => ({
 
 describe('generated asset tag', () => {
   it('shows the tag the server assigned once the asset is saved', async () => {
-    mockApi(routes(IT_ME, { 'POST /api/v1/assets': { status: 201, body: { ...LAPTOP, assetTag: 'DMR-000007' } } }) as never);
+    mockApi(routes(IT_ME, { 'POST /api/v1/assets': { status: 201, body: { ...LAPTOP, assetTag: 'ASSET-2026-0007' } } }) as never);
     const { user } = renderRoute('/assets');
     await user.click(await screen.findByRole('button', { name: 'Yeni cihaz' }));
     const dialog = await screen.findByRole('dialog');
@@ -26,7 +26,7 @@ describe('generated asset tag', () => {
     await chooseOption(user, 'Model', 'T14', dialog);
     await chooseOption(user, 'Lokasyon', LOCATIONS[0]?.path ?? '', dialog);
     await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
-    expect(await screen.findByText('Cihaz kaydedildi: DMR-000007')).toBeInTheDocument();
+    expect(await screen.findByText('Cihaz kaydedildi: ASSET-2026-0007')).toBeInTheDocument();
   });
 });
 

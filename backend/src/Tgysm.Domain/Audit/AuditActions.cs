@@ -41,6 +41,7 @@ public static class AuditActions
     public const string TeamMemberRemoved = "teams.member_removed";
 
     public const string AssetCreated = "assets.created";
+    public const string AssetTagRenumbered = "assets.tag_renumbered";
     public const string AssetUpdated = "assets.updated";
     public const string AssetAssigned = "assets.assigned";
     public const string AssetReturned = "assets.returned";

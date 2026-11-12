@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Tgysm.Application.Common;
 using Tgysm.Infrastructure.Persistence;
 using Tgysm.Infrastructure.Persistence.PostMigration;
 
@@ -16,8 +17,7 @@ public sealed class PostgresDatabase : IAsyncLifetime
     // replica mode skips the append-only triggers; only the test fixture may wipe audit rows.
     private const string TruncateAllSql =
         "SET session_replication_role = replica; "
-        + "TRUNCATE export_jobs, sla_events, sla_pauses, sla_instances, sla_pause_rules, sla_targets, sla_policy_versions, holidays, business_hours, business_calendar, worker_heartbeats, password_tokens, email_deliveries, notification_outbox, ticket_assets, ticket_relations, ticket_events, ticket_attachments, ticket_comments, ticket_assignments, approvals, tickets, ticket_counters, request_types, categories, import_jobs, asset_movements, asset_assignments, assets, asset_models, brands, team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE; "
-        + "ALTER SEQUENCE asset_tag_seq RESTART; "
+        + "TRUNCATE export_jobs, sla_events, sla_pauses, sla_instances, sla_pause_rules, sla_targets, sla_policy_versions, holidays, business_hours, business_calendar, worker_heartbeats, password_tokens, email_deliveries, notification_outbox, ticket_assets, ticket_relations, ticket_events, ticket_attachments, ticket_comments, ticket_assignments, approvals, tickets, ticket_counters, asset_tag_counters, request_types, categories, import_jobs, asset_movements, asset_assignments, assets, asset_models, brands, team_memberships, teams, audit_events, users, departments, locations RESTART IDENTITY CASCADE; "
         + "SET session_replication_role = origin;";
 
     // Email templates are migration-seeded rows that tests edit; a copy taken right after migrating restores them.
@@ -43,7 +43,7 @@ public sealed class PostgresDatabase : IAsyncLifetime
         await using var db = CreateDbContext();
         await db.Database.MigrateAsync();
         // Same order as the migrate command: post-migration data steps right after the schema.
-        await PostMigrationRunner.RunPendingAsync(db, CancellationToken.None);
+        await PostMigrationRunner.RunPendingAsync(db, TimeZoneInfo.FindSystemTimeZoneById(AppOptions.DefaultTimeZone), CancellationToken.None);
         await db.Database.ExecuteSqlRawAsync(SnapshotTemplatesSql);
     }
 

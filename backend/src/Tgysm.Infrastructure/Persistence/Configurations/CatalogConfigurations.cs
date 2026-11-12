@@ -40,3 +40,13 @@ internal sealed class TicketCounterConfiguration : IEntityTypeConfiguration<Tick
         builder.Property(c => c.Kind).HasMaxLength(SnakeCaseEnumConversion<Domain.Tickets.TicketKind>.MaxLength);
     }
 }
+
+internal sealed class AssetTagCounterConfiguration : IEntityTypeConfiguration<AssetTagCounter>
+{
+    public void Configure(EntityTypeBuilder<AssetTagCounter> builder)
+    {
+        builder.ToTable(AssetTagGenerator.CounterTable);
+        builder.HasKey(c => c.Year);
+        builder.Property(c => c.Year).ValueGeneratedNever();
+    }
+}

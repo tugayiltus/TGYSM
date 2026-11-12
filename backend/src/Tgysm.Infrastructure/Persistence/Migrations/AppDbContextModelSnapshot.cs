@@ -23,8 +23,6 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.HasSequence("asset_tag_seq");
-
             modelBuilder.Entity("Tgysm.Domain.Assets.Asset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2519,6 +2517,22 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_users_role", "role IN ('employee', 'it_staff', 'admin')");
                         });
+                });
+
+            modelBuilder.Entity("Tgysm.Infrastructure.Persistence.AssetTagCounter", b =>
+                {
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.Property<long>("LastValue")
+                        .HasColumnType("bigint")
+                        .HasColumnName("last_value");
+
+                    b.HasKey("Year")
+                        .HasName("pk_asset_tag_counters");
+
+                    b.ToTable("asset_tag_counters", (string)null);
                 });
 
             modelBuilder.Entity("Tgysm.Infrastructure.Persistence.TicketCounter", b =>

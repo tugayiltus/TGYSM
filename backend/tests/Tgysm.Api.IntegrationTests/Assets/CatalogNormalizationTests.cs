@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Api.IntegrationTests.Infrastructure;
+using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
 using Tgysm.Infrastructure.Persistence.PostMigration;
 
@@ -44,7 +45,7 @@ public sealed class CatalogNormalizationTests(ApiFactory factory) : IAsyncLifeti
     private async Task<IReadOnlyList<string>> RunAsync()
     {
         await using var db = factory.Database.CreateDbContext();
-        return await PostMigrationRunner.RunPendingAsync(db, Ct);
+        return await PostMigrationRunner.RunPendingAsync(db, TimeZoneInfo.FindSystemTimeZoneById(AppOptions.DefaultTimeZone), Ct);
     }
 
     [Fact]

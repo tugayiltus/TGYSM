@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { chooseFirstOption, chooseOption, expectNoHorizontalScroll, visibleEntry } from './helpers';
 import { adminSession, seedBrandWithModel, seedWorld, userSession } from './world';
 
-const GENERATED_TAG = /^Cihaz kaydedildi: DMR-\d{6,}$/;
+const GENERATED_TAG = /^Cihaz kaydedildi: ASSET-\d{4}-\d{4,}$/;
 
 test('admin adds a brand and model; IT registers a device with them and gets a generated tag', async ({ browser }) => {
   const admin = await adminSession(browser);

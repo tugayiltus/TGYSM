@@ -45,6 +45,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<RequestType> RequestTypes => Set<RequestType>();
     public DbSet<TicketCounter> TicketCounters => Set<TicketCounter>();
+    public DbSet<AssetTagCounter> AssetTagCounters => Set<AssetTagCounter>();
     public DbSet<WorkerHeartbeat> WorkerHeartbeats => Set<WorkerHeartbeat>();
     public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
@@ -110,6 +111,5 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     {
         modelBuilder.HasPostgresExtension(Configurations.TrigramIndex.Extension);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-        modelBuilder.HasSequence<long>(AssetTagGenerator.SequenceName);
     }
 }

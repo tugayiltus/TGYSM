@@ -90,8 +90,8 @@ describe('buildCrumbs', () => {
   });
 
   it('falls back to the default parent for a direct asset URL', () => {
-    const crumbs = buildCrumbs({ routeId: 'assetDetail', params: { id: 'a1' }, labels: { assetDetail: 'DMR-000001' }, from: null, t });
-    expect(labels(crumbs)).toEqual(['Ana sayfa', 'Envanter', 'DMR-000001']);
+    const crumbs = buildCrumbs({ routeId: 'assetDetail', params: { id: 'a1' }, labels: { assetDetail: 'ASSET-2026-0001' }, from: null, t });
+    expect(labels(crumbs)).toEqual(['Ana sayfa', 'Envanter', 'ASSET-2026-0001']);
     expect(crumbs[1]?.href).toBe('/assets');
   });
 

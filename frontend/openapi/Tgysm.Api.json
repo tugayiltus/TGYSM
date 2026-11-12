@@ -6968,7 +6968,6 @@
       "AssetImportRow": {
         "required": [
           "row",
-          "assetTag",
           "type",
           "modelId",
           "brand",
@@ -6988,12 +6987,6 @@
           "row": {
             "type": "integer",
             "format": "int32"
-          },
-          "assetTag": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "type": {
             "$ref": "#/components/schemas/AssetType"

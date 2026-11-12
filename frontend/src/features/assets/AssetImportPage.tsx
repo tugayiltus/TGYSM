@@ -65,7 +65,6 @@ function RowTable({ job }: { job: AssetImportJobItem }) {
   const { t } = useTranslation('assets');
   const rows = job.rows.map((row) => ({
     key: String(row.row),
-    tag: row.assetTag ?? t('import.autoTag'),
     device: `${t(`types.${row.type}`)}${META_SEPARATOR}${row.brand} ${row.model}`,
     location: row.locationPath,
     status: t(`statuses.${row.status}`),
@@ -77,7 +76,6 @@ function RowTable({ job }: { job: AssetImportJobItem }) {
         data={rows}
         idKey="key"
         columns={[
-          { key: 'tag', header: t('list.columns.tag') },
           { key: 'device', header: t('list.columns.device') },
           { key: 'location', header: t('list.columns.location') },
           { key: 'status', header: t('list.columns.status') },

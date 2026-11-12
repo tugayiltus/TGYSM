@@ -1,20 +1,28 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Tgysm.Domain.Assets;
 
 /// <summary>
-/// Server-generated asset tags (ADR-0023 amendment): <c>DMR-</c> plus a sequence number, zero-padded to six digits and
-/// never truncated. Tags are immutable and never reused; gaps are normal. The prefix is reserved for generated tags.
+/// Server-generated asset tags (ADR-0029): <c>ASSET-</c>, the company calendar year of creation, and a number counted
+/// from 1 each year, zero-padded to at least four digits and never truncated. Tags are immutable and never reused; gaps
+/// are normal. Every tag is generated; CSV import does not take tags.
 /// </summary>
-public static class AssetTagFormat
+public static partial class AssetTagFormat
 {
-    public const string Prefix = "DMR-";
-    public const int Digits = 6;
+    public const string Prefix = "ASSET-";
+    public const int MinimumDigits = 4;
+    private static readonly string NumberFormat = new('0', MinimumDigits);
 
-    private static readonly string NumberFormat = new('0', Digits);
+    public static string Format(int year, long number) =>
+        string.Create(CultureInfo.InvariantCulture, $"{Prefix}{year}-{number.ToString(NumberFormat, CultureInfo.InvariantCulture)}");
 
-    public static string Format(long number) => Prefix + number.ToString(NumberFormat, CultureInfo.InvariantCulture);
+    /// <summary>The company calendar year of a moment; a tag created on New Year's Eve in UTC may already count for the next year.</summary>
+    public static int YearOf(DateTimeOffset instant, TimeZoneInfo companyZone) => TimeZoneInfo.ConvertTime(instant, companyZone).Year;
 
-    /// <summary>A tag that uses the generated prefix (compared like other tags, without case and spaces).</summary>
-    public static bool IsReserved(string tag) => Asset.NormalizeTag(tag).StartsWith(Prefix, StringComparison.Ordinal);
+    /// <summary>A tag already in the generated format (compared like other tags, without case and spaces).</summary>
+    public static bool IsCurrent(string tag) => CurrentPattern().IsMatch(Asset.NormalizeTag(tag));
+
+    [GeneratedRegex(@"^ASSET-[0-9]{4}-[0-9]{4,}$", RegexOptions.CultureInvariant)]
+    private static partial Regex CurrentPattern();
 }

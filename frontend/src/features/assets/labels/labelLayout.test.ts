@@ -8,8 +8,8 @@ const measure: Measure = (text, size) => text.length * size * CHAR_EM;
 
 describe('label text layout', () => {
   it('shrinks the tag until it fits the column instead of cutting it', () => {
-    const size = fitFontSize(measure, 'DMR-000123', 260, 52, 24);
-    expect(measure('DMR-000123', size)).toBeLessThanOrEqual(260);
+    const size = fitFontSize(measure, 'ASSET-2026-0123', 260, 52, 24);
+    expect(measure('ASSET-2026-0123', size)).toBeLessThanOrEqual(260);
     expect(size).toBeGreaterThan(24);
   });
 

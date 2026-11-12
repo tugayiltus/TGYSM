@@ -64,13 +64,14 @@ public sealed class AssetCatalogueTests(ApiFactory factory) : IAsyncLifetime
         await CreateAsync(it, NewAsset("ignored", model: "iPad"));
 
         using var byType = await it.GetAsync($"{AssetsPath}?type=tablet");
-        using var bySearch = await it.GetAsync($"{AssetsPath}?search=dmr-000001");
+        var createdTag = created.GetProperty("assetTag").GetString()!;
+        using var bySearch = await it.GetAsync($"{AssetsPath}?search={createdTag.ToLowerInvariant()}");
         using var detail = await it.GetAsync($"{AssetsPath}/{created.GetProperty("id").GetGuid()}");
 
         Assert.Equal("in_stock", created.GetProperty("status").GetString());
         Assert.Equal("Depo", created.GetProperty("locationName").GetString());
         Assert.Equal(1, (await it.ReadJsonAsync<JsonElement>(byType)).GetProperty("totalCount").GetInt32());
-        Assert.Equal("DMR-000001", (await it.ReadJsonAsync<JsonElement>(bySearch)).GetProperty("items")[0].GetProperty("assetTag").GetString());
+        Assert.Equal(createdTag, (await it.ReadJsonAsync<JsonElement>(bySearch)).GetProperty("items")[0].GetProperty("assetTag").GetString());
         Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
         await using var db = factory.Database.CreateDbContext();
         Assert.True(await db.AuditEvents.AnyAsync(a => a.Action == AuditActions.AssetCreated, Ct));

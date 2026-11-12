@@ -6,5 +6,6 @@ public interface IPostMigrationStep
     /// <summary>Stable id recorded in <c>maintenance_steps</c>; never reuse or rename one that shipped.</summary>
     string Id { get; }
 
-    Task RunAsync(AppDbContext db, CancellationToken cancellationToken);
+    /// <param name="companyZone">The company calendar zone (<c>App:TimeZone</c>), for steps that work with calendar dates.</param>
+    Task RunAsync(AppDbContext db, TimeZoneInfo companyZone, CancellationToken cancellationToken);
 }

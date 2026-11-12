@@ -27,6 +27,7 @@ public sealed class TurkishCharactersExportTests(ApiFactory factory) : IAsyncLif
     private const string Brand = "Öztürk Çağ";
     private const string Model = "Işıklı Ü-14";
     private const string Location = "Şişli Göğüs İç";
+    /// <summary>The tag column of an old-format file; it is not read, every tag is generated (ADR-0029).</summary>
     private const string Tag = "DT-ÇĞ-1";
 
     private const string ImportPath = "/api/v1/assets/import";
@@ -60,7 +61,7 @@ public sealed class TurkishCharactersExportTests(ApiFactory factory) : IAsyncLif
     }
 
     [Fact]
-    public async Task Csv_import_keeps_turkish_letters_in_names_tags_and_notes()
+    public async Task Csv_import_keeps_turkish_letters_in_names_and_notes()
     {
         await TestData.ModelAsync(factory, Brand, Model);
         await TestData.LocationAsync(factory, Location);
@@ -79,7 +80,6 @@ public sealed class TurkishCharactersExportTests(ApiFactory factory) : IAsyncLif
         var id = await db.Assets.Select(a => a.Id).SingleAsync(Ct);
         using var read = await it.GetAsync($"{AssetsPath}/{id}");
         var asset = await it.ReadJsonAsync<JsonElement>(read);
-        Assert.Equal(Tag, asset.GetProperty("assetTag").GetString());
         Assert.Equal(Brand, asset.GetProperty("brand").GetString());
         Assert.Equal(Model, asset.GetProperty("model").GetString());
         Assert.Equal(Location, asset.GetProperty("locationName").GetString());

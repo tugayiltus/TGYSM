@@ -5,24 +5,26 @@ import { IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
 const ROW = {
-  row: 2, assetTag: 'DT-1', type: 'laptop', brand: 'Lenovo', model: 'T14', serialNumber: null, locationId: 'l-1', locationPath: 'Merkez Kampüs',
+  row: 2, type: 'laptop', brand: 'Lenovo', model: 'T14', serialNumber: null, locationId: 'l-1', locationPath: 'Merkez Kampüs',
   departmentId: null, departmentName: null, status: 'in_stock', warrantyEndsOn: null, purchasedOn: null, notes: null,
 };
 const JOB = { jobId: 'j-1', fileName: 'cihazlar.csv', status: 'previewed', totalRows: 1, validRows: 1, errorRows: 0, rows: [ROW], errors: [], createdAt: '2026-09-26T10:00:00Z', committedAt: null };
 const FAILED_JOB = { ...JOB, totalRows: 2, errorRows: 1, errors: [{ row: 3, field: 'brand', code: 'validation.required' }, { row: 3, field: 'location', code: 'imports.location_ambiguous' }] };
 
-const csvFile = () => new File(['Demirbaş No,Tür\n'], 'cihazlar.csv', { type: 'text/csv' });
+const csvFile = () => new File(['Tür,Marka\n'], 'cihazlar.csv', { type: 'text/csv' });
 
 describe('AssetImportPage', () => {
-  it('shows rows without a tag as getting one automatically', async () => {
+  it('lists the devices to add without a tag column: the system gives every tag', async () => {
     mockApi({
       'GET /api/v1/auth/me': { status: 200, body: IT_ME },
-      'POST /api/v1/assets/import/preview': { status: 200, body: { ...JOB, rows: [{ ...ROW, assetTag: null }] } },
+      'POST /api/v1/assets/import/preview': { status: 200, body: JOB },
     });
     const { user } = renderRoute('/assets/import');
     await user.upload(await screen.findByLabelText('CSV dosyası', { selector: 'input[type="file"]' }), csvFile());
     await user.click(screen.getByRole('button', { name: 'Önizle' }));
-    expect(await within(screen.getByRole('main')).findByText('Otomatik')).toBeInTheDocument();
+    const table = await screen.findByRole('table', { name: 'Eklenecek cihazlar' });
+    expect(within(table).queryByRole('columnheader', { name: 'Demirbaş No' })).not.toBeInTheDocument();
+    expect(within(table).getByText(/Lenovo T14/)).toBeInTheDocument();
   });
 
   it('previews a file and lists row errors without allowing the commit', async () => {

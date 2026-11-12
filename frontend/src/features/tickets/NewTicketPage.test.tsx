@@ -25,7 +25,7 @@ describe('incident device', () => {
     let posted: { assetId?: string | null } = {};
     mockApi({
       ...referenceRoutes,
-      'GET /api/v1/me/assets': { status: 200, body: [{ id: 'a-1', assetTag: 'DMR-000001', type: 'laptop', brand: 'Lenovo', model: 'T14', serialNumber: null, assignedAt: '2026-09-01T08:00:00Z' }] },
+      'GET /api/v1/me/assets': { status: 200, body: [{ id: 'a-1', assetTag: 'ASSET-2026-0001', type: 'laptop', brand: 'Lenovo', model: 'T14', serialNumber: null, assignedAt: '2026-09-01T08:00:00Z' }] },
       'POST /api/v1/tickets/incidents': async (request) => {
         posted = (await request.json()) as { assetId?: string | null };
         return { status: 201, body: INCIDENT };
@@ -34,7 +34,7 @@ describe('incident device', () => {
     });
     const { user } = renderRoute('/tickets/new/incident');
     await screen.findByRole('combobox', { name: 'İlgili cihaz' });
-    await chooseOption(user, 'İlgili cihaz', 'DMR-000001 · Lenovo T14');
+    await chooseOption(user, 'İlgili cihaz', 'ASSET-2026-0001 · Lenovo T14');
     await user.type(screen.getByLabelText(/^Konu/), 'Ekran kırık');
     await user.type(screen.getByLabelText(/^Açıklama/), 'Açılmıyor, siyah ekran.');
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
@@ -104,7 +104,7 @@ describe('NewTicketPage', () => {
 });
 
 describe('incident from a scanned device label', () => {
-  const SCANNED = { id: 'a-9', assetTag: 'DMR-000009', type: 'desktop', brand: 'HP', model: 'ProDesk 400', canReport: true };
+  const SCANNED = { id: 'a-9', assetTag: 'ASSET-2026-0009', type: 'desktop', brand: 'HP', model: 'ProDesk 400', canReport: true };
   const scanRoutes = (scan: unknown, status = 200) => ({
     ...referenceRoutes,
     'GET /api/v1/me/assets': { status: 200, body: [] },
@@ -124,7 +124,7 @@ describe('incident from a scanned device label', () => {
     const { user } = renderRoute(`/tickets/new/incident?asset=${SCANNED.id}`);
     const device = await screen.findByRole('combobox', { name: 'İlgili cihaz' });
     // The option appears once the scanned device has loaded.
-    await waitFor(() => expect(device).toHaveTextContent('DMR-000009 · HP ProDesk 400'));
+    await waitFor(() => expect(device).toHaveTextContent('ASSET-2026-0009 · HP ProDesk 400'));
     await user.type(screen.getByLabelText(/^Konu/), 'Yazıcı');
     await user.type(screen.getByLabelText(/^Açıklama/), 'Kağıt sıkışıyor.');
     await user.click(screen.getByRole('button', { name: 'Gönder' }));

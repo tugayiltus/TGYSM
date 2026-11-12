@@ -8,7 +8,6 @@ namespace Tgysm.Application.Features.Assets.Import;
 /// </summary>
 internal static class AssetCsvTemplate
 {
-    public const string AssetTag = "assetTag";
     public const string Type = "type";
     public const string Brand = "brand";
     public const string Model = "model";
@@ -26,7 +25,6 @@ internal static class AssetCsvTemplate
     /// <summary>Column order of the template: (field, Turkish header, required).</summary>
     public static readonly IReadOnlyList<(string Field, string Header, bool Required)> Columns =
     [
-        (AssetTag, "Demirbaş No", true),
         (Type, "Tür", true),
         (Brand, "Marka", true),
         (Model, "Model", true),
@@ -39,7 +37,6 @@ internal static class AssetCsvTemplate
         (Notes, "Notlar", false),
     ];
 
-    private const string ExampleTag = "DT-0001";
     private const string ExampleType = "laptop";
     private const string ExampleBrand = "Lenovo";
     private const string ExampleModel = "ThinkPad T14";
@@ -52,7 +49,7 @@ internal static class AssetCsvTemplate
     public static byte[] Build(string exampleLocationPath)
     {
         var header = string.Join(Delimiter, Columns.Select(c => c.Header));
-        string[] example = [ExampleTag, ExampleType, ExampleBrand, ExampleModel, ExampleSerial, Escape(exampleLocationPath), string.Empty, ExampleStatus, ExampleWarranty, ExamplePurchased, string.Empty];
+        string[] example = [ExampleType, ExampleBrand, ExampleModel, ExampleSerial, Escape(exampleLocationPath), string.Empty, ExampleStatus, ExampleWarranty, ExamplePurchased, string.Empty];
         var text = header + LineBreak + string.Join(Delimiter, example) + LineBreak;
         return [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(text)];
     }

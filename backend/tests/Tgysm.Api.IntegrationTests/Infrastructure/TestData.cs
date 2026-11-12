@@ -96,15 +96,16 @@ public static class TestData
     }
 
     /// <summary>An asset carrying a legacy (imported) tag, which the API no longer accepts from clients.</summary>
-    public static async Task LegacyAssetAsync(ApiFactory factory, string tag, Guid locationId, string? serial = null)
+    public static async Task<Guid> LegacyAssetAsync(ApiFactory factory, string tag, Guid locationId, string? serial = null, DateTimeOffset? createdAt = null)
     {
         var modelId = await ModelAsync(factory);
-        var (asset, movement) = Asset.Create(tag, new AssetCatalogEntry(modelId, AssetType.Laptop, "Lenovo", "T14"), serial, locationId, null, null, null, null, DateTimeOffset.UtcNow);
+        var (asset, movement) = Asset.Create(tag, new AssetCatalogEntry(modelId, AssetType.Laptop, "Lenovo", "T14"), serial, locationId, null, null, null, null, createdAt ?? DateTimeOffset.UtcNow);
         await SaveAsync(factory, db =>
         {
             db.Assets.Add(asset);
             db.AssetMovements.Add(movement);
         });
+        return asset.Id;
     }
 
     public static async Task SaveAsync(ApiFactory factory, Action<AppDbContext> change)

@@ -10,16 +10,16 @@ namespace Tgysm.Infrastructure.Persistence.PostMigration;
 public static class PostMigrationRunner
 {
     /// <summary>All steps, in the order they run.</summary>
-    public static IReadOnlyList<IPostMigrationStep> Steps { get; } = [new RecomputeCatalogNamesStep()];
+    public static IReadOnlyList<IPostMigrationStep> Steps { get; } = [new RecomputeCatalogNamesStep(), new RenumberAssetTagsStep()];
 
-    public static async Task<IReadOnlyList<string>> RunPendingAsync(AppDbContext db, CancellationToken cancellationToken)
+    public static async Task<IReadOnlyList<string>> RunPendingAsync(AppDbContext db, TimeZoneInfo companyZone, CancellationToken cancellationToken)
     {
         var done = await db.Database.SqlQueryRaw<string>("SELECT id AS \"Value\" FROM maintenance_steps").ToListAsync(cancellationToken);
         var ran = new List<string>();
         foreach (var step in Steps.Where(s => !done.Contains(s.Id)))
         {
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-            await step.RunAsync(db, cancellationToken);
+            await step.RunAsync(db, companyZone, cancellationToken);
             await db.Database.ExecuteSqlAsync($"INSERT INTO maintenance_steps (id, completed_at) VALUES ({step.Id}, now())", cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             ran.Add(step.Id);

@@ -203,6 +203,7 @@
     },
     "assets": {
       "created": "Cihaz eklendi",
+      "tag_renumbered": "Demirbaş numarası yeni biçime çevrildi",
       "updated": "Cihaz güncellendi",
       "assigned": "Cihaz teslim edildi",
       "returned": "Cihaz iade alındı",

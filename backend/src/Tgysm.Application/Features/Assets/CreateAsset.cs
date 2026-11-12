@@ -32,6 +32,7 @@ public sealed class CreateAssetHandler(
     ICurrentActor actor,
     IAuditLog audit,
     IAssetTagGenerator tags,
+    ICompanyClock companyClock,
     TimeProvider clock)
 {
     public async Task<AssetItem> HandleAsync(CreateAssetCommand command, CancellationToken cancellationToken)
@@ -43,7 +44,7 @@ public sealed class CreateAssetHandler(
         // Under the catalog lock, so the brand/model names written here cannot be overtaken by a concurrent rename.
         await db.RunSerializedAsync(SerializationLocks.AssetCatalog, async ct =>
         {
-            var assetTag = await tags.NextAsync(ct);
+            var assetTag = await tags.NextAsync(AssetTagFormat.YearOf(clock.GetUtcNow(), companyClock.Zone), ct);
             await AssetRules.EnsureUniqueAsync(db, assetTag, command.SerialNumber, exceptId: null, ct);
             var model = await AssetModelResolver.ResolveAsync(db, command.ModelId, keepInactiveId: null, ct);
 

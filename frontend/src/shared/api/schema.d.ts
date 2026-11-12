@@ -6702,7 +6702,6 @@ export interface components {
         AssetImportRow: {
             /** Format: int32 */
             row: number;
-            assetTag: null | string;
             type: components["schemas"]["AssetType"];
             /** Format: uuid */
             modelId: string;
