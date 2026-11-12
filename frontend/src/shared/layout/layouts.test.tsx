@@ -111,6 +111,15 @@ describe('sidebar width', () => {
 });
 
 describe('account menu', () => {
+  it('offers no password change to a user who signs in with the company account', async () => {
+    mockApi({ 'GET /api/v1/auth/me': { status: 200, body: { ...EMPLOYEE_ME, hasLocalPassword: false } } });
+    const { user } = renderRoute('/profile');
+    await user.click(await screen.findByRole('button', { name: /Hesap menüsü/ }));
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).queryByRole('menuitem', { name: 'Şifre değiştir' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('main')).queryByRole('link', { name: 'Şifre değiştir' })).not.toBeInTheDocument();
+  });
+
   it('holds profile, password change and logout; logout goes to login', async () => {
     const mock = mockApi({ 'GET /api/v1/auth/me': { status: 200, body: EMPLOYEE_ME }, 'POST /api/v1/auth/logout': { status: 204, body: null } });
     const { user, router } = renderRoute('/profile');

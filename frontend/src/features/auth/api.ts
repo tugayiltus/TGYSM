@@ -76,3 +76,36 @@ export function useSetPassword() {
 export function useForgotPassword() {
   return useMutation({ mutationFn: (email: string) => unwrap(api.POST('/api/v1/auth/forgot-password', { body: { email } })) });
 }
+
+export type LoginMethod = components['schemas']['LoginMethod'];
+const LOGIN_METHOD_KEY = ['auth', 'method'] as const;
+const LOCAL_METHOD: LoginMethod = 'local';
+
+/** Which sign-in form to show (ADR-0030); falls back to the local form when the API cannot be asked. */
+export function useLoginMethod() {
+  const query = useQuery({
+    queryKey: LOGIN_METHOD_KEY,
+    queryFn: async () => (await unwrap(api.GET('/api/v1/auth/method'))).method,
+    retry: false,
+  });
+  return { method: query.data ?? LOCAL_METHOD, isPending: query.isPending };
+}
+
+export interface LdapLoginInput {
+  identifier: string;
+  password: string;
+}
+
+/** Active Directory sign-in with the Windows user name or email (ADR-0030). */
+export function useLdapLogin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: LdapLoginInput) => {
+      const result = await unwrap(api.POST('/api/v1/auth/login/ldap', { body: input }));
+      // The antiforgery token is bound to the signed-in user, as after a local login.
+      await refreshCsrfToken();
+      return result;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY }),
+  });
+}

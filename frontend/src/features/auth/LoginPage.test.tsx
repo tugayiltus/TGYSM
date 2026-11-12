@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { findAlert } from '../../test/alerts';
@@ -55,5 +55,61 @@ describe('LoginPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Profilim' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/profile');
+  });
+
+  describe('login method', () => {
+    const anonymous = { 'GET /api/v1/auth/me': { status: 401, body: { code: 'auth.unauthenticated' } } };
+
+    it('asks for the Windows user name or email and signs in through LDAP', async () => {
+      let posted: unknown;
+      mockApi({
+        ...anonymous,
+        'GET /api/v1/auth/method': { status: 200, body: { method: 'ldap' } },
+        'POST /api/v1/auth/login/ldap': async (request: Request) => {
+          posted = await request.json();
+          return { status: 401, body: { code: 'auth.invalid_credentials' } };
+        },
+      });
+      const { user } = renderRoute('/login');
+      await user.type(await screen.findByLabelText('Kullanıcı adı veya e-posta'), 'ahmet.yilmaz');
+      await user.type(screen.getByLabelText('Şifre'), 'AdŞifresi-2026');
+      await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+      await waitFor(() => expect(posted).toEqual({ identifier: 'ahmet.yilmaz', password: 'AdŞifresi-2026' }));
+      expect(screen.queryByRole('link', { name: 'Şifremi unuttum' })).not.toBeInTheDocument();
+    });
+
+    it('offers only the Microsoft button, with a local admin form behind a link', async () => {
+      let posted = false;
+      mockApi({
+        ...anonymous,
+        'GET /api/v1/auth/method': { status: 200, body: { method: 'entra' } },
+        'POST /api/v1/auth/login': () => {
+          posted = true;
+          return { status: 401, body: { code: 'auth.invalid_credentials' } };
+        },
+      });
+      const { user } = renderRoute('/login');
+      expect(await screen.findByRole('button', { name: 'Microsoft ile giriş yap' })).toBeInTheDocument();
+      expect(screen.queryByLabelText('E-posta')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Yerel yönetici girişi' }));
+      await user.type(await screen.findByLabelText('E-posta'), 'yonetici@sirket.com');
+      await user.type(screen.getByLabelText('Şifre'), 'Test-password-2026');
+      await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+      await waitFor(() => expect(posted).toBe(true));
+    });
+
+    it('says why a Microsoft sign-in came back refused', async () => {
+      mockApi({ ...anonymous, 'GET /api/v1/auth/method': { status: 200, body: { method: 'entra' } } });
+      renderRoute('/login?error=sso');
+      expect(await screen.findByText('Microsoft ile giriş yapılamadı. Hesabınızın yetkili olduğundan emin olun.')).toBeInTheDocument();
+    });
+
+    it('keeps the email form and the forgot-password link for the local method', async () => {
+      mockApi({ ...anonymous, 'GET /api/v1/auth/method': { status: 200, body: { method: 'local' } } });
+      renderRoute('/login');
+      expect(await screen.findByLabelText('E-posta')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Şifremi unuttum' })).toBeInTheDocument();
+    });
   });
 });

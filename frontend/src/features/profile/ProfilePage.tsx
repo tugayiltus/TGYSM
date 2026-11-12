@@ -38,7 +38,12 @@ export function ProfilePage() {
 
   return (
     <VStack gap={4}>
-      <PageHeader icon="user" actions={<Button label={t('profile.changePassword')} variant="secondary" href={ROUTES.changePassword} icon={<Icon icon={Icons.lock} />} />} />
+      <PageHeader
+        icon="user"
+        actions={
+          me.hasLocalPassword && <Button label={t('profile.changePassword')} variant="secondary" href={ROUTES.changePassword} icon={<Icon icon={Icons.lock} />} />
+        }
+      />
       <Card padding={6} maxWidth={CARD_MAX_WIDTH}>
         <VStack gap={5}>
           <HStack gap={3} vAlign="center">

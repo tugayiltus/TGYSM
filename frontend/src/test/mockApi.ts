@@ -30,6 +30,7 @@ export const ADMIN_ME = {
   mustChangePassword: false,
   departmentName: null,
   locationName: null,
+  hasLocalPassword: true,
 } as const;
 
 export const EMPLOYEE_ME = {
