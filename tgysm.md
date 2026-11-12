@@ -128,7 +128,7 @@ Envanter, cihazın ne olduğunu ve nerede bulunduğunu gösterir. Asset Manageme
 - Otomatik cihaz keşfi, Intune, ağ taraması, cihaz ajanı.
 - Tam CMDB ve servis bağımlılık haritası.
 - Satın alma, sözleşme, yazılım lisansı ve amortisman muhasebesi.
-- Full Problem Management, Change Management, CAB ve Release Management.
+- Full Problem Management, CAB, standart/acil değişiklik ve Release Management. Görevler ve normal değişiklik (onay, bakım penceresi, geri dönüş) Faz 7–9 ile kapsama alındı (ADR-0031).
 - Çok aşamalı onay, genel amaçlı BPM/otomasyon motoru.
 - Gelen e-postadan kayıt açma, SMS, WhatsApp, chatbot.
 - Native mobil uygulama, çevrimdışı işlem ve uzaktan masaüstü.
@@ -585,6 +585,9 @@ Ekip büyüklüğü, çalışma kapasitesi ve yayın ortamı bilinmediğinden ta
 | 4 — SLA/E-posta | Takvim, saatler, uyarı/ihlal, outbox/worker, şablonlar | Faz 3 olay modeli | Transfer zamanı korur; SMTP kesintisi iş kaybettirmez |
 | 5 — Bilgi/Rapor | Bilgi bankası, tüm raporlar, filtre/drill-down/Excel | Faz 2–4 verileri | Görünürlük ve rapor hesapları tutarlı |
 | 6 — İlk sürüm | Entegrasyon/E2E, mobil kontrol, restore provası, rehber, pilot | Faz 1–5 | İlk sürüm kabul ölçütlerinin tamamı sağlanır |
+| 7 — Görev | Ekipler arası görev (`TSK-`), kayıttan görev açma, atama/aktarma, birleşik İş listem | Faz 6 | A1–A3 ve gerileme testleri yeşil; arızadan başka ekibe görev E2E |
+| 8 — Değişiklik | Normal değişiklik (`CHG-`), durum makinesi, faz görevleri, yönetici onayı, plan parmak izi, kapanış ve geri dönüş | Faz 7 | A4–A8 ve kayıt onayı gerilemesi yeşil |
+| 9 — Takvim/Rapor | Bakım takvimi, pencere çakışma uyarısı, "Bu hafta" kartı, değişiklik/görev raporları ve Excel | Faz 8 | A9 ve rapor gerilemeleri yeşil; performans sınırlar içinde |
 
 Bilgi bankası çalışması ekip kapasitesi uygunsa veri sözleşmeleri sabitlendikten sonra paralel yürütülebilir. Envanter, onay, SLA ve rapor veri modeli kritik bağımlılıklardır. Kapsam değişiminde etkilenen faz ve kabul ölçütleri güncellenir; özellikler sessizce sonraki sürüme taşınmaz.
 
@@ -610,6 +613,20 @@ Bilgi bankası çalışması ekip kapasitesi uygunsa veri sözleşmeleri sabitle
 18. Pilot veri hacminde liste/rapor/CSV performansı ölçülür; sayısal hedefler kapasite kararı sonrası belirlenir.
 19. Yedek veritabanı ve dosyalar yeni ortama geri yüklenir; ilişki ve oturum güvenliği kontrol edilir.
 20. `capabilities.md`, ADR'ler, kullanıcı rehberi ve `combined.md` teslimle uyumludur.
+
+### Faz 7–9 kabul ölçütleri (görev ve değişiklik)
+
+Tasarım: `docs/superpowers/specs/2026-11-12-task-and-change-management-design.md` (ADR-0031).
+
+- A1 (Faz 7) Bağlı arızaya erişimi olmayan ekip görevi görür, arızayı görmez (adresi 404).
+- A2 (Faz 7) Aynı görevi iki kişi aynı anda üstlenir: biri kazanır, diğeri 409 alır.
+- A3 (Faz 7) Görevi tamamlamak bağlı arızanın durumunu ve SLA'sını değiştirmez.
+- A4 (Faz 8) Onaydan önce "Uygulamaya başla" ve Uygulama görevini başlatmak reddedilir.
+- A5 (Faz 8) İki yönetici aynı onaya aynı anda karar verir: biri kazanır, diğeri 409; değişiklik başına tek bekleyen onay.
+- A6 (Faz 8) Yazar veya değişiklik sahibi onaylayamaz; tek yönetici yazar ise değişiklik uyarıyla bekler.
+- A7 (Faz 8) Planlandı durumunda pencereyi değiştirmek onayı geçersiz kılar ve onaylayana bildirir.
+- A8 (Faz 8) Eksik doğrulama notu veya açık Uygulama göreviyle Başarılı kapanış reddedilir; geri dönüş yolu görevleri kapanınca Geri alındı ile kapanır.
+- A9 (Faz 9) Aynı varlıkta çakışan pencereler engellemeden uyarır; takvim kapsam dışı değişiklikleri göstermez.
 
 ## 21. Açık kararlar ve uygulama varsayımları
 
