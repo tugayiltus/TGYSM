@@ -37,4 +37,24 @@ public sealed class EntraConnectionTesterTests
     [Fact]
     public async Task An_unknown_client_is_named() =>
         Assert.Equal(ErrorCodes.AuthEntraClientInvalid, (await TestAsync(HttpStatusCode.BadRequest, """{"error_codes":[700016]}""")).ErrorCode);
+
+    private sealed class Silent : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
+
+    [Fact]
+    public async Task A_silent_microsoft_endpoint_answers_unavailable_within_the_time_limit()
+    {
+        var started = System.Diagnostics.Stopwatch.StartNew();
+
+        var result = await new EntraConnectionTester(new HttpClient(new Silent())).TestAsync(Tenant, "istemci", "sır", TestContext.Current.CancellationToken);
+
+        Assert.Equal(ErrorCodes.AuthDirectoryUnavailable, result.ErrorCode);
+        Assert.True(started.Elapsed < EntraConnectionTester.RequestTimeout + TimeSpan.FromSeconds(5), started.Elapsed.ToString());
+    }
 }

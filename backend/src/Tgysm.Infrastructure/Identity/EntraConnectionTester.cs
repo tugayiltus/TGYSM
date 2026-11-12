@@ -9,6 +9,9 @@ namespace Tgysm.Infrastructure.Identity;
 public sealed class EntraConnectionTester(HttpClient http) : IEntraConnectionTester
 {
     public const string Authority = "https://login.microsoftonline.com";
+
+    /// <summary>The whole test gives up after this; a silent endpoint must not hold the admin page for minutes.</summary>
+    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
     private const string MetadataPath = "/v2.0/.well-known/openid-configuration";
     private const string TokenEndpointField = "token_endpoint";
     private const string ErrorCodesField = "error_codes";
@@ -17,8 +20,11 @@ public sealed class EntraConnectionTester(HttpClient http) : IEntraConnectionTes
     /// <summary>AADSTS7000215 / AADSTS7000222: the client secret is wrong or expired.</summary>
     private static readonly int[] SecretInvalid = [7000215, 7000222];
 
-    public async Task<(bool Ok, string? ErrorCode)> TestAsync(string tenantId, string clientId, string clientSecret, CancellationToken cancellationToken)
+    public async Task<(bool Ok, string? ErrorCode)> TestAsync(string tenantId, string clientId, string clientSecret, CancellationToken callerToken)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(callerToken);
+        timeout.CancelAfter(RequestTimeout);
+        var cancellationToken = timeout.Token;
         try
         {
             using var metadata = await http.GetAsync($"{Authority}/{Uri.EscapeDataString(tenantId)}{MetadataPath}", cancellationToken);
@@ -46,7 +52,7 @@ public sealed class EntraConnectionTester(HttpClient http) : IEntraConnectionTes
             // Any other refusal (AADSTS700016 and the rest) points at the application registration.
             return (false, codes.Any(SecretInvalid.Contains) ? ErrorCodes.AuthEntraSecretInvalid : ErrorCodes.AuthEntraClientInvalid);
         }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or JsonException)
+        catch (Exception e) when (e is HttpRequestException or JsonException || (e is OperationCanceledException && !callerToken.IsCancellationRequested))
         {
             return (false, ErrorCodes.AuthDirectoryUnavailable);
         }

@@ -58,4 +58,17 @@ public sealed class NovellLdapDirectoryTests
 
         Assert.Equal(LdapStatus.NotFound, result.Status);
     }
+
+    [Fact]
+    public async Task A_directory_that_never_answers_is_unavailable_within_the_time_limit()
+    {
+        // 10.255.255.1 is a non-routable address: a connection there hangs instead of being refused.
+        var settings = new LdapConnectionSettings("10.255.255.1", 636, LdapSecurity.Ldaps, "DC=x", "CN=svc", "x", null);
+        var started = System.Diagnostics.Stopwatch.StartNew();
+
+        var match = await Directory().FindAsync(settings, "ahmet", TestContext.Current.CancellationToken);
+
+        Assert.Equal(LdapStatus.Unavailable, match.Status);
+        Assert.True(started.Elapsed < NovellLdapDirectory.OperationTimeout + TimeSpan.FromSeconds(5), started.Elapsed.ToString());
+    }
 }

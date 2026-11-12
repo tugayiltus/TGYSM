@@ -22,8 +22,13 @@ internal sealed partial class NovellLdapDirectory(ILogger<NovellLdapDirectory> l
     private const string UserPrincipalName = "userPrincipalName";
     private static readonly string[] Attributes = [ObjectGuid, GivenName, Surname, Mail, UserPrincipalName];
 
-    public async Task<LdapEntryMatch> FindAsync(LdapConnectionSettings settings, string identifier, CancellationToken cancellationToken)
+    /// <summary>Each lookup or password check gives up after this, so a silent domain controller cannot hold a sign-in for minutes.</summary>
+    public static readonly TimeSpan OperationTimeout = TimeSpan.FromSeconds(10);
+
+    public async Task<LdapEntryMatch> FindAsync(LdapConnectionSettings settings, string identifier, CancellationToken callerToken)
     {
+        using var timeout = Timeout(callerToken);
+        var cancellationToken = timeout.Token;
         try
         {
             using var service = await ConnectAsync(settings, cancellationToken);
@@ -33,15 +38,17 @@ internal sealed partial class NovellLdapDirectory(ILogger<NovellLdapDirectory> l
                 ? new LdapEntryMatch(LdapStatus.Ok, entry.Dn, identity)
                 : new LdapEntryMatch(LdapStatus.NotFound, null, null);
         }
-        catch (LdapException e)
+        catch (Exception e) when (e is LdapException || IsTimeout(e, callerToken))
         {
-            LogUnavailable(logger, e.ResultCode, e.Message);
+            LogUnavailable(logger, (e as LdapException)?.ResultCode ?? 0, e.Message);
             return new LdapEntryMatch(LdapStatus.Unavailable, null, null);
         }
     }
 
-    public async Task<LdapStatus> CheckPasswordAsync(LdapConnectionSettings settings, string distinguishedName, string password, CancellationToken cancellationToken)
+    public async Task<LdapStatus> CheckPasswordAsync(LdapConnectionSettings settings, string distinguishedName, string password, CancellationToken callerToken)
     {
+        using var timeout = Timeout(callerToken);
+        var cancellationToken = timeout.Token;
         try
         {
             using var user = await ConnectAsync(settings, cancellationToken);
@@ -52,15 +59,17 @@ internal sealed partial class NovellLdapDirectory(ILogger<NovellLdapDirectory> l
         {
             return LdapStatus.InvalidCredentials;
         }
-        catch (LdapException e)
+        catch (Exception e) when (e is LdapException || IsTimeout(e, callerToken))
         {
-            LogUnavailable(logger, e.ResultCode, e.Message);
+            LogUnavailable(logger, (e as LdapException)?.ResultCode ?? 0, e.Message);
             return LdapStatus.Unavailable;
         }
     }
 
-    public async Task<LdapTestResult> TestAsync(LdapConnectionSettings settings, CancellationToken cancellationToken)
+    public async Task<LdapTestResult> TestAsync(LdapConnectionSettings settings, CancellationToken callerToken)
     {
+        using var timeout = Timeout(callerToken);
+        var cancellationToken = timeout.Token;
         try
         {
             using var service = await ConnectAsync(settings, cancellationToken);
@@ -77,16 +86,31 @@ internal sealed partial class NovellLdapDirectory(ILogger<NovellLdapDirectory> l
         {
             return new LdapTestResult(false, ErrorCodes.AuthLdapBaseDnNotFound);
         }
-        catch (LdapException e)
+        catch (Exception e) when (e is LdapException || IsTimeout(e, callerToken))
         {
-            LogUnavailable(logger, e.ResultCode, e.Message);
+            LogUnavailable(logger, (e as LdapException)?.ResultCode ?? 0, e.Message);
             return new LdapTestResult(false, ErrorCodes.AuthDirectoryUnavailable);
         }
     }
 
+    private static CancellationTokenSource Timeout(CancellationToken callerToken)
+    {
+        var timeout = CancellationTokenSource.CreateLinkedTokenSource(callerToken);
+        timeout.CancelAfter(OperationTimeout);
+        return timeout;
+    }
+
+    /// <summary>Our own time limit ran out (not the caller giving up), or the connect attempt timed out on the socket.</summary>
+    private static bool IsTimeout(Exception e, CancellationToken callerToken) =>
+        (e is OperationCanceledException && !callerToken.IsCancellationRequested) || e is TimeoutException;
+
     private static async Task<LdapConnection> ConnectAsync(LdapConnectionSettings settings, CancellationToken cancellationToken)
     {
-        var connection = new LdapConnection { SecureSocketLayer = settings.Security == LdapSecurity.Ldaps };
+        var connection = new LdapConnection
+        {
+            SecureSocketLayer = settings.Security == LdapSecurity.Ldaps,
+            ConnectionTimeout = (int)OperationTimeout.TotalMilliseconds,
+        };
         await connection.ConnectAsync(settings.Host, settings.Port, cancellationToken);
         if (settings.Security == LdapSecurity.StartTls)
         {
@@ -104,7 +128,15 @@ internal sealed partial class NovellLdapDirectory(ILogger<NovellLdapDirectory> l
         var entries = new List<LdapEntry>();
         while (await results.HasMoreAsync(cancellationToken))
         {
-            entries.Add(await results.NextAsync(cancellationToken));
+            try
+            {
+                entries.Add(await results.NextAsync(cancellationToken));
+            }
+            catch (LdapReferralException)
+            {
+                // A search at the domain root also returns references to other naming contexts (DomainDnsZones,
+                // ForestDnsZones, Configuration); users never live there, so they are skipped, not followed.
+            }
         }
 
         // Two entries for one name would make the sign-in ambiguous; treat it as no match.
