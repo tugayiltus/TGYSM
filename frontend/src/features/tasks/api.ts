@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { api, unwrap } from '../../shared/api/client';
 import type { components } from '../../shared/api/schema';
+import { ROUTES } from '../../shared/routes';
 import { ticketKeys, type HoldReason, type Priority, type TransferReason } from '../tickets/api';
 
 type Schemas = components['schemas'];
@@ -14,6 +15,10 @@ export type WorkQueue = 'assigned_to_me' | 'my_teams';
 
 export const TASK_STATUSES: readonly TaskStatus[] = ['open', 'in_progress', 'on_hold', 'completed', 'cancelled'];
 export const TASK_QUEUES: readonly TaskQueue[] = ['mine', 'team', 'unassigned', 'overdue'];
+const QUEUE_PARAM = 'queue';
+
+/** The task list opened on one queue, as the İş listem cards link to it. */
+export const taskQueuePath = (queue: TaskQueue) => `${ROUTES.tasks}?${new URLSearchParams({ [QUEUE_PARAM]: queue }).toString()}`;
 
 export const taskKeys = {
   all: ['tasks'],

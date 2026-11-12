@@ -34,6 +34,7 @@ import { TicketActions } from './TicketActions';
 import { TicketArticles } from './TicketArticles';
 import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
 import { TicketLinks } from './TicketLinks';
+import { TicketTasks } from './TicketTasks';
 import { Timeline } from './Timeline';
 
 /** Wide screens: content takes two of three columns, the side column one. */
@@ -143,6 +144,7 @@ function TicketDetail({ number }: { number: string }) {
         </MetadataList>
       </SectionCard>
       <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
+      <TicketTasks ticket={item} />
       <TicketArticles ticket={item} />
       <SectionCard title={t('detail.comments')}>
         {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}

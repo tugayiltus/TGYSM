@@ -85,5 +85,21 @@
     "anyone": "Ekipte kimse",
     "transferReason": "Aktarma nedeni",
     "select": "Seçin"
+  },
+  "workspace": {
+    "count": "{{count}} görev",
+    "allWork": "Bana atanan işler",
+    "allWorkCaption": "Bana atanan açık kayıtlar ve görevler",
+    "empty": "Size atanmış açık iş yok.",
+    "kinds": {
+      "incident": "Arıza",
+      "request": "Talep",
+      "task": "Görev"
+    }
+  },
+  "ticketSection": {
+    "title": "Görevler",
+    "add": "Görev ekle",
+    "empty": "Bu kayda bağlı görev yok."
   }
 }

@@ -141,7 +141,8 @@
     "noComments": "Henüz yazışma yok.",
     "internal": "İç not",
     "by": "{{name}}",
-    "download": "İndir"
+    "download": "İndir",
+    "openTasksWarning": "Bu kayda bağlı {{count}} açık görev var. Kaydı yine de tamamlayabilirsiniz; görevler açık kalır."
   },
   "comment": {
     "public": "Yanıt",

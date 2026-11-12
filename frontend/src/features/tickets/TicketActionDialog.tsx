@@ -3,6 +3,7 @@
  * @output A dialog with the small form that action needs; it sends the version the person saw.
  * @position Opened from the ticket work actions.
  */
+import { Banner } from '@astryxdesign/core/Banner';
 import { Button } from '@astryxdesign/core/Button';
 import { Dialog, DialogHeader } from '@astryxdesign/core/Dialog';
 import { HStack } from '@astryxdesign/core/HStack';
@@ -141,6 +142,7 @@ export function TicketActionDialog({ ticket, kind, onClose }: { ticket: TicketDe
                 )}
                 {kind === 'complete' && (
                   <>
+                    {ticket.openTaskCount > 0 && <Banner status="warning" title={t('detail.openTasksWarning', { count: ticket.openTaskCount })} />}
                     <FormTextArea control={control} name="text" label={t('fields.resolution')} />
                     {ticket.kind === 'incident' && select('choice', t('fields.outcome'), INCIDENT_OUTCOMES.map((value) => ({ value, label: t(`outcomes.${value}`) })), t('fields.select'))}
                     {text('note', t('fields.rootCause'))}
