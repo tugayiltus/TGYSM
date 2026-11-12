@@ -68,6 +68,7 @@ export default defineConfig({
             // DistributionChart stays out so the chart code (and vendor-charts) loads only with the first distribution card.
             { name: 'feature-reports', test: /[\\/]src[\\/]features[\\/]reports[\\/](?!DistributionChart)/, priority: 40 },
             { name: 'feature-tickets', test: /[\\/]src[\\/]features[\\/](tickets|workspace|approvals)[\\/]/, priority: 40 },
+            { name: 'feature-tasks', test: /[\\/]src[\\/]features[\\/]tasks[\\/]/, priority: 40 },
           ],
         },
       },

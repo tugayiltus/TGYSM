@@ -41,7 +41,7 @@ describe('AppLayout sidebar', () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: IT_ME } });
     renderRoute('/profile');
     const nav = await mainNav();
-    expect(linkNames(nav)).toEqual(['Ana sayfa', 'Kayıtlarım', 'Zimmetlerim', 'Bilgi bankası', 'İş listem', 'Kuyruk', 'Envanter', 'Raporlar', 'Dışa aktarımlarım']);
+    expect(linkNames(nav)).toEqual(['Ana sayfa', 'Kayıtlarım', 'Zimmetlerim', 'Bilgi bankası', 'İş listem', 'Kuyruk', 'Görevler', 'Envanter', 'Raporlar', 'Dışa aktarımlarım']);
     expect(screen.queryByRole('link', { name: 'Yönetim' })).not.toBeInTheDocument();
   });
 

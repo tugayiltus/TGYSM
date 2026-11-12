@@ -1,0 +1,89 @@
+{
+  "statuses": {
+    "open": "Açık",
+    "in_progress": "İşlemde",
+    "on_hold": "Beklemede",
+    "completed": "Tamamlandı",
+    "cancelled": "İptal edildi"
+  },
+  "queues": {
+    "mine": "Görevlerim",
+    "team": "Ekibimin görevleri",
+    "unassigned": "Atanmamış görevler",
+    "overdue": "Geciken görevler"
+  },
+  "list": {
+    "title": "Görevler",
+    "search": "Görev ara",
+    "caption": "Görev listesi",
+    "empty": "Görev yok.",
+    "queueFilter": "Görünüm",
+    "statusFilter": "Durum",
+    "priorityFilter": "Öncelik",
+    "all": "Tümü",
+    "open": "Aç",
+    "new": "Yeni görev",
+    "columns": {
+      "number": "Numara",
+      "title": "Başlık",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "team": "Ekip",
+      "assignee": "Atanan",
+      "due": "Bitiş tarihi",
+      "updated": "Güncelleme"
+    }
+  },
+  "form": {
+    "title": "Yeni görev",
+    "submit": "Görevi aç",
+    "taskTitle": "Başlık",
+    "description": "Açıklama",
+    "team": "Ekip",
+    "assignee": "Atanan",
+    "anyone": "Ekipten biri üstlensin",
+    "priority": "Öncelik",
+    "dueDate": "Bitiş tarihi",
+    "ticket": "Bağlı kayıt: {{number}}",
+    "select": "Seçin"
+  },
+  "detail": {
+    "back": "Geri",
+    "team": "Ekip",
+    "assignee": "Atanan",
+    "createdBy": "Açan",
+    "createdAt": "Açılış",
+    "dueDate": "Bitiş tarihi",
+    "overdue": "Gecikti",
+    "description": "Açıklama",
+    "resultNote": "Sonuç notu",
+    "cancelReason": "İptal nedeni",
+    "holdNote": "Bekleme notu",
+    "link": "Bağlı kayıt",
+    "noAccess": "Bağlı kayıt: erişiminiz yok",
+    "standalone": "Bağlı kayıt yok"
+  },
+  "actions": {
+    "title": "İşlemler",
+    "claim": "Üstlen",
+    "start": "Başla",
+    "resume": "Devam et",
+    "reopen": "Yeniden aç",
+    "hold": "Beklet",
+    "complete": "Tamamla",
+    "cancel": "İptal et",
+    "assign": "Ata",
+    "transfer": "Aktar"
+  },
+  "fields": {
+    "resultNote": "Sonuç notu",
+    "reason": "Neden",
+    "holdReason": "Bekleme nedeni",
+    "note": "Not",
+    "team": "Hedef ekip",
+    "assignee": "Atanacak kişi",
+    "anyone": "Ekipte kimse",
+    "transferReason": "Aktarma nedeni",
+    "select": "Seçin"
+  }
+}

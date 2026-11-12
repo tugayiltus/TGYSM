@@ -12,6 +12,7 @@ export const ROUTES = {
   scanAsset: '/scan/asset/:id',
   myAssets: '/assets/mine',
   tickets: '/tickets',
+  tasks: '/tasks',
   newIncident: '/tickets/new/incident',
   newRequest: '/tickets/new/request',
   kb: '/kb',
@@ -47,6 +48,7 @@ export const newIncidentPath = (assetId: string) => `${ROUTES.newIncident}?${new
 export const assetLabelsPath = (id: string) => `${ROUTES.assetLabels}?${new URLSearchParams({ ids: id }).toString()}`;
 
 export const ticketPath = (number: string) => `${ROUTES.tickets}/${number}`;
+export const taskPath = (number: string) => `${ROUTES.tasks}/${number}`;
 
 export const articlePath = (id: string) => `${ROUTES.kb}/${id}`;
 

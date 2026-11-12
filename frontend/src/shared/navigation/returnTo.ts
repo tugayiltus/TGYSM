@@ -3,7 +3,7 @@ import { matchPath, useLocation } from 'react-router';
 import { ROUTE_IDS, ROUTE_META, type RouteId } from './routeMeta';
 
 /** Lists a detail page may return to with their filters (spec §4.5); anything else falls back to the default parent. */
-export const RETURNABLE_LISTS: readonly RouteId[] = ['myTickets', 'workspace', 'workspaceQueue', 'approvals', 'assets', 'myAssets', 'kbList', 'report', 'reportList'];
+export const RETURNABLE_LISTS: readonly RouteId[] = ['myTickets', 'workspace', 'workspaceQueue', 'tasks', 'approvals', 'assets', 'myAssets', 'kbList', 'report', 'reportList'];
 
 export interface ReturnTarget {
   routeId: RouteId;

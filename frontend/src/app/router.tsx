@@ -80,6 +80,8 @@ const appRoutes: RouteObject[] = [
             children: [
               { id: 'workspace', path: ROUTES.workspace, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).WorkspacePage }) },
               { id: 'workspaceQueue', path: ROUTES.workspaceQueue, lazy: async () => ({ Component: (await import('../features/workspace/WorkspacePage')).QueuePage }) },
+              { id: 'tasks', path: ROUTES.tasks, lazy: async () => ({ Component: (await import('../features/tasks/TaskListPage')).TaskListPage }) },
+              { id: 'taskDetail', path: `${ROUTES.tasks}/:number`, lazy: async () => ({ Component: (await import('../features/tasks/TaskDetailPage')).TaskDetailPage }) },
               { id: 'assets', path: ROUTES.assets, lazy: async () => ({ Component: (await import('../features/assets/AssetsPage')).AssetsPage }) },
               { id: 'assetImport', path: ROUTES.assetImport, lazy: async () => ({ Component: (await import('../features/assets/AssetImportPage')).AssetImportPage }) },
               { id: 'assetDetail', path: `${ROUTES.assets}/:id`, lazy: async () => ({ Component: (await import('../features/assets/AssetDetailPage')).AssetDetailPage }) },
