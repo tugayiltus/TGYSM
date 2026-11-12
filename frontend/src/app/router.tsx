@@ -126,6 +126,7 @@ const appRoutes: RouteObject[] = [
               { id: 'adminEmailDeliveries', path: ROUTES.adminEmailDeliveries, lazy: async () => ({ Component: (await import('../features/admin/email/EmailDeliveriesPage')).EmailDeliveriesPage }) },
               { id: 'adminSlaCalendar', path: ROUTES.adminSlaCalendar, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaCalendarPage')).SlaCalendarPage }) },
               { id: 'adminSlaPolicy', path: ROUTES.adminSlaPolicy, lazy: async () => ({ Component: (await import('../features/admin/sla/SlaPolicyPage')).SlaPolicyPage }) },
+              { id: 'adminLoginMethod', path: ROUTES.adminLoginMethod, lazy: async () => ({ Component: (await import('../features/admin/auth/LoginMethodPage')).LoginMethodPage }) },
               { id: 'adminSystem', path: ROUTES.adminSystem, lazy: async () => ({ Component: (await import('../features/admin/system/SystemPage')).SystemPage }) },
               { id: 'adminAudit', path: ROUTES.adminAudit, lazy: async () => ({ Component: (await import('../features/admin/audit/AuditPage')).AuditPage }) },
             ],

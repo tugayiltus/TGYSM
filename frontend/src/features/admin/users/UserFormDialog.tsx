@@ -4,6 +4,7 @@
  * @position Opened from the user list.
  */
 import { Grid } from '@astryxdesign/core/Grid';
+import { Text } from '@astryxdesign/core/Text';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -13,6 +14,7 @@ import { applyServerErrors, describeError, isHandledByFields } from '../../../sh
 import { ERROR_CODES } from '../../../shared/api/errors';
 import { FormDialog } from '../../../shared/feedback/FormDialog';
 import { FormSelector, FormTextInput } from '../../../shared/form/formFields';
+import { useLoginMethod } from '../../auth/api';
 import { useDepartmentOptions, useLocationOptions, withCurrentOption } from '../shared/referenceOptions';
 
 import { DEFAULT_DELIVERY, useCreateUser, useUpdateUser, type CredentialDelivery, type UserListItem } from './api';
@@ -36,6 +38,8 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
   const departmentOptions = withCurrentOption(useDepartmentOptions(), user?.departmentId, user?.departmentName);
   const locationOptions = withCurrentOption(useLocationOptions(), user?.locationId, user?.locationName);
   const [delivery, setDelivery] = useState<CredentialDelivery>(DEFAULT_DELIVERY);
+  // Under a company-account method the server sets no password and sends no email (ADR-0030).
+  const viaDirectory = useLoginMethod().method !== 'local';
   const create = useCreateUser();
   const update = useUpdateUser();
   const mutation = user === null ? create : update;
@@ -57,7 +61,10 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
     const fields = toRequestFields(values);
     const onError = (error: unknown) => applyServerErrors(error, setError, FORM_FIELDS, CODE_FIELDS);
     if (user === null) {
-      create.mutate({ ...fields, delivery }, { onSuccess: (result) => onCreated({ email: fields.email, temporaryPassword: result.temporaryPassword }), onError });
+      create.mutate(
+        { ...fields, delivery },
+        { onSuccess: (result) => (viaDirectory ? onClose() : onCreated({ email: fields.email, temporaryPassword: result.temporaryPassword })), onError },
+      );
     } else {
       update.mutate({ id: user.id, version: user.version, ...fields }, { onSuccess: onClose, onError });
     }
@@ -84,7 +91,7 @@ export function UserFormDialog({ user, onClose, onCreated }: UserFormDialogProps
       <FormSelector control={control} name="role" label={t('users.fields.role')} options={roleOptions} />
       <FormSelector control={control} name="departmentId" label={t('users.fields.department')} options={departmentOptions} placeholder={tc('none')} isClearable />
       <FormSelector control={control} name="locationId" label={t('users.fields.location')} options={locationOptions} placeholder={tc('none')} isClearable />
-      {user === null && <DeliveryChoice value={delivery} onChange={setDelivery} />}
+      {user === null && (viaDirectory ? <Text type="supporting">{t('users.directoryNote')}</Text> : <DeliveryChoice value={delivery} onChange={setDelivery} />)}
     </FormDialog>
   );
 }

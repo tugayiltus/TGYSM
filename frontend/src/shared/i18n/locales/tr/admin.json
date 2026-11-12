@@ -45,6 +45,7 @@
     },
     "confirmDeactivate": "{{name}} pasifleştirilsin mi? Kullanıcının açık oturumu hemen kapanır.",
     "confirmReactivate": "{{name}} tekrar aktifleştirilsin mi?",
+    "directoryNote": "Kullanıcı ilk girişinde şirket hesabıyla bağlanır; e-posta gönderilmez.",
     "delivery": {
       "label": "Şifre iletimi",
       "emailLink": "E-posta ile bağlantı gönder",
@@ -398,6 +399,47 @@
       "error": "Son hata",
       "date": "Tarih",
       "actions": "İşlemler"
+    }
+  },
+  "loginMethod": {
+    "intro": "Kullanıcıların nasıl giriş yapacağını seçin. Aynı anda tek yöntem açıktır; yöneticiler her yöntemde yerel şifreleriyle de girebilir.",
+    "active": "Etkin yöntem",
+    "methods": {
+      "local": "Yerel (TGYSM şifresi)",
+      "entra": "Microsoft (Entra ID)",
+      "ldap": "Active Directory (LDAP)"
+    },
+    "save": "Kaydet",
+    "saved": "Ayarlar kaydedildi.",
+    "test": "Bağlantıyı test et",
+    "testOk": "Bağlantı başarılı. Bu yöntemi açabilirsiniz.",
+    "switchOn": "Bu yöntemi aç",
+    "switchDisabled": "Önce bağlantıyı test edin.",
+    "switchConfirm": "{{method}} açılsın mı? Bir sonraki girişten itibaren kullanıcılar bu yöntemle girer.",
+    "backToLocal": "Yerel girişe dön",
+    "backToLocalConfirm": "Yerel girişe dönülsün mü? Şifresi olmayan {{count}} kişiye şifre belirleme e-postası gider.",
+    "secretStored": "Kayıtlı. Değiştirmek için yeni değeri yazın.",
+    "secretMissing": "Henüz kayıtlı değil.",
+    "copy": "Kopyala",
+    "fields": {
+      "tenantId": "Kiracı (Tenant) ID",
+      "clientId": "Uygulama (Client) ID",
+      "clientSecret": "İstemci sırrı (Client secret)",
+      "allowedDomains": "İzinli e-posta alan adları",
+      "allowedDomainsHint": "Virgülle ayırın, ör. sirket.com, sirket.com.tr. Boş bırakırsanız kiracının tüm alan adları kabul edilir.",
+      "redirectUri": "Yönlendirme adresi (Entra'ya kaydedin)",
+      "host": "Sunucu",
+      "port": "Port",
+      "security": "Güvenli bağlantı",
+      "baseDn": "Arama kökü (Base DN)",
+      "bindDn": "Servis hesabı DN",
+      "bindPassword": "Servis hesabı şifresi",
+      "userFilter": "Ek kullanıcı filtresi (isteğe bağlı)",
+      "userFilterHint": "Ör. (memberOf=CN=TGYSM,OU=Gruplar,DC=sirket,DC=local)"
+    },
+    "security": {
+      "ldaps": "LDAPS (636)",
+      "start_tls": "StartTLS (389)"
     }
   },
   "system": {

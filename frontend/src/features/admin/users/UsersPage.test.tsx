@@ -102,6 +102,26 @@ describe('UsersPage', () => {
     expect(posted.delivery).toBe('email_link');
   });
 
+  it('under a company-account login method, explains the first sign-in and offers no password or email choice', async () => {
+    setup({
+      'GET /api/v1/auth/method': { status: 200, body: { method: 'ldap' } },
+      'POST /api/v1/admin/users': { status: 201, body: { userId: 'u-2', temporaryPassword: null } },
+    });
+    const { user } = renderRoute('/admin/users');
+
+    await user.click(await screen.findByRole('button', { name: 'Yeni kullanıcı' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(await within(dialog).findByText('Kullanıcı ilk girişinde şirket hesabıyla bağlanır; e-posta gönderilmez.')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('radio', { name: 'E-posta ile bağlantı gönder' })).not.toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText('Ad'), 'Deniz');
+    await user.type(within(dialog).getByLabelText('Soyad'), 'Aydın');
+    await user.type(within(dialog).getByLabelText('E-posta'), 'deniz@sirket.com');
+    await user.click(within(dialog).getByRole('button', { name: 'Oluştur' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByRole('heading', { name: 'Bağlantı gönderildi' })).not.toBeInTheDocument();
+  });
+
   it('resets a password with the chosen delivery', async () => {
     const bodies: unknown[] = [];
     setup({
