@@ -144,5 +144,13 @@
   },
   "assets.catalog_duplicate": "Bu ad zaten kayıtlı. Mevcut tanımı kullanın.",
   "assets.model_inactive": "Seçilen model kullanılamıyor. Etkin bir model seçin.",
-  "assets.import_catalog_missing": "Tanım eksik: marka veya model katalogda yok. Yöneticiye bildirin."
+  "assets.import_catalog_missing": "Tanım eksik: marka veya model katalogda yok. Yöneticiye bildirin.",
+  "tasks": {
+    "invalid_transition": "Bu işlem görevin mevcut durumunda yapılamaz.",
+    "result_required": "Görevi tamamlamak için sonuç notu yazın.",
+    "cancel_reason_required": "Görevi iptal etmek için neden yazın.",
+    "hold_note_required": "\"Diğer\" bekleme nedeni için açıklama yazın.",
+    "assignee_not_in_team": "Atanan kişi görevin ekibinde değil.",
+    "already_claimed": "Görevi başka biri üstlendi. Sayfayı yenileyin."
+  }
 }

@@ -83,6 +83,12 @@ public static class ErrorCodes
     public const string TicketCancelReasonRequired = "tickets.cancel_reason_required";
     public const string TicketAlreadyAssigned = "tickets.already_assigned";
     public const string TicketAssigneeNotInTeam = "tickets.assignee_not_in_team";
+    public const string TaskInvalidTransition = "tasks.invalid_transition";
+    public const string TaskResultRequired = "tasks.result_required";
+    public const string TaskCancelReasonRequired = "tasks.cancel_reason_required";
+    public const string TaskHoldNoteRequired = "tasks.hold_note_required";
+    public const string TaskAssigneeNotInTeam = "tasks.assignee_not_in_team";
+    public const string TaskAlreadyClaimed = "tasks.already_claimed";
 
     public const string ApprovalNotApprover = "approvals.not_approver";
     public const string ApprovalNotPending = "approvals.not_pending";

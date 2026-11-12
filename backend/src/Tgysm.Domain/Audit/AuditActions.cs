@@ -85,6 +85,10 @@ public static class AuditActions
     public const string TicketCancelled = "tickets.cancelled";
     public const string TicketAssetLinked = "tickets.asset_linked";
     public const string TicketAssetUnlinked = "tickets.asset_unlinked";
+    public const string TaskCreated = "tasks.created";
+    public const string TaskAssigned = "tasks.assigned";
+    public const string TaskTransferred = "tasks.transferred";
+    public const string TaskStatusChanged = "tasks.status_changed";
     public const string RelatedRequestCreated = "tickets.related_request_created";
     public const string ApprovalApproved = "approvals.approved";
     public const string ApprovalRejected = "approvals.rejected";

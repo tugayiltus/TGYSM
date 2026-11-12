@@ -160,7 +160,8 @@
     "export_job": "Rapor dışa aktarımı",
     "auth_settings": "Giriş yöntemi ayarları",
     "brand": "Marka",
-    "asset_model": "Model"
+    "asset_model": "Model",
+    "task": "Görev"
   },
   "auditActions": {
     "setup": {
@@ -290,6 +291,12 @@
       "renamed": "Model adı değiştirildi",
       "deactivated": "Model pasifleştirildi",
       "reactivated": "Model yeniden etkinleştirildi"
+    },
+    "tasks": {
+      "created": "Görev oluşturuldu",
+      "assigned": "Görev atandı",
+      "transferred": "Görev aktarıldı",
+      "status_changed": "Görev durumu değişti"
     }
   },
   "emailEvents": {
