@@ -24,6 +24,25 @@
         }
       }
     },
+    "/api/v1/auth/method": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginMethodDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/oidc/start": {
       "get": {
         "tags": [
@@ -3259,6 +3278,106 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/auth-settings/test": {
+      "post": {
+        "tags": [
+          "Admin: Login method"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestAuthSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSettingsTestResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/auth-settings/switch-preview": {
+      "get": {
+        "tags": [
+          "Admin: Login method"
+        ],
+        "parameters": [
+          {
+            "name": "method",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginMethodSwitchPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/auth-settings/method": {
+      "post": {
+        "tags": [
+          "Admin: Login method"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchLoginMethodRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSettingsDto"
                 }
               }
             }
@@ -7737,6 +7856,24 @@
           }
         }
       },
+      "AuthSettingsTestResult": {
+        "required": [
+          "ok",
+          "errorCode"
+        ],
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "errorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "BrandItem": {
         "required": [
           "id",
@@ -9027,6 +9164,29 @@
           "ldap"
         ]
       },
+      "LoginMethodDto": {
+        "required": [
+          "method"
+        ],
+        "type": "object",
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/LoginMethod"
+          }
+        }
+      },
+      "LoginMethodSwitchPreview": {
+        "required": [
+          "usersWithoutPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "usersWithoutPassword": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "LoginRequest": {
         "required": [
           "email",
@@ -9062,7 +9222,8 @@
           "role",
           "mustChangePassword",
           "departmentName",
-          "locationName"
+          "locationName",
+          "hasLocalPassword"
         ],
         "type": "object",
         "properties": {
@@ -9096,6 +9257,9 @@
               "null",
               "string"
             ]
+          },
+          "hasLocalPassword": {
+            "type": "boolean"
           }
         }
       },
@@ -10241,6 +10405,22 @@
           }
         }
       },
+      "SwitchLoginMethodRequest": {
+        "required": [
+          "method",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/LoginMethod"
+          },
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          }
+        }
+      },
       "TeamDetail": {
         "required": [
           "id",
@@ -10359,6 +10539,17 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "TestAuthSettingsRequest": {
+        "required": [
+          "method"
+        ],
+        "type": "object",
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/LoginMethod"
           }
         }
       },

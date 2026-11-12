@@ -38,6 +38,11 @@ public sealed class ChangePasswordHandler(
         var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId && u.IsActive, cancellationToken)
             ?? throw new AuthenticationFailedException();
 
+        if (!user.HasLocalPassword)
+        {
+            throw new DomainException(ErrorCodes.AuthNoLocalPassword, "A directory user has no local password.");
+        }
+
         if (!passwords.Verify(user.PasswordHash, command.CurrentPassword))
         {
             throw new ValidationException(

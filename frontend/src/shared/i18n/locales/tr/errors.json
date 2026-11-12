@@ -28,6 +28,7 @@
     "token_invalid": "Bağlantı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin.",
     "method_not_tested": "Önce bağlantıyı test edin; test başarılı olmadan bu yöntem açılamaz.",
     "directory_unavailable": "Dizin sunucusuna ulaşılamıyor. Daha sonra yeniden deneyin.",
+    "no_local_password": "Şirket hesabınızla giriş yapıyorsunuz; şifrenizi şirket hesabınızdan değiştirin.",
     "ldap_bind_failed": "Servis hesabı ile bağlanılamadı. Bağlanma DN'ini ve şifresini kontrol edin.",
     "ldap_base_dn_not_found": "Arama kökü (Base DN) dizinde bulunamadı.",
     "entra_tenant_not_found": "Bu kiracı kimliği (Tenant ID) Microsoft'ta bulunamadı.",

@@ -53,6 +53,7 @@ public static class ErrorCodes
     public const string TicketAssetNotAssignedToRequester = "tickets.asset_not_assigned_to_requester";
     public const string AuthMethodNotTested = "auth.method_not_tested";
     public const string AuthDirectoryUnavailable = "auth.directory_unavailable";
+    public const string AuthNoLocalPassword = "auth.no_local_password";
     public const string AuthLdapBindFailed = "auth.ldap_bind_failed";
     public const string AuthEntraTenantNotFound = "auth.entra_tenant_not_found";
     public const string AuthEntraClientInvalid = "auth.entra_client_invalid";

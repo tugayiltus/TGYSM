@@ -62,10 +62,14 @@ public sealed class User : Entity
     }
 
     /// <summary>A user created on first directory sign-in: employee, no local password, no department or location (ADR-0030).</summary>
-    public static User CreateFromDirectory(string firstName, string lastName, string email, DateTimeOffset now)
+    public static User CreateFromDirectory(string firstName, string lastName, string email, DateTimeOffset now) =>
+        CreateWithoutPassword(firstName, lastName, email, UserRole.Employee, departmentId: null, locationId: null, now);
+
+    /// <summary>A user an admin adds while a directory method is active: linked by email on first sign-in, no password (ADR-0030).</summary>
+    public static User CreateWithoutPassword(string firstName, string lastName, string email, UserRole role, Guid? departmentId, Guid? locationId, DateTimeOffset now)
     {
-        var user = new User { Role = UserRole.Employee, IsActive = true, CreatedAt = now };
-        user.SetProfile(firstName, lastName, email, departmentId: null, locationId: null, now);
+        var user = new User { Role = role, IsActive = true, CreatedAt = now };
+        user.SetProfile(firstName, lastName, email, departmentId, locationId, now);
         user.TouchAndRotateStamp(now);
         return user;
     }

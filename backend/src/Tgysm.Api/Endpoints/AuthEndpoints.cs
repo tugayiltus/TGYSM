@@ -1,3 +1,4 @@
+using Tgysm.Application.Features.Auth.Settings;
 using Tgysm.Domain.Auth;
 using Tgysm.Application.Abstractions;
 using Tgysm.Api.Auth;
@@ -23,6 +24,7 @@ internal static class AuthEndpoints
         var auth = api.MapGroup(ApiRoutes.Auth).WithTags(Tag);
 
         auth.MapGet("/csrf", GetCsrfToken).AllowAnonymous();
+        auth.MapGet("/method", async (GetLoginMethodHandler handler, CancellationToken ct) => TypedResults.Ok(await handler.HandleAsync(ct))).AllowAnonymous();
         auth.MapGet("/oidc/start", StartEntraAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.Login);
         auth.MapPost("/login/ldap", LdapLoginAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.Login)
             .ProducesProblem(StatusCodes.Status401Unauthorized).ProducesProblem(StatusCodes.Status503ServiceUnavailable);

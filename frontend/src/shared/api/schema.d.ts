@@ -39,6 +39,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/method": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LoginMethodDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/oidc/start": {
         parameters: {
             query?: never;
@@ -3374,6 +3409,137 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth-settings/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TestAuthSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuthSettingsTestResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth-settings/switch-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    method: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LoginMethodSwitchPreview"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth-settings/method": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SwitchLoginMethodRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuthSettingsDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -7091,6 +7257,10 @@ export interface components {
             /** Format: uint32 */
             version: number;
         };
+        AuthSettingsTestResult: {
+            ok: boolean;
+            errorCode: null | string;
+        };
         BrandItem: {
             /** Format: uuid */
             id: string;
@@ -7436,6 +7606,13 @@ export interface components {
         };
         /** @enum {unknown} */
         LoginMethod: "local" | "entra" | "ldap";
+        LoginMethodDto: {
+            method: components["schemas"]["LoginMethod"];
+        };
+        LoginMethodSwitchPreview: {
+            /** Format: int32 */
+            usersWithoutPassword: number;
+        };
         LoginRequest: {
             email: string;
             password: string;
@@ -7453,6 +7630,7 @@ export interface components {
             mustChangePassword: boolean;
             departmentName: null | string;
             locationName: null | string;
+            hasLocalPassword: boolean;
         };
         /** @enum {unknown} */
         MetricShape: "count" | "ratio" | "duration" | "distribution";
@@ -7771,6 +7949,11 @@ export interface components {
             version: number;
             retainResponsibility: boolean;
         };
+        SwitchLoginMethodRequest: {
+            method: components["schemas"]["LoginMethod"];
+            /** Format: uint32 */
+            version: number;
+        };
         TeamDetail: {
             /** Format: uuid */
             id: string;
@@ -7805,6 +7988,9 @@ export interface components {
             /** Format: uuid */
             userId: string;
             temporaryPassword: null | string;
+        };
+        TestAuthSettingsRequest: {
+            method: components["schemas"]["LoginMethod"];
         };
         TicketArticleItem: {
             /** Format: uuid */

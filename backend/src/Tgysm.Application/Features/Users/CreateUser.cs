@@ -5,6 +5,7 @@ using Tgysm.Application.Common;
 using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Security;
 using Tgysm.Domain.Audit;
+using Tgysm.Domain.Auth;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Users;
 
@@ -57,6 +58,18 @@ public sealed class CreateUserHandler(
         }
 
         await references.EnsureActiveAsync(command.DepartmentId, command.LocationId, cancellationToken);
+
+        // Under a directory method the user signs in with the company account and is linked by email on first sign-in:
+        // no password and no email from TGYSM (ADR-0030).
+        var method = await db.AuthSettings.AsNoTracking().Select(s => s.Method).SingleAsync(cancellationToken);
+        if (method != LoginMethod.Local)
+        {
+            var directoryUser = User.CreateWithoutPassword(command.FirstName, command.LastName, command.Email, command.Role, command.DepartmentId, command.LocationId, clock.GetUtcNow());
+            db.Users.Add(directoryUser);
+            audit.Record(AuditActions.UserCreated, AuditEntityTypes.User, directoryUser.Id, newValues: UserAuditSnapshot.From(directoryUser));
+            await db.SaveTranslatingDuplicateAsync(ErrorCodes.EmailTaken, UserMessages.EmailTaken, cancellationToken);
+            return new TemporaryPasswordResult(directoryUser.Id, TemporaryPassword: null);
+        }
 
         var temporaryPassword = temporaryPasswords.Generate();
         var user = User.Create(

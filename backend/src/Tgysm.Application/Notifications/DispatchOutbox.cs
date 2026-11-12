@@ -1,3 +1,4 @@
+using Tgysm.Domain.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -156,6 +157,19 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
     /// unknown or inactive email is skipped, and so is an account whose last reset link is still unused and younger
     /// than <see cref="PasswordResetCooldown"/>. Either way no delivery is created for the request event itself.
     /// </summary>
+    /// <summary>
+    /// Under a directory method only admins may reset a local password (break-glass, ADR-0030); everyone else signs in
+    /// with the company account, so a reset link would be useless.
+    /// </summary>
+    private static async Task<Guid?> ResettableUserAsync(IAppDbContext db, string normalizedEmail, CancellationToken cancellationToken)
+    {
+        var method = await db.AuthSettings.AsNoTracking().Select(s => s.Method).SingleAsync(cancellationToken);
+        return await db.Users
+            .Where(u => u.NormalizedEmail == normalizedEmail && u.IsActive && (method == LoginMethod.Local || u.Role == UserRole.Admin))
+            .Select(u => (Guid?)u.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     private static async Task ResolvePasswordResetRequestAsync(
         IServiceProvider scoped, IAppDbContext db, OutboxEvent outboxEvent, DateTimeOffset now, CancellationToken cancellationToken)
     {
@@ -164,7 +178,7 @@ public sealed class DispatchOutboxHandler(IOutboxClaimer claimer, IServiceScopeF
         var normalizedEmail = email is null ? null : User.NormalizeEmail(email);
         var userId = normalizedEmail is null
             ? null
-            : await db.Users.Where(u => u.NormalizedEmail == normalizedEmail && u.IsActive).Select(u => (Guid?)u.Id).SingleOrDefaultAsync(cancellationToken);
+            : await ResettableUserAsync(db, normalizedEmail, cancellationToken);
 
         var cooldownStart = now - PasswordResetCooldown;
         var recentlyLinked = userId is { } candidate && await db.PasswordTokens.AnyAsync(

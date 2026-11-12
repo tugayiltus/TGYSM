@@ -23,6 +23,10 @@ public sealed class AnonymousAccessTests(ApiFactory factory) : IAsyncLifetime
     [
         "GET api/v1/auth/csrf",
         "POST api/v1/auth/login",
+        // Login method choice (ADR-0030): which form to show, LDAP sign-in and the Microsoft redirect.
+        "GET api/v1/auth/method",
+        "POST api/v1/auth/login/ldap",
+        "GET api/v1/auth/oidc/start",
         "POST api/v1/auth/forgot-password",
         "POST api/v1/auth/set-password",
         "GET api/v1/health",

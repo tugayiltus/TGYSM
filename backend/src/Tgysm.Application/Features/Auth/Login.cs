@@ -4,6 +4,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Application.Security;
 using Tgysm.Domain.Audit;
+using Tgysm.Domain.Auth;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Users;
 
@@ -44,6 +45,17 @@ public sealed class LoginHandler(
             // Same hashing cost as a real check, so response time does not reveal unknown emails.
             passwords.Verify(passwords.DummyHash, command.Password);
             audit.Record(AuditActions.LoginFailed, AuditEntityTypes.User, entityId: null, newValues: new { Email = normalizedEmail });
+            await db.SaveChangesAsync(cancellationToken);
+            throw new AuthenticationFailedException();
+        }
+
+        // Under a directory method only admins keep a local password login (break-glass, ADR-0030); a directory-only
+        // user has no local password at all. Both fail like a wrong password, without counting towards lockout.
+        var method = await db.AuthSettings.AsNoTracking().Select(s => s.Method).SingleAsync(cancellationToken);
+        if (!user.HasLocalPassword || (method != LoginMethod.Local && user.Role != UserRole.Admin))
+        {
+            passwords.Verify(passwords.DummyHash, command.Password);
+            audit.Record(AuditActions.LoginFailed, AuditEntityTypes.User, user.Id, newValues: new { Method = method });
             await db.SaveChangesAsync(cancellationToken);
             throw new AuthenticationFailedException();
         }

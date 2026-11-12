@@ -14,7 +14,8 @@ public sealed record MeDto(
     UserRole Role,
     bool MustChangePassword,
     string? DepartmentName,
-    string? LocationName);
+    string? LocationName,
+    bool HasLocalPassword);
 
 public sealed class GetMeHandler(IAppDbContext db, ICurrentActor actor)
 {
@@ -37,7 +38,8 @@ public sealed class GetMeHandler(IAppDbContext db, ICurrentActor actor)
                 user.Role,
                 user.MustChangePassword,
                 department == null ? null : department.Name,
-                location == null ? null : location.Name))
+                location == null ? null : location.Name,
+                user.PasswordHash != string.Empty))
             .SingleOrDefaultAsync(cancellationToken);
 
         return me ?? throw new NotFoundException(AuditEntityTypes.User);
