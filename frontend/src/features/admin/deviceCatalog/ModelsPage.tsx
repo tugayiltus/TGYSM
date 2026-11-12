@@ -1,6 +1,6 @@
 /**
- * @input Nothing; search, brand and status come from the URL query.
- * @output The device model list per brand and type, with create, edit and (de)activate (ADR-0023).
+ * @input Nothing; search, type, brand and status come from the URL query.
+ * @output The device model list as type, brand and name, with create, edit and (de)activate (ADR-0023).
  * @position `/admin/models`, inside the admin shell.
  */
 import { Button } from '@astryxdesign/core/Button';
@@ -47,7 +47,9 @@ export interface ModelsPageState {
 }
 const brandToCreateFor = (state: unknown): string | undefined =>
   typeof state === 'object' && state !== null && 'createModelForBrand' in state && typeof state.createModelForBrand === 'string' ? state.createModelForBrand : undefined;
-const FILTER_KEYS = [BRAND_FILTER_KEY, STATUS_FILTER_KEY] as const;
+const TYPE_FILTER_KEY = 'type';
+const FILTER_KEYS = [TYPE_FILTER_KEY, BRAND_FILTER_KEY, STATUS_FILTER_KEY] as const;
+const isAssetType = (value: string | undefined): value is AssetType => ASSET_TYPES.some((type) => type === value);
 
 const createSchema = nameSchema.extend({
   brandId: z.string().min(1, ERROR_CODES.required),
@@ -55,7 +57,7 @@ const createSchema = nameSchema.extend({
 });
 const editSchema = nameSchema.extend({ brandId: z.string(), type: z.string() });
 type CreateValues = z.infer<typeof createSchema>;
-const CREATE_FIELDS = ['brandId', 'type', 'name'] as const;
+const CREATE_FIELDS = ['type', 'brandId', 'name'] as const;
 
 const modelName = (m: AssetModelItem) => `${m.brandName} ${m.name}`;
 
@@ -95,21 +97,21 @@ function ModelFormDialog({ model, initialBrandId, onClose }: { model: AssetModel
     >
       <FormSelector
         control={control}
-        name="brandId"
-        label={t('deviceCatalog.fields.brand')}
-        placeholder={t('deviceCatalog.fields.selectBrand')}
-        isReadOnly={fixed}
-        isRequired={!fixed}
-        options={(brands.data ?? []).filter((b) => b.isActive || b.id === model?.brandId).map((b) => ({ value: b.id, label: b.name }))}
-      />
-      <FormSelector
-        control={control}
         name="type"
         label={t('deviceCatalog.fields.type')}
         placeholder={t('deviceCatalog.fields.selectType')}
         isReadOnly={fixed}
         isRequired={!fixed}
         options={ASSET_TYPES.map((type) => ({ value: type, label: ta(`types.${type}`) }))}
+      />
+      <FormSelector
+        control={control}
+        name="brandId"
+        label={t('deviceCatalog.fields.brand')}
+        placeholder={t('deviceCatalog.fields.selectBrand')}
+        isReadOnly={fixed}
+        isRequired={!fixed}
+        options={(brands.data ?? []).filter((b) => b.isActive || b.id === model?.brandId).map((b) => ({ value: b.id, label: b.name }))}
       />
       <FormTextInput control={control} name="name" label={t('deviceCatalog.fields.name')} autoComplete="off" isRequired />
     </FormDialog>
@@ -140,7 +142,8 @@ export function ModelsPage() {
       void navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
     }
   };
-  const rows = models.data === undefined ? undefined : filterRows(models.data, list.search, status, modelName);
+  const type = isAssetType(list.filters.type) ? list.filters.type : undefined;
+  const rows = models.data === undefined ? undefined : filterRows(models.data, list.search, status, modelName).filter((m) => type === undefined || m.type === type);
 
   const actions = (m: AssetModelItem) => (
     <RecordActions
@@ -154,8 +157,8 @@ export function ModelsPage() {
     />
   );
   const columns: DataColumn<AssetModelItem>[] = [
-    { key: 'brand', header: t('deviceCatalog.fields.brand'), renderCell: (m) => m.brandName },
     { key: 'type', header: t('deviceCatalog.fields.type'), renderCell: (m) => ta(`types.${m.type}`) },
+    { key: 'brand', header: t('deviceCatalog.fields.brand'), renderCell: (m) => m.brandName },
     { key: 'name', header: t('deviceCatalog.fields.name'), renderCell: (m) => <Text type="label">{m.name}</Text> },
     { key: 'status', header: t('deviceCatalog.fields.status'), renderCell: (m) => <ActiveToken isActive={m.isActive} /> },
     { key: 'actions', header: t('deviceCatalog.fields.actions'), renderCell: actions },
@@ -165,10 +168,10 @@ export function ModelsPage() {
       <HStack gap={2} hAlign="between" vAlign="start">
         <StackItem size="fill">
           <VStack gap={0}>
+            <Text type="supporting">{ta(`types.${m.type}`)}</Text>
             <Text type="label" wordBreak="break-word">
               {modelName(m)}
             </Text>
-            <Text type="supporting">{ta(`types.${m.type}`)}</Text>
           </VStack>
         </StackItem>
         <StackItem><ActiveToken isActive={m.isActive} /></StackItem>
@@ -192,6 +195,13 @@ export function ModelsPage() {
         onClear={list.clear}
         filters={
           <>
+            <Selector
+              label={t('deviceCatalog.models.typeFilter')}
+              placeholder={t('deviceCatalog.models.allTypes')}
+              value={type ?? ''}
+              options={ASSET_TYPES.map((value) => ({ value, label: ta(`types.${value}`) }))}
+              onChange={(value) => list.setFilter(TYPE_FILTER_KEY, value)}
+            />
             <Selector
               label={t('deviceCatalog.models.brandFilter')}
               placeholder={t('deviceCatalog.models.allBrands')}

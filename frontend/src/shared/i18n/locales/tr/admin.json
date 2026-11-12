@@ -495,6 +495,8 @@
       "searchLabel": "Model ara",
       "brandFilter": "Marka filtresi",
       "allBrands": "Tüm markalar",
+      "typeFilter": "Tür filtresi",
+      "allTypes": "Tüm türler",
       "confirmDeactivate": "{{name}} modeli yeni cihazlarda seçilemeyecek. Mevcut cihazlar etkilenmez.",
       "confirmReactivate": "{{name}} modeli yeniden seçilebilecek."
     },

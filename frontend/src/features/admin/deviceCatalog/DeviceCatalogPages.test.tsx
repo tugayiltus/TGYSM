@@ -114,6 +114,38 @@ describe('ModelsPage', () => {
     await waitFor(() => expect(created).toEqual({ brandId: 'b-1', type: 'laptop', name: 'ThinkPad T14s' }));
   });
 
+  it('lists models as type, brand and name, and filters them by type from the URL', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      'GET /api/v1/admin/brands': { status: 200, body: BRANDS },
+      'GET /api/v1/admin/models': { status: 200, body: MODELS },
+    });
+    const { user, router } = renderRoute('/admin/models');
+    const table = await screen.findByRole('table');
+    const headers = within(table).getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers.slice(0, 3)).toEqual(['Tür', 'Marka', 'Ad']);
+
+    await chooseOption(user, 'Tür filtresi', 'Telefon');
+    await waitFor(() => expect(new URLSearchParams(router.state.location.search).get('type')).toBe('phone'));
+    expect(within(screen.getByRole('table')).queryByText('T14')).not.toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('iPhone 15')).toBeInTheDocument();
+  });
+
+  it('asks for type, then brand, then name in the model form', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      'GET /api/v1/admin/brands': { status: 200, body: BRANDS },
+      'GET /api/v1/admin/models': { status: 200, body: MODELS },
+    });
+    const { user } = renderRoute('/admin/models');
+    await user.click(await screen.findByRole('button', { name: 'Yeni model' }));
+    const dialog = await screen.findByRole('dialog');
+    const [type, brand] = await Promise.all([findSelect(/^Tür/, dialog), findSelect(/^Marka/, dialog)]);
+    const name = within(dialog).getByLabelText(/^Ad/);
+    expect(type!.compareDocumentPosition(brand!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(brand!.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('is in the device catalog group of the admin menu and breadcrumb', async () => {
     mockApi({ 'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME }, 'GET /api/v1/admin/brands': { status: 200, body: BRANDS }, 'GET /api/v1/admin/models': { status: 200, body: MODELS } });
     renderRoute('/admin/models');
