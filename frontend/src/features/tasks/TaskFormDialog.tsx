@@ -15,7 +15,7 @@ import { FormDialog } from '../../shared/feedback/FormDialog';
 import { FormDateInput, FormSelector, FormTextArea, FormTextInput } from '../../shared/form/formFields';
 import { PRIORITIES, useReferenceTeams, type Priority } from '../tickets/api';
 
-import { useCreateTask, type TaskDetail } from './api';
+import { useCreateTask, type NewTaskInput, type TaskDetail } from './api';
 
 /** Mirror backend WorkTask.TitleMaxLength / DescriptionMaxLength. */
 const TITLE_MAX_LENGTH = 200;
@@ -34,11 +34,20 @@ type Values = z.infer<typeof schema>;
 
 const orNull = (value: string) => (value.trim() === '' ? null : value.trim());
 
-export function TaskFormDialog({ ticketNumber = null, onCreated, onClose }: { ticketNumber?: string | null; onCreated: (task: TaskDetail) => void; onClose: () => void }) {
+interface TaskFormDialogProps {
+  ticketNumber?: string | null;
+  /** The change this task belongs to, with its phase. */
+  change?: { number: string; phase: NonNullable<NewTaskInput['phase']> };
+  onCreated: (task: TaskDetail) => void;
+  onClose: () => void;
+}
+
+export function TaskFormDialog({ ticketNumber = null, change, onCreated, onClose }: TaskFormDialogProps) {
   const { t } = useTranslation('tasks');
   const { t: tt } = useTranslation('tickets');
   const teams = useReferenceTeams(true);
   const create = useCreateTask();
+  const subject = ticketNumber ?? change?.number ?? null;
   const { control, setValue, handleSubmit, formState } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { title: '', description: '', teamId: '', assigneeId: '', priority: DEFAULT_PRIORITY, dueDate: '' },
@@ -58,13 +67,14 @@ export function TaskFormDialog({ ticketNumber = null, onCreated, onClose }: { ti
         priority: v.priority as Priority,
         dueDate: orNull(v.dueDate),
         ticketNumber,
+        ...(change === undefined ? {} : { changeNumber: change.number, phase: change.phase }),
       },
       { onSuccess: onCreated },
     ),
   );
   return (
     <FormDialog
-      title={ticketNumber ? `${t('form.title')} · ${ticketNumber}` : t('form.title')}
+      title={subject === null ? t('form.title') : `${t('form.title')} · ${subject}`}
       submitLabel={t('form.submit')}
       isPending={create.isPending}
       alert={create.error ? describeError(create.error) : null}

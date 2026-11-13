@@ -88,6 +88,8 @@
     "workspaceQueue": "Kuyruk",
     "tasks": "Görevler",
     "taskDetail": "Görev",
+    "changes": "Değişiklikler",
+    "changeDetail": "Değişiklik",
     "approvals": "Onay yönetimi",
     "kbList": "Bilgi bankası",
     "kbNew": "Yeni makale",

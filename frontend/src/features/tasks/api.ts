@@ -112,6 +112,9 @@ export interface NewTaskInput {
   priority: Priority;
   dueDate: string | null;
   ticketNumber: string | null;
+  /** A task of a change carries the change and its phase; both are left out otherwise. */
+  changeNumber?: string;
+  phase?: Schemas['ChangePhase'];
 }
 
 export function useCreateTask() {

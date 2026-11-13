@@ -5,6 +5,7 @@
  */
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { DateInput } from '@astryxdesign/core/DateInput';
+import { DateTimeInput } from '@astryxdesign/core/DateTimeInput';
 import { NumberInput } from '@astryxdesign/core/NumberInput';
 import { Selector } from '@astryxdesign/core/Selector';
 import { Switch } from '@astryxdesign/core/Switch';
@@ -121,4 +122,14 @@ export function FormDateInput<T extends FieldValues>({ control, name, ...props }
   // The schema keeps the value in the API's YYYY-MM-DD form, which is Astryx's ISO date string.
   const date = current === NO_VALUE ? undefined : (current as ComponentProps<typeof DateInput>['value']);
   return <DateInput {...props} hasClear value={date} onChange={(next) => onChange(next ?? NO_VALUE)} status={status} />;
+}
+
+export type FormDateTimeInputProps<T extends FieldValues> = Bound<T> & Omit<ComponentProps<typeof DateTimeInput>, Supplied | 'changeAction'>;
+
+/** The form keeps `''` for "no time"; Astryx uses `undefined`. The value is the local `YYYY-MM-DDTHH:mm` form of Astryx's ISO string. */
+export function FormDateTimeInput<T extends FieldValues>({ control, name, ...props }: FormDateTimeInputProps<T>) {
+  const { value, onChange, status } = useBoundField({ control, name });
+  const current = (value as string | undefined) ?? NO_VALUE;
+  const moment = current === NO_VALUE ? undefined : (current as ComponentProps<typeof DateTimeInput>['value']);
+  return <DateTimeInput {...props} hasClear value={moment} onChange={(next) => onChange(next ?? NO_VALUE)} status={status} />;
 }

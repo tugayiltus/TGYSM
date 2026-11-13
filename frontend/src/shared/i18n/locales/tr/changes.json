@@ -1,0 +1,200 @@
+{
+  "statuses": {
+    "draft": "Taslak",
+    "pending_approval": "Onay bekliyor",
+    "scheduled": "Planlandı",
+    "implementing": "Uygulanıyor",
+    "verifying": "Doğrulama",
+    "closed": "Kapalı",
+    "cancelled": "İptal"
+  },
+  "outcomes": {
+    "successful": "Başarılı",
+    "rolled_back": "Geri alındı",
+    "failed": "Başarısız"
+  },
+  "levels": {
+    "low": "Düşük",
+    "medium": "Orta",
+    "high": "Yüksek"
+  },
+  "phases": {
+    "preparation": "Hazırlık",
+    "implementation": "Uygulama",
+    "verification": "Doğrulama",
+    "backout": "Geri dönüş"
+  },
+  "queues": {
+    "mine": "Benim değişikliklerim",
+    "team": "Ekibimin değişiklikleri",
+    "pending_approval": "Onay bekleyenler",
+    "open": "Açık değişiklikler"
+  },
+  "list": {
+    "title": "Değişiklikler",
+    "caption": "Değişiklik listesi",
+    "search": "Numara veya başlıkta ara",
+    "queueFilter": "Kuyruk",
+    "statusFilter": "Durum",
+    "riskFilter": "Risk",
+    "all": "Tümü",
+    "new": "Yeni değişiklik",
+    "empty": "Bu filtreyle değişiklik yok.",
+    "open": "Aç",
+    "columns": {
+      "number": "Numara",
+      "title": "Başlık",
+      "status": "Durum",
+      "risk": "Risk",
+      "window": "Bakım penceresi",
+      "team": "Ekip",
+      "owner": "Sahip",
+      "updated": "Güncellendi"
+    }
+  },
+  "detail": {
+    "back": "Listeye dön",
+    "summarySection": "Özet",
+    "planSection": "Plan",
+    "assetsSection": "Etkilenen varlıklar",
+    "tasksSection": "Görevler",
+    "approvalSection": "Onay",
+    "timelineSection": "Zaman çizgisi",
+    "sideSection": "Bilgiler",
+    "justification": "Gerekçe",
+    "affectedService": "Etkilenen hizmet",
+    "risk": "Risk",
+    "impact": "Etki",
+    "window": "Bakım penceresi",
+    "windowFrom": "Başlangıç",
+    "windowTo": "Bitiş",
+    "implementationPlan": "Uygulama planı",
+    "verificationPlan": "Doğrulama planı",
+    "backoutPlan": "Geri dönüş planı",
+    "team": "Sahip ekip",
+    "owner": "Sahip",
+    "createdBy": "Oluşturan",
+    "createdAt": "Oluşturulma",
+    "actualStart": "Gerçek başlangıç",
+    "actualEnd": "Gerçek bitiş",
+    "backoutStartedAt": "Geri dönüş başladı",
+    "outcome": "Sonuç",
+    "verificationNote": "Doğrulama notu",
+    "backoutNote": "Geri dönüş notu",
+    "closingNote": "Kapanış notu",
+    "cancelReason": "İptal nedeni",
+    "noAssets": "Bu değişikliğe bağlı varlık yok.",
+    "removeAsset": "Çıkar",
+    "noTimeline": "Henüz kayıt yok.",
+    "noWindow": "Pencere belirlenmedi",
+    "notPlanned": "Belirlenmedi"
+  },
+  "summary": {
+    "banner": "Bu değişikliğin çalışma özetini görüyorsunuz.",
+    "bannerDescription": "Tam kayıt yalnızca sahip ekibe ve yöneticilere açıktır.",
+    "implementationPlan": "Uygulama planı",
+    "backoutPlan": "Geri dönüş planı"
+  },
+  "tasks": {
+    "add": "Görev ekle",
+    "empty": "Bu aşamada görev yok.",
+    "open": "Aç",
+    "caption": "{{phase}} aşaması görevleri",
+    "assignee": "Atanan",
+    "unassigned": "Atanmamış"
+  },
+  "approval": {
+    "statuses": {
+      "pending": "Bekliyor",
+      "approved": "Onaylandı",
+      "rejected": "Reddedildi",
+      "returned": "Düzeltmeye gönderildi",
+      "withdrawn": "Geri çekildi",
+      "void": "Geçersiz"
+    },
+    "none": "Bu değişiklik için henüz onay istenmedi.",
+    "status": "Durum",
+    "decidedBy": "Karar veren",
+    "decidedAt": "Karar zamanı",
+    "requestedAt": "İstenme zamanı",
+    "reason": "Gerekçe",
+    "noEligible": "Onaylayabilecek başka yönetici yok",
+    "noEligibleDescription": "Değişikliği oluşturan ve sahibi onay veremez. Onaya göndermeden önce başka bir yönetici ekleyin.",
+    "approve": "Onayla",
+    "reject": "Reddet",
+    "return": "Düzeltmeye gönder",
+    "decisionTitle": "{{decision}} · {{number}}",
+    "reasonField": "Gerekçe",
+    "reasonOptional": "Gerekçe (isteğe bağlı)"
+  },
+  "actions": {
+    "title": "İşlemler",
+    "edit": "Düzenle",
+    "submit": "Onaya gönder",
+    "withdraw": "Geri çek",
+    "start-implementation": "Uygulamaya başla",
+    "finish-implementation": "Uygulama bitti",
+    "start-backout": "Geri dönüşü başlat",
+    "close": "Kapat",
+    "cancel": "İptal et",
+    "openIncident": "Arıza kaydı aç"
+  },
+  "fields": {
+    "select": "Seçin",
+    "outcome": "Sonuç",
+    "verificationNote": "Doğrulama notu",
+    "backoutNote": "Geri dönüş notu",
+    "closingNote": "Kapanış notu",
+    "actualEnd": "Gerçek bitiş",
+    "reason": "İptal nedeni",
+    "failedHint": "Sonuç Başarısız: sorun için ayrı bir arıza kaydı açabilirsiniz. Kayıt kendiliğinden açılmaz."
+  },
+  "form": {
+    "createTitle": "Yeni değişiklik",
+    "editTitle": "Değişikliği düzenle",
+    "submitCreate": "Değişikliği oluştur",
+    "submitEdit": "Kaydet",
+    "changeTitle": "Başlık",
+    "justification": "Gerekçe",
+    "affectedService": "Etkilenen hizmet",
+    "risk": "Risk",
+    "impact": "Etki",
+    "windowStart": "Pencere başlangıcı",
+    "windowEnd": "Pencere bitişi",
+    "implementationPlan": "Uygulama planı",
+    "verificationPlan": "Doğrulama planı",
+    "backoutPlan": "Geri dönüş planı",
+    "team": "Sahip ekip",
+    "owner": "Sahip",
+    "select": "Seçin",
+    "assets": "Etkilenen varlıklar",
+    "assetSearch": "Varlık ara",
+    "assetPick": "Varlık ekle",
+    "assetRemove": "{{tag}} varlığını çıkar",
+    "noAssets": "Henüz varlık eklenmedi.",
+    "invalidWindow": "Pencere bitişi başlangıçtan sonra olmalı."
+  },
+  "invalidate": {
+    "title": "Onay geçersiz olacak",
+    "message": "Bu değişiklik onayı geçersiz kılar. Kaydettikten sonra değişiklik yeniden onaya gönderilmelidir.",
+    "confirm": "Yine de kaydet"
+  },
+  "timeline": {
+    "events": {
+      "created": "Değişiklik oluşturuldu",
+      "updated": "Değişiklik düzenlendi",
+      "submitted": "Onaya gönderildi",
+      "withdrawn": "Onay isteği geri çekildi",
+      "approved": "Onaylandı",
+      "rejected": "Reddedildi",
+      "returned": "Düzeltmeye gönderildi",
+      "approval_voided": "Onay geçersiz kılındı",
+      "implementation_started": "Uygulama başladı",
+      "implementation_finished": "Uygulama bitti",
+      "backout_started": "Geri dönüş başladı",
+      "closed": "Kapatıldı",
+      "cancelled": "İptal edildi",
+      "assets_changed": "Etkilenen varlıklar değişti"
+    }
+  }
+}

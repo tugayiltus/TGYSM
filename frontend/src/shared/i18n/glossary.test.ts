@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import admin from './locales/tr/admin.json';
 import assets from './locales/tr/assets.json';
 import auth from './locales/tr/auth.json';
+import changes from './locales/tr/changes.json';
 import common from './locales/tr/common.json';
 import errors from './locales/tr/errors.json';
 import kb from './locales/tr/kb.json';
@@ -31,7 +32,7 @@ function texts(namespace: string, value: unknown, path = namespace): [string, st
   return [];
 }
 
-const ALL = Object.entries({ admin, assets, auth, common, errors, kb, reports, tasks, tickets }).flatMap(([name, value]) => texts(name, value));
+const ALL = Object.entries({ admin, assets, auth, changes, common, errors, kb, reports, tasks, tickets }).flatMap(([name, value]) => texts(name, value));
 
 describe('UI glossary', () => {
   it('uses one word per thing', () => {
