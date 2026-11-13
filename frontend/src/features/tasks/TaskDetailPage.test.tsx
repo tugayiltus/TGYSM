@@ -7,7 +7,49 @@ import { TASK, taskRoutes } from '../../test/taskData';
 
 const BASE = `/api/v1/tasks/${TASK.number}`;
 
+const TIMELINE = [
+  { id: 'e-1', kind: 'created', actorName: 'Ayşe Demir', data: {}, occurredAt: '2026-11-13T07:00:00Z' },
+  { id: 'e-2', kind: 'commented', actorName: 'Deniz Yıldız', data: { body: 'Yedek 02:00de alınacak' }, occurredAt: '2026-11-13T08:00:00Z' },
+];
+
 describe('TaskDetailPage', () => {
+  it('lists the history with notes and adds a note', async () => {
+    let posted: unknown;
+    let loads = 0;
+    mockApi(
+      taskRoutes(TASK, {
+        [`GET ${BASE}/timeline`]: () => {
+          loads++;
+          return { status: 200, body: TIMELINE };
+        },
+        [`POST ${BASE}/comments`]: async (request: Request) => {
+          posted = await request.json();
+          return { status: 204 };
+        },
+      }) as never,
+    );
+    const { user } = renderRoute(`/tasks/${TASK.number}`);
+
+    const history = await screen.findByRole('list', { name: 'Geçmiş ve notlar' });
+    expect(within(history).getByText('Görev açıldı')).toBeInTheDocument();
+    expect(within(history).getByText('Yedek 02:00de alınacak')).toBeInTheDocument();
+    await user.type(screen.getByRole('textbox', { name: 'Not' }), '  Disk değişti ');
+    await user.click(screen.getByRole('button', { name: 'Not ekle' }));
+
+    await waitFor(() => expect(posted).toEqual({ body: 'Disk değişti' }));
+    // The note changes the task version, so history and task load again.
+    await waitFor(() => expect(loads).toBeGreaterThan(1));
+    expect(screen.getByRole('textbox', { name: 'Not' })).toHaveValue('');
+  });
+
+  it('shows the history but no note box to someone who cannot work on the task', async () => {
+    mockApi(taskRoutes({ ...TASK, canWork: false }, { [`GET ${BASE}/timeline`]: { status: 200, body: TIMELINE } }) as never);
+    renderRoute(`/tasks/${TASK.number}`);
+
+    expect(await screen.findByText('Yedek 02:00de alınacak')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Not' })).not.toBeInTheDocument();
+  });
+
   it('shows an unassigned open task with Üstlen as the primary action and claims it', async () => {
     let posted: unknown;
     mockApi(

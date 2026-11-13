@@ -101,5 +101,23 @@
     "title": "Görevler",
     "add": "Görev ekle",
     "empty": "Bu kayda bağlı görev yok."
+  },
+  "timeline": {
+    "title": "Geçmiş ve notlar",
+    "noteForm": "Not ekle",
+    "note": "Not",
+    "send": "Not ekle",
+    "events": {
+      "created": "Görev açıldı",
+      "assigned": "Atama değişti",
+      "transferred": "Başka ekibe aktarıldı",
+      "started": "Çalışmaya başlandı",
+      "held": "Bekletildi",
+      "resumed": "Devam edildi",
+      "completed": "Tamamlandı",
+      "cancelled": "İptal edildi",
+      "reopened": "Yeniden açıldı",
+      "commented": "Not eklendi"
+    }
   }
 }

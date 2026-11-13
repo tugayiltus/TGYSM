@@ -1,6 +1,6 @@
 /**
  * @input The task number from the route.
- * @output The task: status, description, linked ticket, result, actions and details.
+ * @output The task: status, description, linked ticket, result, history with notes, actions and details.
  * @position `/tasks/:number`, inside the app shell (IT staff and admins).
  */
 import { Button } from '@astryxdesign/core/Button';
@@ -29,6 +29,7 @@ import { PriorityBadge, TicketStatusBadge } from '../tickets/TicketBadges';
 import { useTask, type TaskDetail } from './api';
 import { TaskActions } from './TaskActions';
 import { OverdueBadge, TaskStatusBadge } from './TaskBadges';
+import { TaskTimeline } from './TaskTimeline';
 
 /** Wide screens: content takes two of three columns, the side column one. */
 const WIDE_COLUMNS = 3;
@@ -127,6 +128,9 @@ function TaskDetailView({ number }: { number: string }) {
           {item.resultNote && <Field label={t('detail.resultNote')} value={item.resultNote} />}
           {item.cancelReason && <Field label={t('detail.cancelReason')} value={item.cancelReason} />}
         </MetadataList>
+      </SectionCard>
+      <SectionCard title={t('timeline.title')}>
+        <TaskTimeline task={item} />
       </SectionCard>
     </VStack>
   );

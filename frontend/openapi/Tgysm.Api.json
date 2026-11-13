@@ -6103,6 +6103,48 @@
         }
       }
     },
+    "/api/v1/tasks/{number}/timeline": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskTimelineItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tasks/{number}/claim": {
       "post": {
         "tags": [
@@ -11722,6 +11764,20 @@
           }
         }
       },
+      "TaskEventKind": {
+        "enum": [
+          "created",
+          "assigned",
+          "transferred",
+          "started",
+          "held",
+          "resumed",
+          "completed",
+          "cancelled",
+          "reopened",
+          "commented"
+        ]
+      },
       "TaskListItem": {
         "required": [
           "id",
@@ -11796,6 +11852,38 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "TaskTimelineItem": {
+        "required": [
+          "id",
+          "kind",
+          "actorName",
+          "data",
+          "occurredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TaskEventKind"
+          },
+          "actorName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

@@ -157,6 +157,37 @@ public sealed class TaskActionTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Timeline_lists_history_and_comments_in_order_with_the_actor()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var task = await TaskWorld.CreateForTeamAsync(world.Desk, world.FieldTeam.Id);
+        await ActAsync(world.Field, task, "claim");
+        using (var comment = await world.Field.PostAsync(TaskWorld.PathOf(task, "comments"), new { body = " Yedek 02:00'de alınacak " }))
+        {
+            Assert.Equal(HttpStatusCode.NoContent, comment.StatusCode);
+        }
+
+        using var response = await world.Desk.GetAsync(TaskWorld.PathOf(task, "timeline"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var items = (await world.Field.ReadJsonAsync<JsonElement>(response)).EnumerateArray().ToList();
+        Assert.Equal(["created", "assigned", "commented"], items.Select(i => i.GetProperty("kind").GetString()));
+        Assert.Equal("Yedek 02:00'de alınacak", items[2].GetProperty("data").GetProperty("body").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(items[2].GetProperty("actorName").GetString()));
+    }
+
+    [Fact]
+    public async Task Employee_gets_404_for_the_timeline()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var task = await TaskWorld.CreateForTeamAsync(world.Desk, world.FieldTeam.Id);
+
+        using var response = await world.Employee.GetAsync(TaskWorld.PathOf(task, "timeline"));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Task_actions_leave_the_linked_incident_and_its_sla_unchanged()
     {
         var world = await TicketWorld.CreateAsync(factory);

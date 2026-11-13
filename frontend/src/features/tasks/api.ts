@@ -10,6 +10,7 @@ export type TaskDetail = Schemas['TaskDetail'];
 export type TaskListItem = Schemas['TaskListItem'];
 export type TaskStatus = Schemas['WorkTaskStatus'];
 export type WorkItemRow = Schemas['WorkItemRow'];
+export type TaskTimelineItem = Schemas['TaskTimelineItem'];
 export type TaskQueue = 'mine' | 'team' | 'unassigned' | 'overdue';
 export type WorkQueue = 'assigned_to_me' | 'my_teams';
 
@@ -24,6 +25,7 @@ export const taskKeys = {
   all: ['tasks'],
   list: (params: TaskListParams) => ['tasks', 'list', params],
   detail: (number: string) => ['tasks', 'detail', number],
+  timeline: (number: string) => ['tasks', 'timeline', number],
   work: (params: WorkListParams) => ['tasks', 'work', params],
 } as const;
 
@@ -75,6 +77,22 @@ export function useWorkItems(params: WorkListParams) {
 
 export function useTask(number: string) {
   return useQuery({ queryKey: taskKeys.detail(number), queryFn: () => unwrap(api.GET('/api/v1/tasks/{number}', { params: { path: { number } } })) });
+}
+
+export function useTaskTimeline(number: string) {
+  return useQuery({
+    queryKey: taskKeys.timeline(number),
+    queryFn: () => unwrap(api.GET('/api/v1/tasks/{number}/timeline', { params: { path: { number } } })),
+  });
+}
+
+/** A note changes the task's row version, so the whole task cache refreshes and the next action sends the new version. */
+export function useAddTaskComment(number: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) => unwrap(api.POST('/api/v1/tasks/{number}/comments', { params: { path: { number } }, body: { body } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+  });
 }
 
 /** A task changes ticket data shown elsewhere (open-task count), so both caches refresh. */

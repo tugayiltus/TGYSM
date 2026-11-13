@@ -52,6 +52,7 @@ export function taskRoutes(task: TaskDetail = TASK, extra: Record<string, unknow
   return {
     'GET /api/v1/auth/me': { status: 200, body: IT_ME },
     [`GET /api/v1/tasks/${task.number}`]: { status: 200, body: task },
+    [`GET /api/v1/tasks/${task.number}/timeline`]: { status: 200, body: [] },
     'GET /api/v1/reference/teams': { status: 200, body: TEAMS },
     ...extra,
   };

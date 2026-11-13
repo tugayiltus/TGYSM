@@ -37,6 +37,8 @@ internal static class TaskEndpoints
         tasks.MapGet("", ListAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound);
         tasks.MapGet(NumberRoute, async (string number, GetTaskHandler handler, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleAsync(new GetTaskQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        tasks.MapGet($"{NumberRoute}/timeline", async (string number, GetTaskTimelineHandler handler, CancellationToken ct) =>
+            TypedResults.Ok(await handler.HandleAsync(new GetTaskTimelineQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
         MapActions(tasks);
         api.MapGroup(ApiRoutes.WorkItems).WithTags(Tag).RequireAuthorization()
             .MapGet("", ListWorkItemsAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound);
