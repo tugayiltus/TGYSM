@@ -198,7 +198,7 @@
   },
   "approvals": {
     "title": "Onay bekleyenler",
-    "empty": "Onay bekleyen talep yok.",
+    "empty": "Onay bekleyen kayıt yok.",
     "approve": "Onayla",
     "reject": "Reddet",
     "reassign": "Onaylayıcı ata",

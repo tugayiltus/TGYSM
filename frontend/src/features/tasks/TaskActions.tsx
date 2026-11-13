@@ -56,7 +56,7 @@ function availableActions(t: TaskDetail): { direct: DirectKind[]; dialogs: TaskD
 }
 
 /** What the change phase blocks: starting and resuming, completing, and the hint that says why. */
-function phaseGate(task: TaskDetail, t: TFunction<'tasks'>) {
+function phaseGate(task: TaskDetail, actions: ReturnType<typeof availableActions>, t: TFunction<'tasks'>) {
   const link = task.changeLink;
   if (link === null || link.status === null || isClosed(task)) {
     return { startBlocked: false, completeBlocked: false, hint: null };
@@ -64,7 +64,11 @@ function phaseGate(task: TaskDetail, t: TFunction<'tasks'>) {
 
   const startBlocked = !canStartInPhase(link.status, link.phase);
   const completeBlocked = !canCompleteInPhase(link.status, link.phase);
-  const hint = startBlocked ? t(`detail.phaseHint.${link.phase}`) : completeBlocked ? t('detail.phaseNotOpen') : null;
+  // A hint only explains a button that is shown.
+  const startShown = actions.direct.includes('start') || actions.direct.includes('resume');
+  const completeShown = actions.dialogs.includes('complete');
+  const hint =
+    startShown && startBlocked ? t(`detail.phaseHint.${link.phase}`) : completeShown && completeBlocked ? t('detail.phaseNotOpen') : null;
   return { startBlocked, completeBlocked, hint };
 }
 
@@ -73,7 +77,7 @@ export function TaskActions({ task }: { task: TaskDetail }) {
   const direct = useTaskAction(task);
   const [dialog, setDialog] = useState<TaskDialogKind | null>(null);
   const actions = availableActions(task);
-  const gate = phaseGate(task, t);
+  const gate = phaseGate(task, actions, t);
   // Every action sends the version shown here; wait for a refetch so a dialog does not open with an old version.
   // A running action changes the version too, so the other buttons wait for its answer.
   const busy = useIsFetching({ queryKey: taskKeys.detail(task.number) }) > 0 || direct.isPending;

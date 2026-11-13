@@ -18,6 +18,7 @@ import { FormAlert } from '../../shared/feedback/FormAlert';
 import { useDecideListedChangeApproval, type ApprovalDecision, type ChangeApprovalItem } from '../changes/api';
 
 const DIALOG_WIDTH = 480;
+const DECISION_VARIANT = { approve: 'primary', reject: 'destructive', return: 'secondary' } as const;
 
 export interface ChangeDecision {
   item: ChangeApprovalItem;
@@ -61,7 +62,7 @@ export function ChangeApprovalDialog({ pending, onClose }: { pending: ChangeDeci
               <Button label={tc('actions.cancel')} variant="secondary" onClick={onClose} />
               <Button
                 label={tc('actions.confirm')}
-                variant={decision === 'approve' ? 'primary' : 'destructive'}
+                variant={DECISION_VARIANT[decision]}
                 isDisabled={needsReason && reason.trim() === ''}
                 isLoading={decide.isPending}
                 onClick={confirm}

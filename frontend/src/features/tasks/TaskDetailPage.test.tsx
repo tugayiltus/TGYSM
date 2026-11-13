@@ -180,4 +180,14 @@ describe('TaskDetailPage', () => {
     expect(await screen.findByRole('button', { name: 'Başla' })).not.toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByText('Değişiklik uygulamaya başlayınca başlatılabilir')).not.toBeInTheDocument();
   });
+
+  it('shows no start hint for an in-progress task and keeps Tamamla enabled while the change verifies', async () => {
+    const task = { ...TASK, status: 'in_progress' as const, assigneeId: 'u-1', changeLink: { number: 'CHG-2026-000001', title: 'Çekirdek anahtar yükseltmesi', status: 'verifying' as const, phase: 'implementation' as const, accessible: true } };
+    mockApi(taskRoutes(task) as never);
+    renderRoute(`/tasks/${TASK.number}`);
+
+    expect(await screen.findByRole('button', { name: 'Tamamla' })).not.toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByText('Değişiklik uygulamaya başlayınca başlatılabilir')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bu aşama şu an tamamlamaya açık değil')).not.toBeInTheDocument();
+  });
 });

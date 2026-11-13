@@ -1,3 +1,8 @@
+/**
+ * @input A change status and the phase of one of its tasks.
+ * @output Whether a task of that phase may start (or resume) and complete, as the backend allows it.
+ * @position Task actions on the task detail page.
+ */
 import type { ChangePhase, ChangeStatus } from '../changes/api';
 
 /**
