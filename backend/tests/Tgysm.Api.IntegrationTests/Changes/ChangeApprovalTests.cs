@@ -344,4 +344,120 @@ public sealed class ChangeApprovalTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
         Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
     }
+
+    private static object WindowEditDraft(string start, string end) => new
+    {
+        title = "Sunucu güncellemesi",
+        justification = "Güvenlik yaması",
+        affectedService = "Dosya sunucusu",
+        risk = "medium",
+        impact = "high",
+        windowStart = start,
+        windowEnd = end,
+        implementationPlan = ChangeWorld.ImplementationPlan,
+        verificationPlan = "Paylaşımları dene",
+        backoutPlan = ChangeWorld.BackoutPlan,
+    };
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Admin_who_edited_the_plan_cannot_approve_it_but_another_admin_can(bool whileScheduled)
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (editor, editorUser) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "editor-admin@example.com");
+        var (other, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "other-admin@example.com");
+        var team = world.ServiceDesk.Id;
+        await TestData.SaveAsync(factory, db => db.TeamMemberships.Add(Tgysm.Domain.Organization.TeamMembership.Create(team, editorUser.Id, DateTimeOffset.UtcNow)));
+        var current = whileScheduled ? await ScheduledAsync(world) : await SubmittedAsync(world);
+
+        using var edit = await editor.PutAsync(ChangeWorld.PathOf(current), EditBody(current, WindowEditDraft("2026-12-07T20:00:00Z", "2026-12-07T22:00:00Z")));
+        Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
+        var edited = await editor.ReadJsonAsync<JsonElement>(edit);
+        var body = new { approvalVersion = edited.GetProperty("approval").GetProperty("version").GetUInt32() };
+
+        using var self = await editor.PostAsync(Action(edited, "approval/approve"), body);
+        using var fine = await other.PostAsync(Action(edited, "approval/approve"), body);
+
+        Assert.Equal(HttpStatusCode.Forbidden, self.StatusCode);
+        Assert.Equal("changes.self_approval", await ApiClient.ReadCodeAsync(self));
+        Assert.Equal(HttpStatusCode.OK, fine.StatusCode);
+    }
+
+    [Fact]
+    public async Task Plan_editor_is_not_listed_and_is_not_an_eligible_approver()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (editor, editorUser) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "editor-admin@example.com");
+        await TestData.SaveAsync(factory, db => db.TeamMemberships.Add(Tgysm.Domain.Organization.TeamMembership.Create(world.ServiceDesk.Id, editorUser.Id, DateTimeOffset.UtcNow)));
+        var submitted = await SubmittedAsync(world);
+        using var edit = await editor.PutAsync(ChangeWorld.PathOf(submitted), EditBody(submitted, WindowEditDraft("2026-12-07T20:00:00Z", "2026-12-07T22:00:00Z")));
+        Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
+
+        Assert.Empty((await TicketWorld.ReadAsync(editor, "/api/v1/change-approvals")).EnumerateArray());
+        Assert.Single((await TicketWorld.ReadAsync(world.Admin, "/api/v1/change-approvals")).EnumerateArray());
+        Assert.False((await DetailAsync(editor, submitted)).GetProperty("approval").GetProperty("canDecide").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Clearing_a_plan_of_a_pending_change_is_not_ready_and_nothing_is_saved()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var submitted = await SubmittedAsync(world);
+
+        using var response = await world.Desk.PutAsync(ChangeWorld.PathOf(submitted), EditBody(submitted, ChangeWorld.DraftBody(implementationPlan: null)));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("changes.not_ready", await ApiClient.ReadCodeAsync(response));
+        Assert.Equal(ChangeWorld.ImplementationPlan, (await DetailAsync(world.Desk, submitted)).GetProperty("implementationPlan").GetString());
+    }
+
+    [Fact]
+    public async Task Clearing_the_window_of_a_scheduled_change_is_not_ready()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var scheduled = await ScheduledAsync(world);
+        var draft = new
+        {
+            title = "Sunucu güncellemesi",
+            risk = "medium",
+            impact = "high",
+            windowStart = (string?)null,
+            windowEnd = (string?)null,
+            implementationPlan = ChangeWorld.ImplementationPlan,
+            verificationPlan = "Paylaşımları dene",
+            backoutPlan = ChangeWorld.BackoutPlan,
+        };
+
+        using var response = await world.Desk.PutAsync(ChangeWorld.PathOf(scheduled), EditBody(scheduled, draft));
+
+        Assert.Equal("changes.not_ready", await ApiClient.ReadCodeAsync(response));
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("2026-12-05T22:00:00Z", "2026-12-05T22:00:00Z")]
+    [InlineData("2026-12-05T22:00:00Z", "2026-12-05T20:00:00Z")]
+    public async Task Submit_without_a_window_or_with_an_end_not_after_the_start_is_not_ready(string? start, string? end)
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var draft = new
+        {
+            title = "Sunucu güncellemesi",
+            risk = "medium",
+            impact = "high",
+            windowStart = start,
+            windowEnd = end,
+            implementationPlan = ChangeWorld.ImplementationPlan,
+            verificationPlan = "Paylaşımları dene",
+            backoutPlan = ChangeWorld.BackoutPlan,
+        };
+        var change = await ChangeWorld.CreateAsync(world.Desk, world, draft);
+        await ChangeWorld.AddTaskAsync(factory, change, ChangePhase.Implementation, world.FieldTeam.Id);
+
+        using var response = await world.Desk.PostAsync(Action(change, "submit"), new { version = ChangeWorld.VersionOf(change) });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("changes.not_ready", await ApiClient.ReadCodeAsync(response));
+    }
 }

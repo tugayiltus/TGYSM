@@ -70,7 +70,7 @@ public sealed class ChangePersistenceTests(PostgresDatabase database) : IAsyncLi
         var results = await Task.WhenAll(Enumerable.Range(0, ParallelRequests).Select(async _ =>
         {
             await using var db = database.CreateDbContext();
-            db.ChangeApprovals.Add(ChangeApproval.Request(_change.Id, Fingerprint, Now));
+            db.ChangeApprovals.Add(ChangeApproval.Request(_change.Id, Fingerprint, _change.CreatedById, Now));
             try
             {
                 await db.SaveChangesAsync(Ct);
@@ -91,10 +91,10 @@ public sealed class ChangePersistenceTests(PostgresDatabase database) : IAsyncLi
     public async Task A_decided_approval_does_not_block_the_next_request()
     {
         await using var db = database.CreateDbContext();
-        var first = ChangeApproval.Request(_change.Id, Fingerprint, Now);
+        var first = ChangeApproval.Request(_change.Id, Fingerprint, _change.CreatedById, Now);
         first.Withdraw(Now);
         db.ChangeApprovals.Add(first);
-        db.ChangeApprovals.Add(ChangeApproval.Request(_change.Id, Fingerprint, Now));
+        db.ChangeApprovals.Add(ChangeApproval.Request(_change.Id, Fingerprint, _change.CreatedById, Now));
         await db.SaveChangesAsync(Ct);
 
         Assert.Equal(2, await db.ChangeApprovals.CountAsync(a => a.ChangeId == _change.Id, Ct));

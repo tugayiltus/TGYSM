@@ -23,8 +23,14 @@ public sealed class ChangeApproval : Entity
     public DateTimeOffset? DecidedAt { get; private set; }
     public Guid? DecidedById { get; private set; }
 
-    public static ChangeApproval Request(Guid changeId, string fingerprint, DateTimeOffset now) =>
-        new() { ChangeId = changeId, Fingerprint = fingerprint, Status = ChangeApprovalStatus.Pending, CreatedAt = now };
+    /// <summary>
+    /// Who submitted or last changed the plan this row covers. That person cannot decide it, so nobody approves their
+    /// own edit (separation of duties).
+    /// </summary>
+    public Guid? PlanEditorId { get; private set; }
+
+    public static ChangeApproval Request(Guid changeId, string fingerprint, Guid planEditorId, DateTimeOffset now) =>
+        new() { ChangeId = changeId, Fingerprint = fingerprint, PlanEditorId = planEditorId, Status = ChangeApprovalStatus.Pending, CreatedAt = now };
 
     public void Approve(Guid actorUserId, DateTimeOffset now) => Decide(ChangeApprovalStatus.Approved, actorUserId, null, now);
 
@@ -53,10 +59,11 @@ public sealed class ChangeApproval : Entity
     }
 
     /// <summary>The author edited the plan while the request waits: the decision applies to the new plan.</summary>
-    public void UpdateFingerprint(string fingerprint)
+    public void UpdateFingerprint(string fingerprint, Guid planEditorId)
     {
         RequireStatus(ChangeApprovalStatus.Pending);
         Fingerprint = fingerprint;
+        PlanEditorId = planEditorId;
     }
 
     private void Decide(ChangeApprovalStatus status, Guid actorUserId, string? reason, DateTimeOffset now)

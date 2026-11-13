@@ -733,6 +733,10 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("fingerprint");
 
+                    b.Property<Guid?>("PlanEditorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("plan_editor");
+
                     b.Property<string>("Reason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -760,6 +764,9 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("DecidedById")
                         .HasDatabaseName("ix_change_approvals_decided_by");
+
+                    b.HasIndex("PlanEditorId")
+                        .HasDatabaseName("ix_change_approvals_plan_editor");
 
                     b.HasIndex("ChangeId", "CreatedAt")
                         .HasDatabaseName("ix_change_approvals_change_id_created_at");
@@ -3399,6 +3406,12 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasForeignKey("DecidedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_change_approvals_users_decided_by");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("PlanEditorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_change_approvals_users_plan_editor");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Changes.ChangeAsset", b =>

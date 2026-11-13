@@ -59,13 +59,15 @@ public sealed class EditChangeHandler(
             return;
         }
 
+        // A submitted change keeps the rules submit checked: an edit cannot strip its window, a plan or its Uygulama task.
+        change.RequireReady(await ChangeApprovalFlow.PlanTasks(db, change.Id).CountAsync(ct));
         var fingerprint = await ChangeApprovalFlow.FingerprintAsync(db, change, assetIds, ct);
         if (change.Status == ChangeStatus.PendingApproval)
         {
             var pending = await db.ChangeApprovals.SingleAsync(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Pending, ct);
             if (pending.Fingerprint != fingerprint)
             {
-                pending.UpdateFingerprint(fingerprint);
+                pending.UpdateFingerprint(fingerprint, actorUserId);
             }
 
             return;
@@ -74,7 +76,8 @@ public sealed class EditChangeHandler(
         var approvedFingerprint = await db.ChangeApprovals
             .Where(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Approved)
             .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id)
-            .Select(a => a.Fingerprint).FirstAsync(ct);
+            .Select(a => a.Fingerprint).FirstOrDefaultAsync(ct)
+            ?? throw new Domain.Common.DomainException(Domain.Common.ErrorCodes.ChangeApprovalNotPending, "The change has no approved approval.");
         if (approvedFingerprint != fingerprint)
         {
             await flow.VoidAsync(change, ChangeApprovalFlow.PlanChangedReason, actorUserId, now, assetIds, ct);

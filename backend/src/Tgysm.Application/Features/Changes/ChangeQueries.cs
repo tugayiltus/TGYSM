@@ -89,6 +89,7 @@ internal static class ChangeQueries
                 a.CreatedAt,
                 a.DecidedAt,
                 a.Version,
+                a.PlanEditorId,
             })
             .FirstOrDefaultAsync(cancellationToken);
         if (approval is null)
@@ -97,7 +98,7 @@ internal static class ChangeQueries
         }
 
         var canDecide = approval.Status == ChangeApprovalStatus.Pending
-            && viewer.IsAdmin && viewer.UserId != change.CreatedById && viewer.UserId != change.OwnerId;
+            && viewer.IsAdmin && viewer.UserId != change.CreatedById && viewer.UserId != change.OwnerId && viewer.UserId != approval.PlanEditorId;
         return new ChangeApprovalInfo(
             approval.Status, approval.DecidedById, approval.DecidedByName, approval.Reason, approval.CreatedAt, approval.DecidedAt, canDecide, approval.Version);
     }

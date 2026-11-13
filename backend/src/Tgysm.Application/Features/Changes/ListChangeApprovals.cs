@@ -28,7 +28,7 @@ public sealed class ListChangeApprovalsHandler(IAppDbContext db, ChangeScope sco
         var rows = await (
             from a in db.ChangeApprovals.AsNoTracking()
             join c in db.ChangeRequests on a.ChangeId equals c.Id
-            where a.Status == ChangeApprovalStatus.Pending && c.CreatedById != me && c.OwnerId != me
+            where a.Status == ChangeApprovalStatus.Pending && c.CreatedById != me && c.OwnerId != me && a.PlanEditorId != me
             orderby a.CreatedAt
             select new { a.Id, c.Number, c.Title, c.Risk, c.WindowStart, c.WindowEnd, c.ImplementationPlan, a.Version })
             .ToListAsync(cancellationToken);

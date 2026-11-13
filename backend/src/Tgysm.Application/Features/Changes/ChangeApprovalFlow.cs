@@ -23,8 +23,18 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
     /// <summary>The author and the owner never decide; the caller checks the admin role.</summary>
     public static bool IsEligible(Guid userId, ChangeRequest change) => userId != change.CreatedById && userId != change.OwnerId;
 
-    public static Task<bool> HasEligibleApproverAsync(IAppDbContext db, ChangeRequest change, CancellationToken cancellationToken) =>
-        db.Users.AnyAsync(u => u.IsActive && u.Role == UserRole.Admin && u.Id != change.CreatedById && u.Id != change.OwnerId, cancellationToken);
+    /// <summary>The person who last changed the plan of the pending approval, who cannot decide it.</summary>
+    public static async Task<Guid?> PendingPlanEditorAsync(IAppDbContext db, Guid changeId, CancellationToken cancellationToken) =>
+        await db.ChangeApprovals.AsNoTracking()
+            .Where(a => a.ChangeId == changeId && a.Status == ChangeApprovalStatus.Pending)
+            .Select(a => a.PlanEditorId).FirstOrDefaultAsync(cancellationToken);
+
+    public static async Task<bool> HasEligibleApproverAsync(IAppDbContext db, ChangeRequest change, CancellationToken cancellationToken)
+    {
+        var editorId = await PendingPlanEditorAsync(db, change.Id, cancellationToken);
+        return await db.Users.AnyAsync(
+            u => u.IsActive && u.Role == UserRole.Admin && u.Id != change.CreatedById && u.Id != change.OwnerId && u.Id != editorId, cancellationToken);
+    }
 
     /// <summary>Fingerprint of the saved plan; pass <paramref name="assetIds"/> when the asset links are not saved yet.</summary>
     public static async Task<string> FingerprintAsync(
@@ -40,7 +50,7 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
     {
         var taskCount = await PlanTasks(db, change.Id).CountAsync(cancellationToken);
         change.Submit(taskCount, now);
-        db.ChangeApprovals.Add(ChangeApproval.Request(change.Id, await FingerprintAsync(db, change, null, cancellationToken), now));
+        db.ChangeApprovals.Add(ChangeApproval.Request(change.Id, await FingerprintAsync(db, change, null, cancellationToken), actorUserId, now));
         ChangeHistory.Record(db, change, ChangeEventKind.Submitted, actorUserId, now);
         audit.Record(AuditActions.ChangeStatusChanged, AuditEntityTypes.Change, change.Id, newValues: new { change.Number, change.Status });
         outbox.AddForSubject(NotificationEventTypes.ChangeApprovalRequested, OutboxSubjectTypes.Change, change.Id, userId: null);
@@ -72,7 +82,7 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
         var approverId = approved.DecidedById;
         approved.Void(reason, now);
         change.BackToPending(now);
-        db.ChangeApprovals.Add(ChangeApproval.Request(change.Id, await FingerprintAsync(db, change, assetIds, cancellationToken), now));
+        db.ChangeApprovals.Add(ChangeApproval.Request(change.Id, await FingerprintAsync(db, change, assetIds, cancellationToken), actorUserId, now));
         ChangeHistory.Record(db, change, ChangeEventKind.ApprovalVoided, actorUserId, now, new { Reason = reason });
         audit.Record(AuditActions.ChangeApprovalVoided, AuditEntityTypes.Change, change.Id, newValues: new { change.Number }, reason: reason);
         var data = approverId is { } id ? new Dictionary<string, string> { [OutboxEvent.ApproverIdKey] = id.ToString() } : null;

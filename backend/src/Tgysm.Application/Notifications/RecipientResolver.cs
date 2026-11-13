@@ -111,8 +111,11 @@ public sealed class RecipientResolver(IAppDbContext db)
             .Where(c => c.Id == outboxEvent.SubjectId)
             .Select(c => new { c.CreatedById, c.OwnerId })
             .SingleAsync(cancellationToken);
+        var editorId = await db.ChangeApprovals.AsNoTracking()
+            .Where(a => a.ChangeId == outboxEvent.SubjectId && a.Status == ChangeApprovalStatus.Pending)
+            .Select(a => a.PlanEditorId).FirstOrDefaultAsync(cancellationToken);
         return await db.Users.AsNoTracking()
-            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId)
+            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId && u.Id != editorId)
             .Select(u => u.Id)
             .ToListAsync(cancellationToken);
     }

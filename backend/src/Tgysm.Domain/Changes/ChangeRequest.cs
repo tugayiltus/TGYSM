@@ -114,6 +114,13 @@ public sealed class ChangeRequest : Entity
     public void Submit(int implementationTaskCount, DateTimeOffset now)
     {
         Require([ChangeStatus.Draft], nameof(Submit));
+        RequireReady(implementationTaskCount);
+        Move(ChangeStatus.PendingApproval, now);
+    }
+
+    /// <summary>The rules a submitted change keeps: a window, all three plans and at least one Uygulama task.</summary>
+    public void RequireReady(int implementationTaskCount)
+    {
         if (WindowStart is not { } start || WindowEnd is not { } end || start >= end)
         {
             throw NotReady("A window with a start before its end is required.");
@@ -128,8 +135,6 @@ public sealed class ChangeRequest : Entity
         {
             throw NotReady("At least one Uygulama task is required.");
         }
-
-        Move(ChangeStatus.PendingApproval, now);
     }
 
     /// <summary>Pending approval → draft: withdrawn by the author, or returned/rejected by an approver.</summary>
