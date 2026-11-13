@@ -1,8 +1,8 @@
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Changes;
-using Tgysm.Domain.Common;
 
 namespace Tgysm.Application.Features.Changes;
 
@@ -19,11 +19,12 @@ internal sealed class EditChangeValidator : AbstractValidator<EditChangeCommand>
 }
 
 /// <summary>
-/// Replaces the plan and the affected assets of a draft. Other states refuse here until the approval flow decides how
-/// an edit there is treated (ADR-0032).
+/// Replaces the plan and the affected assets. While the approval is pending an edit refreshes its fingerprint; an
+/// approved (scheduled) change whose fingerprint changes goes back to approval; from implementation on the domain
+/// refuses (ADR-0032).
 /// </summary>
 public sealed class EditChangeHandler(
-    IAppDbContext db, IValidator<EditChangeCommand> validator, IValidator<ChangeDraft> draftValidator, ChangeWork work, IAuditLog audit)
+    IAppDbContext db, IValidator<EditChangeCommand> validator, IValidator<ChangeDraft> draftValidator, ChangeWork work, ChangeApprovalFlow flow, IAuditLog audit)
 {
     public async Task<ChangeDetail> HandleAsync(EditChangeCommand command, CancellationToken cancellationToken)
     {
@@ -31,11 +32,6 @@ public sealed class EditChangeHandler(
         await draftValidator.ValidateAndThrowAsync(command.Draft, cancellationToken);
         return await work.RunAsync(command.Number, command.Version, async (change, viewer, now, ct) =>
         {
-            if (change.Status != ChangeStatus.Draft)
-            {
-                throw new DomainException(ErrorCodes.ChangeInvalidTransition, "Only a draft change can be edited.");
-            }
-
             var assetIds = await ChangeAssetLinks.ResolveAsync(db, command.AssetIds, ct);
             var before = ChangeDraftFields.Of(change);
             change.Edit(command.Draft, now);
@@ -51,8 +47,38 @@ public sealed class EditChangeHandler(
                 ChangeHistory.Record(db, change, ChangeEventKind.AssetsChanged, viewer.UserId, now, new { Added = added, Removed = removed });
             }
 
+            await ApplyApprovalAsync(change, assetIds, viewer.UserId, now, ct);
             audit.Record(AuditActions.ChangeUpdated, AuditEntityTypes.Change, change.Id, newValues: new { change.Number, Fields = changed, Added = added, Removed = removed });
         }, cancellationToken);
+    }
+
+    private async Task ApplyApprovalAsync(ChangeRequest change, IReadOnlyList<Guid> assetIds, Guid actorUserId, DateTimeOffset now, CancellationToken ct)
+    {
+        if (change.Status is not (ChangeStatus.PendingApproval or ChangeStatus.Scheduled))
+        {
+            return;
+        }
+
+        var fingerprint = await ChangeApprovalFlow.FingerprintAsync(db, change, assetIds, ct);
+        if (change.Status == ChangeStatus.PendingApproval)
+        {
+            var pending = await db.ChangeApprovals.SingleAsync(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Pending, ct);
+            if (pending.Fingerprint != fingerprint)
+            {
+                pending.UpdateFingerprint(fingerprint);
+            }
+
+            return;
+        }
+
+        var approvedFingerprint = await db.ChangeApprovals
+            .Where(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Approved)
+            .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id)
+            .Select(a => a.Fingerprint).FirstAsync(ct);
+        if (approvedFingerprint != fingerprint)
+        {
+            await flow.VoidAsync(change, ChangeApprovalFlow.PlanChangedReason, actorUserId, now, assetIds, ct);
+        }
     }
 }
 

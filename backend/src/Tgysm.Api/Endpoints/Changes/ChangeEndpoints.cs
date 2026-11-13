@@ -9,6 +9,10 @@ namespace Tgysm.Api.Endpoints.Changes;
 
 public sealed record EditChangeRequest(uint Version, ChangeDraft Draft, IReadOnlyList<Guid> AssetIds);
 
+public sealed record ChangeVersionRequest(uint Version);
+
+public sealed record DecideChangeApprovalRequest(uint ApprovalVersion, string? Reason);
+
 internal static class ChangeEndpoints
 {
     private const string Tag = "Changes";
@@ -30,8 +34,27 @@ internal static class ChangeEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
         changes.MapGet($"{NumberRoute}/timeline", async (string number, GetChangeTimelineHandler handler, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleAsync(new GetChangeTimelineQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        changes.MapPost($"{NumberRoute}/submit", async (string number, ChangeVersionRequest r, SubmitChangeHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new SubmitChangeCommand(number, r.Version), ct)))
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapPost($"{NumberRoute}/withdraw", async (string number, ChangeVersionRequest r, WithdrawChangeHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new WithdrawChangeCommand(number, r.Version), ct)))
+            .ProducesProblem(StatusCodes.Status403Forbidden).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        MapDecision(changes, "approve", ChangeApprovalDecision.Approve);
+        MapDecision(changes, "reject", ChangeApprovalDecision.Reject);
+        MapDecision(changes, "return", ChangeApprovalDecision.Return);
+
+        api.MapGroup(ApiRoutes.ChangeApprovals).WithTags(Tag).RequireAuthorization()
+            .MapGet("", async (ListChangeApprovalsHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new ListChangeApprovalsQuery(), ct)));
         return changes;
     }
+
+    private static void MapDecision(RouteGroupBuilder changes, string action, ChangeApprovalDecision decision) =>
+        changes.MapPost($"{NumberRoute}/approval/{action}", async (string number, DecideChangeApprovalRequest r, DecideChangeApprovalHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new DecideChangeApprovalCommand(number, decision, r.ApprovalVersion, r.Reason), ct)))
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
 
     private static async Task<Ok<PagedResult<ChangeListItem>>> ListAsync(
         string? queue, string? status, string? risk, string? search, int? page, int? pageSize,

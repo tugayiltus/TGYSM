@@ -24,6 +24,7 @@ internal static class ApiRoutes
     public const string Tickets = "/tickets";
     public const string Tasks = "/tasks";
     public const string Changes = "/changes";
+    public const string ChangeApprovals = "/change-approvals";
     public const string WorkItems = "/work-items";
     public const string Approvals = "/approvals";
     public const string Knowledge = "/kb";

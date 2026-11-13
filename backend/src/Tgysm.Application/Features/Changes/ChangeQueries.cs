@@ -64,8 +64,7 @@ internal static class ChangeQueries
                 db.Users.Where(u => u.Id == t.AssigneeId).Select(u => u.FirstName + NameSeparator + u.LastName).FirstOrDefault()))
             .ToListAsync(cancellationToken);
         var groups = Enum.GetValues<ChangePhase>().Select(p => new ChangePhaseGroup(p, [.. tasks.Where(t => t.Phase == p)])).ToList();
-        var hasEligibleApprover = await db.Users.AnyAsync(
-            u => u.IsActive && u.Role == UserRole.Admin && u.Id != change.CreatedById && u.Id != change.OwnerId, cancellationToken);
+        var hasEligibleApprover = await ChangeApprovalFlow.HasEligibleApproverAsync(db, change, cancellationToken);
         return new ChangeDetail(
             change.Id, change.Number, change.Title, change.Justification, change.AffectedService, change.Risk, change.Impact,
             change.WindowStart, change.WindowEnd, change.ImplementationPlan, change.VerificationPlan, change.BackoutPlan,
