@@ -111,6 +111,20 @@ public sealed class ChangeClosingTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Implementation_task_reopened_while_verifying_can_be_completed_again_and_the_change_closes_successful()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (verifying, implementation) = await VerifyingAsync(world);
+        var reopened = await ChangeWorld.TaskActAsync(world.Desk, implementation, "reopen");
+
+        var completed = await CompleteAsync(world.Desk, reopened);
+
+        Assert.Equal("completed", completed.GetProperty("status").GetString());
+        var closed = await ChangeWorld.ActAsync(world.Desk, verifying, "close", CloseBody(verifying, "successful"));
+        Assert.Equal("successful", closed.GetProperty("outcome").GetString());
+    }
+
+    [Fact]
     public async Task Rolled_back_needs_a_started_backout_with_closed_backout_tasks_and_a_note()
     {
         var world = await TicketWorld.CreateAsync(factory);

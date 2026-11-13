@@ -86,17 +86,18 @@ public sealed class ResumeTaskHandler(IAppDbContext db, TaskWork work, ChangeTas
         }, cancellationToken);
 }
 
-public sealed class CompleteTaskHandler(IAppDbContext db, IValidator<CompleteTaskCommand> validator, TaskWork work, IAuditLog audit)
+public sealed class CompleteTaskHandler(
+    IAppDbContext db, IValidator<CompleteTaskCommand> validator, TaskWork work, ChangeTaskRules changeTasks, IAuditLog audit)
 {
     public async Task<TaskDetail> HandleAsync(CompleteTaskCommand command, CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        return await work.RunAsync(command.Number, command.Version, requireWorker: true, (task, viewer, now) =>
+        return await work.RunAsync(command.Number, command.Version, requireWorker: true, async (task, viewer, now) =>
         {
+            await changeTasks.RequireCompletablePhaseAsync(task, cancellationToken);
             var before = task.Status;
             task.Complete(command.ResultNote, now);
             TaskStatusChange.Record(db, audit, task, before, TaskEventKind.Completed, viewer.UserId, now);
-            return Task.CompletedTask;
         }, cancellationToken);
     }
 }

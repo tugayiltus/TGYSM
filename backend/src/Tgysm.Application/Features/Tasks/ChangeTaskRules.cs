@@ -28,6 +28,21 @@ public sealed class ChangeTaskRules(IAppDbContext db, ChangeApprovalFlow flow)
         }
     }
 
+    /// <summary>Complete: the task's phase must be open for completion (409 changes.phase_not_active).</summary>
+    public async Task RequireCompletablePhaseAsync(WorkTask task, CancellationToken cancellationToken)
+    {
+        if (task is not { ChangeId: not null, Phase: { } phase })
+        {
+            return;
+        }
+
+        var change = await ChangeOfAsync(task, cancellationToken);
+        if (!ChangeGate.CanComplete(change.Status, phase, change.BackoutStartedAt is not null))
+        {
+            throw new DomainException(ErrorCodes.ChangePhaseNotActive, $"A {phase} task cannot be completed while the change is {change.Status}.");
+        }
+    }
+
     /// <summary>True for a plain task; for a change task, whether its change is still open.</summary>
     public async Task<bool> ChangeOpenAsync(WorkTask task, CancellationToken cancellationToken) =>
         task.ChangeId is null || (await ChangeOfAsync(task, cancellationToken)).IsOpen;

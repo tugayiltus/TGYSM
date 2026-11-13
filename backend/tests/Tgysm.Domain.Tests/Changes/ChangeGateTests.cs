@@ -36,4 +36,21 @@ public sealed class ChangeGateTests
     [InlineData(ChangeStatus.Closed, true, false)]
     public void Backout_runs_only_after_the_backout_started_on_an_open_change(ChangeStatus status, bool backoutStarted, bool expected) =>
         Assert.Equal(expected, ChangeGate.CanStart(status, ChangePhase.Backout, backoutStarted));
+
+    [Theory]
+    [InlineData(ChangePhase.Implementation, ChangeStatus.Scheduled, false, false)]
+    [InlineData(ChangePhase.Implementation, ChangeStatus.Implementing, false, true)]
+    [InlineData(ChangePhase.Implementation, ChangeStatus.Verifying, false, true)]
+    [InlineData(ChangePhase.Implementation, ChangeStatus.Closed, false, false)]
+    [InlineData(ChangePhase.Verification, ChangeStatus.Implementing, false, false)]
+    [InlineData(ChangePhase.Verification, ChangeStatus.Verifying, false, true)]
+    [InlineData(ChangePhase.Preparation, ChangeStatus.Draft, false, false)]
+    [InlineData(ChangePhase.Preparation, ChangeStatus.Scheduled, false, true)]
+    [InlineData(ChangePhase.Preparation, ChangeStatus.Verifying, false, true)]
+    [InlineData(ChangePhase.Preparation, ChangeStatus.Cancelled, false, false)]
+    [InlineData(ChangePhase.Backout, ChangeStatus.Implementing, false, false)]
+    [InlineData(ChangePhase.Backout, ChangeStatus.Verifying, true, true)]
+    [InlineData(ChangePhase.Backout, ChangeStatus.Closed, true, false)]
+    public void Complete_follows_the_phase_with_late_uygulama_completion(ChangePhase phase, ChangeStatus status, bool backoutStarted, bool expected) =>
+        Assert.Equal(expected, ChangeGate.CanComplete(status, phase, backoutStarted));
 }

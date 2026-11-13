@@ -49,6 +49,19 @@ public sealed class ChangeTaskTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Implementation_task_cannot_be_completed_while_scheduled()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (_, implementation) = await ChangeWorld.ScheduledAsync(world);
+
+        using var response = await world.Desk.PostAsync(
+            TaskWorld.PathOf(implementation, "complete"), new { version = TaskWorld.VersionOf(implementation), resultNote = "Bitti" });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("changes.phase_not_active", await ApiClient.ReadCodeAsync(response));
+    }
+
+    [Fact]
     public async Task Implementation_task_starts_once_the_change_is_implementing()
     {
         var world = await TicketWorld.CreateAsync(factory);
