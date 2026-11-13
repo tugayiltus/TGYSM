@@ -13,6 +13,11 @@ public sealed record ChangeVersionRequest(uint Version);
 
 public sealed record DecideChangeApprovalRequest(uint ApprovalVersion, string? Reason);
 
+public sealed record CloseChangeRequest(
+    uint Version, ChangeOutcome Outcome, string? VerificationNote, string? BackoutNote, string? ClosingNote, DateTimeOffset? ActualEnd);
+
+public sealed record CancelChangeRequest(uint Version, string Reason);
+
 internal static class ChangeEndpoints
 {
     private const string Tag = "Changes";
@@ -40,6 +45,22 @@ internal static class ChangeEndpoints
         changes.MapPost($"{NumberRoute}/withdraw", async (string number, ChangeVersionRequest r, WithdrawChangeHandler handler, CancellationToken ct) =>
                 TypedResults.Ok(await handler.HandleAsync(new WithdrawChangeCommand(number, r.Version), ct)))
             .ProducesProblem(StatusCodes.Status403Forbidden).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapPost($"{NumberRoute}/start-implementation", async (string number, ChangeVersionRequest r, StartImplementationHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new StartImplementationCommand(number, r.Version), ct)))
+            .ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapPost($"{NumberRoute}/finish-implementation", async (string number, ChangeVersionRequest r, FinishImplementationHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new FinishImplementationCommand(number, r.Version), ct)))
+            .ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapPost($"{NumberRoute}/start-backout", async (string number, ChangeVersionRequest r, StartBackoutHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new StartBackoutCommand(number, r.Version), ct)))
+            .ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapPost($"{NumberRoute}/close", async (string number, CloseChangeRequest r, CloseChangeHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(
+                    new CloseChangeCommand(number, r.Version, r.Outcome, r.VerificationNote, r.BackoutNote, r.ClosingNote, r.ActualEnd), ct)))
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapPost($"{NumberRoute}/cancel", async (string number, CancelChangeRequest r, CancelChangeHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new CancelChangeCommand(number, r.Version, r.Reason), ct)))
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
         MapDecision(changes, "approve", ChangeApprovalDecision.Approve);
         MapDecision(changes, "reject", ChangeApprovalDecision.Reject);
         MapDecision(changes, "return", ChangeApprovalDecision.Return);

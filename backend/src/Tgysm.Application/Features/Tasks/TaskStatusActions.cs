@@ -47,15 +47,15 @@ internal static class TaskStatusChange
     }
 }
 
-public sealed class StartTaskHandler(IAppDbContext db, TaskWork work, IAuditLog audit)
+public sealed class StartTaskHandler(IAppDbContext db, TaskWork work, ChangeTaskRules changeTasks, IAuditLog audit)
 {
     public Task<TaskDetail> HandleAsync(StartTaskCommand command, CancellationToken cancellationToken) =>
-        work.RunAsync(command.Number, command.Version, requireWorker: true, (task, viewer, now) =>
+        work.RunAsync(command.Number, command.Version, requireWorker: true, async (task, viewer, now) =>
         {
+            await changeTasks.RequireActivePhaseAsync(task, cancellationToken);
             var before = task.Status;
             task.Start(now);
             TaskStatusChange.Record(db, audit, task, before, TaskEventKind.Started, viewer.UserId, now);
-            return Task.CompletedTask;
         }, cancellationToken);
 }
 
@@ -74,15 +74,15 @@ public sealed class HoldTaskHandler(IAppDbContext db, IValidator<HoldTaskCommand
     }
 }
 
-public sealed class ResumeTaskHandler(IAppDbContext db, TaskWork work, IAuditLog audit)
+public sealed class ResumeTaskHandler(IAppDbContext db, TaskWork work, ChangeTaskRules changeTasks, IAuditLog audit)
 {
     public Task<TaskDetail> HandleAsync(ResumeTaskCommand command, CancellationToken cancellationToken) =>
-        work.RunAsync(command.Number, command.Version, requireWorker: true, (task, viewer, now) =>
+        work.RunAsync(command.Number, command.Version, requireWorker: true, async (task, viewer, now) =>
         {
+            await changeTasks.RequireActivePhaseAsync(task, cancellationToken);
             var before = task.Status;
             task.Resume(now);
             TaskStatusChange.Record(db, audit, task, before, TaskEventKind.Resumed, viewer.UserId, now);
-            return Task.CompletedTask;
         }, cancellationToken);
 }
 
@@ -101,29 +101,45 @@ public sealed class CompleteTaskHandler(IAppDbContext db, IValidator<CompleteTas
     }
 }
 
-public sealed class CancelTaskHandler(IAppDbContext db, IValidator<CancelTaskCommand> validator, TaskWork work, IAuditLog audit)
+/// <summary>Cancelling an Uygulama task changes the change's plan: refused once locked, else the approval follows.</summary>
+public sealed class CancelTaskHandler(
+    IAppDbContext db, IValidator<CancelTaskCommand> validator, TaskWork work, ChangeTaskRules changeTasks, IAuditLog audit)
 {
     public async Task<TaskDetail> HandleAsync(CancelTaskCommand command, CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
-        return await work.RunAsync(command.Number, command.Version, requireWorker: true, (task, viewer, now) =>
+        return await work.RunAsync(command.Number, command.Version, requireWorker: true, async (task, viewer, now) =>
         {
+            var planChange = await changeTasks.BeforePlanTaskChangeAsync(task, cancellationToken);
             var before = task.Status;
             task.Cancel(command.Reason, now);
             TaskStatusChange.Record(db, audit, task, before, TaskEventKind.Cancelled, viewer.UserId, now, new { command.Reason });
-            return Task.CompletedTask;
+            if (planChange is not null)
+            {
+                await changeTasks.PlanTasksChangedAsync(planChange, viewer.UserId, now, cancellationToken);
+            }
         }, cancellationToken);
     }
 }
 
-public sealed class ReopenTaskHandler(IAppDbContext db, TaskWork work, IAuditLog audit)
+/// <summary>
+/// A change task reopens only while its change is open; a cancelled Uygulama task rejoins the plan, as an added one.
+/// </summary>
+public sealed class ReopenTaskHandler(IAppDbContext db, TaskWork work, ChangeTaskRules changeTasks, IAuditLog audit)
 {
     public Task<TaskDetail> HandleAsync(ReopenTaskCommand command, CancellationToken cancellationToken) =>
-        work.RunAsync(command.Number, command.Version, requireWorker: true, (task, viewer, now) =>
+        work.RunAsync(command.Number, command.Version, requireWorker: true, async (task, viewer, now) =>
         {
             var before = task.Status;
-            task.Reopen(now, changeOpen: true);
+            var changeOpen = await changeTasks.ChangeOpenAsync(task, cancellationToken);
+            var planChange = before == WorkTaskStatus.Cancelled && changeOpen
+                ? await changeTasks.BeforePlanTaskChangeAsync(task, cancellationToken)
+                : null;
+            task.Reopen(now, changeOpen);
             TaskStatusChange.Record(db, audit, task, before, TaskEventKind.Reopened, viewer.UserId, now);
-            return Task.CompletedTask;
+            if (planChange is not null)
+            {
+                await changeTasks.PlanTasksChangedAsync(planChange, viewer.UserId, now, cancellationToken);
+            }
         }, cancellationToken);
 }

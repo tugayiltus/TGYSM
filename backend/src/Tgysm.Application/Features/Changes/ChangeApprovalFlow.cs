@@ -68,6 +68,51 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
     }
 
     /// <summary>
+    /// After a plan change (edit, or an Uygulama task added, cancelled or reopened): a submitted change must stay ready;
+    /// a pending approval takes the new fingerprint and the actor becomes its plan editor; an approved plan that no
+    /// longer matches is voided. The plan tasks are read from the database, so a task change is saved first.
+    /// </summary>
+    public async Task PlanChangedAsync(
+        ChangeRequest change, IReadOnlyList<Guid>? assetIds, Guid actorUserId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        if (change.Status is not (ChangeStatus.PendingApproval or ChangeStatus.Scheduled))
+        {
+            return;
+        }
+
+        // A submitted change keeps the rules submit checked: a change cannot strip its window, a plan or its Uygulama task.
+        change.RequireReady(await PlanTasks(db, change.Id).CountAsync(cancellationToken));
+        var fingerprint = await FingerprintAsync(db, change, assetIds, cancellationToken);
+        if (change.Status == ChangeStatus.PendingApproval)
+        {
+            var pending = await db.ChangeApprovals.SingleAsync(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Pending, cancellationToken);
+            if (pending.Fingerprint != fingerprint)
+            {
+                pending.UpdateFingerprint(fingerprint, actorUserId);
+            }
+
+            return;
+        }
+
+        var approvedFingerprint = await db.ChangeApprovals
+            .Where(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Approved)
+            .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id)
+            .Select(a => a.Fingerprint).FirstOrDefaultAsync(cancellationToken)
+            ?? throw new Domain.Common.DomainException(Domain.Common.ErrorCodes.ChangeApprovalNotPending, "The change has no approved approval.");
+        if (approvedFingerprint != fingerprint)
+        {
+            await VoidAsync(change, PlanChangedReason, actorUserId, now, assetIds, cancellationToken);
+        }
+    }
+
+    /// <summary>A cancelled change leaves the approval queue: its pending row counts as withdrawn.</summary>
+    public async Task CloseOpenRequestAsync(ChangeRequest change, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var pending = await db.ChangeApprovals.SingleOrDefaultAsync(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Pending, cancellationToken);
+        pending?.Withdraw(now);
+    }
+
+    /// <summary>
     /// A fingerprint field changed after approval: the approved row becomes void, a new pending row asks again and the
     /// admin who approved is told. <paramref name="assetIds"/> is the new asset set when it is not saved yet.
     /// </summary>

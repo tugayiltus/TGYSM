@@ -57,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<Features.Changes.ChangeScope>();
         services.AddScoped<Features.Changes.ChangeWork>();
         services.AddScoped<Features.Changes.ChangeApprovalFlow>();
+        services.AddScoped<Features.Tasks.ChangeTaskRules>();
         return services;
     }
 }

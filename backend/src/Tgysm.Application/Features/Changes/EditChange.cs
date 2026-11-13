@@ -1,5 +1,4 @@
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Changes;
@@ -47,41 +46,9 @@ public sealed class EditChangeHandler(
                 ChangeHistory.Record(db, change, ChangeEventKind.AssetsChanged, viewer.UserId, now, new { Added = added, Removed = removed });
             }
 
-            await ApplyApprovalAsync(change, assetIds, viewer.UserId, now, ct);
+            await flow.PlanChangedAsync(change, assetIds, viewer.UserId, now, ct);
             audit.Record(AuditActions.ChangeUpdated, AuditEntityTypes.Change, change.Id, newValues: new { change.Number, Fields = changed, Added = added, Removed = removed });
         }, cancellationToken);
-    }
-
-    private async Task ApplyApprovalAsync(ChangeRequest change, IReadOnlyList<Guid> assetIds, Guid actorUserId, DateTimeOffset now, CancellationToken ct)
-    {
-        if (change.Status is not (ChangeStatus.PendingApproval or ChangeStatus.Scheduled))
-        {
-            return;
-        }
-
-        // A submitted change keeps the rules submit checked: an edit cannot strip its window, a plan or its Uygulama task.
-        change.RequireReady(await ChangeApprovalFlow.PlanTasks(db, change.Id).CountAsync(ct));
-        var fingerprint = await ChangeApprovalFlow.FingerprintAsync(db, change, assetIds, ct);
-        if (change.Status == ChangeStatus.PendingApproval)
-        {
-            var pending = await db.ChangeApprovals.SingleAsync(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Pending, ct);
-            if (pending.Fingerprint != fingerprint)
-            {
-                pending.UpdateFingerprint(fingerprint, actorUserId);
-            }
-
-            return;
-        }
-
-        var approvedFingerprint = await db.ChangeApprovals
-            .Where(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Approved)
-            .OrderByDescending(a => a.CreatedAt).ThenByDescending(a => a.Id)
-            .Select(a => a.Fingerprint).FirstOrDefaultAsync(ct)
-            ?? throw new Domain.Common.DomainException(Domain.Common.ErrorCodes.ChangeApprovalNotPending, "The change has no approved approval.");
-        if (approvedFingerprint != fingerprint)
-        {
-            await flow.VoidAsync(change, ChangeApprovalFlow.PlanChangedReason, actorUserId, now, assetIds, ct);
-        }
     }
 }
 

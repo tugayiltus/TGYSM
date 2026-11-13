@@ -42,7 +42,7 @@ public sealed class ClaimTaskHandler(IAppDbContext db, TaskScope scope, TaskWork
 
         await TaskRules.EnsureAssigneeInTeamAsync(db, task.TeamId, viewer.UserId, cancellationToken);
         var teamId = task.TeamId;
-        await db.RunInTransactionAsync(async ct =>
+        await work.InFrameAsync(task.ChangeId is not null, async ct =>
         {
             var now = clock.GetUtcNow();
             // The version and the open state are part of the condition: a task changed or closed since the person
