@@ -20,6 +20,7 @@ export const TASK: TaskDetail = {
   createdById: 'u-9',
   createdByName: 'Can Demir',
   link: null,
+  changeLink: null,
   resultNote: null,
   cancelReason: null,
   createdAt: '2026-11-13T08:00:00Z',

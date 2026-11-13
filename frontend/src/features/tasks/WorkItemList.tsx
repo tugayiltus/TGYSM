@@ -62,7 +62,7 @@ export function WorkItemList() {
     { key: 'number', header: t('list.columns.number'), renderCell: (x) => <NumberLink row={x} /> },
     { key: 'title', header: t('list.columns.title'), renderCell: (x) => x.title },
     { key: 'status', header: t('list.columns.status'), renderCell: (x) => <StatusText status={x.status} /> },
-    { key: 'priority', header: t('list.columns.priority'), renderCell: (x) => <PriorityBadge priority={x.priority} /> },
+    { key: 'priority', header: t('list.columns.priority'), renderCell: (x) => (x.priority ? <PriorityBadge priority={x.priority} /> : null) },
     { key: 'due', header: t('list.columns.due'), renderCell: (x) => (x.dueDate ? formatDate(x.dueDate) : tc('none')) },
     { key: 'team', header: t('list.columns.team'), renderCell: (x) => x.teamName },
   ];
@@ -82,7 +82,7 @@ export function WorkItemList() {
         </StackItem>
       </HStack>
       <HStack gap={2} vAlign="center" wrap="wrap">
-        <PriorityBadge priority={x.priority} />
+        {x.priority && <PriorityBadge priority={x.priority} />}
         <StatusText status={x.status} />
         {x.dueDate && <Text type="supporting">{formatDate(x.dueDate)}</Text>}
       </HStack>
