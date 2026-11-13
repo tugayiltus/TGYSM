@@ -26,11 +26,19 @@ Güncel: 2026-11-13.
 | Rapor filtreleri, Tür → Marka → Model akışı, QR etiket (yazdırma, toplu, tarayarak arıza) | `docs/superpowers/plans/2026-11-11-reports-catalog-qr.md` (11 görev) | 0028 | `master` (`4d70063`) |
 | Model listesinde tür filtresi, Tür – Marka – Ad sırası | — | — | `master` (`6be4532`) |
 | Yıllık varlık etiketi `ASSET-YYYY-NNNN` | — | 0029 | `master` (`d43ad8c`) |
-| Giriş yöntemi panelden: Yerel, Microsoft Entra ID, Active Directory (LDAP) | `docs/superpowers/plans/2026-11-12-sso-ldap-login.md` (9 görev) | 0030 | Dal `feature/sso-ldap-login`; CI sonrası `master` |
+| Giriş yöntemi panelden: Yerel, Microsoft Entra ID, Active Directory (LDAP) | `docs/superpowers/plans/2026-11-12-sso-ldap-login.md` (9 görev) | 0030 | `master` (`9a7a0b3`) |
+
+## Görev ve Değişiklik Yönetimi
+
+| Faz | İçerik | Plan | ADR | Durum |
+|---|---|---|---|---|
+| 7 — Görev | `TSK-` görevler, üstlenme/atama/aktarma/bekletme/tamamlama, geçmiş ve notlar, `task_assigned` e-postası, İş listem kartları ve birleşik liste, kayıtta Görevler bölümü | `docs/superpowers/plans/2026-11-13-phase-7-tasks.md` (9 görev) | 0031 | `master` (`2046892`) |
+| 8 — Değişiklik | Normal değişiklik (`CHG-`), durum makinesi, faz görevleri, yönetici onayı, kapanış ve geri dönüş | — | 0032 (planlı) | Sırada |
+| 9 — Takvim/Rapor | Bakım takvimi, pencere çakışma uyarısı, "Bu hafta" kartı, değişiklik/görev raporları | — | — | Bekliyor |
 
 ## Açık işler
 
 - SSO canlıya almadan önce: gerçek AD ile `TGYSM_TEST_LDAP_*` sözleşme testi; gerçek Entra ve AD ile elle giriş.
-- Dokümanlar (`README.md`, `capabilities.md`, `SECURITY.md`, kullanıcı rehberi) QR, `ASSET-` etiketi ve SSO için eski; sahibin isteğiyle güncellenir.
+- `SECURITY.md` ve kullanıcı rehberi QR, `ASSET-` etiketi, SSO ve görevler için eski; sahibin isteğiyle güncellenir. `README.md` ve `capabilities.md` `2046892` itibarıyla güncel.
 - Bekleyen Dependabot PR'ları.
-- Sıradaki: Görev ve Değişiklik Yönetimi (spec `docs/superpowers/specs/2026-11-12-task-and-change-management-design.md`; Faz 7 Görev, Faz 8 Değişiklik, Faz 9 Takvim).
+- Sıradaki: Faz 8 Değişiklik Yönetimi (spec `docs/superpowers/specs/2026-11-12-task-and-change-management-design.md`).
