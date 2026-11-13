@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { LOCATIONS } from '../../test/assetData';
+import { findFieldMessages } from '../../test/fieldMessages';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 import { chooseOption } from '../../test/select';
@@ -68,7 +69,7 @@ describe('NewTicketPage', () => {
     const { user, router } = renderRoute('/tickets/new/incident');
 
     await user.click(await screen.findByRole('button', { name: 'Gönder' }));
-    expect(await screen.findAllByText('Bu alan zorunludur.')).toHaveLength(2);
+    expect(await findFieldMessages('Bu alan zorunludur.')).toHaveLength(2);
     await user.type(screen.getByLabelText(/^Konu/), 'Yazıcı çalışmıyor');
     await user.type(screen.getByLabelText(/^Açıklama/), 'Kağıt sıkışıyor');
     await chooseOption(user, 'Kategori', 'Donanım');

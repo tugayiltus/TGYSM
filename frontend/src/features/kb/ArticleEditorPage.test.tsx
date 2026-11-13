@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { findFieldMessages } from '../../test/fieldMessages';
 import { ARTICLE, ARTICLE_ID, kbRoutes } from '../../test/kbData';
 import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
@@ -29,7 +30,7 @@ describe('ArticleEditorPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Kaydet' }));
 
-    expect(await screen.findAllByText('Bu alan zorunludur.')).toHaveLength(2);
+    expect(await findFieldMessages('Bu alan zorunludur.')).toHaveLength(2);
     expect(api.calls.some((c) => c.method === 'POST')).toBe(false);
   });
 
@@ -42,7 +43,7 @@ describe('ArticleEditorPage', () => {
     fireEvent.change(screen.getByLabelText('İçerik (Markdown)'), { target: { value: 'a'.repeat(ARTICLE_LIMITS.body + 1) } });
     await user.click(screen.getByRole('button', { name: 'Kaydet' }));
 
-    expect(await screen.findAllByText('Bu alan çok uzun.')).toHaveLength(3);
+    expect(await findFieldMessages('Bu alan çok uzun.')).toHaveLength(3);
     expect(api.calls.some((c) => c.method === 'POST')).toBe(false);
   });
 

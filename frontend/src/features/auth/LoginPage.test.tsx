@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { findAlert } from '../../test/alerts';
+import { findFieldMessages } from '../../test/fieldMessages';
 import { EMPLOYEE_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
 
@@ -12,7 +13,7 @@ describe('LoginPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Giriş yap' }));
 
-    expect(await screen.findAllByText('Bu alan zorunludur.')).toHaveLength(2);
+    expect(await findFieldMessages('Bu alan zorunludur.')).toHaveLength(2);
   });
 
   it('shows the uniform error for wrong credentials', async () => {
