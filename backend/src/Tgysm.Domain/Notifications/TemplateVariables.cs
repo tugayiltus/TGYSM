@@ -22,6 +22,12 @@ public static class TemplateVariables
     public const string TaskUrl = "taskUrl";
     public const string TeamName = "teamName";
     public const string DueDate = "dueDate";
+    public const string ChangeNumber = "changeNumber";
+    public const string ChangeUrl = "changeUrl";
+    public const string WindowStart = "windowStart";
+    public const string WindowEnd = "windowEnd";
+    public const string Risk = "risk";
+    public const string Reason = "reason";
 
     private static readonly IReadOnlySet<string> TicketCommon = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -37,6 +43,11 @@ public static class TemplateVariables
         TaskNumber, Subject, Status, TeamName, DueDate, TaskUrl, RecipientName,
     };
 
+    private static readonly IReadOnlySet<string> ChangeSet = new HashSet<string>(StringComparer.Ordinal)
+    {
+        ChangeNumber, Subject, Status, WindowStart, WindowEnd, Risk, Reason, ChangeUrl, RecipientName,
+    };
+
     private static readonly IReadOnlySet<string> AccountSet = new HashSet<string>(StringComparer.Ordinal)
     {
         RecipientName, ActionUrl, ExpiresAt,
@@ -47,6 +58,9 @@ public static class TemplateVariables
         [NotificationEventTypes.TicketCreated] = TicketCommon,
         [NotificationEventTypes.TicketAssigned] = TicketCommon,
         [NotificationEventTypes.TaskAssigned] = TaskSet,
+        [NotificationEventTypes.ChangeApprovalRequested] = ChangeSet,
+        [NotificationEventTypes.ChangeApprovalDecided] = ChangeSet,
+        [NotificationEventTypes.ChangeBackoutStarted] = ChangeSet,
         [NotificationEventTypes.PublicReply] = TicketCommon,
         [NotificationEventTypes.ApprovalRequested] = TicketCommon,
         [NotificationEventTypes.ApprovalDecided] = TicketCommon,
@@ -62,6 +76,7 @@ public static class TemplateVariables
     {
         TicketNumber, Subject, Status, Resolution, CompletedAt, TicketUrl, RecipientName, ActionUrl, ExpiresAt, SlaMetric, DueAt,
         TaskNumber, TaskUrl, TeamName, DueDate,
+        ChangeNumber, ChangeUrl, WindowStart, WindowEnd, Risk, Reason,
     };
 
     /// <summary>The variable names an admin may use for <paramref name="eventType"/> (one of <see cref="NotificationEventTypes"/>).</summary>

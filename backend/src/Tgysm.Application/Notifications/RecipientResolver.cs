@@ -1,7 +1,10 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Notifications;
+using Tgysm.Domain.Tasks;
+using Tgysm.Domain.Users;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Notifications;
@@ -19,6 +22,7 @@ public sealed class RecipientResolver(IAppDbContext db)
     private static readonly IReadOnlySet<string> ActorExcludedEvents = new HashSet<string>(StringComparer.Ordinal)
     {
         NotificationEventTypes.TicketAssigned, NotificationEventTypes.PublicReply, NotificationEventTypes.TaskAssigned,
+        NotificationEventTypes.ChangeBackoutStarted,
     };
 
     public async Task<IReadOnlyList<Recipient>> ResolveAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
@@ -76,6 +80,16 @@ public sealed class RecipientResolver(IAppDbContext db)
 
             case NotificationEventTypes.TaskAssigned:
                 return outboxEvent.UserId is { } taskAssignee ? [taskAssignee] : await TaskTeamIdsAsync(outboxEvent, cancellationToken);
+
+            case NotificationEventTypes.ChangeApprovalRequested:
+                return await ChangeApproverIdsAsync(outboxEvent, cancellationToken);
+
+            case NotificationEventTypes.ChangeApprovalDecided:
+                return await ChangeAuthorAndOwnerIdsAsync(outboxEvent, cancellationToken);
+
+            case NotificationEventTypes.ChangeBackoutStarted:
+                return await BackoutWorkerIdsAsync(outboxEvent, cancellationToken);
+
             case NotificationEventTypes.AccountActivation:
             case NotificationEventTypes.PasswordReset:
                 return outboxEvent.UserId is { } user ? [user] : [];
@@ -83,6 +97,50 @@ public sealed class RecipientResolver(IAppDbContext db)
             default:
                 throw new ArgumentOutOfRangeException(nameof(outboxEvent), outboxEvent.EventType, "Unknown notification event type.");
         }
+    }
+
+    /// <summary>The admin named in the payload (a voided approval), else every active admin except the change's author and owner.</summary>
+    private async Task<IReadOnlyList<Guid>> ChangeApproverIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
+    {
+        if (ApproverIdOf(outboxEvent) is { } approverId)
+        {
+            return [approverId];
+        }
+
+        var change = await db.ChangeRequests.AsNoTracking()
+            .Where(c => c.Id == outboxEvent.SubjectId)
+            .Select(c => new { c.CreatedById, c.OwnerId })
+            .SingleAsync(cancellationToken);
+        return await db.Users.AsNoTracking()
+            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId)
+            .Select(u => u.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<Guid>> ChangeAuthorAndOwnerIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
+    {
+        var change = await db.ChangeRequests.AsNoTracking()
+            .Where(c => c.Id == outboxEvent.SubjectId)
+            .Select(c => new { c.CreatedById, c.OwnerId })
+            .SingleAsync(cancellationToken);
+        return [.. new[] { change.CreatedById, change.OwnerId }.Distinct()];
+    }
+
+    /// <summary>Assignees of the change's open Geri dönüş tasks; an unassigned task goes to its team's members.</summary>
+    private async Task<IReadOnlyList<Guid>> BackoutWorkerIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
+    {
+        var tasks = await db.WorkTasks.AsNoTracking()
+            .Where(t => t.ChangeId == outboxEvent.SubjectId && t.Phase == ChangePhase.Backout
+                && t.Status != WorkTaskStatus.Completed && t.Status != WorkTaskStatus.Cancelled)
+            .Select(t => new { t.AssigneeId, t.TeamId })
+            .ToListAsync(cancellationToken);
+        var ids = tasks.Where(t => t.AssigneeId is not null).Select(t => t.AssigneeId!.Value).ToHashSet();
+        foreach (var teamId in tasks.Where(t => t.AssigneeId is null).Select(t => t.TeamId).Distinct())
+        {
+            ids.UnionWith(await TeamMemberIdsAsync(teamId, cancellationToken));
+        }
+
+        return [.. ids];
     }
 
     private async Task<IReadOnlyList<Guid>> AssigneeOrTeamIdsAsync(Ticket ticket, CancellationToken cancellationToken) =>
@@ -100,6 +158,12 @@ public sealed class RecipientResolver(IAppDbContext db)
          join u in db.Users on m.UserId equals u.Id
          where m.TeamId == teamId && u.IsActive
          select m.UserId).ToListAsync(cancellationToken);
+
+    private static Guid? ApproverIdOf(OutboxEvent outboxEvent)
+    {
+        using var payload = JsonDocument.Parse(outboxEvent.Payload);
+        return payload.RootElement.TryGetProperty(OutboxEvent.ApproverIdKey, out var value) ? value.GetGuid() : null;
+    }
 
     private static Guid? ActorIdOf(OutboxEvent outboxEvent)
     {

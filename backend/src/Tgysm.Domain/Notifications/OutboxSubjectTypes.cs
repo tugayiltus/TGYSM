@@ -6,4 +6,5 @@ public static class OutboxSubjectTypes
     public const int MaxLength = 20;
     public const string Ticket = "ticket";
     public const string Task = "task";
+    public const string Change = "change";
 }

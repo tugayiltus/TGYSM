@@ -3,6 +3,7 @@ using Tgysm.Domain.Assets;
 using Tgysm.Domain.Auth;
 using Tgysm.Domain.Catalog;
 using Tgysm.Domain.Knowledge;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Audit;
@@ -40,6 +41,10 @@ public interface IAppDbContext
     DbSet<WorkTask> WorkTasks { get; }
     DbSet<TaskEvent> TaskEvents { get; }
     DbSet<TaskAssignment> TaskAssignments { get; }
+    DbSet<ChangeRequest> ChangeRequests { get; }
+    DbSet<ChangeApproval> ChangeApprovals { get; }
+    DbSet<ChangeEvent> ChangeEvents { get; }
+    DbSet<ChangeAsset> ChangeAssets { get; }
     DbSet<TicketRelation> TicketRelations { get; }
     DbSet<TicketAsset> TicketAssets { get; }
     DbSet<TicketArticle> TicketArticles { get; }

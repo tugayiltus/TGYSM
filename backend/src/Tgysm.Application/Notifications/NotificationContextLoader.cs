@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Notifications;
 
 namespace Tgysm.Application.Notifications;
@@ -19,6 +20,7 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
 {
     private const string TicketUrlPathFormat = "/tickets/{0}";
     private const string TaskUrlPathFormat = "/tasks/{0}";
+    private const string ChangeUrlPathFormat = "/changes/{0}";
     private const string DateFormat = "dd.MM.yyyy";
 
     public async Task<IReadOnlyDictionary<string, string>> LoadAsync(OutboxEvent outboxEvent, Recipient recipient, CancellationToken cancellationToken)
@@ -57,6 +59,27 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
             // A task without a due date renders an empty value, not a placeholder.
             Set(TemplateVariables.DueDate, task.DueDate?.ToString(DateFormat, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty);
             Set(TemplateVariables.TaskUrl, PublicUrl(TaskUrlPathFormat, task.Number));
+        }
+
+        if (outboxEvent.SubjectType == OutboxSubjectTypes.Change && outboxEvent.SubjectId is { } changeId)
+        {
+            var change = await db.ChangeRequests.AsNoTracking().SingleAsync(c => c.Id == changeId, cancellationToken);
+            Set(TemplateVariables.ChangeNumber, change.Number);
+            Set(TemplateVariables.Subject, change.Title);
+            Set(TemplateVariables.Status, ChangeLabels.Of(change.Status));
+            Set(TemplateVariables.WindowStart, change.WindowStart is { } start ? clock.Format(start) : string.Empty);
+            Set(TemplateVariables.WindowEnd, change.WindowEnd is { } end ? clock.Format(end) : string.Empty);
+            Set(TemplateVariables.Risk, ChangeLabels.Of(change.Risk));
+            Set(TemplateVariables.ChangeUrl, PublicUrl(ChangeUrlPathFormat, change.Number));
+            // The reason is free text the approver typed; it is read from the decision, never copied into the outbox payload.
+            var reason = outboxEvent.EventType == NotificationEventTypes.ChangeApprovalDecided
+                ? await db.ChangeApprovals.AsNoTracking()
+                    .Where(a => a.ChangeId == changeId && a.Status != ChangeApprovalStatus.Pending && a.Reason != null)
+                    .OrderByDescending(a => a.DecidedAt)
+                    .Select(a => a.Reason)
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+            Set(TemplateVariables.Reason, reason ?? string.Empty);
         }
 
         // sla_warning/sla_breached: metric and due time come from the event's own payload (ids and reason codes

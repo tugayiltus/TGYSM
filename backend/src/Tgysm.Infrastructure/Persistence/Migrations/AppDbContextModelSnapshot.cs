@@ -705,6 +705,326 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.ToTable("request_types", (string)null);
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChangeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("change_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("fingerprint");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_change_approvals");
+
+                    b.HasIndex("ChangeId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_change_approvals_pending")
+                        .HasFilter("status = 'pending'");
+
+                    b.HasIndex("DecidedById")
+                        .HasDatabaseName("ix_change_approvals_decided_by");
+
+                    b.HasIndex("ChangeId", "CreatedAt")
+                        .HasDatabaseName("ix_change_approvals_change_id_created_at");
+
+                    b.ToTable("change_approvals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_change_approvals_status", "status IN ('pending', 'approved', 'rejected', 'returned', 'withdrawn', 'void')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asset_id");
+
+                    b.Property<Guid>("ChangeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("change_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_change_assets");
+
+                    b.HasIndex("AssetId")
+                        .HasDatabaseName("ix_change_assets_asset_id");
+
+                    b.HasIndex("ChangeId", "AssetId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_change_assets_change_id_asset_id");
+
+                    b.ToTable("change_assets", (string)null);
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<Guid>("ChangeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("change_id");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_change_events");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_change_events_actor_user_id");
+
+                    b.HasIndex("ChangeId", "OccurredAt")
+                        .HasDatabaseName("ix_change_events_change_id_occurred_at");
+
+                    b.ToTable("change_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_change_events_kind", "kind IN ('created', 'updated', 'submitted', 'withdrawn', 'approved', 'rejected', 'returned', 'approval_voided', 'implementation_started', 'implementation_finished', 'backout_started', 'closed', 'cancelled', 'assets_changed')");
+                        });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ActualEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("actual_end");
+
+                    b.Property<DateTimeOffset?>("ActualStart")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("actual_start");
+
+                    b.Property<string>("AffectedService")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("affected_service");
+
+                    b.Property<string>("BackoutNote")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("backout_note");
+
+                    b.Property<string>("BackoutPlan")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("backout_plan");
+
+                    b.Property<DateTimeOffset?>("BackoutStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("backout_started_at");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("cancel_reason");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<string>("ClosingNote")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("closing_note");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Impact")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("impact");
+
+                    b.Property<string>("ImplementationPlan")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("implementation_plan");
+
+                    b.Property<string>("Justification")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("justification");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("number");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("outcome");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
+                    b.Property<Guid>("OwnerTeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_team_id");
+
+                    b.Property<string>("Risk")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("risk");
+
+                    b.Property<string>("SearchText")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("search_text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VerificationNote")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("verification_note");
+
+                    b.Property<string>("VerificationPlan")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("verification_plan");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("WindowEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("window_end");
+
+                    b.Property<DateTimeOffset?>("WindowStart")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("window_start");
+
+                    b.HasKey("Id")
+                        .HasName("pk_change_requests");
+
+                    b.HasIndex("CreatedById")
+                        .HasDatabaseName("ix_change_requests_created_by_id");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_change_requests_number");
+
+                    b.HasIndex("OwnerId", "Status")
+                        .HasDatabaseName("ix_change_requests_owner_id_status");
+
+                    b.HasIndex("OwnerTeamId", "Status")
+                        .HasDatabaseName("ix_change_requests_owner_team_id_status");
+
+                    b.HasIndex(new[] { "SearchText" }, "ix_change_requests_search_text_trgm")
+                        .HasDatabaseName("ix_change_requests_search_text");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "SearchText" }, "ix_change_requests_search_text_trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "SearchText" }, "ix_change_requests_search_text_trgm"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex(new[] { "UpdatedAt", "Id" }, "ix_change_requests_updated_at_id")
+                        .IsDescending()
+                        .HasDatabaseName("ix_change_requests_updated_at_id");
+
+                    b.ToTable("change_requests", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_change_requests_impact", "impact IN ('high', 'medium', 'low')");
+
+                            t.HasCheckConstraint("ck_change_requests_outcome", "outcome IN ('successful', 'rolled_back', 'failed')");
+
+                            t.HasCheckConstraint("ck_change_requests_risk", "risk IN ('high', 'medium', 'low')");
+
+                            t.HasCheckConstraint("ck_change_requests_status", "status IN ('draft', 'pending_approval', 'scheduled', 'implementing', 'verifying', 'closed', 'cancelled')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Knowledge.ArticleRevision", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1969,6 +2289,10 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("cancel_reason");
 
+                    b.Property<Guid?>("ChangeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("change_id");
+
                     b.Property<DateTimeOffset?>("ClosedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("closed_at");
@@ -2005,6 +2329,11 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")
                         .HasColumnName("number");
+
+                    b.Property<string>("Phase")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("phase");
 
                     b.Property<string>("Priority")
                         .IsRequired()
@@ -2069,6 +2398,9 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.HasIndex("AssigneeId", "Status")
                         .HasDatabaseName("ix_work_tasks_assignee_id_status");
 
+                    b.HasIndex("ChangeId", "Phase")
+                        .HasDatabaseName("ix_work_tasks_change_id_phase");
+
                     b.HasIndex("TeamId", "Status")
                         .HasDatabaseName("ix_work_tasks_team_id_status");
 
@@ -2089,6 +2421,12 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_work_tasks_hold", "(status = 'on_hold') = (hold_reason IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_work_tasks_hold_reason", "hold_reason IN ('user', 'manager_approval', 'vendor', 'technical_team', 'third_party', 'scheduled_date', 'other')");
+
+                            t.HasCheckConstraint("ck_work_tasks_one_link", "ticket_id IS NULL OR change_id IS NULL");
+
+                            t.HasCheckConstraint("ck_work_tasks_phase", "phase IN ('preparation', 'implementation', 'verification', 'backout')");
+
+                            t.HasCheckConstraint("ck_work_tasks_phase_with_change", "(change_id IS NULL) = (phase IS NULL)");
 
                             t.HasCheckConstraint("ck_work_tasks_priority", "priority IN ('p1', 'p2', 'p3', 'p4')");
 
@@ -3047,6 +3385,79 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_categories_categories_parent_id");
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeApproval", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Changes.ChangeRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ChangeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_approvals_change_requests_change_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_change_approvals_users_decided_by");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeAsset", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Assets.Asset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_assets_assets_asset_id");
+
+                    b.HasOne("Tgysm.Domain.Changes.ChangeRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ChangeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_assets_change_requests_change_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeEvent", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_change_events_users_actor_user_id");
+
+                    b.HasOne("Tgysm.Domain.Changes.ChangeRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ChangeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_events_change_requests_change_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeRequest", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_requests_users_created_by_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_requests_users_owner_id");
+
+                    b.HasOne("Tgysm.Domain.Organization.Team", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerTeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_requests_teams_owner_team_id");
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Knowledge.ArticleRevision", b =>
                 {
                     b.HasOne("Tgysm.Domain.Knowledge.KnowledgeArticle", null)
@@ -3277,6 +3688,12 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasForeignKey("AssigneeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_work_tasks_users_assignee_id");
+
+                    b.HasOne("Tgysm.Domain.Changes.ChangeRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ChangeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_work_tasks_change_requests_change_id");
 
                     b.HasOne("Tgysm.Domain.Users.User", null)
                         .WithMany()

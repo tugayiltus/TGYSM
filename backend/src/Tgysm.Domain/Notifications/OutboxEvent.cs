@@ -43,6 +43,12 @@ public sealed class OutboxEvent
     /// </summary>
     public const string RequestedEmailKey = "email";
 
+    /// <summary>
+    /// <see cref="Payload"/> key holding the one admin a <c>change_approval_requested</c> event is for (the admin who
+    /// approved a plan that was then voided); without it the event goes to every eligible admin.
+    /// </summary>
+    public const string ApproverIdKey = "approverId";
+
     /// <summary>Dispatch attempts stop retrying once <see cref="Attempts"/> reaches this (spec: retry plan, max 5 attempts).</summary>
     public const int MaxAttempts = RetryBackoff.MaxAttempts;
 

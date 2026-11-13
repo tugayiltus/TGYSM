@@ -30,4 +30,7 @@ public static class SerializationLocks
     /// The import commit takes <see cref="AssetImport"/> first, then this one.
     /// </summary>
     public const long AssetCatalog = 7_008;
+
+    /// <summary>Change state changes, approvals and change-task writes (ADR-0032): a close never races a task being completed.</summary>
+    public const long ChangeWork = 7_009;
 }

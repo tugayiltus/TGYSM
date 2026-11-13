@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Organization;
 using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
@@ -20,6 +21,9 @@ internal sealed class WorkTaskConfiguration : IEntityTypeConfiguration<WorkTask>
             table.HasCheckConstraint("ck_work_tasks_hold", "(status = 'on_hold') = (hold_reason IS NOT NULL)");
             table.HasCheckConstraint("ck_work_tasks_result", "status <> 'completed' OR result_note IS NOT NULL");
             table.HasCheckConstraint("ck_work_tasks_cancel_reason", "status <> 'cancelled' OR cancel_reason IS NOT NULL");
+            table.HasCheckConstraint("ck_work_tasks_one_link", "ticket_id IS NULL OR change_id IS NULL");
+            table.HasCheckConstraint("ck_work_tasks_phase", SnakeCaseEnumConversion<ChangePhase>.CheckSql("phase"));
+            table.HasCheckConstraint("ck_work_tasks_phase_with_change", "(change_id IS NULL) = (phase IS NULL)");
         });
         builder.ConfigureEntityBase();
         builder.Property(t => t.Number).HasMaxLength(TicketNumber.MaxLength).IsRequired();
@@ -35,10 +39,9 @@ internal sealed class WorkTaskConfiguration : IEntityTypeConfiguration<WorkTask>
         builder.HasIndex(t => t.Number).IsUnique();
         builder.HasIndex(t => new { t.TeamId, t.Status });
         builder.HasIndex(t => new { t.AssigneeId, t.Status });
-        // Not persisted until the change tables and their migration land (Phase 8, next task).
-        builder.Ignore(t => t.ChangeId);
-        builder.Ignore(t => t.Phase);
+        builder.Property(t => t.Phase).HasEnumName();
         builder.HasIndex(t => t.TicketId);
+        builder.HasIndex(t => new { t.ChangeId, t.Phase });
         builder.HasIndex(t => new { t.UpdatedAt, t.Id }, "ix_work_tasks_updated_at_id").IsDescending(true, true);
         // Substring search (LIKE '%x%') needs trigrams; a B-tree cannot serve it.
         builder.HasIndex(t => t.SearchText, "ix_work_tasks_search_text_trgm").HasMethod(TrigramIndex.Method).HasOperators(TrigramIndex.Operators);
@@ -46,6 +49,7 @@ internal sealed class WorkTaskConfiguration : IEntityTypeConfiguration<WorkTask>
         builder.HasOne<User>().WithMany().HasForeignKey(t => t.AssigneeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(t => t.CreatedById).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Ticket>().WithMany().HasForeignKey(t => t.TicketId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<ChangeRequest>().WithMany().HasForeignKey(t => t.ChangeId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -9,6 +9,9 @@ public static class NotificationEventTypes
     public const string TicketCreated = "ticket_created";
     public const string TicketAssigned = "ticket_assigned";
     public const string TaskAssigned = "task_assigned";
+    public const string ChangeApprovalRequested = "change_approval_requested";
+    public const string ChangeApprovalDecided = "change_approval_decided";
+    public const string ChangeBackoutStarted = "change_backout_started";
     public const string PublicReply = "public_reply";
     public const string ApprovalRequested = "approval_requested";
     public const string ApprovalDecided = "approval_decided";
