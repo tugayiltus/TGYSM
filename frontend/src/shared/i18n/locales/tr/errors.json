@@ -163,6 +163,7 @@
     "backout_required": "Geri alındı veya başarısız olarak kapatmak için geri dönüşü başlatın, en az bir Geri dönüş görevini bitirin ve geri dönüş notu yazın.",
     "self_approval": "Değişikliği oluşturan kişi ve sahibi onay veremez.",
     "approval_not_pending": "Bu onay artık beklemiyor. Sayfayı yenileyin.",
-    "phase_not_active": "Bu aşamanın görevleri değişikliğin mevcut durumunda başlatılamaz."
+    "phase_not_active": "Bu aşamanın görevleri değişikliğin mevcut durumunda başlatılamaz.",
+    "owner_not_in_team": "Değişiklik sahibi, sahip ekibin aktif bir üyesi olmalı."
   }
 }

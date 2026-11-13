@@ -54,6 +54,8 @@ public static class DependencyInjection
         services.AddScoped<Features.Tickets.TicketWork>();
         services.AddScoped<Features.Tasks.TaskScope>();
         services.AddScoped<Features.Tasks.TaskWork>();
+        services.AddScoped<Features.Changes.ChangeScope>();
+        services.AddScoped<Features.Changes.ChangeWork>();
         return services;
     }
 }

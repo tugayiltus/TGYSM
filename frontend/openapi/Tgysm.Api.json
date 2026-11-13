@@ -6882,6 +6882,296 @@
         }
       }
     },
+    "/api/v1/changes": {
+      "post": {
+        "tags": [
+          "Changes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChangeCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "queue",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "risk",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfChangeListItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/changes/{number}": {
+      "get": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/changes/{number}/timeline": {
+      "get": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChangeTimelineItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/approvals/mine": {
       "get": {
         "tags": [
@@ -9007,6 +9297,509 @@
           "both"
         ]
       },
+      "ChangeAccess": {
+        "enum": [
+          "none",
+          "summary",
+          "full"
+        ]
+      },
+      "ChangeApprovalInfo": {
+        "required": [
+          "status",
+          "decidedById",
+          "decidedByName",
+          "reason",
+          "createdAt",
+          "decidedAt",
+          "canDecide",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ChangeApprovalStatus"
+          },
+          "decidedById": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "decidedByName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "canDecide": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          }
+        }
+      },
+      "ChangeApprovalStatus": {
+        "enum": [
+          "pending",
+          "approved",
+          "rejected",
+          "returned",
+          "withdrawn",
+          "void"
+        ]
+      },
+      "ChangeAssetItem": {
+        "required": [
+          "id",
+          "assetTag",
+          "type",
+          "brand",
+          "model",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assetTag": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AssetType"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssetStatus"
+          }
+        }
+      },
+      "ChangeDetail": {
+        "required": [
+          "id",
+          "number",
+          "title",
+          "justification",
+          "affectedService",
+          "risk",
+          "impact",
+          "windowStart",
+          "windowEnd",
+          "implementationPlan",
+          "verificationPlan",
+          "backoutPlan",
+          "ownerTeamId",
+          "ownerTeamName",
+          "ownerId",
+          "ownerName",
+          "status",
+          "outcome",
+          "actualStart",
+          "actualEnd",
+          "backoutStartedAt",
+          "verificationNote",
+          "backoutNote",
+          "closingNote",
+          "cancelReason",
+          "createdById",
+          "createdByName",
+          "createdAt",
+          "updatedAt",
+          "closedAt",
+          "assets",
+          "tasksByPhase",
+          "approval",
+          "hasEligibleApprover",
+          "canWork",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "justification": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "affectedService": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "windowStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "windowEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "implementationPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "verificationPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "backoutPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ownerTeamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerTeamName": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ChangeStatus"
+          },
+          "outcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChangeOutcome"
+              }
+            ]
+          },
+          "actualStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "actualEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "backoutStartedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "verificationNote": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "backoutNote": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "closingNote": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cancelReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdById": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeAssetItem"
+            }
+          },
+          "tasksByPhase": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangePhaseGroup"
+            }
+          },
+          "approval": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChangeApprovalInfo"
+              }
+            ]
+          },
+          "hasEligibleApprover": {
+            "type": "boolean"
+          },
+          "canWork": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          }
+        }
+      },
+      "ChangeDraft": {
+        "required": [
+          "title",
+          "justification",
+          "affectedService",
+          "risk",
+          "impact",
+          "windowStart",
+          "windowEnd",
+          "implementationPlan",
+          "verificationPlan",
+          "backoutPlan"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "justification": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "affectedService": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "windowStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "windowEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "implementationPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "verificationPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "backoutPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ChangeEventKind": {
+        "enum": [
+          "created",
+          "updated",
+          "submitted",
+          "withdrawn",
+          "approved",
+          "rejected",
+          "returned",
+          "approval_voided",
+          "implementation_started",
+          "implementation_finished",
+          "backout_started",
+          "closed",
+          "cancelled",
+          "assets_changed"
+        ]
+      },
+      "ChangeListItem": {
+        "required": [
+          "id",
+          "number",
+          "title",
+          "status",
+          "outcome",
+          "risk",
+          "windowStart",
+          "windowEnd",
+          "ownerTeamName",
+          "ownerName",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ChangeStatus"
+          },
+          "outcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChangeOutcome"
+              }
+            ]
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "windowStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "windowEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "ownerTeamName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ownerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChangeOutcome": {
+        "enum": [
+          "successful",
+          "rolled_back",
+          "failed",
+          null
+        ]
+      },
       "ChangePasswordCommand": {
         "required": [
           "currentPassword",
@@ -9019,6 +9812,32 @@
           },
           "newPassword": {
             "type": "string"
+          }
+        }
+      },
+      "ChangePhase": {
+        "enum": [
+          "preparation",
+          "implementation",
+          "verification",
+          "backout"
+        ]
+      },
+      "ChangePhaseGroup": {
+        "required": [
+          "phase",
+          "tasks"
+        ],
+        "type": "object",
+        "properties": {
+          "phase": {
+            "$ref": "#/components/schemas/ChangePhase"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeTaskRow"
+            }
           }
         }
       },
@@ -9057,6 +9876,184 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "ChangeStatus": {
+        "enum": [
+          "draft",
+          "pending_approval",
+          "scheduled",
+          "implementing",
+          "verifying",
+          "closed",
+          "cancelled"
+        ]
+      },
+      "ChangeSummary": {
+        "required": [
+          "id",
+          "number",
+          "title",
+          "status",
+          "windowStart",
+          "windowEnd",
+          "risk",
+          "implementationPlan",
+          "backoutPlan"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ChangeStatus"
+          },
+          "windowStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "windowEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "implementationPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "backoutPlan": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ChangeTaskRow": {
+        "required": [
+          "id",
+          "number",
+          "title",
+          "status",
+          "phase",
+          "teamId",
+          "teamName",
+          "assigneeName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkTaskStatus"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/ChangePhase"
+          },
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "assigneeName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ChangeTimelineItem": {
+        "required": [
+          "id",
+          "kind",
+          "actorName",
+          "data",
+          "occurredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChangeEventKind"
+          },
+          "actorName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChangeView": {
+        "required": [
+          "access",
+          "detail",
+          "summary"
+        ],
+        "type": "object",
+        "properties": {
+          "access": {
+            "$ref": "#/components/schemas/ChangeAccess"
+          },
+          "detail": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChangeDetail"
+              }
+            ]
+          },
+          "summary": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChangeSummary"
+              }
+            ]
           }
         }
       },
@@ -9288,6 +10285,35 @@
           },
           "scope": {
             "$ref": "#/components/schemas/CategoryScope"
+          }
+        }
+      },
+      "CreateChangeCommand": {
+        "required": [
+          "draft",
+          "ownerTeamId",
+          "ownerId",
+          "assetIds"
+        ],
+        "type": "object",
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/ChangeDraft"
+          },
+          "ownerTeamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assetIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -9750,6 +10776,30 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "EditChangeRequest": {
+        "required": [
+          "version",
+          "draft",
+          "assetIds"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "uint32"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/ChangeDraft"
+          },
+          "assetIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -10555,6 +11605,35 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AuditEventItem"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PagedResultOfChangeListItem": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeListItem"
             }
           },
           "page": {
@@ -13408,6 +14487,9 @@
     },
     {
       "name": "Tasks"
+    },
+    {
+      "name": "Changes"
     },
     {
       "name": "Approvals"

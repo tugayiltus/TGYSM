@@ -7032,6 +7032,260 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    queue?: string;
+                    status?: string;
+                    risk?: string;
+                    search?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PagedResultOfChangeListItem"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateChangeCommand"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeDetail"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeView"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["EditChangeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeDetail"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{number}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeTimelineItem"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/approvals/mine": {
         parameters: {
             query?: never;
@@ -8239,9 +8493,128 @@ export interface components {
         };
         /** @enum {unknown} */
         CategoryScope: "incident" | "request" | "both";
+        /** @enum {unknown} */
+        ChangeAccess: "none" | "summary" | "full";
+        ChangeApprovalInfo: {
+            status: components["schemas"]["ChangeApprovalStatus"];
+            /** Format: uuid */
+            decidedById: null | string;
+            decidedByName: null | string;
+            reason: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: null | string;
+            canDecide: boolean;
+            /** Format: uint32 */
+            version: number;
+        };
+        /** @enum {unknown} */
+        ChangeApprovalStatus: "pending" | "approved" | "rejected" | "returned" | "withdrawn" | "void";
+        ChangeAssetItem: {
+            /** Format: uuid */
+            id: string;
+            assetTag: string;
+            type: components["schemas"]["AssetType"];
+            brand: string;
+            model: string;
+            status: components["schemas"]["AssetStatus"];
+        };
+        ChangeDetail: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            title: string;
+            justification: null | string;
+            affectedService: null | string;
+            risk: components["schemas"]["Level"];
+            impact: components["schemas"]["Level"];
+            /** Format: date-time */
+            windowStart: null | string;
+            /** Format: date-time */
+            windowEnd: null | string;
+            implementationPlan: null | string;
+            verificationPlan: null | string;
+            backoutPlan: null | string;
+            /** Format: uuid */
+            ownerTeamId: string;
+            ownerTeamName: string;
+            /** Format: uuid */
+            ownerId: string;
+            ownerName: string;
+            status: components["schemas"]["ChangeStatus"];
+            outcome: null | components["schemas"]["ChangeOutcome"];
+            /** Format: date-time */
+            actualStart: null | string;
+            /** Format: date-time */
+            actualEnd: null | string;
+            /** Format: date-time */
+            backoutStartedAt: null | string;
+            verificationNote: null | string;
+            backoutNote: null | string;
+            closingNote: null | string;
+            cancelReason: null | string;
+            /** Format: uuid */
+            createdById: string;
+            createdByName: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            closedAt: null | string;
+            assets: components["schemas"]["ChangeAssetItem"][];
+            tasksByPhase: components["schemas"]["ChangePhaseGroup"][];
+            approval: null | components["schemas"]["ChangeApprovalInfo"];
+            hasEligibleApprover: boolean;
+            canWork: boolean;
+            /** Format: uint32 */
+            version: number;
+        };
+        ChangeDraft: {
+            title: string;
+            justification: null | string;
+            affectedService: null | string;
+            risk: components["schemas"]["Level"];
+            impact: components["schemas"]["Level"];
+            /** Format: date-time */
+            windowStart: null | string;
+            /** Format: date-time */
+            windowEnd: null | string;
+            implementationPlan: null | string;
+            verificationPlan: null | string;
+            backoutPlan: null | string;
+        };
+        /** @enum {unknown} */
+        ChangeEventKind: "created" | "updated" | "submitted" | "withdrawn" | "approved" | "rejected" | "returned" | "approval_voided" | "implementation_started" | "implementation_finished" | "backout_started" | "closed" | "cancelled" | "assets_changed";
+        ChangeListItem: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            title: string;
+            status: components["schemas"]["ChangeStatus"];
+            outcome: null | components["schemas"]["ChangeOutcome"];
+            risk: components["schemas"]["Level"];
+            /** Format: date-time */
+            windowStart: null | string;
+            /** Format: date-time */
+            windowEnd: null | string;
+            ownerTeamName: null | string;
+            ownerName: null | string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @enum {unknown} */
+        ChangeOutcome: "successful" | "rolled_back" | "failed" | null;
         ChangePasswordCommand: {
             currentPassword: string;
             newPassword: string;
+        };
+        /** @enum {unknown} */
+        ChangePhase: "preparation" | "implementation" | "verification" | "backout";
+        ChangePhaseGroup: {
+            phase: components["schemas"]["ChangePhase"];
+            tasks: components["schemas"]["ChangeTaskRow"][];
         };
         ChangePriorityRequest: {
             /** Format: uint32 */
@@ -8249,6 +8622,48 @@ export interface components {
             impact: null | components["schemas"]["Level"];
             urgency: null | components["schemas"]["Level"];
             reason: string;
+        };
+        /** @enum {unknown} */
+        ChangeStatus: "draft" | "pending_approval" | "scheduled" | "implementing" | "verifying" | "closed" | "cancelled";
+        ChangeSummary: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            title: string;
+            status: components["schemas"]["ChangeStatus"];
+            /** Format: date-time */
+            windowStart: null | string;
+            /** Format: date-time */
+            windowEnd: null | string;
+            risk: components["schemas"]["Level"];
+            implementationPlan: null | string;
+            backoutPlan: null | string;
+        };
+        ChangeTaskRow: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            title: string;
+            status: components["schemas"]["WorkTaskStatus"];
+            phase: components["schemas"]["ChangePhase"];
+            /** Format: uuid */
+            teamId: string;
+            teamName: string;
+            assigneeName: null | string;
+        };
+        ChangeTimelineItem: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ChangeEventKind"];
+            actorName: null | string;
+            data: components["schemas"]["JsonElement"];
+            /** Format: date-time */
+            occurredAt: string;
+        };
+        ChangeView: {
+            access: components["schemas"]["ChangeAccess"];
+            detail: null | components["schemas"]["ChangeDetail"];
+            summary: null | components["schemas"]["ChangeSummary"];
         };
         CommentItem: {
             /** Format: uuid */
@@ -8310,6 +8725,14 @@ export interface components {
             /** Format: uuid */
             parentId: null | string;
             scope: components["schemas"]["CategoryScope"];
+        };
+        CreateChangeCommand: {
+            draft: components["schemas"]["ChangeDraft"];
+            /** Format: uuid */
+            ownerTeamId: string;
+            /** Format: uuid */
+            ownerId: string;
+            assetIds: string[];
         };
         CreateDepartmentCommand: {
             name: string;
@@ -8429,6 +8852,12 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             completedAt: null | string;
+        };
+        EditChangeRequest: {
+            /** Format: uint32 */
+            version: number;
+            draft: components["schemas"]["ChangeDraft"];
+            assetIds: string[];
         };
         EmailDeliveryItem: {
             /** Format: uuid */
@@ -8644,6 +9073,15 @@ export interface components {
         };
         PagedResultOfAuditEventItem: {
             items: components["schemas"]["AuditEventItem"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        PagedResultOfChangeListItem: {
+            items: components["schemas"]["ChangeListItem"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
