@@ -50,7 +50,9 @@
       "team": "Ekip",
       "owner": "Sahip",
       "updated": "Güncellendi"
-    }
+    },
+    "mineCard": "Değişikliklerim",
+    "cardCount": "{{count}} değişiklik"
   },
   "detail": {
     "back": "Listeye dön",

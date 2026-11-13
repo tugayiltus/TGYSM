@@ -1,6 +1,6 @@
 /**
- * @input Nothing; loads the signed-in admin's open approvals.
- * @output A list of approvals with approve, reject or reassign actions, each confirmed in a dialog.
+ * @input Nothing; loads the signed-in admin's open request approvals and the change approvals they may decide.
+ * @output One list of both kinds, each row with a kind token and approve, reject, return or reassign actions confirmed in a dialog.
  * @position `/approvals`, inside the app shell (admins only).
  */
 import { Button } from '@astryxdesign/core/Button';
@@ -30,7 +30,12 @@ import { ticketPath } from '../../shared/routes';
 import { Icons } from '../../shared/ui/icons';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 import { useAdminOptions } from '../admin/shared/referenceOptions';
+import { useChangeApprovals } from '../changes/api';
 import { useDecideApproval, useMyApprovals, useReassignApprover, type MyApprovalItem } from '../tickets/api';
+
+import { ChangeApprovalDialog, type ChangeDecision } from './ChangeApprovalDialog';
+import { ChangeApprovalRow } from './ChangeApprovalRow';
+import { KindToken } from './KindToken';
 
 const SKELETON_ROWS = 5;
 const DIALOG_WIDTH = 480;
@@ -108,6 +113,7 @@ function ApprovalRow({ item, onDecide }: { item: MyApprovalItem; onDecide: (pend
   const action = (kind: Pending['kind']) => () => onDecide({ item, kind });
   return (
     <ListItem
+      startContent={<KindToken kind="ticket" />}
       label={
         <StateLink href={ticketPath(item.ticketNumber)} state={linkState(location)} ref={link}>
           {item.subject}
@@ -134,24 +140,41 @@ function ApprovalRow({ item, onDecide }: { item: MyApprovalItem; onDecide: (pend
 export function ApprovalsPage() {
   const { t } = useTranslation('tickets');
   const approvals = useMyApprovals();
+  const changeApprovals = useChangeApprovals();
   const [pending, setPending] = useState<Pending | null>(null);
+  const [changePending, setChangePending] = useState<ChangeDecision | null>(null);
+  const isPending = approvals.isPending || changeApprovals.isPending;
+  const error = approvals.error ?? changeApprovals.error;
+  const ticketItems = approvals.data ?? [];
+  const changeItems = changeApprovals.data ?? [];
+  const loaded = approvals.data !== undefined && changeApprovals.data !== undefined;
+  const retry = () => {
+    void approvals.refetch();
+    void changeApprovals.refetch();
+  };
 
   return (
     <VStack gap={4}>
       <PageHeader icon={ROUTE_META.approvals.icon} titleOverride={t('approvals.title')} />
       <Card padding={0}>
-        {approvals.isPending && <LoadingState rows={SKELETON_ROWS} />}
-        {approvals.isError && <ErrorState error={approvals.error} onRetry={() => void approvals.refetch()} />}
-        {approvals.data && approvals.data.length === 0 && <EmptyState message={t('approvals.empty')} />}
-        {approvals.data && approvals.data.length > 0 && (
+        {isPending && !error && <LoadingState rows={SKELETON_ROWS} />}
+        {error && <ErrorState error={error} onRetry={retry} />}
+        {loaded && ticketItems.length + changeItems.length === 0 && <EmptyState message={t('approvals.empty')} />}
+        {loaded && ticketItems.length + changeItems.length > 0 && (
           <List hasDividers aria-label={t('approvals.title')}>
-            {approvals.data.map((item) => (
+            {ticketItems.map((item) => (
               <ApprovalRow key={item.id} item={item} onDecide={setPending} />
+            ))}
+            {changeItems.map((item) => (
+              <ChangeApprovalRow key={item.id} item={item} onDecide={setChangePending} />
             ))}
           </List>
         )}
       </Card>
       {pending !== null && <DecisionDialog key={`${pending.item.id}-${pending.kind}`} pending={pending} onClose={() => setPending(null)} />}
+      {changePending !== null && (
+        <ChangeApprovalDialog key={`${changePending.item.id}-${changePending.decision}`} pending={changePending} onClose={() => setChangePending(null)} />
+      )}
     </VStack>
   );
 }

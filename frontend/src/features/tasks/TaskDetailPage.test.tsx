@@ -159,4 +159,25 @@ describe('TaskDetailPage', () => {
     expect(await screen.findByRole('heading', { name: TASK.title })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Üstlen' })).not.toBeInTheDocument();
   });
+
+  it('shows the change and phase on a change task and blocks Başla while the phase is not active', async () => {
+    const task = { ...TASK, changeLink: { number: 'CHG-2026-000001', title: 'Çekirdek anahtar yükseltmesi', status: 'scheduled' as const, phase: 'implementation' as const, accessible: true } };
+    mockApi(taskRoutes(task) as never);
+    renderRoute(`/tasks/${TASK.number}`);
+
+    expect(await screen.findByRole('link', { name: /CHG-2026-000001/ })).toHaveAttribute('href', '/changes/CHG-2026-000001');
+    expect(screen.getByText('Aşama: Uygulama')).toBeInTheDocument();
+    expect(screen.getByText('Planlandı')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Başla' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('Değişiklik uygulamaya başlayınca başlatılabilir')).toBeInTheDocument();
+  });
+
+  it('lets a change task start once its phase is active', async () => {
+    const task = { ...TASK, changeLink: { number: 'CHG-2026-000001', title: 'Çekirdek anahtar yükseltmesi', status: 'implementing' as const, phase: 'implementation' as const, accessible: true } };
+    mockApi(taskRoutes(task) as never);
+    renderRoute(`/tasks/${TASK.number}`);
+
+    expect(await screen.findByRole('button', { name: 'Başla' })).not.toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByText('Değişiklik uygulamaya başlayınca başlatılabilir')).not.toBeInTheDocument();
+  });
 });

@@ -1,6 +1,6 @@
 /**
  * @input Nothing; it reads the signed-in person's open work.
- * @output One list of the open tickets and tasks assigned to the person, newest first, with paging.
+ * @output One list of the open tickets, tasks and changes assigned to the person, newest first, with paging; change rows show risk and window.
  * @position IT workspace (İş listem), below the queue cards.
  */
 import { HStack } from '@astryxdesign/core/HStack';
@@ -9,17 +9,18 @@ import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
 import { VStack } from '@astryxdesign/core/VStack';
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import { EmptyState, ErrorState, LoadingState } from '../../shared/feedback/States';
-import { formatDate } from '../../shared/lib/format';
+import { formatDate, formatDateTime } from '../../shared/lib/format';
 import { DataList, type DataColumn } from '../../shared/list/DataList';
 import { linkState } from '../../shared/navigation/returnTo';
 import { StateLink } from '../../shared/navigation/StateLink';
 import { SectionCard } from '../../shared/page/SectionCard';
-import { taskPath, ticketPath } from '../../shared/routes';
+import { changePath, taskPath, ticketPath } from '../../shared/routes';
+import { ChangeStatusBadge, RiskBadge } from '../changes/ChangeBadges';
 import { PriorityBadge } from '../tickets/TicketBadges';
 
 import { useWorkItems, type WorkItemRow } from './api';
@@ -28,9 +29,22 @@ const PAGE_SIZE = 20;
 const FIRST_PAGE = 1;
 const SKELETON_ROWS = 3;
 const TASK_KIND = 'task';
-type Kind = 'incident' | 'request' | 'task';
+const CHANGE_KIND = 'change';
+type Kind = 'incident' | 'request' | 'task' | 'change';
+type ChangeStatusValue = ComponentProps<typeof ChangeStatusBadge>['status'];
 
-const pathOf = (row: WorkItemRow) => (row.kind === TASK_KIND ? taskPath(row.number) : ticketPath(row.number));
+const KIND_COLOR = { task: 'purple', change: 'blue' } as const;
+
+function pathOf(row: WorkItemRow) {
+  switch (row.kind) {
+    case TASK_KIND:
+      return taskPath(row.number);
+    case CHANGE_KIND:
+      return changePath(row.number);
+    default:
+      return ticketPath(row.number);
+  }
+}
 
 function NumberLink({ row }: { row: WorkItemRow }) {
   const location = useLocation();
@@ -43,27 +57,56 @@ function NumberLink({ row }: { row: WorkItemRow }) {
 
 function KindToken({ kind }: { kind: string }) {
   const { t } = useTranslation('tasks');
-  return <Token size="sm" color={kind === TASK_KIND ? 'purple' : 'gray'} label={t(`workspace.kinds.${kind as Kind}`)} />;
+  return <Token size="sm" color={KIND_COLOR[kind as keyof typeof KIND_COLOR] ?? 'gray'} label={t(`workspace.kinds.${kind as Kind}`)} />;
 }
 
-/** Ticket and task statuses share their names, so one label set reads both. */
-function StatusText({ status }: { status: string }) {
+/** Ticket and task statuses share their names, so one label set reads both; a change has its own status names. */
+function StatusText({ row }: { row: WorkItemRow }) {
   const { t } = useTranslation('tasks');
+  if (row.kind === CHANGE_KIND) {
+    return <ChangeStatusBadge status={row.status as ChangeStatusValue} />;
+  }
+
+  const status = row.status;
   return <Text>{t(`statuses.${status as 'open'}`)}</Text>;
+}
+
+/** A change has a risk instead of a priority. */
+function PriorityOrRisk({ row }: { row: WorkItemRow }) {
+  if (row.kind === CHANGE_KIND) {
+    return row.risk ? <RiskBadge risk={row.risk} /> : null;
+  }
+
+  return row.priority ? <PriorityBadge priority={row.priority} /> : null;
+}
+
+function WindowStart({ row }: { row: WorkItemRow }) {
+  const { t } = useTranslation('tasks');
+  const { t: tc } = useTranslation();
+  return <Text type="supporting">{row.windowStart ? t('workspace.windowStart', { start: formatDateTime(row.windowStart) }) : tc('none')}</Text>;
+}
+
+/** A change has a maintenance window instead of a due date; the row carries only its start. */
+function DueOrWindow({ row }: { row: WorkItemRow }) {
+  const { t: tc } = useTranslation();
+  if (row.kind === CHANGE_KIND) {
+    return <WindowStart row={row} />;
+  }
+
+  return row.dueDate ? formatDate(row.dueDate) : tc('none');
 }
 
 export function WorkItemList() {
   const { t } = useTranslation('tasks');
-  const { t: tc } = useTranslation();
   const [page, setPage] = useState(FIRST_PAGE);
   const items = useWorkItems({ queue: 'assigned_to_me', page, pageSize: PAGE_SIZE });
   const columns: DataColumn<WorkItemRow>[] = [
     { key: 'kind', header: '', renderCell: (x) => <KindToken kind={x.kind} /> },
     { key: 'number', header: t('list.columns.number'), renderCell: (x) => <NumberLink row={x} /> },
     { key: 'title', header: t('list.columns.title'), renderCell: (x) => x.title },
-    { key: 'status', header: t('list.columns.status'), renderCell: (x) => <StatusText status={x.status} /> },
-    { key: 'priority', header: t('list.columns.priority'), renderCell: (x) => (x.priority ? <PriorityBadge priority={x.priority} /> : null) },
-    { key: 'due', header: t('list.columns.due'), renderCell: (x) => (x.dueDate ? formatDate(x.dueDate) : tc('none')) },
+    { key: 'status', header: t('list.columns.status'), renderCell: (x) => <StatusText row={x} /> },
+    { key: 'priority', header: t('list.columns.priority'), renderCell: (x) => <PriorityOrRisk row={x} /> },
+    { key: 'due', header: t('list.columns.due'), renderCell: (x) => <DueOrWindow row={x} /> },
     { key: 'team', header: t('list.columns.team'), renderCell: (x) => x.teamName },
   ];
   const renderCard = (x: WorkItemRow) => (
@@ -82,9 +125,9 @@ export function WorkItemList() {
         </StackItem>
       </HStack>
       <HStack gap={2} vAlign="center" wrap="wrap">
-        {x.priority && <PriorityBadge priority={x.priority} />}
-        <StatusText status={x.status} />
-        {x.dueDate && <Text type="supporting">{formatDate(x.dueDate)}</Text>}
+        <PriorityOrRisk row={x} />
+        <StatusText row={x} />
+        {x.kind === CHANGE_KIND ? <WindowStart row={x} /> : x.dueDate && <Text type="supporting">{formatDate(x.dueDate)}</Text>}
       </HStack>
     </VStack>
   );

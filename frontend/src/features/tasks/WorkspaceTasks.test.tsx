@@ -10,6 +10,7 @@ const TASK_COUNTS: Record<string, number> = { mine: 2, team: 6, overdue: 1 };
 const WORK_ROWS = [
   { kind: 'task', number: 'TSK-2026-000001', title: 'Gece yedeği al', status: 'open', priority: 'p2', dueDate: '2026-12-01', teamName: 'Saha Destek', assigneeName: 'Can Demir', updatedAt: '2026-11-13T09:00:00Z' },
   { kind: 'incident', number: 'INC-2026-000001', title: 'Yazıcı çalışmıyor', status: 'in_progress', priority: 'p3', dueDate: null, teamName: 'Servis Masası', assigneeName: 'Can Demir', updatedAt: '2026-11-13T08:00:00Z' },
+  { kind: 'change', number: 'CHG-2026-000001', title: 'Çekirdek anahtar yükseltmesi', status: 'scheduled', priority: null, dueDate: null, teamName: 'Ağ', assigneeName: 'Can Demir', updatedAt: '2026-11-13T07:00:00Z', risk: 'high', windowStart: '2026-12-01T22:00:00Z' },
 ];
 
 function routes() {
@@ -20,7 +21,8 @@ function routes() {
       const queue = new URL(request.url).searchParams.get('queue') ?? '';
       return { status: 200, body: { items: [TASK_ROW], page: 1, pageSize: 1, totalCount: TASK_COUNTS[queue] ?? 0 } };
     },
-    'GET /api/v1/work-items': { status: 200, body: { items: WORK_ROWS, page: 1, pageSize: 20, totalCount: 2 } },
+    'GET /api/v1/changes': { status: 200, body: { items: [], page: 1, pageSize: 1, totalCount: 3 } },
+    'GET /api/v1/work-items': { status: 200, body: { items: WORK_ROWS, page: 1, pageSize: 20, totalCount: 3 } },
   };
 }
 
@@ -46,5 +48,26 @@ describe('İş listem tasks', () => {
     expect(within(list).getAllByText('Arıza').length).toBeGreaterThan(0);
     expect(within(list).getAllByRole('link', { name: /TSK-2026-000001/ })[0]).toHaveAttribute('href', '/tasks/TSK-2026-000001');
     expect(within(list).getAllByRole('link', { name: /INC-2026-000001/ })[0]).toHaveAttribute('href', '/tickets/INC-2026-000001');
+  });
+
+  it('shows the Değişikliklerim card with its count and opens the own changes', async () => {
+    mockApi(routes() as never);
+    const { user, router } = renderRoute('/workspace');
+
+    await user.click(await screen.findByRole('link', { name: /Değişikliklerim 3 değişiklik/ }));
+
+    await waitFor(() => expect(router.state.location.pathname + router.state.location.search).toBe('/changes?queue=mine'));
+  });
+
+  it('lists a change row with its link, change status, risk and window', async () => {
+    mockApi(routes() as never);
+    renderRoute('/workspace');
+
+    const list = await screen.findByRole('region', { name: 'Bana atanan işler' });
+    expect((await within(list).findAllByRole('link', { name: /CHG-2026-000001/ }))[0]).toHaveAttribute('href', '/changes/CHG-2026-000001');
+    expect(within(list).getAllByText('Değişiklik').length).toBeGreaterThan(0);
+    expect(within(list).getAllByText('Planlandı').length).toBeGreaterThan(0);
+    expect(within(list).getAllByText('Risk: Yüksek').length).toBeGreaterThan(0);
+    expect(within(list).getAllByText(/^Pencere: /).length).toBeGreaterThan(0);
   });
 });

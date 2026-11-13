@@ -45,7 +45,8 @@
     "priority": "Öncelik",
     "dueDate": "Bitiş tarihi",
     "ticket": "Bağlı kayıt: {{number}}",
-    "select": "Seçin"
+    "select": "Seçin",
+    "phase": "Aşama: {{phase}}"
   },
   "detail": {
     "back": "Geri",
@@ -61,7 +62,17 @@
     "holdNote": "Bekleme notu",
     "link": "Bağlı kayıt",
     "noAccess": "Bağlı kayıt: erişiminiz yok",
-    "standalone": "Bağlı kayıt yok"
+    "standalone": "Bağlı kayıt yok",
+    "change": "Bağlı değişiklik",
+    "phase": "Aşama",
+    "changeNoAccess": "Bağlı değişiklik: erişiminiz yok",
+    "phaseHint": {
+      "preparation": "Değişiklik planlanınca başlatılabilir",
+      "implementation": "Değişiklik uygulamaya başlayınca başlatılabilir",
+      "verification": "Değişiklik doğrulamaya geçince başlatılabilir",
+      "backout": "Geri dönüş başlayınca başlatılabilir"
+    },
+    "phaseNotOpen": "Bu aşama şu an tamamlamaya açık değil"
   },
   "actions": {
     "title": "İşlemler",
@@ -89,13 +100,15 @@
   "workspace": {
     "count": "{{count}} görev",
     "allWork": "Bana atanan işler",
-    "allWorkCaption": "Bana atanan açık kayıtlar ve görevler",
+    "allWorkCaption": "Bana atanan açık kayıtlar, görevler ve değişiklikler",
     "empty": "Size atanmış açık iş yok.",
     "kinds": {
       "incident": "Arıza",
       "request": "Talep",
-      "task": "Görev"
-    }
+      "task": "Görev",
+      "change": "Değişiklik"
+    },
+    "windowStart": "Pencere: {{start}}"
   },
   "ticketSection": {
     "title": "Görevler",

@@ -15,6 +15,7 @@ export type ChangePhase = Schemas['ChangePhase'];
 export type ChangeOutcome = NonNullable<Schemas['ChangeOutcome']>;
 export type ChangeStatus = NonNullable<Schemas['ChangeStatus']>;
 export type ChangeEventKind = Schemas['ChangeEventKind'];
+export type ChangeApprovalItem = Schemas['ChangeApprovalItem'];
 export type ChangeAssetItem = Schemas['ChangeAssetItem'];
 export type Level = Schemas['Level'];
 export type ChangeQueue = 'mine' | 'team' | 'pending_approval' | 'open';
@@ -30,6 +31,7 @@ export const changeKeys = {
   list: (params: ChangeListParams) => ['changes', 'list', params],
   detail: (number: string) => ['changes', 'detail', number],
   timeline: (number: string) => ['changes', 'timeline', number],
+  approvals: ['changes', 'approvals'],
 } as const;
 
 export interface ChangeListParams {
@@ -184,27 +186,46 @@ export function useChangeAction(change: ChangeDetail) {
 
 export type ApprovalDecision = 'approve' | 'reject' | 'return';
 
+function postDecision(number: string, decision: ApprovalDecision, approvalVersion: number, reason: string | null) {
+  const options = { params: { path: { number } }, body: { approvalVersion, reason } };
+  switch (decision) {
+    case 'approve':
+      return unwrap(api.POST('/api/v1/changes/{number}/approval/approve', options));
+    case 'reject':
+      return unwrap(api.POST('/api/v1/changes/{number}/approval/reject', options));
+    case 'return':
+      return unwrap(api.POST('/api/v1/changes/{number}/approval/return', options));
+  }
+}
+
 export function useDecideChangeApproval(change: ChangeDetail) {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateChanges();
   const reload = useReloadOnError();
   return useMutation({
-    mutationFn: ({ decision, reason }: { decision: ApprovalDecision; reason: string | null }) => {
-      const approvalVersion = change.approval?.version ?? 0;
-      const options = { params: { path: { number: change.number } }, body: { approvalVersion, reason } };
-      switch (decision) {
-        case 'approve':
-          return unwrap(api.POST('/api/v1/changes/{number}/approval/approve', options));
-        case 'reject':
-          return unwrap(api.POST('/api/v1/changes/{number}/approval/reject', options));
-        case 'return':
-          return unwrap(api.POST('/api/v1/changes/{number}/approval/return', options));
-      }
-    },
+    mutationFn: ({ decision, reason }: { decision: ApprovalDecision; reason: string | null }) =>
+      postDecision(change.number, decision, change.approval?.version ?? 0, reason),
     onSuccess: async (updated) => {
       queryClient.setQueryData(changeKeys.detail(updated.number), fullView(updated));
       await invalidate();
     },
+    onError: reload,
+  });
+}
+
+/** Change approvals the caller may decide (the Onaylar page). */
+export function useChangeApprovals() {
+  return useQuery({ queryKey: changeKeys.approvals, queryFn: () => unwrap(api.GET('/api/v1/change-approvals')) });
+}
+
+/** Decides a listed approval: the list row carries the approval version the page showed. */
+export function useDecideListedChangeApproval() {
+  const invalidate = useInvalidateChanges();
+  const reload = useReloadOnError();
+  return useMutation({
+    mutationFn: ({ number, decision, approvalVersion, reason }: { number: string; decision: ApprovalDecision; approvalVersion: number; reason: string | null }) =>
+      postDecision(number, decision, approvalVersion, reason),
+    onSuccess: invalidate,
     onError: reload,
   });
 }

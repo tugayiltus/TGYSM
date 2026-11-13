@@ -22,8 +22,9 @@ import { linkState, useReturnTo } from '../../shared/navigation/returnTo';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { StateLink } from '../../shared/navigation/StateLink';
 import { SectionCard } from '../../shared/page/SectionCard';
-import { ROUTES, ticketPath } from '../../shared/routes';
+import { changePath, ROUTES, ticketPath } from '../../shared/routes';
 import { Icons } from '../../shared/ui/icons';
+import { ChangeStatusBadge } from '../changes/ChangeBadges';
 import { PriorityBadge, TicketStatusBadge } from '../tickets/TicketBadges';
 
 import { useTask, type TaskDetail } from './api';
@@ -79,6 +80,33 @@ function LinkedTicket({ task }: { task: TaskDetail }) {
   );
 }
 
+/** The change a task belongs to, with its status and the phase of this task, or a notice when it is not visible. */
+function LinkedChange({ task }: { task: TaskDetail }) {
+  const { t } = useTranslation('tasks');
+  const { t: tch } = useTranslation('changes');
+  const location = useLocation();
+  const link = task.changeLink;
+  if (link === null) {
+    return null;
+  }
+
+  if (!link.accessible || link.number === null) {
+    return <Text type="supporting">{t('detail.changeNoAccess')}</Text>;
+  }
+
+  return (
+    <VStack gap={2}>
+      <HStack gap={2} vAlign="center" wrap="wrap">
+        <StateLink href={changePath(link.number)} state={linkState(location)}>
+          {`${link.number}${META_SEPARATOR}${link.title ?? ''}`}
+        </StateLink>
+        <ChangeStatusBadge status={link.status} />
+      </HStack>
+      <Text type="supporting">{`${t('detail.phase')}: ${tch(`phases.${link.phase}`)}`}</Text>
+    </VStack>
+  );
+}
+
 /** Keyed by number: switching tasks starts with fresh dialogs and errors. */
 export function TaskDetailPage() {
   const { number = '' } = useParams();
@@ -118,9 +146,7 @@ function TaskDetailView({ number }: { number: string }) {
   );
   const main = (
     <VStack gap={4}>
-      <SectionCard title={t('detail.link')}>
-        <LinkedTicket task={item} />
-      </SectionCard>
+      <SectionCard title={item.changeLink === null ? t('detail.link') : t('detail.change')}>{item.changeLink === null ? <LinkedTicket task={item} /> : <LinkedChange task={item} />}</SectionCard>
       <SectionCard>
         <MetadataList label={{ position: 'top' }}>
           <Field label={t('detail.description')} value={item.description} />

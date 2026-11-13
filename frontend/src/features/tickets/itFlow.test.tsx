@@ -75,6 +75,7 @@ describe('approvals', () => {
   it('confirms an approver assignment with "Onaylayıcıyı ata", not "Onayla"', async () => {
     mockApi({
       'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      'GET /api/v1/change-approvals': { status: 200, body: [] },
       'GET /api/v1/approvals/mine': {
         status: 200,
         body: [{ id: 'a-1', ticketNumber: 'REQ-2026-000001', subject: 'Yeni dizüstü', requesterName: 'Ayşe', requestTypeName: null, createdAt: '2026-10-01T08:00:00Z', approverId: null, version: 1 }],

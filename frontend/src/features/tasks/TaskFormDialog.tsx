@@ -3,6 +3,7 @@
  * @output A dialog that opens a task for any team, with an optional assignee, priority and due date.
  * @position Task list page and the Görevler section of a ticket.
  */
+import { Text } from '@astryxdesign/core/Text';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -45,6 +46,7 @@ interface TaskFormDialogProps {
 export function TaskFormDialog({ ticketNumber = null, change, onCreated, onClose }: TaskFormDialogProps) {
   const { t } = useTranslation('tasks');
   const { t: tt } = useTranslation('tickets');
+  const { t: tch } = useTranslation('changes');
   const teams = useReferenceTeams(true);
   const create = useCreateTask();
   const subject = ticketNumber ?? change?.number ?? null;
@@ -82,6 +84,7 @@ export function TaskFormDialog({ ticketNumber = null, change, onCreated, onClose
       onClose={onClose}
       isDirty={formState.isDirty}
     >
+      {change !== undefined && <Text type="supporting">{t('form.phase', { phase: tch(`phases.${change.phase}`) })}</Text>}
       <FormTextInput control={control} name="title" label={t('form.taskTitle')} autoComplete="off" />
       <FormTextArea control={control} name="description" label={t('form.description')} />
       <FormSelector

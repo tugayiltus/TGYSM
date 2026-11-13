@@ -5,7 +5,9 @@
  */
 import { Button } from '@astryxdesign/core/Button';
 import { HStack } from '@astryxdesign/core/HStack';
+import { Text } from '@astryxdesign/core/Text';
 import { useIsFetching } from '@tanstack/react-query';
+import type { TFunction } from 'i18next';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -14,6 +16,7 @@ import { FormAlert } from '../../shared/feedback/FormAlert';
 import { SectionCard } from '../../shared/page/SectionCard';
 
 import { taskKeys, useTaskAction, type TaskDetail } from './api';
+import { canCompleteInPhase, canStartInPhase } from './changeGate';
 import { TaskActionDialog, type TaskDialogKind } from './TaskActionDialog';
 
 type DirectKind = 'claim' | 'start' | 'resume' | 'reopen';
@@ -52,11 +55,25 @@ function availableActions(t: TaskDetail): { direct: DirectKind[]; dialogs: TaskD
   return { direct, dialogs };
 }
 
+/** What the change phase blocks: starting and resuming, completing, and the hint that says why. */
+function phaseGate(task: TaskDetail, t: TFunction<'tasks'>) {
+  const link = task.changeLink;
+  if (link === null || link.status === null || isClosed(task)) {
+    return { startBlocked: false, completeBlocked: false, hint: null };
+  }
+
+  const startBlocked = !canStartInPhase(link.status, link.phase);
+  const completeBlocked = !canCompleteInPhase(link.status, link.phase);
+  const hint = startBlocked ? t(`detail.phaseHint.${link.phase}`) : completeBlocked ? t('detail.phaseNotOpen') : null;
+  return { startBlocked, completeBlocked, hint };
+}
+
 export function TaskActions({ task }: { task: TaskDetail }) {
   const { t } = useTranslation('tasks');
   const direct = useTaskAction(task);
   const [dialog, setDialog] = useState<TaskDialogKind | null>(null);
   const actions = availableActions(task);
+  const gate = phaseGate(task, t);
   // Every action sends the version shown here; wait for a refetch so a dialog does not open with an old version.
   // A running action changes the version too, so the other buttons wait for its answer.
   const busy = useIsFetching({ queryKey: taskKeys.detail(task.number) }) > 0 || direct.isPending;
@@ -74,7 +91,7 @@ export function TaskActions({ task }: { task: TaskDetail }) {
             key={kind}
             label={t(`actions.${kind}`)}
             variant={index === 0 ? 'primary' : 'secondary'}
-            isDisabled={busy}
+            isDisabled={busy || ((kind === 'start' || kind === 'resume') && gate.startBlocked)}
             isLoading={direct.isPending && direct.variables?.kind === kind}
             onClick={() => direct.mutate({ kind })}
           />
@@ -84,7 +101,7 @@ export function TaskActions({ task }: { task: TaskDetail }) {
             key={kind}
             label={t(`actions.${kind}`)}
             variant={kind === 'cancel' ? 'destructive' : 'secondary'}
-            isDisabled={busy}
+            isDisabled={busy || (kind === 'complete' && gate.completeBlocked)}
             onClick={() => {
               direct.reset();
               setDialog(kind);
@@ -92,6 +109,7 @@ export function TaskActions({ task }: { task: TaskDetail }) {
           />
         ))}
       </HStack>
+      {gate.hint && <Text type="supporting">{gate.hint}</Text>}
       {dialog !== null && <TaskActionDialog key={dialog} task={task} kind={dialog} onClose={() => setDialog(null)} />}
     </SectionCard>
   );

@@ -206,7 +206,11 @@
     "approver": "Onaylayıcı",
     "unassigned": "Onaylayıcı yok",
     "requestedBy": "Talep sahibi: {{name}}",
-    "assignApprover": "Onaylayıcıyı ata"
+    "assignApprover": "Onaylayıcıyı ata",
+    "kinds": {
+      "ticket": "Talep",
+      "change": "Değişiklik"
+    }
   },
   "nav": {
     "tickets": "Kayıtlarım",
