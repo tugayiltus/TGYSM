@@ -140,6 +140,24 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Approval_request_after_a_void_falls_back_to_eligible_admins_when_the_named_approver_voided_it()
+    {
+        var voider = await AddUserAsync(UserRole.Admin);
+        var eligible = await AddUserAsync(UserRole.Admin);
+        var approval = ChangeApproval.Request(_change.Id, new string('a', ChangeApproval.FingerprintLength), Now);
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            db.ChangeApprovals.Add(approval);
+            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, voider.Id));
+            await db.SaveChangesAsync(Ct);
+        }
+
+        await EmitAsync(NotificationEventTypes.ChangeApprovalRequested, voider.Id, voider.Id);
+
+        Assert.Equal([eligible.Id], await RecipientsAsync());
+    }
+
+    [Fact]
     public async Task Approval_decision_goes_to_author_and_owner_but_not_the_actor()
     {
         // The owner (an admin who is not the author) decides: only the author is mailed.

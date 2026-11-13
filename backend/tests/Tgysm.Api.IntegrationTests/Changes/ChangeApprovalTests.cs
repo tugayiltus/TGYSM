@@ -445,6 +445,33 @@ public sealed class ChangeApprovalTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_void_starts_the_new_cycle_with_only_the_voiding_user_as_editor()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (x, xUser) = await TeamAdminAsync(world, "admin-x@example.com");
+        var (a, aUser) = await TeamAdminAsync(world, "admin-a@example.com");
+        var submitted = await SubmittedAsync(world);
+        await EditWindowAsync(x, submitted, "2026-12-07T20:00:00Z", "2026-12-07T22:00:00Z");
+        var pending = await DetailAsync(world.Admin, submitted);
+        using var approve = await world.Admin.PostAsync(Action(pending, "approval/approve"), new { approvalVersion = pending.GetProperty("approval").GetProperty("version").GetUInt32() });
+        Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
+
+        await EditWindowAsync(a, submitted, "2026-12-08T20:00:00Z", "2026-12-08T22:00:00Z");
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var changeId = submitted.GetProperty("id").GetGuid();
+        var editors = await db.ChangeApprovalEditors.AsNoTracking()
+            .Where(e => db.ChangeApprovals.Any(p => p.Id == e.ApprovalId && p.ChangeId == changeId && p.Status == ChangeApprovalStatus.Pending))
+            .Select(e => e.UserId).ToListAsync(Ct);
+        Assert.Equal([aUser.Id], editors);
+        var voided = await DetailAsync(x, submitted);
+        using var byX = await x.PostAsync(Action(voided, "approval/approve"), new { approvalVersion = voided.GetProperty("approval").GetProperty("version").GetUInt32() });
+        Assert.Equal(HttpStatusCode.OK, byX.StatusCode);
+        Assert.NotEqual(xUser.Id, aUser.Id);
+    }
+
+    [Fact]
     public async Task Change_has_no_eligible_approver_when_the_only_other_admins_all_edited_the_plan()
     {
         var world = await TicketWorld.CreateAsync(factory);

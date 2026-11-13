@@ -100,23 +100,25 @@ public sealed class RecipientResolver(IAppDbContext db)
         }
     }
 
-    /// <summary>The admin named in the payload (a voided approval), else every active admin except the change's author and owner.</summary>
+    /// <summary>
+    /// Every active admin who may decide the pending approval (not author, owner or editor). After a void the admin who
+    /// approved is told alone, when they may still decide; otherwise every eligible admin is.
+    /// </summary>
     private async Task<IReadOnlyList<Guid>> ChangeApproverIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
     {
-        if (ApproverIdOf(outboxEvent) is { } approverId)
-        {
-            return [approverId];
-        }
-
         var change = await db.ChangeRequests.AsNoTracking()
             .Where(c => c.Id == outboxEvent.SubjectId)
             .Select(c => new { c.CreatedById, c.OwnerId })
             .SingleAsync(cancellationToken);
         var editors = ChangeApprovalFlow.PendingEditorIds(db, outboxEvent.SubjectId.GetValueOrDefault());
-        return await db.Users.AsNoTracking()
-            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId && !editors.Contains(u.Id))
-            .Select(u => u.Id)
-            .ToListAsync(cancellationToken);
+        var eligible = db.Users.AsNoTracking()
+            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId && !editors.Contains(u.Id));
+        if (ApproverIdOf(outboxEvent) is { } approverId && await eligible.AnyAsync(u => u.Id == approverId, cancellationToken))
+        {
+            return [approverId];
+        }
+
+        return await eligible.Select(u => u.Id).ToListAsync(cancellationToken);
     }
 
     private async Task<IReadOnlyList<Guid>> ChangeAuthorAndOwnerIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)

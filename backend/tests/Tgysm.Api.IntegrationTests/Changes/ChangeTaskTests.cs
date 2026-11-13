@@ -231,6 +231,35 @@ public sealed class ChangeTaskTests(ApiFactory factory) : IAsyncLifetime
         Assert.Contains(world.DeskUser.Id, editors);
     }
 
+    [Theory]
+    [InlineData("cancel")]
+    [InlineData("reopen")]
+    public async Task Cancelling_or_reopening_an_implementation_task_while_pending_makes_the_actor_an_editor(string action)
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        await TestData.SaveAsync(factory, db => db.TeamMemberships.Add(Tgysm.Domain.Organization.TeamMembership.Create(world.ServiceDesk.Id, world.AdminUser.Id, DateTimeOffset.UtcNow)));
+        var change = await ChangeWorld.CreateAsync(world.Desk, world);
+        await ChangeWorld.CreateTaskAsync(world.Desk, change, "implementation", world.ServiceDesk.Id);
+        var second = await ChangeWorld.CreateTaskAsync(world.Desk, change, "implementation", world.ServiceDesk.Id);
+        if (action == "reopen")
+        {
+            second = await ChangeWorld.TaskActAsync(world.Desk, second, "cancel", new { version = TaskWorld.VersionOf(second), reason = "Sonra" });
+        }
+
+        var submitted = await ChangeWorld.ActAsync(world.Desk, await ChangeWorld.DetailAsync(world.Desk, change), "submit");
+        var before = Assert.Single(await ApprovalsAsync(submitted));
+        await ChangeWorld.TaskActAsync(
+            world.Admin, second, action, action == "cancel" ? new { version = TaskWorld.VersionOf(second), reason = "Gereksiz" } : null);
+
+        var after = Assert.Single(await ApprovalsAsync(submitted));
+        Assert.NotEqual(before.Fingerprint, after.Fingerprint);
+        var current = await ChangeWorld.DetailAsync(world.Admin, submitted);
+        using var response = await world.Admin.PostAsync(
+            ChangeWorld.PathOf(current, "approval/approve"), new { approvalVersion = current.GetProperty("approval").GetProperty("version").GetUInt32() });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal("changes.self_approval", await ApiClient.ReadCodeAsync(response));
+    }
+
     [Fact]
     public async Task Implementation_tasks_are_locked_from_implementing_on_but_backout_tasks_can_be_added()
     {
