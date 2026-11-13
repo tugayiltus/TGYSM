@@ -121,6 +121,15 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
     [Fact]
     public async Task Approval_decision_goes_to_author_and_owner_but_not_the_actor()
     {
+        // The owner (an admin who is not the author) decides: only the author is mailed.
+        await EmitAsync(NotificationEventTypes.ChangeApprovalDecided, _owner.Id);
+
+        Assert.Equal([_author.Id], await RecipientsAsync());
+    }
+
+    [Fact]
+    public async Task Approval_decision_reaches_both_when_a_third_admin_decides()
+    {
         var decider = await AddUserAsync(UserRole.Admin);
 
         await EmitAsync(NotificationEventTypes.ChangeApprovalDecided, decider.Id);

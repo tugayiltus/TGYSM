@@ -22,7 +22,7 @@ public sealed class RecipientResolver(IAppDbContext db)
     private static readonly IReadOnlySet<string> ActorExcludedEvents = new HashSet<string>(StringComparer.Ordinal)
     {
         NotificationEventTypes.TicketAssigned, NotificationEventTypes.PublicReply, NotificationEventTypes.TaskAssigned,
-        NotificationEventTypes.ChangeBackoutStarted,
+        NotificationEventTypes.ChangeBackoutStarted, NotificationEventTypes.ChangeApprovalDecided,
     };
 
     public async Task<IReadOnlyList<Recipient>> ResolveAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
