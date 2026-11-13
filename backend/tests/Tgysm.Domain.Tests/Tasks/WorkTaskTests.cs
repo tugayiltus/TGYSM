@@ -141,6 +141,28 @@ public sealed class WorkTaskTests
     }
 
     [Fact]
+    public void Clearing_the_assignee_of_running_work_returns_to_open()
+    {
+        var task = NewTask(Agent);
+        task.Start(Now);
+
+        task.Assign(null, Now, Creator);
+
+        Assert.Equal(((Guid?)null, WorkTaskStatus.Open), (task.AssigneeId, task.Status));
+    }
+
+    [Fact]
+    public void Handing_running_work_to_another_member_keeps_it_in_progress()
+    {
+        var task = NewTask(Agent);
+        task.Start(Now);
+
+        task.Assign(Creator, Now, Creator);
+
+        Assert.Equal(((Guid?)Creator, WorkTaskStatus.InProgress), (task.AssigneeId, task.Status));
+    }
+
+    [Fact]
     public void Transfer_moves_team_clears_assignee_and_reopens_work()
     {
         var task = NewTask(Agent);

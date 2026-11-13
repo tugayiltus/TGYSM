@@ -65,12 +65,20 @@ public sealed class WorkTask : Entity
     /// <summary>Overdue: the due date has passed in the company calendar and the task is still open.</summary>
     public bool IsOverdue(DateOnly today) => IsOpen && DueDate is { } due && due < today;
 
-    /// <summary>Sets or clears the assignee inside the same team; membership is checked by the caller.</summary>
+    /// <summary>
+    /// Sets or clears the assignee inside the same team; membership is checked by the caller.
+    /// Clearing the assignee of running work returns it to open, so a member can claim and start it again.
+    /// </summary>
     public TaskAssignment Assign(Guid? assigneeId, DateTimeOffset now, Guid actorUserId)
     {
         RequireOpen(nameof(Assign));
         var record = TaskAssignment.Record(Id, TeamId, TeamId, AssigneeId, assigneeId, null, null, actorUserId, now);
         AssigneeId = assigneeId;
+        if (assigneeId is null && Status == WorkTaskStatus.InProgress)
+        {
+            Status = WorkTaskStatus.Open;
+        }
+
         Touch(now);
         return record;
     }
