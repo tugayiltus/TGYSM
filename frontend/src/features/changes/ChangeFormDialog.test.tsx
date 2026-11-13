@@ -126,3 +126,53 @@ describe('ChangeFormDialog', () => {
     expect(screen.queryByRole('button', { name: 'Düzenle' })).not.toBeInTheDocument();
   });
 });
+
+describe('ChangeFormDialog edit versions and whitespace', () => {
+  it('sends the version the dialog opened with, even after a refetch brought a newer one', async () => {
+    let put: unknown;
+    let current = { ...CHANGE, status: 'draft' as const };
+    const api = mockApi(
+      changeRoutes(current, {
+        [`GET ${BASE}`]: () => ({ status: 200, body: full(current) }),
+        [`PUT ${BASE}`]: async (request: Request) => {
+          put = await request.json();
+          return { status: 409, body: { code: 'concurrency.conflict' } };
+        },
+      }) as never,
+    );
+    const { user, queryClient } = renderRoute(`/changes/${CHANGE.number}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Düzenle' }));
+    const dialog = await screen.findByRole('dialog');
+    current = { ...current, version: 9 };
+    await queryClient.invalidateQueries({ queryKey: ['changes'] });
+    await waitFor(() => expect(api.calls.filter((c) => c.method === 'GET' && c.url.endsWith(BASE)).length).toBeGreaterThan(1));
+    const title = within(dialog).getByLabelText('Başlık');
+    await user.type(title, ' x');
+    await user.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+
+    await waitFor(() => expect(put).toMatchObject({ version: CHANGE.version }));
+    expect(await within(dialog).findByText(/başka biri tarafından değiştirildi/)).toBeInTheDocument();
+  });
+
+  it('does not ask about the approval when only trailing whitespace differs', async () => {
+    let put: unknown;
+    mockApi(
+      changeRoutes({ ...CHANGE, status: 'scheduled', implementationPlan: 'Plan  ' }, {
+        [`PUT ${BASE}`]: async (request: Request) => {
+          put = await request.json();
+          return { status: 200, body: { ...CHANGE, status: 'scheduled', version: 4 } };
+        },
+      }) as never,
+    );
+    const { user } = renderRoute(`/changes/${CHANGE.number}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Düzenle' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Başlık'), ' x');
+    await user.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+
+    await waitFor(() => expect(put).toBeDefined());
+    expect(screen.queryByText(/onayı geçersiz kılar/)).not.toBeInTheDocument();
+  });
+});

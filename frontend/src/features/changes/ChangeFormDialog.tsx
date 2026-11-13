@@ -149,7 +149,9 @@ export function ChangeFormDialog({ change, onSaved, onClose }: { change?: Change
   const me = useSession();
   const teams = useReferenceTeams(true);
   const create = useCreateChange();
-  const edit = useEditChange(change?.number ?? '', change?.version ?? 0);
+  // The version the user saw when opening the dialog; a background refetch must not silently skip the conflict check.
+  const [openedVersion] = useState(change?.version ?? 0);
+  const edit = useEditChange(change?.number ?? '', openedVersion);
   const [picked, setPicked] = useState<PickedAsset[]>(() => (change?.assets ?? []).map((a) => ({ id: a.id, label: assetLabel(a.assetTag, a.brand, a.model) })));
   const [pendingDraft, setPendingDraft] = useState<{ draft: ChangeDraft } | null>(null);
   const [initial] = useState(() => initialValues(change, me.id));
@@ -159,7 +161,7 @@ export function ChangeFormDialog({ change, onSaved, onClose }: { change?: Change
     () => (teams.data?.find((team) => team.id === teamId)?.members ?? []).map((m) => ({ value: m.id, label: m.fullName })),
     [teams.data, teamId],
   );
-  const initialAssetIds = useMemo(() => (change?.assets ?? []).map((a) => a.id), [change]);
+  const [initialAssetIds] = useState(() => (change?.assets ?? []).map((a) => a.id));
   const assetIds = picked.map((p) => p.id);
   const mutation = change === undefined ? create : edit;
 
@@ -183,7 +185,7 @@ export function ChangeFormDialog({ change, onSaved, onClose }: { change?: Change
       verificationPlan: orNull(v.verificationPlan),
       backoutPlan: orNull(v.backoutPlan),
     };
-    const touchesFingerprint = FINGERPRINT_KEYS.some((key) => v[key] !== initial[key]) || !sameSet(assetIds, initialAssetIds);
+    const touchesFingerprint = FINGERPRINT_KEYS.some((key) => v[key].trim() !== initial[key].trim()) || !sameSet(assetIds, initialAssetIds);
     if (change?.status === 'scheduled' && touchesFingerprint) {
       setPendingDraft({ draft });
       return;
