@@ -89,6 +89,17 @@ public static class ErrorCodes
     public const string TaskHoldNoteRequired = "tasks.hold_note_required";
     public const string TaskAssigneeNotInTeam = "tasks.assignee_not_in_team";
     public const string TaskAlreadyClaimed = "tasks.already_claimed";
+    public const string TaskOneLinkOnly = "tasks.one_link_only";
+
+    public const string ChangeInvalidTransition = "changes.invalid_transition";
+    public const string ChangeNotReady = "changes.not_ready";
+    public const string ChangePlanLocked = "changes.plan_locked";
+    public const string ChangeOpenTasks = "changes.open_tasks";
+    public const string ChangeVerificationRequired = "changes.verification_required";
+    public const string ChangeBackoutRequired = "changes.backout_required";
+    public const string ChangeSelfApproval = "changes.self_approval";
+    public const string ChangeApprovalNotPending = "changes.approval_not_pending";
+    public const string ChangePhaseNotActive = "changes.phase_not_active";
 
     public const string ApprovalNotApprover = "approvals.not_approver";
     public const string ApprovalNotPending = "approvals.not_pending";

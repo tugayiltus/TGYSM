@@ -151,6 +151,18 @@
     "cancel_reason_required": "Görevi iptal etmek için neden yazın.",
     "hold_note_required": "\"Diğer\" bekleme nedeni için açıklama yazın.",
     "assignee_not_in_team": "Atanan kişi görevin ekibinde değil.",
-    "already_claimed": "Görevi başka biri üstlendi. Sayfayı yenileyin."
+    "already_claimed": "Görevi başka biri üstlendi. Sayfayı yenileyin.",
+    "one_link_only": "Görev aynı anda hem kayda hem değişikliğe bağlanamaz."
+  },
+  "changes": {
+    "invalid_transition": "Bu işlem değişikliğin mevcut durumunda yapılamaz.",
+    "not_ready": "Onaya göndermek için bakım penceresi, üç plan (uygulama, doğrulama, geri dönüş) ve en az bir Uygulama görevi gerekir. Pencere bitişi başlangıçtan sonra olmalı.",
+    "plan_locked": "Uygulama başladıktan sonra plan, pencere, risk ve etki değiştirilemez.",
+    "open_tasks": "Başarılı kapatmak için tüm Uygulama ve Doğrulama görevleri tamamlanmış, Hazırlık görevleri tamamlanmış veya iptal edilmiş olmalı.",
+    "verification_required": "Başarılı kapatmak için doğrulama notu yazın.",
+    "backout_required": "Geri alındı veya başarısız olarak kapatmak için geri dönüşü başlatın, en az bir Geri dönüş görevini bitirin ve geri dönüş notu yazın.",
+    "self_approval": "Değişikliği oluşturan kişi ve sahibi onay veremez.",
+    "approval_not_pending": "Bu onay artık beklemiyor. Sayfayı yenileyin.",
+    "phase_not_active": "Bu aşamanın görevleri değişikliğin mevcut durumunda başlatılamaz."
   }
 }

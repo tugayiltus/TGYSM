@@ -89,6 +89,12 @@ public static class AuditActions
     public const string TaskAssigned = "tasks.assigned";
     public const string TaskTransferred = "tasks.transferred";
     public const string TaskStatusChanged = "tasks.status_changed";
+    public const string ChangeCreated = "changes.created";
+    public const string ChangeUpdated = "changes.updated";
+    public const string ChangeStatusChanged = "changes.status_changed";
+    public const string ChangeApprovalDecided = "changes.approval_decided";
+    public const string ChangeApprovalVoided = "changes.approval_voided";
+    public const string ChangeClosed = "changes.closed";
     public const string RelatedRequestCreated = "tickets.related_request_created";
     public const string ApprovalApproved = "approvals.approved";
     public const string ApprovalRejected = "approvals.rejected";

@@ -35,6 +35,9 @@ internal sealed class WorkTaskConfiguration : IEntityTypeConfiguration<WorkTask>
         builder.HasIndex(t => t.Number).IsUnique();
         builder.HasIndex(t => new { t.TeamId, t.Status });
         builder.HasIndex(t => new { t.AssigneeId, t.Status });
+        // Not persisted until the change tables and their migration land (Phase 8, next task).
+        builder.Ignore(t => t.ChangeId);
+        builder.Ignore(t => t.Phase);
         builder.HasIndex(t => t.TicketId);
         builder.HasIndex(t => new { t.UpdatedAt, t.Id }, "ix_work_tasks_updated_at_id").IsDescending(true, true);
         // Substring search (LIKE '%x%') needs trigrams; a B-tree cannot serve it.

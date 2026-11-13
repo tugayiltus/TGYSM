@@ -122,7 +122,7 @@ public sealed class ReopenTaskHandler(IAppDbContext db, TaskWork work, IAuditLog
         work.RunAsync(command.Number, command.Version, requireWorker: true, (task, viewer, now) =>
         {
             var before = task.Status;
-            task.Reopen(now);
+            task.Reopen(now, changeOpen: true);
             TaskStatusChange.Record(db, audit, task, before, TaskEventKind.Reopened, viewer.UserId, now);
             return Task.CompletedTask;
         }, cancellationToken);

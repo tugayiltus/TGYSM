@@ -161,7 +161,8 @@
     "auth_settings": "Giriş yöntemi ayarları",
     "brand": "Marka",
     "asset_model": "Model",
-    "task": "Görev"
+    "task": "Görev",
+    "change": "Değişiklik"
   },
   "auditActions": {
     "setup": {
@@ -297,6 +298,14 @@
       "assigned": "Görev atandı",
       "transferred": "Görev aktarıldı",
       "status_changed": "Görev durumu değişti"
+    },
+    "changes": {
+      "created": "Değişiklik oluşturuldu",
+      "updated": "Değişiklik güncellendi",
+      "status_changed": "Değişiklik durumu değişti",
+      "approval_decided": "Değişiklik onayı karara bağlandı",
+      "approval_voided": "Değişiklik onayı geçersiz kılındı",
+      "closed": "Değişiklik kapatıldı"
     }
   },
   "emailEvents": {

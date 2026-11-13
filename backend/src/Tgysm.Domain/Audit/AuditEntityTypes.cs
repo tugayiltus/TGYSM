@@ -15,6 +15,7 @@ public static class AuditEntityTypes
     public const string AssetModel = "asset_model";
     public const string Ticket = "ticket";
     public const string Task = "task";
+    public const string Change = "change";
     public const string Approval = "approval";
     public const string Attachment = "attachment";
     public const string EmailTemplate = "email_template";

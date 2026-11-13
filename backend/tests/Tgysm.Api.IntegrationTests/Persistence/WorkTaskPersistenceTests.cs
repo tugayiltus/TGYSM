@@ -39,7 +39,7 @@ public sealed class WorkTaskPersistenceTests(PostgresDatabase database) : IAsync
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     private WorkTask NewTask(string number = "TSK-2026-000001", Guid? ticketId = null) =>
-        WorkTask.Create(number, "Yedek al", null, _team.Id, _agent.Id, Priority.P2, new DateOnly(2026, 11, 20), ticketId, _agent.Id, Now);
+        WorkTask.Create(number, "Yedek al", null, _team.Id, _agent.Id, Priority.P2, new DateOnly(2026, 11, 20), ticketId, null, null, _agent.Id, Now);
 
     [Fact]
     public async Task Task_round_trips_with_history()

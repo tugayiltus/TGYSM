@@ -1,3 +1,4 @@
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Tickets;
 
@@ -31,6 +32,10 @@ public sealed class WorkTask : Entity
     public Priority Priority { get; private set; }
     public DateOnly? DueDate { get; private set; }
     public Guid? TicketId { get; private init; }
+    public Guid? ChangeId { get; private init; }
+
+    /// <summary>Set exactly when <see cref="ChangeId"/> is set.</summary>
+    public ChangePhase? Phase { get; private init; }
     public HoldReason? HoldReason { get; private set; }
     public string? HoldNote { get; private set; }
     public string? ResultNote { get; private set; }
@@ -44,8 +49,19 @@ public sealed class WorkTask : Entity
 
     public static WorkTask Create(
         string number, string title, string? description, Guid teamId, Guid? assigneeId, Priority priority, DateOnly? dueDate,
-        Guid? ticketId, Guid createdById, DateTimeOffset now) =>
-        new()
+        Guid? ticketId, Guid? changeId, ChangePhase? phase, Guid createdById, DateTimeOffset now)
+    {
+        if (ticketId is not null && changeId is not null)
+        {
+            throw new DomainException(ErrorCodes.TaskOneLinkOnly, "A task links to a ticket or a change, not both.");
+        }
+
+        if ((changeId is null) != (phase is null))
+        {
+            throw new ArgumentException("A phase is required exactly when the task is linked to a change.", nameof(phase));
+        }
+
+        return new WorkTask
         {
             Number = number,
             Title = title.Trim(),
@@ -57,10 +73,13 @@ public sealed class WorkTask : Entity
             Priority = priority,
             DueDate = dueDate,
             TicketId = ticketId,
+            ChangeId = changeId,
+            Phase = phase,
             CreatedById = createdById,
             CreatedAt = now,
             UpdatedAt = now,
         };
+    }
 
     /// <summary>Overdue: the due date has passed in the company calendar and the task is still open.</summary>
     public bool IsOverdue(DateOnly today) => IsOpen && DueDate is { } due && due < today;
@@ -167,9 +186,10 @@ public sealed class WorkTask : Entity
         Close(now);
     }
 
-    public void Reopen(DateTimeOffset now)
+    /// <summary>A change task reopens only while its change is still open; the caller passes that (ADR-0032).</summary>
+    public void Reopen(DateTimeOffset now, bool changeOpen)
     {
-        if (IsOpen)
+        if (IsOpen || !changeOpen)
         {
             throw InvalidTransition(nameof(Reopen));
         }

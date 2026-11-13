@@ -53,7 +53,7 @@ public sealed class CreateTaskHandler(
         {
             var now = clock.GetUtcNow();
             var number = TaskNumber.Format(now.Year, await numbers.NextAsync(TaskNumber.CounterKind, now.Year, ct));
-            task = WorkTask.Create(number, command.Title, command.Description, command.TeamId, command.AssigneeId, command.Priority, command.DueDate, ticketId, viewer.UserId, now);
+            task = WorkTask.Create(number, command.Title, command.Description, command.TeamId, command.AssigneeId, command.Priority, command.DueDate, ticketId, null, null, viewer.UserId, now);
             db.WorkTasks.Add(task);
             TaskHistory.Record(db, task, TaskEventKind.Created, viewer.UserId, now, new { task.TeamId, task.AssigneeId, task.TicketId });
             audit.Record(AuditActions.TaskCreated, AuditEntityTypes.Task, task.Id, newValues: new { task.Number, task.TeamId, task.AssigneeId, task.TicketId });

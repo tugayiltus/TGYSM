@@ -1,3 +1,4 @@
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
@@ -14,7 +15,7 @@ public sealed class WorkTaskTests
     private static readonly DateOnly Today = new(2026, 11, 13);
 
     private static WorkTask NewTask(Guid? assignee = null, DateOnly? due = null, Guid? ticketId = null) =>
-        WorkTask.Create("TSK-2026-000001", " Yedek al ", " Veritabanı yedeği ", Team, assignee, Priority.P2, due, ticketId, Creator, Now);
+        WorkTask.Create("TSK-2026-000001", " Yedek al ", " Veritabanı yedeği ", Team, assignee, Priority.P2, due, ticketId, null, null, Creator, Now);
 
     private static void AssertCode(string code, Action action) =>
         Assert.Equal(code, Assert.Throws<DomainException>(action).Code);
@@ -96,13 +97,41 @@ public sealed class WorkTaskTests
     }
 
     [Fact]
+    public void A_task_links_to_a_ticket_or_a_change_not_both()
+    {
+        AssertCode(ErrorCodes.TaskOneLinkOnly, () => WorkTask.Create(
+            "TSK-2026-000001", "x", null, Team, null, Priority.P2, null, Guid.NewGuid(), Guid.NewGuid(), ChangePhase.Backout, Creator, Now));
+    }
+
+    [Fact]
+    public void A_change_task_needs_a_phase_and_a_plain_task_has_none()
+    {
+        var changeId = Guid.NewGuid();
+        var task = WorkTask.Create("TSK-2026-000001", "x", null, Team, null, Priority.P2, null, null, changeId, ChangePhase.Verification, Creator, Now);
+
+        Assert.Equal((changeId, ChangePhase.Verification), (task.ChangeId, task.Phase));
+        Assert.Throws<ArgumentException>(() => WorkTask.Create("TSK-2026-000001", "x", null, Team, null, Priority.P2, null, null, changeId, null, Creator, Now));
+        Assert.Throws<ArgumentException>(() => WorkTask.Create("TSK-2026-000001", "x", null, Team, null, Priority.P2, null, null, null, ChangePhase.Backout, Creator, Now));
+    }
+
+    [Fact]
+    public void Reopen_is_refused_when_the_change_is_closed()
+    {
+        var task = NewTask(Agent);
+        task.Start(Now);
+        task.Complete("Bitti", Now);
+
+        AssertInvalid(() => task.Reopen(Now, changeOpen: false));
+    }
+
+    [Fact]
     public void Refused_transitions()
     {
         var task = NewTask(Agent);
         AssertInvalid(() => task.Resume(Now));
         task.Start(Now);
         AssertInvalid(() => task.Start(Now));
-        AssertInvalid(() => task.Reopen(Now));
+        AssertInvalid(() => task.Reopen(Now, changeOpen: true));
         task.Hold(HoldReason.User, null, Now);
         AssertInvalid(() => task.Complete("Bitti", Now));
         task.Resume(Now);
@@ -121,7 +150,7 @@ public sealed class WorkTaskTests
         task.Start(Now);
         task.Complete("Bitti", Now);
 
-        task.Reopen(Now.AddHours(1));
+        task.Reopen(Now.AddHours(1), changeOpen: true);
 
         Assert.Equal(WorkTaskStatus.Open, task.Status);
         Assert.Null(task.ResultNote);
