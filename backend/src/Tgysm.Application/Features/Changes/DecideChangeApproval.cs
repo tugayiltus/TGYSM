@@ -54,11 +54,11 @@ public sealed class DecideChangeApprovalHandler(
             var reason = command.Decision == ChangeApprovalDecision.Approve ? null : command.Reason!.Trim();
             var pending = await db.ChangeApprovals.AsNoTracking()
                 .Where(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Pending)
-                .Select(a => new { a.Id, a.PlanEditorId }).SingleOrDefaultAsync(ct)
+                .Select(a => new { a.Id, IsEditor = db.ChangeApprovalEditors.Any(e => e.ApprovalId == a.Id && e.UserId == viewer.UserId) }).SingleOrDefaultAsync(ct)
                 ?? throw NotPending();
-            if (pending.PlanEditorId == viewer.UserId)
+            if (pending.IsEditor)
             {
-                throw new DomainException(ErrorCodes.ChangeSelfApproval, "The person who last changed the plan cannot decide it.");
+                throw new DomainException(ErrorCodes.ChangeSelfApproval, "Whoever submitted or changed the plan of this approval cannot decide it.");
             }
 
             var pendingId = pending.Id;

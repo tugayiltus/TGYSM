@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
+using Tgysm.Application.Features.Changes;
 using Tgysm.Domain.Changes;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tasks;
@@ -111,11 +112,9 @@ public sealed class RecipientResolver(IAppDbContext db)
             .Where(c => c.Id == outboxEvent.SubjectId)
             .Select(c => new { c.CreatedById, c.OwnerId })
             .SingleAsync(cancellationToken);
-        var editorId = await db.ChangeApprovals.AsNoTracking()
-            .Where(a => a.ChangeId == outboxEvent.SubjectId && a.Status == ChangeApprovalStatus.Pending)
-            .Select(a => a.PlanEditorId).FirstOrDefaultAsync(cancellationToken);
+        var editors = ChangeApprovalFlow.PendingEditorIds(db, outboxEvent.SubjectId.GetValueOrDefault());
         return await db.Users.AsNoTracking()
-            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId && u.Id != editorId)
+            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId && !editors.Contains(u.Id))
             .Select(u => u.Id)
             .ToListAsync(cancellationToken);
     }

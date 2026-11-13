@@ -8,7 +8,7 @@ public sealed class ChangeApprovalTests
     private static readonly DateTimeOffset Now = new(2026, 11, 13, 9, 0, 0, TimeSpan.Zero);
     private static readonly Guid Admin = Guid.NewGuid();
 
-    private static ChangeApproval Pending() => ChangeApproval.Request(Guid.NewGuid(), "abc", Guid.NewGuid(), Now);
+    private static ChangeApproval Pending() => ChangeApproval.Request(Guid.NewGuid(), "abc", Now);
 
     private static void AssertCode(string code, Action action) =>
         Assert.Equal(code, Assert.Throws<DomainException>(action).Code);
@@ -50,13 +50,13 @@ public sealed class ChangeApprovalTests
     public void Withdraw_and_fingerprint_update_work_only_while_pending()
     {
         var approval = Pending();
-        approval.UpdateFingerprint("def", Guid.NewGuid());
+        approval.UpdateFingerprint("def");
         Assert.Equal("def", approval.Fingerprint);
         approval.Withdraw(Now);
         Assert.Equal(ChangeApprovalStatus.Withdrawn, approval.Status);
 
         AssertCode(ErrorCodes.ChangeApprovalNotPending, () => approval.Withdraw(Now));
-        AssertCode(ErrorCodes.ChangeApprovalNotPending, () => approval.UpdateFingerprint("x", Guid.NewGuid()));
+        AssertCode(ErrorCodes.ChangeApprovalNotPending, () => approval.UpdateFingerprint("x"));
         AssertCode(ErrorCodes.ChangeApprovalNotPending, () => approval.Approve(Admin, Now));
     }
 

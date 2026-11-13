@@ -211,7 +211,7 @@ public sealed class ChangeTaskTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Adding_an_implementation_task_while_pending_refreshes_the_fingerprint_and_the_actor_becomes_the_plan_editor()
+    public async Task Adding_an_implementation_task_while_pending_refreshes_the_fingerprint_and_the_actor_becomes_a_plan_editor()
     {
         var world = await TicketWorld.CreateAsync(factory);
         var change = await ChangeWorld.CreateAsync(world.Desk, world);
@@ -224,7 +224,11 @@ public sealed class ChangeTaskTests(ApiFactory factory) : IAsyncLifetime
         var after = Assert.Single(await ApprovalsAsync(submitted));
         Assert.Equal(ChangeApprovalStatus.Pending, after.Status);
         Assert.NotEqual(before.Fingerprint, after.Fingerprint);
-        Assert.Equal(world.AdminUser.Id, after.PlanEditorId);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var editors = await db.ChangeApprovalEditors.AsNoTracking().Where(e => e.ApprovalId == after.Id).Select(e => e.UserId).ToListAsync(Ct);
+        Assert.Contains(world.AdminUser.Id, editors);
+        Assert.Contains(world.DeskUser.Id, editors);
     }
 
     [Fact]

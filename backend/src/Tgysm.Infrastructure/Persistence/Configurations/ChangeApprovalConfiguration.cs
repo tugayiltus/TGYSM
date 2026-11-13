@@ -16,13 +16,11 @@ internal sealed class ChangeApprovalConfiguration : IEntityTypeConfiguration<Cha
         builder.Property(a => a.Status).HasEnumName();
         builder.Property(a => a.Reason).HasMaxLength(ChangeApproval.ReasonMaxLength);
         builder.Property(a => a.DecidedById).HasColumnName("decided_by");
-        builder.Property(a => a.PlanEditorId).HasColumnName("plan_editor");
 
         // One open decision per change (ADR-0032).
         builder.HasIndex(a => a.ChangeId).IsUnique().HasFilter("status = 'pending'").HasDatabaseName("ux_change_approvals_pending");
         builder.HasIndex(a => new { a.ChangeId, a.CreatedAt });
         builder.HasOne<ChangeRequest>().WithMany().HasForeignKey(a => a.ChangeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(a => a.DecidedById).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<User>().WithMany().HasForeignKey(a => a.PlanEditorId).OnDelete(DeleteBehavior.Restrict);
     }
 }

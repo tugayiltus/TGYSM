@@ -46,6 +46,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<ChangeRequest> ChangeRequests => Set<ChangeRequest>();
     public DbSet<ChangeApproval> ChangeApprovals => Set<ChangeApproval>();
     public DbSet<ChangeEvent> ChangeEvents => Set<ChangeEvent>();
+    public DbSet<ChangeApprovalEditor> ChangeApprovalEditors => Set<ChangeApprovalEditor>();
     public DbSet<ChangeAsset> ChangeAssets => Set<ChangeAsset>();
     public DbSet<TicketRelation> TicketRelations => Set<TicketRelation>();
     public DbSet<TicketAsset> TicketAssets => Set<TicketAsset>();

@@ -108,6 +108,27 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Approval_request_skips_every_plan_editor_of_the_pending_approval()
+    {
+        var editorA = await AddUserAsync(UserRole.Admin);
+        var editorB = await AddUserAsync(UserRole.Admin);
+        var eligible = await AddUserAsync(UserRole.Admin);
+        var approval = ChangeApproval.Request(_change.Id, new string('a', ChangeApproval.FingerprintLength), Now);
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            db.ChangeApprovals.Add(approval);
+            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, _author.Id));
+            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, editorA.Id));
+            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, editorB.Id));
+            await db.SaveChangesAsync(Ct);
+        }
+
+        await EmitAsync(NotificationEventTypes.ChangeApprovalRequested, _author.Id);
+
+        Assert.Equal([eligible.Id], await RecipientsAsync());
+    }
+
+    [Fact]
     public async Task Approval_request_after_a_void_goes_only_to_the_named_admin()
     {
         var approver = await AddUserAsync(UserRole.Admin);

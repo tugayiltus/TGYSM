@@ -733,10 +733,6 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("fingerprint");
 
-                    b.Property<Guid?>("PlanEditorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("plan_editor");
-
                     b.Property<string>("Reason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -765,9 +761,6 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                     b.HasIndex("DecidedById")
                         .HasDatabaseName("ix_change_approvals_decided_by");
 
-                    b.HasIndex("PlanEditorId")
-                        .HasDatabaseName("ix_change_approvals_plan_editor");
-
                     b.HasIndex("ChangeId", "CreatedAt")
                         .HasDatabaseName("ix_change_approvals_change_id_created_at");
 
@@ -775,6 +768,33 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_change_approvals_status", "status IN ('pending', 'approved', 'rejected', 'returned', 'withdrawn', 'void')");
                         });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeApprovalEditor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ApprovalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approval_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_change_approval_editors");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_change_approval_editors_user_id");
+
+                    b.HasIndex("ApprovalId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_change_approval_editors_approval_id_user_id");
+
+                    b.ToTable("change_approval_editors", (string)null);
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Changes.ChangeAsset", b =>
@@ -3406,12 +3426,23 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasForeignKey("DecidedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_change_approvals_users_decided_by");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeApprovalEditor", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Changes.ChangeApproval", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_approval_editors_change_approvals_approval_id");
 
                     b.HasOne("Tgysm.Domain.Users.User", null)
                         .WithMany()
-                        .HasForeignKey("PlanEditorId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_change_approvals_users_plan_editor");
+                        .IsRequired()
+                        .HasConstraintName("fk_change_approval_editors_users_user_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Changes.ChangeAsset", b =>

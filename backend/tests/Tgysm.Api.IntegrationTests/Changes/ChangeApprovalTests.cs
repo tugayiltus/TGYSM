@@ -399,6 +399,64 @@ public sealed class ChangeApprovalTests(ApiFactory factory) : IAsyncLifetime
         Assert.False((await DetailAsync(editor, submitted)).GetProperty("approval").GetProperty("canDecide").GetBoolean());
     }
 
+    private async Task<(ApiClient Client, User User)> TeamAdminAsync(TicketWorld world, string email)
+    {
+        var (client, user) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, email);
+        await TestData.SaveAsync(factory, db => db.TeamMemberships.Add(Tgysm.Domain.Organization.TeamMembership.Create(world.ServiceDesk.Id, user.Id, DateTimeOffset.UtcNow)));
+        return (client, user);
+    }
+
+    private static async Task EditWindowAsync(ApiClient client, JsonElement change, string start, string end)
+    {
+        var current = await DetailAsync(client, change);
+        using var edit = await client.PutAsync(ChangeWorld.PathOf(change), EditBody(current, WindowEditDraft(start, end)));
+        Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
+    }
+
+    [Fact]
+    public async Task Every_plan_editor_of_the_cycle_is_excluded_not_only_the_last_one()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (a, _) = await TeamAdminAsync(world, "admin-a@example.com");
+        var (b, _) = await TeamAdminAsync(world, "admin-b@example.com");
+        var (c, _) = await TeamAdminAsync(world, "admin-c@example.com");
+        var submitted = await SubmittedAsync(world);
+        await EditWindowAsync(a, submitted, "2026-12-07T20:00:00Z", "2026-12-07T22:00:00Z");
+        await EditWindowAsync(b, submitted, "2026-12-07T21:00:00Z", "2026-12-07T23:00:00Z");
+        var current = await DetailAsync(c, submitted);
+        var body = new { approvalVersion = current.GetProperty("approval").GetProperty("version").GetUInt32() };
+
+        using var byA = await a.PostAsync(Action(current, "approval/approve"), body);
+        using var byB = await b.PostAsync(Action(current, "approval/approve"), body);
+        Assert.Equal("changes.self_approval", await ApiClient.ReadCodeAsync(byA));
+        Assert.Equal("changes.self_approval", await ApiClient.ReadCodeAsync(byB));
+        Assert.Equal(HttpStatusCode.Forbidden, byA.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byB.StatusCode);
+        foreach (var editor in new[] { a, b })
+        {
+            Assert.DoesNotContain(
+                (await TicketWorld.ReadAsync(editor, "/api/v1/change-approvals")).EnumerateArray(),
+                item => item.GetProperty("number").GetString() == current.GetProperty("number").GetString());
+            Assert.False((await DetailAsync(editor, submitted)).GetProperty("approval").GetProperty("canDecide").GetBoolean());
+        }
+
+        using var byC = await c.PostAsync(Action(current, "approval/approve"), body);
+        Assert.Equal(HttpStatusCode.OK, byC.StatusCode);
+    }
+
+    [Fact]
+    public async Task Change_has_no_eligible_approver_when_the_only_other_admins_all_edited_the_plan()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (b, _) = await TeamAdminAsync(world, "admin-b@example.com");
+        var submitted = await SubmittedAsync(world);
+        Assert.True((await DetailAsync(world.Desk, submitted)).GetProperty("hasEligibleApprover").GetBoolean());
+        await EditWindowAsync(world.Admin, submitted, "2026-12-07T20:00:00Z", "2026-12-07T22:00:00Z");
+        await EditWindowAsync(b, submitted, "2026-12-07T21:00:00Z", "2026-12-07T23:00:00Z");
+
+        Assert.False((await DetailAsync(world.Desk, submitted)).GetProperty("hasEligibleApprover").GetBoolean());
+    }
+
     [Fact]
     public async Task Clearing_a_plan_of_a_pending_change_is_not_ready_and_nothing_is_saved()
     {
