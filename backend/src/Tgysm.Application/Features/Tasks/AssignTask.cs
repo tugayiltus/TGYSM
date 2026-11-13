@@ -45,12 +45,18 @@ public sealed class ClaimTaskHandler(IAppDbContext db, TaskScope scope, TaskWork
         await db.RunInTransactionAsync(async ct =>
         {
             var now = clock.GetUtcNow();
+            // The version and the open state are part of the condition: a task changed or closed since the person
+            // saw it is not claimed, even when its assignee is still empty.
             var claimed = await db.WorkTasks
-                .Where(t => t.Id == task.Id && t.AssigneeId == null && t.TeamId == teamId)
+                .Where(t => t.Id == task.Id && t.AssigneeId == null && t.TeamId == teamId && t.Version == command.Version)
+                .Where(t => t.Status != WorkTaskStatus.Completed && t.Status != WorkTaskStatus.Cancelled)
                 .ExecuteUpdateAsync(s => s.SetProperty(t => t.AssigneeId, viewer.UserId).SetProperty(t => t.UpdatedAt, now), ct);
             if (claimed == 0)
             {
-                throw new DomainException(ErrorCodes.TaskAlreadyClaimed, "Someone else has claimed the task.");
+                var someoneClaimed = await db.WorkTasks.AnyAsync(t => t.Id == task.Id && t.AssigneeId != null, ct);
+                throw someoneClaimed
+                    ? new DomainException(ErrorCodes.TaskAlreadyClaimed, "Someone else has claimed the task.")
+                    : new DomainException(ErrorCodes.ConcurrencyConflict, "The task changed since it was loaded.");
             }
 
             db.TaskAssignments.Add(TaskAssignment.Claim(task.Id, teamId, viewer.UserId, now));

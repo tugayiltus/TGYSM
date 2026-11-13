@@ -37,6 +37,23 @@ public sealed class TaskConcurrencyTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Claim_with_a_stale_version_is_a_conflict_and_assigns_no_one()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var task = await TaskWorld.CreateForTeamAsync(world.Desk, world.FieldTeam.Id);
+        using (var start = await world.Field.PostAsync(TaskWorld.PathOf(task, "start"), new { version = TaskWorld.VersionOf(task) }))
+        {
+            start.EnsureSuccessStatusCode();
+        }
+
+        using var response = await world.Field.PostAsync(TaskWorld.PathOf(task, "claim"), new { version = TaskWorld.VersionOf(task) });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var current = await TicketWorld.ReadAsync(world.Field, TaskWorld.PathOf(task));
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, current.GetProperty("assigneeId").ValueKind);
+    }
+
+    [Fact]
     public async Task Claim_of_an_assigned_task_is_refused()
     {
         var world = await TicketWorld.CreateAsync(factory);
