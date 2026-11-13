@@ -109,4 +109,22 @@ public sealed class ChangeScopeTests(ApiFactory factory) : IAsyncLifetime
         var row = Assert.Single(afterTask.GetProperty("items").EnumerateArray());
         Assert.Equal(JsonValueKind.Null, row.GetProperty("ownerTeamName").ValueKind);
     }
+
+    [Fact]
+    public async Task Summary_list_row_hides_the_outcome_and_owner_names()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var change = await ChangeWorld.CreateAsync(world.Desk, world);
+        await ChangeWorld.AddTaskAsync(factory, change, ChangePhase.Backout, world.FieldTeam.Id);
+        var id = change.GetProperty("id").GetGuid();
+        await TestData.SaveAsync(factory, db => db.Entry(db.ChangeRequests.Single(c => c.Id == id)).Property(c => c.Outcome).CurrentValue = ChangeOutcome.Successful);
+
+        var field = Assert.Single((await TicketWorld.ReadAsync(world.Field, ChangeWorld.ChangesPath)).GetProperty("items").EnumerateArray());
+        var desk = Assert.Single((await TicketWorld.ReadAsync(world.Desk, ChangeWorld.ChangesPath)).GetProperty("items").EnumerateArray());
+
+        Assert.Equal(JsonValueKind.Null, field.GetProperty("outcome").ValueKind);
+        Assert.Equal(JsonValueKind.Null, field.GetProperty("ownerName").ValueKind);
+        Assert.Equal(JsonValueKind.Null, field.GetProperty("ownerTeamName").ValueKind);
+        Assert.Equal("successful", desk.GetProperty("outcome").GetString());
+    }
 }

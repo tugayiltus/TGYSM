@@ -16,7 +16,7 @@ public enum ChangeQueue
     Open,
 }
 
-/// <summary>List row. Owner names show only for viewers with full access; summary viewers get the working basics.</summary>
+/// <summary>List row. Outcome and owner names show only for viewers with full access; summary viewers get the working basics.</summary>
 public sealed record ChangeListItem(
     Guid Id,
     string Number,
@@ -74,7 +74,7 @@ public sealed class ListChangesHandler(IAppDbContext db, ChangeScope scope)
         return await changes
             .OrderByDescending(c => c.UpdatedAt).ThenByDescending(c => c.Id)
             .Select(c => new ChangeListItem(
-                c.Id, c.Number, c.Title, c.Status, c.Outcome, c.Risk, c.WindowStart, c.WindowEnd,
+                c.Id, c.Number, c.Title, c.Status, isAdmin || teamIds.Contains(c.OwnerTeamId) ? c.Outcome : null, c.Risk, c.WindowStart, c.WindowEnd,
                 isAdmin || teamIds.Contains(c.OwnerTeamId) ? db.Teams.Where(x => x.Id == c.OwnerTeamId).Select(x => x.Name).First() : null,
                 isAdmin || teamIds.Contains(c.OwnerTeamId)
                     ? db.Users.Where(u => u.Id == c.OwnerId).Select(u => u.FirstName + NameSeparator + u.LastName).First()

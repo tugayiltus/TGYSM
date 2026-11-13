@@ -29,18 +29,18 @@ public sealed class EditChangeHandler(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
         await draftValidator.ValidateAndThrowAsync(command.Draft, cancellationToken);
-        var assetIds = await ChangeAssetLinks.ResolveAsync(db, command.AssetIds, cancellationToken);
-        return await work.RunAsync(command.Number, command.Version, async (change, viewer, now) =>
+        return await work.RunAsync(command.Number, command.Version, async (change, viewer, now, ct) =>
         {
             if (change.Status != ChangeStatus.Draft)
             {
                 throw new DomainException(ErrorCodes.ChangeInvalidTransition, "Only a draft change can be edited.");
             }
 
+            var assetIds = await ChangeAssetLinks.ResolveAsync(db, command.AssetIds, ct);
             var before = ChangeDraftFields.Of(change);
             change.Edit(command.Draft, now);
             var changed = ChangeDraftFields.Differences(before, ChangeDraftFields.Of(change));
-            var (added, removed) = await ChangeAssetLinks.SyncAsync(db, change, assetIds, now, CancellationToken.None);
+            var (added, removed) = await ChangeAssetLinks.SyncAsync(db, change, assetIds, now, ct);
             if (changed.Count > 0)
             {
                 ChangeHistory.Record(db, change, ChangeEventKind.Updated, viewer.UserId, now, new { Fields = changed });

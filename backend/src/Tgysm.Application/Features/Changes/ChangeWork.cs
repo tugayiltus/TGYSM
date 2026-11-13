@@ -11,14 +11,14 @@ namespace Tgysm.Application.Features.Changes;
 public sealed class ChangeWork(IAppDbContext db, ChangeScope scope, TimeProvider clock)
 {
     public async Task<ChangeDetail> RunAsync(
-        string number, uint version, Func<ChangeRequest, ChangeViewer, DateTimeOffset, Task> change, CancellationToken cancellationToken)
+        string number, uint version, Func<ChangeRequest, ChangeViewer, DateTimeOffset, CancellationToken, Task> change, CancellationToken cancellationToken)
     {
         ChangeDetail? detail = null;
         await db.RunSerializedAsync(SerializationLocks.ChangeWork, async ct =>
         {
             var (loaded, viewer) = await scope.LoadForWorkAsync(number, ct);
             db.SetExpectedVersion(loaded, version);
-            await change(loaded, viewer, clock.GetUtcNow());
+            await change(loaded, viewer, clock.GetUtcNow(), ct);
             await db.SaveChangesAsync(ct);
             detail = await DetailAsync(loaded.Id, viewer, ct);
         }, cancellationToken);

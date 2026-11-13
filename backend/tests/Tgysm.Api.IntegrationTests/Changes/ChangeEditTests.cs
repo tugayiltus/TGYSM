@@ -82,4 +82,15 @@ public sealed class ChangeEditTests(ApiFactory factory) : IAsyncLifetime
         await using var db = factory.Database.CreateDbContext();
         Assert.Equal("Sunucu güncellemesi", (await db.ChangeRequests.SingleAsync(TestContext.Current.CancellationToken)).Title);
     }
+
+    [Fact]
+    public async Task Non_member_with_an_unknown_asset_id_gets_404_not_400()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var change = await ChangeWorld.CreateAsync(world.Desk, world);
+
+        using var response = await world.Field.PutAsync(ChangeWorld.PathOf(change), EditBody(change, ChangeWorld.DraftBody("X"), [Guid.NewGuid()]));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }
