@@ -11,7 +11,7 @@ public sealed record ChangeApprovalItem(
     Guid Id, string ChangeNumber, string Title, Level Risk, DateTimeOffset? WindowStart, DateTimeOffset? WindowEnd,
     string ImplementationPlanExcerpt, uint Version);
 
-/// <summary>Pending change approvals the caller may decide: an admin who is neither author nor owner. Others get an empty list.</summary>
+/// <summary>Pending change approvals the caller may decide (<see cref="ChangeApprovalFlow.Deciders"/>). Others get an empty list.</summary>
 public sealed class ListChangeApprovalsHandler(IAppDbContext db, ChangeScope scope)
 {
     public const int ExcerptLength = 200;
@@ -28,7 +28,7 @@ public sealed class ListChangeApprovalsHandler(IAppDbContext db, ChangeScope sco
         var rows = await (
             from a in db.ChangeApprovals.AsNoTracking()
             join c in db.ChangeRequests on a.ChangeId equals c.Id
-            where a.Status == ChangeApprovalStatus.Pending && c.CreatedById != me && c.OwnerId != me && !db.ChangeApprovalEditors.Any(e => e.ApprovalId == a.Id && e.UserId == me)
+            where a.Status == ChangeApprovalStatus.Pending && ChangeApprovalFlow.Deciders(db).Any(d => d.ChangeId == c.Id && d.UserId == me)
             orderby a.CreatedAt
             select new { a.Id, c.Number, c.Title, c.Risk, c.WindowStart, c.WindowEnd, c.ImplementationPlan, a.Version })
             .ToListAsync(cancellationToken);

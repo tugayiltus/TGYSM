@@ -48,20 +48,18 @@ public sealed class DecideChangeApprovalHandler(
         await db.RunSerializedAsync(SerializationLocks.ChangeWork, async ct =>
         {
             var (change, _, _) = await scope.LoadAsync(command.Number, ct);
-            change.RequireEligibleApprover(viewer.UserId);
+            if (!await ChangeApprovalFlow.CanDecideAsync(db, change.Id, viewer.UserId, ct))
+            {
+                throw new DomainException(ErrorCodes.ChangeSelfApproval, "The author, the owner and every plan editor of the change cannot decide it.");
+            }
+
             var now = clock.GetUtcNow();
             var status = StatusOf(command.Decision);
             var reason = command.Decision == ChangeApprovalDecision.Approve ? null : command.Reason!.Trim();
-            var pending = await db.ChangeApprovals.AsNoTracking()
+            var pendingId = await db.ChangeApprovals.AsNoTracking()
                 .Where(a => a.ChangeId == change.Id && a.Status == ChangeApprovalStatus.Pending)
-                .Select(a => new { a.Id, IsEditor = db.ChangeApprovalEditors.Any(e => e.ApprovalId == a.Id && e.UserId == viewer.UserId) }).SingleOrDefaultAsync(ct)
+                .Select(a => (Guid?)a.Id).SingleOrDefaultAsync(ct)
                 ?? throw NotPending();
-            if (pending.IsEditor)
-            {
-                throw new DomainException(ErrorCodes.ChangeSelfApproval, "Whoever submitted or changed the plan of this approval cannot decide it.");
-            }
-
-            var pendingId = pending.Id;
             var decided = await db.ChangeApprovals
                 .Where(a => a.Id == pendingId && a.Status == ChangeApprovalStatus.Pending && a.Version == command.ApprovalVersion)
                 .ExecuteUpdateAsync(s => s
@@ -89,7 +87,8 @@ public sealed class DecideChangeApprovalHandler(
             ChangeHistory.Record(db, change, EventOf(command.Decision), viewer.UserId, now, new { Reason = reason });
             audit.Record(AuditActions.ChangeApprovalDecided, AuditEntityTypes.Change, change.Id,
                 newValues: new { change.Number, Decision = status, change.Status }, reason: reason);
-            outbox.AddForSubject(NotificationEventTypes.ChangeApprovalDecided, OutboxSubjectTypes.Change, change.Id, userId: null);
+            outbox.AddForSubject(NotificationEventTypes.ChangeApprovalDecided, OutboxSubjectTypes.Change, change.Id, userId: null,
+                new Dictionary<string, string> { [OutboxEvent.ApprovalIdKey] = pendingId.ToString() });
             await db.SaveChangesAsync(ct);
             detail = await work.DetailAsync(change.Id, viewer, ct);
         }, cancellationToken);

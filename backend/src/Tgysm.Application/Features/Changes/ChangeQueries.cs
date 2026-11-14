@@ -89,7 +89,6 @@ internal static class ChangeQueries
                 a.CreatedAt,
                 a.DecidedAt,
                 a.Version,
-                IsEditor = db.ChangeApprovalEditors.Any(e => e.ApprovalId == a.Id && e.UserId == viewer.UserId),
             })
             .FirstOrDefaultAsync(cancellationToken);
         if (approval is null)
@@ -98,7 +97,7 @@ internal static class ChangeQueries
         }
 
         var canDecide = approval.Status == ChangeApprovalStatus.Pending
-            && viewer.IsAdmin && viewer.UserId != change.CreatedById && viewer.UserId != change.OwnerId && !approval.IsEditor;
+            && await ChangeApprovalFlow.CanDecideAsync(db, change.Id, viewer.UserId, cancellationToken);
         return new ChangeApprovalInfo(
             approval.Status, approval.DecidedById, approval.DecidedByName, approval.Reason, approval.CreatedAt, approval.DecidedAt, canDecide, approval.Version);
     }

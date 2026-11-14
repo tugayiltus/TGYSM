@@ -229,15 +229,6 @@ public sealed class ChangeRequest : Entity
         Move(ChangeStatus.Cancelled, now);
     }
 
-    /// <summary>The author and the owner never approve their own change.</summary>
-    public void RequireEligibleApprover(Guid userId)
-    {
-        if (userId == CreatedById || userId == OwnerId)
-        {
-            throw new DomainException(ErrorCodes.ChangeSelfApproval, "The author and the owner cannot decide this approval.");
-        }
-    }
-
     public void Touch(DateTimeOffset now) => UpdatedAt = now;
 
     private void RequireSuccessful(ChangeClosing closing, ChangeTaskTally tasks)

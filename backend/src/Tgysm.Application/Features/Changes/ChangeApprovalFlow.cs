@@ -20,38 +20,40 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
     public static IQueryable<WorkTask> PlanTasks(IAppDbContext db, Guid changeId) =>
         db.WorkTasks.Where(t => t.ChangeId == changeId && t.Phase == ChangePhase.Implementation && t.Status != WorkTaskStatus.Cancelled);
 
-    /// <summary>The author and the owner never decide; the caller checks the admin role.</summary>
-    public static bool IsEligible(Guid userId, ChangeRequest change) => userId != change.CreatedById && userId != change.OwnerId;
+    /// <summary>
+    /// Every (change, admin) pair where the admin may decide the change's approval: an active admin who is not the
+    /// author, not the owner and never a plan editor of the change. The one rule for deciding, listing and mailing.
+    /// </summary>
+    public static IQueryable<ChangeDecider> Deciders(IAppDbContext db) =>
+        from c in db.ChangeRequests
+        from u in db.Users
+        where u.IsActive && u.Role == UserRole.Admin && u.Id != c.CreatedById && u.Id != c.OwnerId
+            && !db.ChangePlanEditors.Any(e => e.ChangeId == c.Id && e.UserId == u.Id)
+        select new ChangeDecider { ChangeId = c.Id, UserId = u.Id };
 
-    /// <summary>Everyone who submitted or changed the plan of the pending approval; none of them can decide it.</summary>
-    public static IQueryable<Guid> PendingEditorIds(IAppDbContext db, Guid changeId) =>
-        from e in db.ChangeApprovalEditors
-        join a in db.ChangeApprovals on e.ApprovalId equals a.Id
-        where a.ChangeId == changeId && a.Status == ChangeApprovalStatus.Pending
-        select e.UserId;
+    public static Task<bool> HasEligibleApproverAsync(IAppDbContext db, ChangeRequest change, CancellationToken cancellationToken) =>
+        Deciders(db).AnyAsync(d => d.ChangeId == change.Id, cancellationToken);
 
-    public static async Task<bool> HasEligibleApproverAsync(IAppDbContext db, ChangeRequest change, CancellationToken cancellationToken)
+    public static Task<bool> CanDecideAsync(IAppDbContext db, Guid changeId, Guid userId, CancellationToken cancellationToken) =>
+        Deciders(db).AnyAsync(d => d.ChangeId == changeId && d.UserId == userId, cancellationToken);
+
+    /// <summary>
+    /// Records <paramref name="userId"/> as a plan editor of the change for its whole life: the submitter, and whoever
+    /// changes a fingerprint field, the asset set or the Uygulama tasks, in any status.
+    /// </summary>
+    public async Task RecordEditorAsync(Guid changeId, Guid userId, CancellationToken cancellationToken)
     {
-        var editors = PendingEditorIds(db, change.Id);
-        return await db.Users.AnyAsync(
-            u => u.IsActive && u.Role == UserRole.Admin && u.Id != change.CreatedById && u.Id != change.OwnerId && !editors.Contains(u.Id),
-            cancellationToken);
-    }
-
-    private async Task AddEditorAsync(Guid approvalId, Guid userId, CancellationToken cancellationToken)
-    {
-        if (!await db.ChangeApprovalEditors.AnyAsync(e => e.ApprovalId == approvalId && e.UserId == userId, cancellationToken))
+        if (db.ChangePlanEditors.Local.Any(e => e.ChangeId == changeId && e.UserId == userId)
+            || await db.ChangePlanEditors.AnyAsync(e => e.ChangeId == changeId && e.UserId == userId, cancellationToken))
         {
-            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approvalId, userId));
+            return;
         }
+
+        db.ChangePlanEditors.Add(ChangePlanEditor.Create(changeId, userId));
     }
 
-    private void AddPending(ChangeRequest change, string fingerprint, Guid actorUserId, DateTimeOffset now)
-    {
-        var approval = ChangeApproval.Request(change.Id, fingerprint, now);
-        db.ChangeApprovals.Add(approval);
-        db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, actorUserId));
-    }
+    private void AddPending(ChangeRequest change, string fingerprint, DateTimeOffset now) =>
+        db.ChangeApprovals.Add(ChangeApproval.Request(change.Id, fingerprint, now));
 
     /// <summary>Fingerprint of the saved plan; pass <paramref name="assetIds"/> when the asset links are not saved yet.</summary>
     public static async Task<string> FingerprintAsync(
@@ -67,7 +69,8 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
     {
         var taskCount = await PlanTasks(db, change.Id).CountAsync(cancellationToken);
         change.Submit(taskCount, now);
-        AddPending(change, await FingerprintAsync(db, change, null, cancellationToken), actorUserId, now);
+        AddPending(change, await FingerprintAsync(db, change, null, cancellationToken), now);
+        await RecordEditorAsync(change.Id, actorUserId, cancellationToken);
         ChangeHistory.Record(db, change, ChangeEventKind.Submitted, actorUserId, now);
         audit.Record(AuditActions.ChangeStatusChanged, AuditEntityTypes.Change, change.Id, newValues: new { change.Number, change.Status });
         outbox.AddForSubject(NotificationEventTypes.ChangeApprovalRequested, OutboxSubjectTypes.Change, change.Id, userId: null);
@@ -86,8 +89,8 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
 
     /// <summary>
     /// After a plan change (edit, or an Uygulama task added, cancelled or reopened): a submitted change must stay ready;
-    /// a pending approval takes the new fingerprint and the actor joins its editors; an approved plan that no
-    /// longer matches is voided. The plan tasks are read from the database, so a task change is saved first.
+    /// a pending approval takes the new fingerprint; an approved plan that no longer matches is voided. The caller
+    /// records the actor with <see cref="RecordEditorAsync"/>. The plan tasks are read from the database, so a task change is saved first.
     /// </summary>
     public async Task PlanChangedAsync(
         ChangeRequest change, IReadOnlyList<Guid>? assetIds, Guid actorUserId, DateTimeOffset now, CancellationToken cancellationToken)
@@ -106,7 +109,6 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
             if (pending.Fingerprint != fingerprint)
             {
                 pending.UpdateFingerprint(fingerprint);
-                await AddEditorAsync(pending.Id, actorUserId, cancellationToken);
             }
 
             return;
@@ -145,10 +147,17 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
         var approverId = approved.DecidedById;
         approved.Void(reason, now);
         change.BackToPending(now);
-        AddPending(change, await FingerprintAsync(db, change, assetIds, cancellationToken), actorUserId, now);
+        AddPending(change, await FingerprintAsync(db, change, assetIds, cancellationToken), now);
         ChangeHistory.Record(db, change, ChangeEventKind.ApprovalVoided, actorUserId, now, new { Reason = reason });
         audit.Record(AuditActions.ChangeApprovalVoided, AuditEntityTypes.Change, change.Id, newValues: new { change.Number }, reason: reason);
         var data = approverId is { } id ? new Dictionary<string, string> { [OutboxEvent.ApproverIdKey] = id.ToString() } : null;
         outbox.AddForSubject(NotificationEventTypes.ChangeApprovalRequested, OutboxSubjectTypes.Change, change.Id, userId: null, data);
     }
+}
+
+/// <summary>One change and one admin who may decide its approval (<see cref="ChangeApprovalFlow.Deciders"/>).</summary>
+public sealed class ChangeDecider
+{
+    public Guid ChangeId { get; init; }
+    public Guid UserId { get; init; }
 }

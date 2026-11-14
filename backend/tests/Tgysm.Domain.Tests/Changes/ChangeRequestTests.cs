@@ -279,14 +279,4 @@ public sealed class ChangeRequestTests
         Assert.Equal((ChangeStatus.Cancelled, "Vazgeçildi", false), (change.Status, change.CancelReason, change.IsOpen));
         AssertInvalid(() => change.Cancel("x", Now));
     }
-
-    [Fact]
-    public void Author_and_owner_cannot_approve()
-    {
-        var change = NewChange();
-
-        AssertCode(ErrorCodes.ChangeSelfApproval, () => change.RequireEligibleApprover(Author));
-        AssertCode(ErrorCodes.ChangeSelfApproval, () => change.RequireEligibleApprover(Owner));
-        change.RequireEligibleApprover(Guid.NewGuid());
-    }
 }

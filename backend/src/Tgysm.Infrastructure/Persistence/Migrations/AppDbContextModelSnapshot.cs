@@ -770,33 +770,6 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeApprovalEditor", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("ApprovalId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("approval_id");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_change_approval_editors");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_change_approval_editors_user_id");
-
-                    b.HasIndex("ApprovalId", "UserId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_change_approval_editors_approval_id_user_id");
-
-                    b.ToTable("change_approval_editors", (string)null);
-                });
-
             modelBuilder.Entity("Tgysm.Domain.Changes.ChangeAsset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -870,6 +843,33 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_change_events_kind", "kind IN ('created', 'updated', 'submitted', 'withdrawn', 'approved', 'rejected', 'returned', 'approval_voided', 'implementation_started', 'implementation_finished', 'backout_started', 'closed', 'cancelled', 'assets_changed')");
                         });
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangePlanEditor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChangeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("change_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_change_plan_editors");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_change_plan_editors_user_id");
+
+                    b.HasIndex("ChangeId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_change_plan_editors_change_id_user_id");
+
+                    b.ToTable("change_plan_editors", (string)null);
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Changes.ChangeRequest", b =>
@@ -3428,23 +3428,6 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_change_approvals_users_decided_by");
                 });
 
-            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeApprovalEditor", b =>
-                {
-                    b.HasOne("Tgysm.Domain.Changes.ChangeApproval", null)
-                        .WithMany()
-                        .HasForeignKey("ApprovalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_change_approval_editors_change_approvals_approval_id");
-
-                    b.HasOne("Tgysm.Domain.Users.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_change_approval_editors_users_user_id");
-                });
-
             modelBuilder.Entity("Tgysm.Domain.Changes.ChangeAsset", b =>
                 {
                     b.HasOne("Tgysm.Domain.Assets.Asset", null)
@@ -3476,6 +3459,23 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_change_events_change_requests_change_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangePlanEditor", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Changes.ChangeRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ChangeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_plan_editors_change_requests_change_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_plan_editors_users_user_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Changes.ChangeRequest", b =>

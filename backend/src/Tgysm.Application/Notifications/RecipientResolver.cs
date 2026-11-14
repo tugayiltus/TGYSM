@@ -101,24 +101,29 @@ public sealed class RecipientResolver(IAppDbContext db)
     }
 
     /// <summary>
-    /// Every active admin who may decide the pending approval (not author, owner or editor). After a void the admin who
+    /// Every admin who may decide the pending approval (<see cref="ChangeApprovalFlow.Deciders"/>). After a void the admin who
     /// approved is told alone, when they may still decide; otherwise every eligible admin is.
     /// </summary>
     private async Task<IReadOnlyList<Guid>> ChangeApproverIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)
     {
-        var change = await db.ChangeRequests.AsNoTracking()
+        var status = await db.ChangeRequests.AsNoTracking()
             .Where(c => c.Id == outboxEvent.SubjectId)
-            .Select(c => new { c.CreatedById, c.OwnerId })
+            .Select(c => c.Status)
             .SingleAsync(cancellationToken);
-        var editors = ChangeApprovalFlow.PendingEditorIds(db, outboxEvent.SubjectId.GetValueOrDefault());
-        var eligible = db.Users.AsNoTracking()
-            .Where(u => u.Role == UserRole.Admin && u.IsActive && u.Id != change.CreatedById && u.Id != change.OwnerId && !editors.Contains(u.Id));
-        if (ApproverIdOf(outboxEvent) is { } approverId && await eligible.AnyAsync(u => u.Id == approverId, cancellationToken))
+        // Decided, withdrawn or cancelled before dispatch: nobody has anything to decide.
+        if (status != ChangeStatus.PendingApproval)
+        {
+            return [];
+        }
+
+        var changeId = outboxEvent.SubjectId.GetValueOrDefault();
+        var eligible = ChangeApprovalFlow.Deciders(db).Where(d => d.ChangeId == changeId);
+        if (ApproverIdOf(outboxEvent) is { } approverId && await eligible.AnyAsync(d => d.UserId == approverId, cancellationToken))
         {
             return [approverId];
         }
 
-        return await eligible.Select(u => u.Id).ToListAsync(cancellationToken);
+        return await eligible.Select(d => d.UserId).ToListAsync(cancellationToken);
     }
 
     private async Task<IReadOnlyList<Guid>> ChangeAuthorAndOwnerIdsAsync(OutboxEvent outboxEvent, CancellationToken cancellationToken)

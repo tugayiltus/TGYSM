@@ -63,10 +63,14 @@ public sealed class ChangeTaskRules(IAppDbContext db, ChangeApprovalFlow flow)
         return change.IsOpen ? change : null;
     }
 
-    /// <summary>Saves the task change, then refreshes or voids the approval of the change for the new plan.</summary>
+    /// <summary>
+    /// Saves the task change, records the actor as a plan editor, then refreshes or voids the approval of the change
+    /// for the new plan.
+    /// </summary>
     public async Task PlanTasksChangedAsync(ChangeRequest change, Guid actorUserId, DateTimeOffset now, CancellationToken cancellationToken)
     {
         await db.SaveChangesAsync(cancellationToken);
+        await flow.RecordEditorAsync(change.Id, actorUserId, cancellationToken);
         await flow.PlanChangedAsync(change, null, actorUserId, now, cancellationToken);
     }
 

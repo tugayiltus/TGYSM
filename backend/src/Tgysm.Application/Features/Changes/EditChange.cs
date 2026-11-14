@@ -33,7 +33,7 @@ public sealed class EditChangeHandler(
         {
             var assetIds = await ChangeAssetLinks.ResolveAsync(db, command.AssetIds, ct);
             var before = ChangeDraftFields.Of(change);
-            change.Edit(command.Draft, now);
+            var planEdited = change.Edit(command.Draft, now);
             var changed = ChangeDraftFields.Differences(before, ChangeDraftFields.Of(change));
             var (added, removed) = await ChangeAssetLinks.SyncAsync(db, change, assetIds, now, ct);
             if (changed.Count > 0)
@@ -44,6 +44,11 @@ public sealed class EditChangeHandler(
             if (added.Count > 0 || removed.Count > 0)
             {
                 ChangeHistory.Record(db, change, ChangeEventKind.AssetsChanged, viewer.UserId, now, new { Added = added, Removed = removed });
+            }
+
+            if (planEdited || added.Count > 0 || removed.Count > 0)
+            {
+                await flow.RecordEditorAsync(change.Id, viewer.UserId, ct);
             }
 
             await flow.PlanChangedAsync(change, assetIds, viewer.UserId, now, ct);

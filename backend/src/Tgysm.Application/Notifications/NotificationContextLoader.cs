@@ -66,20 +66,22 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
             var change = await db.ChangeRequests.AsNoTracking().SingleAsync(c => c.Id == changeId, cancellationToken);
             Set(TemplateVariables.ChangeNumber, change.Number);
             Set(TemplateVariables.Subject, change.Title);
-            Set(TemplateVariables.Status, ChangeLabels.Of(change.Status));
             Set(TemplateVariables.WindowStart, change.WindowStart is { } start ? clock.Format(start) : string.Empty);
             Set(TemplateVariables.WindowEnd, change.WindowEnd is { } end ? clock.Format(end) : string.Empty);
             Set(TemplateVariables.Risk, ChangeLabels.Of(change.Risk));
             Set(TemplateVariables.ChangeUrl, PublicUrl(ChangeUrlPathFormat, change.Number));
-            // The reason is free text the approver typed; it is read from the decision, never copied into the outbox payload.
-            var reason = outboxEvent.EventType == NotificationEventTypes.ChangeApprovalDecided
+            // A decision mail describes the decided row: the status it led to and the reason the approver typed. The
+            // reason is free text, so it is read from the row, never copied into the outbox payload.
+            var decision = outboxEvent.EventType == NotificationEventTypes.ChangeApprovalDecided
+                && PayloadString(outboxEvent, OutboxEvent.ApprovalIdKey) is { } approvalKey && Guid.TryParse(approvalKey, out var approvalId)
                 ? await db.ChangeApprovals.AsNoTracking()
-                    .Where(a => a.ChangeId == changeId && a.Status != ChangeApprovalStatus.Pending && a.Reason != null)
-                    .OrderByDescending(a => a.DecidedAt)
-                    .Select(a => a.Reason)
-                    .FirstOrDefaultAsync(cancellationToken)
+                    .Where(a => a.Id == approvalId && a.ChangeId == changeId)
+                    .Select(a => new { a.Status, a.Reason })
+                    .SingleOrDefaultAsync(cancellationToken)
                 : null;
-            Set(TemplateVariables.Reason, reason ?? string.Empty);
+            var status = decision is null ? change.Status : ChangeStatusAfter(decision.Status, change.Status);
+            Set(TemplateVariables.Status, ChangeLabels.Of(status));
+            Set(TemplateVariables.Reason, decision?.Reason ?? string.Empty);
         }
 
         // sla_warning/sla_breached: metric and due time come from the event's own payload (ids and reason codes
@@ -94,6 +96,14 @@ public sealed class NotificationContextLoader(IAppDbContext db, ICompanyClock cl
 
         return values;
     }
+
+    /// <summary>The change status a decision led to: approved schedules the change, rejected and returned send it to draft.</summary>
+    private static ChangeStatus ChangeStatusAfter(ChangeApprovalStatus decision, ChangeStatus current) => decision switch
+    {
+        ChangeApprovalStatus.Approved => ChangeStatus.Scheduled,
+        ChangeApprovalStatus.Rejected or ChangeApprovalStatus.Returned => ChangeStatus.Draft,
+        _ => current,
+    };
 
     private string TicketUrl(string number) => PublicUrl(TicketUrlPathFormat, number);
 

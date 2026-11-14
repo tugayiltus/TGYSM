@@ -49,6 +49,9 @@ public sealed class OutboxEvent
     /// </summary>
     public const string ApproverIdKey = "approverId";
 
+    /// <summary>change_approval_decided: the decided approval row, so the mail shows that row's outcome and reason.</summary>
+    public const string ApprovalIdKey = "approvalId";
+
     /// <summary>Dispatch attempts stop retrying once <see cref="Attempts"/> reaches this (spec: retry plan, max 5 attempts).</summary>
     public const int MaxAttempts = RetryBackoff.MaxAttempts;
 

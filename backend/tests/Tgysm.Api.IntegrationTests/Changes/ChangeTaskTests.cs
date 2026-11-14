@@ -226,7 +226,8 @@ public sealed class ChangeTaskTests(ApiFactory factory) : IAsyncLifetime
         Assert.NotEqual(before.Fingerprint, after.Fingerprint);
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var editors = await db.ChangeApprovalEditors.AsNoTracking().Where(e => e.ApprovalId == after.Id).Select(e => e.UserId).ToListAsync(Ct);
+        var changeId = submitted.GetProperty("id").GetGuid();
+        var editors = await db.ChangePlanEditors.AsNoTracking().Where(e => e.ChangeId == changeId).Select(e => e.UserId).ToListAsync(Ct);
         Assert.Contains(world.AdminUser.Id, editors);
         Assert.Contains(world.DeskUser.Id, editors);
     }

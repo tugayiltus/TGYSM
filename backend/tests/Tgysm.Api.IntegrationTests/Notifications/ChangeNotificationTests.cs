@@ -31,8 +31,9 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
         _author = await AddUserAsync(UserRole.Admin);
         _owner = await AddUserAsync(UserRole.Admin);
         _team = Team.Create("Ağ");
-        var draft = new ChangeDraft("Anahtar güncelle", null, "Ağ", Level.High, Level.Medium, Now.AddDays(1), Now.AddDays(1).AddHours(2), null, null, null);
+        var draft = new ChangeDraft("Anahtar güncelle", null, "Ağ", Level.High, Level.Medium, Now.AddDays(1), Now.AddDays(1).AddHours(2), "Uygula", "Doğrula", "Geri al");
         _change = ChangeRequest.Create("CHG-2026-000001", draft, _team.Id, _owner.Id, _author.Id, Now);
+        _change.Submit(1, Now);
         await using var db = factory.Database.CreateDbContext();
         db.Teams.Add(_team);
         db.ChangeRequests.Add(_change);
@@ -55,9 +56,14 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
         return user;
     }
 
-    private async Task EmitAsync(string eventType, Guid? actorId = null, Guid? approverId = null)
+    private async Task EmitAsync(string eventType, Guid? actorId = null, Guid? approverId = null, Guid? approvalId = null)
     {
         var payload = new Dictionary<string, string>();
+        if (approvalId is { } decided)
+        {
+            payload[OutboxEvent.ApprovalIdKey] = decided.ToString();
+        }
+
         if (actorId is { } actor)
         {
             payload[OutboxEvent.ActorIdKey] = actor.ToString();
@@ -117,9 +123,9 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
         await using (var db = factory.Database.CreateDbContext())
         {
             db.ChangeApprovals.Add(approval);
-            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, _author.Id));
-            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, editorA.Id));
-            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, editorB.Id));
+            db.ChangePlanEditors.Add(ChangePlanEditor.Create(_change.Id, _author.Id));
+            db.ChangePlanEditors.Add(ChangePlanEditor.Create(_change.Id, editorA.Id));
+            db.ChangePlanEditors.Add(ChangePlanEditor.Create(_change.Id, editorB.Id));
             await db.SaveChangesAsync(Ct);
         }
 
@@ -148,13 +154,27 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
         await using (var db = factory.Database.CreateDbContext())
         {
             db.ChangeApprovals.Add(approval);
-            db.ChangeApprovalEditors.Add(ChangeApprovalEditor.Create(approval.Id, voider.Id));
+            db.ChangePlanEditors.Add(ChangePlanEditor.Create(_change.Id, voider.Id));
             await db.SaveChangesAsync(Ct);
         }
 
         await EmitAsync(NotificationEventTypes.ChangeApprovalRequested, voider.Id, voider.Id);
 
         Assert.Equal([eligible.Id], await RecipientsAsync());
+    }
+
+    [Fact]
+    public async Task Approval_request_is_skipped_when_the_change_no_longer_waits_for_approval()
+    {
+        await AddUserAsync(UserRole.Admin);
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            await db.Database.ExecuteSqlAsync($"UPDATE change_requests SET status = 'draft'", Ct);
+        }
+
+        await EmitAsync(NotificationEventTypes.ChangeApprovalRequested, _author.Id);
+
+        Assert.Empty(await RecipientsAsync());
     }
 
     [Fact]
@@ -174,6 +194,31 @@ public sealed class ChangeNotificationTests(ApiFactory factory) : IAsyncLifetime
         await EmitAsync(NotificationEventTypes.ChangeApprovalDecided, decider.Id);
 
         Assert.Equal(Sorted(_author.Id, _owner.Id), await RecipientsAsync());
+    }
+
+    [Fact]
+    public async Task Approval_decision_mail_shows_the_reason_and_outcome_of_the_decided_row()
+    {
+        // approve → void → approve again: the second mail must not show the void reason of the first row.
+        var decider = await AddUserAsync(UserRole.Admin);
+        var first = ChangeApproval.Request(_change.Id, new string('a', ChangeApproval.FingerprintLength), Now);
+        first.Approve(decider.Id, Now.AddMinutes(1));
+        first.Void("Eski plan gerekçesi", Now.AddMinutes(2));
+        var second = ChangeApproval.Request(_change.Id, new string('b', ChangeApproval.FingerprintLength), Now.AddMinutes(2));
+        second.Approve(decider.Id, Now.AddMinutes(3));
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            db.ChangeApprovals.AddRange(first, second);
+            await db.SaveChangesAsync(Ct);
+        }
+
+        await EmitAsync(NotificationEventTypes.ChangeApprovalDecided, decider.Id, approvalId: second.Id);
+
+        await using var read = factory.Database.CreateDbContext();
+        var body = Assert.IsType<string>((await read.EmailDeliveries.FirstAsync(Ct)).Body);
+        Assert.DoesNotContain("Eski plan gerekçesi", body, StringComparison.Ordinal);
+        Assert.Contains("Durum: Planlandı", body, StringComparison.Ordinal);
+        Assert.Contains("Gerekçe: \n", body.ReplaceLineEndings("\n"), StringComparison.Ordinal);
     }
 
     [Fact]

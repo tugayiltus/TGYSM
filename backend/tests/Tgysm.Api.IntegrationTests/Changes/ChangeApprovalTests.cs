@@ -120,7 +120,9 @@ public sealed class ChangeApprovalTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(world.AdminUser.Id, approval.GetProperty("decidedById").GetGuid());
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        Assert.Equal(1, await db.OutboxEvents.CountAsync(e => e.EventType == NotificationEventTypes.ChangeApprovalDecided, Ct));
+        var decided = await db.OutboxEvents.SingleAsync(e => e.EventType == NotificationEventTypes.ChangeApprovalDecided, Ct);
+        using var payload = JsonDocument.Parse(decided.Payload);
+        Assert.Equal(Assert.Single(await ApprovalsAsync(scheduled)).Id, payload.RootElement.GetProperty(OutboxEvent.ApprovalIdKey).GetGuid());
         Assert.Contains(ChangeEventKind.Approved, await db.ChangeEvents.Select(e => e.Kind).ToListAsync(Ct));
         Assert.Equal(1, await db.AuditEvents.CountAsync(a => a.Action == Tgysm.Domain.Audit.AuditActions.ChangeApprovalDecided, Ct));
     }
@@ -445,11 +447,12 @@ public sealed class ChangeApprovalTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_void_starts_the_new_cycle_with_only_the_voiding_user_as_editor()
+    public async Task A_plan_editor_of_an_earlier_cycle_stays_ineligible_after_a_void()
     {
         var world = await TicketWorld.CreateAsync(factory);
         var (x, xUser) = await TeamAdminAsync(world, "admin-x@example.com");
         var (a, aUser) = await TeamAdminAsync(world, "admin-a@example.com");
+        var (other, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "other-admin@example.com");
         var submitted = await SubmittedAsync(world);
         await EditWindowAsync(x, submitted, "2026-12-07T20:00:00Z", "2026-12-07T22:00:00Z");
         var pending = await DetailAsync(world.Admin, submitted);
@@ -461,14 +464,39 @@ public sealed class ChangeApprovalTests(ApiFactory factory) : IAsyncLifetime
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var changeId = submitted.GetProperty("id").GetGuid();
-        var editors = await db.ChangeApprovalEditors.AsNoTracking()
-            .Where(e => db.ChangeApprovals.Any(p => p.Id == e.ApprovalId && p.ChangeId == changeId && p.Status == ChangeApprovalStatus.Pending))
-            .Select(e => e.UserId).ToListAsync(Ct);
-        Assert.Equal([aUser.Id], editors);
+        var editors = await db.ChangePlanEditors.AsNoTracking().Where(e => e.ChangeId == changeId).Select(e => e.UserId).ToListAsync(Ct);
+        Assert.Equal([.. new[] { world.DeskUser.Id, xUser.Id, aUser.Id }.Order()], editors.Order());
         var voided = await DetailAsync(x, submitted);
-        using var byX = await x.PostAsync(Action(voided, "approval/approve"), new { approvalVersion = voided.GetProperty("approval").GetProperty("version").GetUInt32() });
-        Assert.Equal(HttpStatusCode.OK, byX.StatusCode);
-        Assert.NotEqual(xUser.Id, aUser.Id);
+        var body = new { approvalVersion = voided.GetProperty("approval").GetProperty("version").GetUInt32() };
+        Assert.False(voided.GetProperty("approval").GetProperty("canDecide").GetBoolean());
+        Assert.Empty((await TicketWorld.ReadAsync(x, "/api/v1/change-approvals")).EnumerateArray());
+        using var byX = await x.PostAsync(Action(voided, "approval/approve"), body);
+        Assert.Equal(HttpStatusCode.Forbidden, byX.StatusCode);
+        Assert.Equal("changes.self_approval", await ApiClient.ReadCodeAsync(byX));
+        using var byOther = await other.PostAsync(Action(voided, "approval/approve"), body);
+        Assert.Equal(HttpStatusCode.OK, byOther.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_who_wrote_the_plans_in_draft_cannot_approve_after_the_owner_submits()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (a, _) = await TeamAdminAsync(world, "admin-a@example.com");
+        var draft = await ChangeWorld.CreateAsync(world.Desk, world, ChangeWorld.DraftBody(implementationPlan: null, backoutPlan: null));
+        await ChangeWorld.CreateTaskAsync(world.Desk, draft, "implementation", world.ServiceDesk.Id);
+        using (var edit = await a.PutAsync(ChangeWorld.PathOf(draft), EditBody(draft, WindowEditDraft("2026-12-07T20:00:00Z", "2026-12-07T22:00:00Z"))))
+        {
+            Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
+        }
+
+        var submitted = await ChangeWorld.ActAsync(world.Desk, await DetailAsync(world.Desk, draft), "submit");
+        var body = new { approvalVersion = submitted.GetProperty("approval").GetProperty("version").GetUInt32() };
+
+        using var byA = await a.PostAsync(Action(submitted, "approval/approve"), body);
+        Assert.Equal(HttpStatusCode.Forbidden, byA.StatusCode);
+        Assert.Equal("changes.self_approval", await ApiClient.ReadCodeAsync(byA));
+        using var byAdmin = await world.Admin.PostAsync(Action(submitted, "approval/approve"), body);
+        Assert.Equal(HttpStatusCode.OK, byAdmin.StatusCode);
     }
 
     [Fact]

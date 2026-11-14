@@ -86,6 +86,7 @@ public sealed class CreateTaskHandler(
             if (change is not null && task.Phase == ChangePhase.Implementation)
             {
                 // The plan tasks are read back from the database, so the new task is saved before the approval follows.
+                await flow.RecordEditorAsync(change.Id, viewer.UserId, ct);
                 await flow.PlanChangedAsync(change, null, viewer.UserId, now, ct);
                 await db.SaveChangesAsync(ct);
             }

@@ -44,7 +44,7 @@ public interface IAppDbContext
     DbSet<ChangeRequest> ChangeRequests { get; }
     DbSet<ChangeApproval> ChangeApprovals { get; }
     DbSet<ChangeEvent> ChangeEvents { get; }
-    DbSet<ChangeApprovalEditor> ChangeApprovalEditors { get; }
+    DbSet<ChangePlanEditor> ChangePlanEditors { get; }
     DbSet<ChangeAsset> ChangeAssets { get; }
     DbSet<TicketRelation> TicketRelations { get; }
     DbSet<TicketAsset> TicketAssets { get; }
