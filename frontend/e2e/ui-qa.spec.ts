@@ -10,7 +10,7 @@ import path from 'node:path';
 import { test } from '@playwright/test';
 
 import { requiredEnv } from './helpers';
-import { adminSession, seedIncidents, seedPublishedArticle, seedWorld } from './world';
+import { adminSession, seedChange, seedChangeTask, seedIncidents, seedPublishedArticle, seedWorld, submitChange, userSession } from './world';
 
 const OUT = requiredEnv('UI_QA_OUT');
 const MODES = ['light', 'dark'] as const;
@@ -27,6 +27,13 @@ test('every screen in light and dark mode', async ({ browser }, info) => {
   const world = await seedWorld(admin);
   const [ticket] = await seedIncidents(admin, ['Ekran titriyor, monitör kablosu gevşek olabilir']);
   const article = await seedPublishedArticle(admin, 'VPN bağlantısı nasıl kurulur', 'employees');
+  // A change waiting for the admin's approval, with a task in its Hazırlık phase (the task screen shows the phase).
+  const owner = await userSession(browser, world.itEmail, world.itPassword);
+  const changeNumber = await seedChange(owner, world, 'Dosya sunucusu güncellemesi', null);
+  const changeTask = await seedChangeTask(owner, changeNumber, 'preparation', 'Yedek al', world.teamId);
+  await seedChangeTask(owner, changeNumber, 'implementation', 'Yamayı kur', world.teamId);
+  await submitChange(owner, changeNumber);
+  await owner.context.close();
   const page = admin.page;
   const found = (await (await admin.context.request.get(`/api/v1/assets?search=${encodeURIComponent(world.assetTag)}`)).json()) as { items: { id: string }[] };
   const assetUrl = `/assets/${found.items[0]?.id ?? ''}`;
@@ -34,7 +41,7 @@ test('every screen in light and dark mode', async ({ browser }, info) => {
   const paths = [
     '/', '/workspace', '/workspace/queue', '/tickets', `/tickets/${ticket ?? ''}`, '/tickets/new/incident', '/tickets/new/request', '/approvals',
     '/assets', assetUrl, '/assets/mine', '/assets/import', '/kb', `/kb/${article.id}`, `/kb/${article.id}/edit`, '/kb/new',
-    '/reports', '/reports/incidents', '/reports/exports', '/profile', '/change-password',
+    '/changes', `/changes/${changeNumber}`, `/tasks/${changeTask}`, '/reports', '/reports/incidents', '/reports/exports', '/profile', '/change-password',
     '/admin', '/admin/users', '/admin/departments', '/admin/teams', '/admin/locations', '/admin/categories', '/admin/request-types',
     '/admin/brands', '/admin/models', '/admin/sla/policy', '/admin/sla/calendar', '/admin/email-templates', '/admin/email-deliveries',
     '/admin/audit', '/admin/system', '/nope-404',

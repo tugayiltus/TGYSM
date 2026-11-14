@@ -69,7 +69,7 @@ test('request: admin approves, IT hands over a device, employee sees it under Zi
   await admin.page.goto('/approvals');
   await admin.page.getByRole('button', { name: `Onayla ${number}` }).click();
   await admin.page.getByRole('dialog').getByRole('button', { name: 'Onayla' }).click();
-  await expect(admin.page.getByRole('heading', { name: 'Onay bekleyen talep yok.' })).toBeVisible();
+  await expect(admin.page.getByRole('heading', { name: 'Onay bekleyen kayıt yok.' })).toBeVisible();
 
   await it.page.goto('/assets');
   await it.page.getByLabel('Demirbaş no, seri no veya model ara').fill(world.assetTag);

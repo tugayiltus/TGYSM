@@ -50,7 +50,7 @@ export async function userSession(browser: Browser, email: string, temporaryPass
 async function send(request: APIRequestContext, method: 'POST' | 'PUT', path: string, data: unknown): Promise<Record<string, unknown>> {
   const csrf = (await (await request.get(CSRF_PATH)).json()) as { token: string };
   const response = await request.fetch(path, { method, data, headers: { [CSRF_HEADER]: csrf.token } });
-  expect(response.ok(), `${method} ${path} → ${response.status()}`).toBe(true);
+  expect(response.ok(), `${method} ${path} → ${response.status()} ${response.ok() ? '' : await response.text()}`).toBe(true);
   return (await response.json()) as Record<string, unknown>;
 }
 
@@ -59,6 +59,10 @@ export interface World {
   employeePassword: string;
   itEmail: string;
   itPassword: string;
+  /** The IT member's user id and the intake team's id and name: the owner team of a change. */
+  itUserId: string;
+  teamId: string;
+  teamName: string;
   requestTypeName: string;
   assetTag: string;
   /** Id of the in-stock device, for its QR scan link. */
@@ -106,6 +110,9 @@ export async function seedWorld(admin: Session): Promise<World> {
     employeePassword: String(employee.temporaryPassword),
     itEmail,
     itPassword: String(it.temporaryPassword),
+    itUserId: String(it.userId),
+    teamId: String(team.id),
+    teamName: String(team.name),
     requestTypeName,
     assetTag,
     assetId,
@@ -132,6 +139,53 @@ export async function seedSecondTeam(admin: Session): Promise<SecondTeam> {
   const team = await send(request, 'POST', '/api/v1/admin/teams', { name: teamName });
   await send(request, 'POST', `/api/v1/admin/teams/${String(team.id)}/members`, { userId: member.userId });
   return { teamName, email, password: String(member.temporaryPassword) };
+}
+
+export interface SecondAdmin {
+  email: string;
+  password: string;
+}
+
+/** A second active admin: the one who may approve a change the first admin's team plans (ADR-0031). */
+export async function seedSecondAdmin(admin: Session): Promise<SecondAdmin> {
+  const suffix = Date.now().toString();
+  const email = `admin2-${suffix}@example.com`;
+  const created = await send(admin.context.request, 'POST', '/api/v1/admin/users', {
+    firstName: 'Selin', lastName: 'Arslan', email, role: 'admin', departmentId: null, locationId: null, delivery: TEMPORARY_PASSWORD_DELIVERY,
+  });
+  return { email, password: String(created.temporaryPassword) };
+}
+
+const CHANGE_WINDOW_START = '2030-03-01T22:00:00Z';
+const CHANGE_WINDOW_END = '2030-03-02T01:00:00Z';
+
+/** Creates a draft change with full plans through the API as the session's user, owned by the world's team. */
+export async function seedChange(author: Session, world: World, title: string, assetId: string | null): Promise<string> {
+  const created = await send(author.context.request, 'POST', '/api/v1/changes', {
+    draft: {
+      title, justification: 'Planlı bakım', affectedService: 'Dosya sunucusu', risk: 'medium', impact: 'low',
+      windowStart: CHANGE_WINDOW_START, windowEnd: CHANGE_WINDOW_END,
+      implementationPlan: 'Sunucuyu güncelle', verificationPlan: 'Paylaşımlara eriş', backoutPlan: 'Eski sürüme dön',
+    },
+    ownerTeamId: world.teamId,
+    ownerId: world.itUserId,
+    assetIds: assetId === null ? [] : [assetId],
+  });
+  return String(created.number);
+}
+
+/** Opens a task of a change phase through the API as the session's user. */
+export async function seedChangeTask(author: Session, changeNumber: string, phase: string, title: string, teamId: string): Promise<string> {
+  const created = await send(author.context.request, 'POST', '/api/v1/tasks', {
+    title, description: null, teamId, assigneeId: null, priority: 'p3', dueDate: null, ticketNumber: null, changeNumber, phase,
+  });
+  return String(created.number);
+}
+
+/** Submits a draft change for approval as the session's user. */
+export async function submitChange(author: Session, changeNumber: string): Promise<void> {
+  const detail = (await (await author.context.request.get(`/api/v1/changes/${changeNumber}`)).json()) as { detail: { version: number } };
+  await send(author.context.request, 'POST', `/api/v1/changes/${changeNumber}/submit`, { version: detail.detail.version });
 }
 
 export type ArticleVisibility = 'employees' | 'internal';
