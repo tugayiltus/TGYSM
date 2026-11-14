@@ -184,8 +184,8 @@ public sealed class ChangeRequest : Entity
     }
 
     /// <summary>
-    /// Closes the change. Successful: from verifying, every Uygulama and Doğrulama task completed (a cancelled one
-    /// does not count as completed), Hazırlık tasks completed or cancelled, a verification note. Rolled back or
+    /// Closes the change. Successful: from verifying, no Uygulama task open and at least one completed (cancelled ones
+    /// are ignored), every Doğrulama task completed, Hazırlık tasks completed or cancelled, a verification note. Rolled back or
     /// failed: backout started, at least one Geri dönüş task, all closed, a backout note. Open Geri dönüş tasks of a
     /// successful change are cancelled by the caller. Actual end defaults to <paramref name="now"/> when not given.
     /// </summary>
@@ -204,7 +204,7 @@ public sealed class ChangeRequest : Entity
         // The form sends the actual end in whole minutes, so a close in the start's own minute must not look earlier.
         if (ActualStart is { } start && end < start.AddTicks(-(start.Ticks % TimeSpan.TicksPerMinute)))
         {
-            throw NotReady("The actual end cannot be before the actual start.");
+            throw new DomainException(ErrorCodes.ChangeEndBeforeStart, "The actual end cannot be before the actual start.");
         }
 
         Outcome = outcome;
@@ -243,9 +243,11 @@ public sealed class ChangeRequest : Entity
     private void RequireSuccessful(ChangeClosing closing, ChangeTaskTally tasks)
     {
         Require([ChangeStatus.Verifying], nameof(Close));
-        if (tasks.Implementation is not { Open: 0, Cancelled: 0 } || tasks.Verification is not { Open: 0, Cancelled: 0 } || tasks.Preparation.Open != 0)
+        // A cancelled Uygulama task cannot rejoin a locked plan, so it is ignored; a cancelled Doğrulama task can reopen.
+        if (tasks.Implementation is not { Open: 0, Completed: >= 1 } || tasks.Verification is not { Open: 0, Cancelled: 0 } || tasks.Preparation.Open != 0)
         {
-            throw new DomainException(ErrorCodes.ChangeOpenTasks, "Every Uygulama and Doğrulama task must be completed and no Hazırlık task open.");
+            throw new DomainException(
+                ErrorCodes.ChangeOpenTasks, "No Uygulama task open and one completed, every Doğrulama task completed, no Hazırlık task open.");
         }
 
         if (string.IsNullOrWhiteSpace(closing.VerificationNote))

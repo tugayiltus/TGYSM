@@ -93,6 +93,7 @@ public static class ErrorCodes
 
     public const string ChangeInvalidTransition = "changes.invalid_transition";
     public const string ChangeNotReady = "changes.not_ready";
+    public const string ChangeEndBeforeStart = "changes.end_before_start";
     public const string ChangePlanLocked = "changes.plan_locked";
     public const string ChangeOpenTasks = "changes.open_tasks";
     public const string ChangeVerificationRequired = "changes.verification_required";

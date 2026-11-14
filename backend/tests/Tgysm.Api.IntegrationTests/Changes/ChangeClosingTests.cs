@@ -41,6 +41,12 @@ public sealed class ChangeClosingTests(ApiFactory factory) : IAsyncLifetime
     private static async Task<(JsonElement Change, JsonElement Implementation)> VerifyingAsync(TicketWorld world, bool completeImplementation = true)
     {
         var (scheduled, implementation) = await ChangeWorld.ScheduledAsync(world);
+        return await VerifyingAsync(world, scheduled, implementation, completeImplementation);
+    }
+
+    private static async Task<(JsonElement Change, JsonElement Implementation)> VerifyingAsync(
+        TicketWorld world, JsonElement scheduled, JsonElement implementation, bool completeImplementation = true)
+    {
         var implementing = await ChangeWorld.ActAsync(world.Desk, scheduled, "start-implementation");
         implementation = await ChangeWorld.TaskActAsync(world.Desk, implementation, "start");
         if (completeImplementation)
@@ -125,6 +131,79 @@ public sealed class ChangeClosingTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Implementation_task_cancelled_while_scheduled_does_not_block_a_successful_close()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        JsonElement second = default;
+        var (scheduled, implementation) = await ChangeWorld.ScheduledAsync(world, async change =>
+            second = await ChangeWorld.CreateTaskAsync(world.Desk, change, "implementation", world.ServiceDesk.Id));
+        await ChangeWorld.TaskActAsync(world.Desk, second, "cancel", new { version = TaskWorld.VersionOf(second), reason = "Gereksiz" });
+        var pending = await ChangeWorld.DetailAsync(world.Desk, scheduled);
+        var approved = await ChangeWorld.ActAsync(world.Admin, pending, "approval/approve",
+            new { approvalVersion = pending.GetProperty("approval").GetProperty("version").GetUInt32() });
+        var (verifying, _) = await VerifyingAsync(world, approved, implementation);
+
+        using var response = await CloseAsync(world.Desk, verifying, CloseBody(verifying, "successful"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("successful", (await world.Desk.ReadJsonAsync<JsonElement>(response)).GetProperty("outcome").GetString());
+    }
+
+    [Fact]
+    public async Task Close_with_an_end_before_the_start_has_its_own_code()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (verifying, _) = await VerifyingAsync(world);
+        var body = new
+        {
+            version = ChangeWorld.VersionOf(verifying),
+            outcome = "successful",
+            verificationNote = VerificationNote,
+            backoutNote = (string?)null,
+            closingNote = "Tamam",
+            actualEnd = DateTimeOffset.UtcNow.AddDays(-1),
+        };
+
+        using var response = await CloseAsync(world.Desk, verifying, body);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("changes.end_before_start", await ApiClient.ReadCodeAsync(response));
+    }
+
+    [Fact]
+    public async Task Successful_close_is_refused_while_a_preparation_task_is_open()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (verifying, _) = await VerifyingAsync(world);
+        await ChangeWorld.CreateTaskAsync(world.Desk, verifying, "preparation", world.ServiceDesk.Id);
+
+        using var response = await CloseAsync(world.Desk, verifying, CloseBody(verifying, "successful"));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("changes.open_tasks", await ApiClient.ReadCodeAsync(response));
+    }
+
+    [Fact]
+    public async Task Verification_task_cancelled_while_verifying_reopens_and_the_change_closes_successful()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var (verifying, _) = await VerifyingAsync(world);
+        var extra = await ChangeWorld.CreateTaskAsync(world.Desk, verifying, "verification", world.ServiceDesk.Id, world.DeskUser.Id);
+        extra = await ChangeWorld.TaskActAsync(world.Desk, extra, "cancel", new { version = TaskWorld.VersionOf(extra), reason = "Yanlışlıkla" });
+        using (var refused = await CloseAsync(world.Desk, verifying, CloseBody(verifying, "successful")))
+        {
+            Assert.Equal("changes.open_tasks", await ApiClient.ReadCodeAsync(refused));
+        }
+
+        var reopened = await ChangeWorld.TaskActAsync(world.Desk, extra, "reopen");
+        Assert.Equal("open", reopened.GetProperty("status").GetString());
+        await CompleteAsync(world.Desk, await ChangeWorld.TaskActAsync(world.Desk, reopened, "start"));
+
+        var closed = await ChangeWorld.ActAsync(world.Desk, verifying, "close", CloseBody(verifying, "successful"));
+        Assert.Equal("successful", closed.GetProperty("outcome").GetString());
+    }
+
+    [Fact]
     public async Task Rolled_back_needs_a_started_backout_with_closed_backout_tasks_and_a_note()
     {
         var world = await TicketWorld.CreateAsync(factory);
@@ -178,6 +257,17 @@ public sealed class ChangeClosingTests(ApiFactory factory) : IAsyncLifetime
         var current = await ReadTaskAsync(world.Desk, preparation);
         using var reopen = await world.Desk.PostAsync(TaskWorld.PathOf(current, "reopen"), new { version = TaskWorld.VersionOf(current) });
         Assert.Equal(HttpStatusCode.Conflict, reopen.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancel_from_draft_closes_the_change()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var draft = await ChangeWorld.CreateAsync(world.Desk, world);
+
+        var cancelled = await ChangeWorld.ActAsync(world.Desk, draft, "cancel", new { version = ChangeWorld.VersionOf(draft), reason = "Gerek kalmadı" });
+
+        Assert.Equal(("cancelled", "Gerek kalmadı"), (cancelled.GetProperty("status").GetString(), cancelled.GetProperty("cancelReason").GetString()));
     }
 
     [Fact]

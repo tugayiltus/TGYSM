@@ -166,7 +166,6 @@ public sealed class ChangeRequestTests
         var change = InStatus(ChangeStatus.Verifying);
 
         AssertCode(ErrorCodes.ChangeOpenTasks, () => change.Close(ChangeOutcome.Successful, Done, Tally(impl: new(1, 0, 0)), Now));
-        AssertCode(ErrorCodes.ChangeOpenTasks, () => change.Close(ChangeOutcome.Successful, Done, Tally(impl: new(0, 1, 1)), Now));
         AssertCode(ErrorCodes.ChangeOpenTasks, () => change.Close(ChangeOutcome.Successful, Done, Tally(verify: new(1, 0, 0)), Now));
         AssertCode(ErrorCodes.ChangeOpenTasks, () => change.Close(ChangeOutcome.Successful, Done, Tally(prep: new(1, 0, 0)), Now));
         AssertCode(ErrorCodes.ChangeVerificationRequired, () => change.Close(ChangeOutcome.Successful, Done with { VerificationNote = " " }, Tally(), Now));
@@ -177,10 +176,43 @@ public sealed class ChangeRequestTests
     }
 
     [Fact]
+    public void Close_successful_ignores_cancelled_implementation_tasks_but_needs_one_completed()
+    {
+        // A cancelled Uygulama task cannot be reopened once the plan is locked, so it must not block the close.
+        AssertCode(ErrorCodes.ChangeOpenTasks, () => InStatus(ChangeStatus.Verifying).Close(ChangeOutcome.Successful, Done, Tally(impl: new(0, 0, 1)), Now.AddDays(2)));
+        AssertCode(ErrorCodes.ChangeOpenTasks, () => InStatus(ChangeStatus.Verifying).Close(ChangeOutcome.Successful, Done, Tally(impl: new(1, 1, 1)), Now.AddDays(2)));
+
+        var change = InStatus(ChangeStatus.Verifying);
+        change.Close(ChangeOutcome.Successful, Done, Tally(impl: new(0, 1, 1)), Now.AddDays(2));
+
+        Assert.Equal((ChangeStatus.Closed, ChangeOutcome.Successful), (change.Status, change.Outcome));
+    }
+
+    [Fact]
+    public void Close_successful_is_allowed_after_the_backout_started()
+    {
+        var change = InStatus(ChangeStatus.Verifying);
+        change.StartBackout(Now.AddDays(1));
+
+        change.Close(ChangeOutcome.Successful, Done, Tally(backout: new(1, 0, 0)), Now.AddDays(2));
+
+        Assert.Equal((ChangeStatus.Closed, ChangeOutcome.Successful), (change.Status, change.Outcome));
+    }
+
+    [Fact]
+    public void Cancel_from_draft()
+    {
+        var change = NewChange();
+        change.Cancel("Gerek kalmadı", Now);
+
+        Assert.Equal((ChangeStatus.Cancelled, Now), (change.Status, change.ClosedAt));
+    }
+
+    [Fact]
     public void Close_rejects_an_end_before_the_start()
     {
         var change = InStatus(ChangeStatus.Verifying);
-        AssertCode(ErrorCodes.ChangeNotReady, () => change.Close(ChangeOutcome.Successful, Done with { ActualEnd = Now }, Tally(), Now));
+        AssertCode(ErrorCodes.ChangeEndBeforeStart, () => change.Close(ChangeOutcome.Successful, Done with { ActualEnd = Now }, Tally(), Now));
     }
 
     [Fact]

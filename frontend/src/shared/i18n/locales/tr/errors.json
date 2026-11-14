@@ -157,6 +157,7 @@
   "changes": {
     "invalid_transition": "Bu işlem değişikliğin mevcut durumunda yapılamaz.",
     "not_ready": "Onaya göndermek için bakım penceresi, üç plan (uygulama, doğrulama, geri dönüş) ve en az bir Uygulama görevi gerekir. Pencere bitişi başlangıçtan sonra olmalı.",
+    "end_before_start": "Gerçekleşen bitiş, uygulamanın başladığı andan önce olamaz.",
     "plan_locked": "Uygulama başladıktan sonra plan, pencere, risk ve etki değiştirilemez.",
     "open_tasks": "Başarılı kapatmak için tüm Uygulama ve Doğrulama görevleri tamamlanmış, Hazırlık görevleri tamamlanmış veya iptal edilmiş olmalı.",
     "verification_required": "Başarılı kapatmak için doğrulama notu yazın.",

@@ -144,6 +144,17 @@ public sealed class WorkTaskTests
     }
 
     [Fact]
+    public void Cancelled_change_task_reopens_while_the_change_is_open()
+    {
+        var task = NewTask(Agent);
+        task.Cancel("Yanlışlıkla", Now);
+
+        task.Reopen(Now.AddHours(1), changeOpen: true);
+
+        Assert.Equal((WorkTaskStatus.Open, (string?)null), (task.Status, task.CancelReason));
+    }
+
+    [Fact]
     public void Reopen_clears_the_closing_fields()
     {
         var task = NewTask(Agent);
