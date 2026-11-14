@@ -25,6 +25,9 @@ internal static class ChangeEndpoints
     private const string QueueParameter = "queue";
     private const string StatusParameter = "status";
     private const string RiskParameter = "risk";
+    private const string ApproveSegment = "approve";
+    private const string RejectSegment = "reject";
+    private const string ReturnSegment = "return";
 
     public static RouteGroupBuilder MapChangeEndpoints(this RouteGroupBuilder api)
     {
@@ -61,9 +64,9 @@ internal static class ChangeEndpoints
         changes.MapPost($"{NumberRoute}/cancel", async (string number, CancelChangeRequest r, CancelChangeHandler handler, CancellationToken ct) =>
                 TypedResults.Ok(await handler.HandleAsync(new CancelChangeCommand(number, r.Version, r.Reason), ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
-        MapDecision(changes, "approve", ChangeApprovalDecision.Approve);
-        MapDecision(changes, "reject", ChangeApprovalDecision.Reject);
-        MapDecision(changes, "return", ChangeApprovalDecision.Return);
+        MapDecision(changes, ApproveSegment, ChangeApprovalDecision.Approve);
+        MapDecision(changes, RejectSegment, ChangeApprovalDecision.Reject);
+        MapDecision(changes, ReturnSegment, ChangeApprovalDecision.Return);
 
         api.MapGroup(ApiRoutes.ChangeApprovals).WithTags(Tag).RequireAuthorization()
             .MapGet("", async (ListChangeApprovalsHandler handler, CancellationToken ct) =>

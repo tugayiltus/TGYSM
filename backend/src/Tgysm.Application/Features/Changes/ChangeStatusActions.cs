@@ -57,9 +57,6 @@ internal static class ChangeStatusChange
 /// <summary>The tasks of a change, loaded for closing or cancelling it, and what those do to them.</summary>
 internal static class ChangeTasks
 {
-    /// <summary>Reason given to the open Geri dönüş tasks of a successful change ("not needed").</summary>
-    public const string BackoutNotNeededReason = "Gerekmedi";
-
     public static Task<List<WorkTask>> LoadAsync(IAppDbContext db, Guid changeId, CancellationToken cancellationToken) =>
         db.WorkTasks.Where(t => t.ChangeId == changeId).ToListAsync(cancellationToken);
 
@@ -141,7 +138,7 @@ public sealed class CloseChangeHandler(IAppDbContext db, IValidator<CloseChangeC
             change.Close(command.Outcome, new ChangeClosing(command.VerificationNote, command.BackoutNote, command.ClosingNote, command.ActualEnd), ChangeTasks.Tally(tasks), now);
             if (command.Outcome == ChangeOutcome.Successful)
             {
-                ChangeTasks.CancelOpen(db, audit, tasks.Where(t => t.Phase == ChangePhase.Backout), ChangeTasks.BackoutNotNeededReason, viewer.UserId, now);
+                ChangeTasks.CancelOpen(db, audit, tasks.Where(t => t.Phase == ChangePhase.Backout), ChangeReasonCodes.NotNeeded, viewer.UserId, now);
             }
 
             ChangeHistory.Record(db, change, ChangeEventKind.Closed, viewer.UserId, now, new { change.Outcome });

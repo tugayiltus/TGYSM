@@ -181,6 +181,10 @@
     "message": "Bu değişiklik onayı geçersiz kılar. Kaydettikten sonra değişiklik yeniden onaya gönderilmelidir.",
     "confirm": "Yine de kaydet"
   },
+  "reason": {
+    "plan_changed": "Plan değişti",
+    "not_needed": "Gerekmedi"
+  },
   "timeline": {
     "events": {
       "created": "Değişiklik oluşturuldu",

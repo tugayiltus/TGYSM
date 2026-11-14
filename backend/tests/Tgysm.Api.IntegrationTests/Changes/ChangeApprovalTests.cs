@@ -289,6 +289,7 @@ public sealed class ChangeApprovalTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal("pending", detail.GetProperty("approval").GetProperty("status").GetString());
         var rows = await ApprovalsAsync(scheduled);
         Assert.Equal([ChangeApprovalStatus.Void, ChangeApprovalStatus.Pending], rows.Select(r => r.Status));
+        Assert.Equal("changes.reason.plan_changed", rows[0].Reason);
         Assert.NotEqual(rows[0].Fingerprint, rows[1].Fingerprint);
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

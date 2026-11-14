@@ -12,6 +12,9 @@ public static class ChangePlanFingerprint
 {
     private const char LengthSeparator = ':';
 
+    /// <summary>Length written for a null value, so null and empty text give different fingerprints.</summary>
+    private const int NullLength = -1;
+
     public static string Compute(ChangeRequest change, IEnumerable<Guid> assetIds, IEnumerable<Guid> implementationTaskIds)
     {
         var builder = new StringBuilder();
@@ -41,9 +44,9 @@ public static class ChangePlanFingerprint
         }
     }
 
-    // Length prefix keeps field boundaries unambiguous; null and empty text are told apart by "-1".
+    // Length prefix keeps field boundaries unambiguous; null and empty text are told apart by NullLength.
     private static void Append(StringBuilder builder, string? value)
     {
-        builder.Append(value is null ? -1 : value.Length).Append(LengthSeparator).Append(value);
+        builder.Append(value is null ? NullLength : value.Length).Append(LengthSeparator).Append(value);
     }
 }

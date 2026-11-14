@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Tgysm.Domain.Audit;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Notifications;
 
@@ -15,6 +16,7 @@ public sealed class TranslationCoverageTests
     private const string EntityTypesPrefix = "entityTypes.";
     private const string EmailEventsPrefix = "emailEvents.";
     private const char KeySeparator = '.';
+    private const string LocaleExtension = ".json";
 
     [Fact]
     public void Every_error_code_has_a_turkish_text_and_no_translation_is_stale()
@@ -41,6 +43,18 @@ public sealed class TranslationCoverageTests
         var keys = LeafKeys(RepositoryPaths.Locale(AdminFile));
 
         Assert.Empty(ConstantsOf(typeof(NotificationEventTypes)).Select(t => EmailEventsPrefix + t).Except(keys));
+    }
+
+    [Fact]
+    public void Every_change_reason_code_has_a_turkish_text_in_its_namespace()
+    {
+        // A code "ns.key.path" is shown with i18next key "ns:key.path", so it lives in ns.json under key.path.
+        foreach (var code in ConstantsOf(typeof(ChangeReasonCodes)))
+        {
+            var separator = code.IndexOf(KeySeparator, StringComparison.Ordinal);
+            var keys = LeafKeys(RepositoryPaths.Locale(code[..separator] + LocaleExtension));
+            Assert.Contains(code[(separator + 1)..], keys);
+        }
     }
 
     private static HashSet<string> ConstantsOf(Type type) =>

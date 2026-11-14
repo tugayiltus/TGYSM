@@ -108,7 +108,7 @@ public sealed class ChangeClosingTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(VerificationNote, closed.GetProperty("verificationNote").GetString());
         var row = await TaskRowAsync(backout);
         Assert.Equal(WorkTaskStatus.Cancelled, row.Status);
-        Assert.Equal("Gerekmedi", row.CancelReason);
+        Assert.Equal("changes.reason.not_needed", row.CancelReason);
 
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

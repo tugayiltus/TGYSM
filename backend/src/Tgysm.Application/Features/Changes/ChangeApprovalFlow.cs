@@ -14,8 +14,6 @@ namespace Tgysm.Application.Features.Changes;
 /// </summary>
 public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox outbox, IAuditLog audit)
 {
-    public const string PlanChangedReason = "Plan değişti";
-
     /// <summary>The Uygulama tasks the fingerprint covers: open or completed, never cancelled.</summary>
     public static IQueryable<WorkTask> PlanTasks(IAppDbContext db, Guid changeId) =>
         db.WorkTasks.Where(t => t.ChangeId == changeId && t.Phase == ChangePhase.Implementation && t.Status != WorkTaskStatus.Cancelled);
@@ -121,7 +119,7 @@ public sealed class ChangeApprovalFlow(IAppDbContext db, INotificationOutbox out
             ?? throw new Domain.Common.DomainException(Domain.Common.ErrorCodes.ChangeApprovalNotPending, "The change has no approved approval.");
         if (approvedFingerprint != fingerprint)
         {
-            await VoidAsync(change, PlanChangedReason, actorUserId, now, assetIds, cancellationToken);
+            await VoidAsync(change, ChangeReasonCodes.PlanChanged, actorUserId, now, assetIds, cancellationToken);
         }
     }
 
