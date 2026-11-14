@@ -201,7 +201,8 @@ public sealed class ChangeRequest : Entity
         }
 
         var end = closing.ActualEnd ?? now;
-        if (ActualStart is { } start && end < start)
+        // The form sends the actual end in whole minutes, so a close in the start's own minute must not look earlier.
+        if (ActualStart is { } start && end < start.AddTicks(-(start.Ticks % TimeSpan.TicksPerMinute)))
         {
             throw NotReady("The actual end cannot be before the actual start.");
         }

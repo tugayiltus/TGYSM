@@ -184,6 +184,22 @@ public sealed class ChangeRequestTests
     }
 
     [Fact]
+    public void Close_accepts_an_end_in_the_start_minute()
+    {
+        var change = NewChange();
+        var start = Now.AddDays(1).AddSeconds(40);
+        change.Submit(1, Now);
+        change.Schedule(Now);
+        change.StartImplementation(start);
+        change.FinishImplementation(start);
+        var minuteStart = Now.AddDays(1);
+
+        change.Close(ChangeOutcome.Successful, Done with { ActualEnd = minuteStart }, Tally(), start);
+
+        Assert.Equal(minuteStart, change.ActualEnd);
+    }
+
+    [Fact]
     public void Close_uses_the_given_actual_end()
     {
         var change = InStatus(ChangeStatus.Verifying);
