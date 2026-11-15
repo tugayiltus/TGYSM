@@ -18,7 +18,7 @@ RUN dotnet publish backend/src/Tgysm.Api -c Release -o /out/api --nologo \
 
 # Shared data folders: file store and Data Protection key ring, owned by the non-root app user.
 # The key folder is private to that user (0700): the keys decrypt account-link tokens.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS api
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION \
     ASPNETCORE_HTTP_PORTS=8080 \
@@ -39,7 +39,7 @@ EXPOSE 8080
 ENTRYPOINT ["dotnet", "Tgysm.Api.dll"]
 
 # The Worker references Infrastructure, which uses ASP.NET Core Data Protection, so it needs the ASP.NET runtime too.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS worker
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS worker
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION \
     Files__RootPath=/data/files \
