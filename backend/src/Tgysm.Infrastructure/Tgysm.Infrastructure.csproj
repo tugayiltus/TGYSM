@@ -8,6 +8,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <!-- Pin: Design (build-only) pulls Relational 10.0.12, Npgsql alone resolves an older one at runtime. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
