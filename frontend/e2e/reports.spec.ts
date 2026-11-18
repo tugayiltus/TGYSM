@@ -59,6 +59,9 @@ test('reports: admin drills into an incident figure, exports it and downloads a 
   // The department is unique to this world, so the figure counts exactly the incidents seeded above.
   // On phones the filters sit behind the "Filtreler (n)" button in a drawer; filters apply as they change.
   const filtersButton = page.getByRole('button', { name: /^Filtreler \(\d+\)$/ });
+  const moreFilters = page.getByRole('button', { name: /^Diğer filtreler/ });
+  // isVisible does not wait: wait until the toolbar shows one of the two layouts before choosing a branch.
+  await expect(filtersButton.or(moreFilters).first()).toBeVisible();
   // Departman is a minor filter: it sits under the collapsed "Diğer filtreler" in both layouts.
   if (await filtersButton.isVisible()) {
     await filtersButton.click();
@@ -67,7 +70,7 @@ test('reports: admin drills into an incident figure, exports it and downloads a 
     await chooseOption(drawer, 'Departman', world.departmentName);
     await page.keyboard.press('Escape');
   } else {
-    await page.getByRole('button', { name: /^Diğer filtreler/ }).click();
+    await moreFilters.click();
     await chooseOption(page, 'Departman', world.departmentName);
   }
   // The card is described by its headline value only, so other numbers on it cannot satisfy the check.

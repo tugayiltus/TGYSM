@@ -10,11 +10,14 @@ const MENU_PANEL = 'Menü';
 /** The left menu: always visible from 768 px, behind the menu button on phones. */
 async function openMenu(page: Page) {
   const button = page.getByRole('button', { name: 'Menüyü aç' });
+  const menu = page.getByRole('navigation', { name: MAIN_MENU });
+  // isVisible does not wait: wait until the shell shows the menu button or the menu before choosing a branch.
+  await expect(button.or(menu).first()).toBeVisible();
   if (await button.isVisible()) {
     await button.click();
     return page.getByRole('dialog', { name: MENU_PANEL });
   }
-  return page.getByRole('navigation', { name: MAIN_MENU });
+  return menu;
 }
 
 const trail = (page: Page) => page.getByRole('navigation', { name: 'Sayfa yolu' });
