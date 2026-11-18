@@ -11,8 +11,9 @@ against the seeded pilot database (`tools/seed-pilot.sh --fresh`); the shot list
 | `my-tickets.md` | Done | `tickets-list-desktop.png`, `ticket-detail-desktop.png` |
 | `my-assets.md` | Done | `my-assets-mobile.png` |
 | `knowledge-base.md` | Done | `knowledge-base-desktop.png`, `kb-article-mobile.png`, `kb-new-desktop.png` |
-| `approvals.md` | Done | `approvals-desktop.png` |
+| `approvals.md` | Done (change approvals added 2026-11-18) | `approvals-desktop.png` (shows request approvals only) |
 | `it-workspace.md` | Done | `workspace-desktop.png`, `workspace-queue-desktop.png`, `ticket-work-desktop.png`, `ticket-complete-desktop.png` |
+| `tasks-and-changes.md` | Done (text only, 2026-11-18) | Pending: task list, task detail, change list, change detail, change approval |
 | `inventory.md` | Done | `assets-list-desktop.png`, `asset-new-desktop.png`, `asset-detail-desktop.png`, `assets-import-desktop.png` |
 | `reports.md` | Done | `reports-incidents-desktop.png`, `reports-incidents-mobile.png`, `reports-exports-desktop.png` |
 | `first-setup.md` | Done | `admin-overview-desktop.png` |
@@ -26,5 +27,5 @@ against the seeded pilot database (`tools/seed-pilot.sh --fresh`); the shot list
 
 ## Screenshot status
 
-Done: every image in `images/` is referenced by a page and was taken from the pilot data. Retake all with
+Every image in `images/` is referenced by a page and was taken from the pilot data. Pending: shots for `tasks-and-changes.md` (needs pilot tasks and changes in `tools/seed-pilot.sh` and entries in `frontend/guide/manifest.ts`). Retake all with
 `GUIDE_PASSWORD=<pilot password> tools/guide-screenshots.sh`, or single shots by id.

@@ -2,7 +2,7 @@
 
 Biten faz ve işlerin tek sayfalık özeti. Ayrıntı her satırdaki plan, spec ve ADR'de; planlar yerinde kalır. Faz tablosu: `tgysm.md` (Faz 0–6 = ilk sürüm).
 
-Güncel: 2026-11-13.
+Güncel: 2026-11-18.
 
 ## Biten fazlar (ilk sürüm)
 
@@ -33,12 +33,13 @@ Güncel: 2026-11-13.
 | Faz | İçerik | Plan | ADR | Durum |
 |---|---|---|---|---|
 | 7 — Görev | `TSK-` görevler, üstlenme/atama/aktarma/bekletme/tamamlama, geçmiş ve notlar, `task_assigned` e-postası, İş listem kartları ve birleşik liste, kayıtta Görevler bölümü | `docs/superpowers/plans/2026-11-13-phase-7-tasks.md` (9 görev) | 0031 | `master` (`2046892`) |
-| 8 — Değişiklik | Normal değişiklik (`CHG-`), durum makinesi, faz görevleri, yönetici onayı, kapanış ve geri dönüş | — | 0032 (planlı) | Sırada |
-| 9 — Takvim/Rapor | Bakım takvimi, pencere çakışma uyarısı, "Bu hafta" kartı, değişiklik/görev raporları | — | — | Bekliyor |
+| 8 — Değişiklik | Normal değişiklik (`CHG-`), durum makinesi, faz görevleri, plan parmak izli tek aşamalı yönetici onayı (plan yazanlar onaylayamaz), kapanış ve geri dönüş, Onaylar ve İş listem'de değişiklikler, üç değişiklik e-postası | `docs/superpowers/plans/2026-11-13-phase-8-changes.md` (10 görev) | 0032 | `master` (`0062691`) |
+| 9 — Takvim/Rapor | Bakım takvimi, pencere çakışma uyarısı, "Bu hafta" kartı, değişiklik/görev raporları | — | — | Sırada |
 
 ## Açık işler
 
 - SSO canlıya almadan önce: gerçek AD ile `TGYSM_TEST_LDAP_*` sözleşme testi; gerçek Entra ve AD ile elle giriş.
-- `SECURITY.md` ve kullanıcı rehberi QR, `ASSET-` etiketi, SSO ve görevler için eski; sahibin isteğiyle güncellenir. `README.md` ve `capabilities.md` `2046892` itibarıyla güncel.
+- `SECURITY.md` QR, `ASSET-` etiketi, SSO, görevler ve değişiklikler için eski; sahibin isteğiyle güncellenir. `README.md` ve `capabilities.md` `ef8d9a0` itibarıyla güncel.
+- Kullanıcı rehberinde görev ve değişiklik sayfası ekran görüntüsüz; görüntüler `tools/guide-screenshots.sh` ile eklenecek.
 - Bekleyen Dependabot PR'ları.
-- Sıradaki: Faz 8 Değişiklik Yönetimi (spec `docs/superpowers/specs/2026-11-12-task-and-change-management-design.md`).
+- Sıradaki: Faz 9 Takvim ve Raporlar (spec `docs/superpowers/specs/2026-11-12-task-and-change-management-design.md`).

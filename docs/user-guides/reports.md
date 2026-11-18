@@ -10,7 +10,7 @@ Bu sayfa IT personeli ve yöneticiler içindir: arıza, talep, operasyon ve enva
    - **Talepler**: Taleplerin karşılanma süresi, onay bekleme süresi, ret oranı.
    - **Operasyon**: Ekip ve kişi yükü, kategori, lokasyon ve departmana göre dağılım, bekletme nedenleri.
    - **Transferler**: Aktarma sayısı ve oranı, yeniden atamalar, arızadan açılan talepler.
-   - **Varlıklar**: Türe ve duruma göre cihazlar, aktif zimmetler, stok.
+   - **Envanter**: Türe ve duruma göre cihazlar, aktif zimmetler, stok.
    - **Garanti**: Garantisi bitmiş, bitecek ve garanti tarihi girilmemiş cihazlar.
 
 ![Olaylar raporu](images/reports-incidents-desktop.png)

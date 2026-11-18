@@ -23,7 +23,7 @@ Bazı talep tipleri yönetici onayı ister (örneğin "Yeni bilgisayar"). Böyle
 
 Talep sahibine karar e-postayla bildirilir. Red nedeni talep sahibi tarafından görülür; açık ve kibar yazın.
 
-Liste boşsa **Onay bekleyen talep yok.** yazar.
+Liste boşsa **Onay bekleyen kayıt yok.** yazar.
 
 ## Onaylayıcısı olmayan talebe onaylayıcı atama
 
@@ -39,6 +39,17 @@ Kararı yalnızca atanan onaylayıcı verebilir. Bu durum sık oluyorsa departma
 ## Onayın geçersiz kılınması
 
 Onaylanmış bir talebin kapsamı sonradan değişirse IT ekibi talep sayfasında **Onayı geçersiz kıl** ile onayı iptal edebilir. Talep yeniden **Beklemede** durumuna geçer ve yeni bir onay istenir.
+
+## Değişiklikleri onaylama
+
+**Onay yönetimi** sayfasında, karar verebileceğiniz değişiklikler de listelenir. Her satırda değişiklik numarası, başlık, risk, bakım penceresi ve uygulama planının başı yazar.
+
+1. Ayrıntıyı görmek için değişiklik numarasına basın.
+2. Karar verin:
+   - **Onayla**: Değişiklik **Planlandı** olur.
+   - **Reddet** veya **Düzeltmeye gönder**: **Gerekçe** alanını doldurun. Değişiklik **Taslak** durumuna döner.
+
+Değişikliği oluşturan kişi, sahibi ve planı yazan veya değiştiren herkes o değişikliği onaylayamaz. Bu kişiler değişikliği listede görmez. Ayrıntılar: [Görevler ve değişiklikler](tasks-and-changes.md).
 
 ## İpuçları
 

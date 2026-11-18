@@ -49,3 +49,7 @@ The ticket `approvals` table (ADR-0009) serves incidents and requests. It belong
 - With one admin in the system, no change can be approved. The detail shows this, and a second admin must be created.
 - The fingerprint must cover every field that matters. A missed field allows an edit without a void. Tests cover each fingerprint field and the non-fingerprint fields.
 - The fingerprint and the eligibility rule can drift from the design. Both are tested against the Phase 8 plan.
+
+## Amendment 2026-11-18
+
+The eligibility rule is stricter than the Decision section states. Besides the author and the change owner, every user who ever submitted or changed the plan of the change is ineligible for the life of the change: fingerprint fields, the asset set, or Uygulama tasks added, cancelled or reopened, in any status including `Draft`. They are recorded in `change_plan_editors` (commit `2d4ae01`); one shared query applies the rule to the decision, `canDecide`, the approvals list, `hasEligibleApprover` and the approval-request recipients. Reason: an admin could otherwise write the plan in `Draft`, let the owner submit, and approve their own plan. The successful close also ignores cancelled Uygulama tasks and needs at least one completed one (commit `6d52d1d`).
