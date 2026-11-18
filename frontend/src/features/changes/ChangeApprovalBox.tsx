@@ -22,6 +22,8 @@ import { FormTextArea } from '../../shared/form/formFields';
 import { formatDateTime } from '../../shared/lib/format';
 
 import { useDecideChangeApproval, type ApprovalDecision, type ChangeDetail } from './api';
+import { reasonText } from './reasonText';
+import { useCloseOnConflict } from './useCloseOnConflict';
 
 /** Mirror backend ChangeApproval.ReasonMaxLength. */
 const REASON_MAX_LENGTH = 500;
@@ -37,11 +39,12 @@ function DecisionDialog({ change, decision, onClose }: { change: ChangeDetail; d
   // The approval version the person saw when opening the dialog.
   const [opened] = useState(change);
   const decide = useDecideChangeApproval(opened);
+  const closeOnConflict = useCloseOnConflict(onClose);
   const { control, handleSubmit } = useForm<z.infer<typeof optionalSchema>>({
     resolver: zodResolver(decision === 'approve' ? optionalSchema : requiredSchema),
     defaultValues: { reason: '' },
   });
-  const onSubmit = handleSubmit((v) => decide.mutate({ decision, reason: v.reason.trim() === '' ? null : v.reason.trim() }, { onSuccess: onClose }));
+  const onSubmit = handleSubmit((v) => decide.mutate({ decision, reason: v.reason.trim() === '' ? null : v.reason.trim() }, { onSuccess: onClose, onError: closeOnConflict }));
   return (
     <FormDialog
       title={t('approval.decisionTitle', { decision: t(`approval.${decision}`), number: change.number })}
@@ -76,7 +79,7 @@ export function ChangeApprovalBox({ change }: { change: ChangeDetail }) {
           {approval.decidedAt && <MetadataListItem label={t('approval.decidedAt')}>{formatDateTime(approval.decidedAt)}</MetadataListItem>}
           {approval.reason && (
             <MetadataListItem label={t('approval.reason')}>
-              <Text wordBreak="break-word">{approval.reason}</Text>
+              <Text wordBreak="break-word">{reasonText(approval.reason)}</Text>
             </MetadataListItem>
           )}
         </MetadataList>

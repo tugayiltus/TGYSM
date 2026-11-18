@@ -25,6 +25,7 @@ import { SectionCard } from '../../shared/page/SectionCard';
 import { changePath, ROUTES, ticketPath } from '../../shared/routes';
 import { Icons } from '../../shared/ui/icons';
 import { ChangeStatusBadge } from '../changes/ChangeBadges';
+import { reasonText } from '../changes/reasonText';
 import { PriorityBadge, TicketStatusBadge } from '../tickets/TicketBadges';
 
 import { useTask, type TaskDetail } from './api';
@@ -152,7 +153,7 @@ function TaskDetailView({ number }: { number: string }) {
           <Field label={t('detail.description')} value={item.description} />
           {item.holdNote && <Field label={t('detail.holdNote')} value={item.holdNote} />}
           {item.resultNote && <Field label={t('detail.resultNote')} value={item.resultNote} />}
-          {item.cancelReason && <Field label={t('detail.cancelReason')} value={item.cancelReason} />}
+          {item.cancelReason && <Field label={t('detail.cancelReason')} value={reasonText(item.cancelReason)} />}
         </MetadataList>
       </SectionCard>
       <SectionCard title={t('timeline.title')}>

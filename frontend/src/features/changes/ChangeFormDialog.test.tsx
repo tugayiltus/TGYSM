@@ -128,7 +128,7 @@ describe('ChangeFormDialog', () => {
 });
 
 describe('ChangeFormDialog edit versions and whitespace', () => {
-  it('sends the version the dialog opened with, even after a refetch brought a newer one', async () => {
+  it('sends the version the dialog opened with, and closes on a conflict so a retry uses the fresh version', async () => {
     let put: unknown;
     let current = { ...CHANGE, status: 'draft' as const };
     const api = mockApi(
@@ -152,7 +152,15 @@ describe('ChangeFormDialog edit versions and whitespace', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
 
     await waitFor(() => expect(put).toMatchObject({ version: CHANGE.version }));
-    expect(await within(dialog).findByText(/başka biri tarafından değiştirildi/)).toBeInTheDocument();
+    expect(await screen.findByText(/başka biri tarafından değiştirildi/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    // Reopening starts from the fresh version, so a retry does not resend the stale one.
+    await user.click(screen.getByRole('button', { name: 'Düzenle' }));
+    const reopened = await screen.findByRole('dialog');
+    await user.type(within(reopened).getByLabelText('Başlık'), ' y');
+    await user.click(within(reopened).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(put).toMatchObject({ version: 9 }));
   });
 
   it('does not ask about the approval when only trailing whitespace differs', async () => {

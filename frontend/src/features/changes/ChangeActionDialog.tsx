@@ -19,6 +19,7 @@ import { ROUTES } from '../../shared/routes';
 
 import { CHANGE_OUTCOMES, useChangeAction, type ChangeAction, type ChangeDetail, type ChangeOutcome } from './api';
 import { fromLocalInput, nowLocalInput } from './dateTime';
+import { useCloseOnConflict } from './useCloseOnConflict';
 
 export type ChangeDialogKind = 'close' | 'cancel';
 
@@ -61,6 +62,7 @@ function CloseForm({ change, onClose }: { change: ChangeDetail; onClose: () => v
   // The version the user saw when opening the dialog; a background refetch must not silently skip the conflict check.
   const [openedVersion] = useState(change.version);
   const action = useChangeAction({ ...change, version: openedVersion });
+  const closeOnConflict = useCloseOnConflict(onClose);
   const { control, handleSubmit } = useForm<z.infer<typeof closeSchema>>({
     resolver: zodResolver(closeSchema),
     defaultValues: { outcome: '', verificationNote: '', backoutNote: '', closingNote: '', actualEnd: nowLocalInput() },
@@ -76,7 +78,7 @@ function CloseForm({ change, onClose }: { change: ChangeDetail; onClose: () => v
       closingNote: orNull(v.closingNote),
       actualEnd: fromLocalInput(v.actualEnd),
     };
-    action.mutate(body, { onSuccess: onClose });
+    action.mutate(body, { onSuccess: onClose, onError: closeOnConflict });
   });
   return (
     <FormDialog
@@ -113,8 +115,9 @@ function CancelForm({ change, onClose }: { change: ChangeDetail; onClose: () => 
   const { t: tc } = useTranslation();
   const [openedVersion] = useState(change.version);
   const action = useChangeAction({ ...change, version: openedVersion });
+  const closeOnConflict = useCloseOnConflict(onClose);
   const { control, handleSubmit } = useForm<z.infer<typeof cancelSchema>>({ resolver: zodResolver(cancelSchema), defaultValues: { reason: '' } });
-  const onSubmit = handleSubmit((v) => action.mutate({ kind: 'cancel', reason: v.reason.trim() }, { onSuccess: onClose }));
+  const onSubmit = handleSubmit((v) => action.mutate({ kind: 'cancel', reason: v.reason.trim() }, { onSuccess: onClose, onError: closeOnConflict }));
   return (
     <FormDialog
       title={`${t('actions.cancel')} · ${change.number}`}

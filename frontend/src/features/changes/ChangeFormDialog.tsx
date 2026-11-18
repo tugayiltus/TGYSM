@@ -27,6 +27,7 @@ import { useReferenceTeams } from '../tickets/api';
 
 import { LEVELS, useCreateChange, useEditChange, type ChangeDetail, type ChangeDraft, type Level } from './api';
 import { fromLocalInput, toLocalInput } from './dateTime';
+import { useCloseOnConflict } from './useCloseOnConflict';
 
 /** Mirror backend ChangeRequest.TitleMaxLength / AffectedServiceMaxLength / TextMaxLength. */
 const TITLE_MAX_LENGTH = 200;
@@ -151,6 +152,7 @@ export function ChangeFormDialog({ change, onSaved, onClose }: { change?: Change
   const create = useCreateChange();
   // The version the user saw when opening the dialog; a background refetch must not silently skip the conflict check.
   const [openedVersion] = useState(change?.version ?? 0);
+  const closeOnConflict = useCloseOnConflict(onClose);
   const edit = useEditChange(change?.number ?? '', openedVersion);
   const [picked, setPicked] = useState<PickedAsset[]>(() => (change?.assets ?? []).map((a) => ({ id: a.id, label: assetLabel(a.assetTag, a.brand, a.model) })));
   const [pendingDraft, setPendingDraft] = useState<{ draft: ChangeDraft } | null>(null);
@@ -169,7 +171,7 @@ export function ChangeFormDialog({ change, onSaved, onClose }: { change?: Change
     if (change === undefined) {
       create.mutate({ draft, ownerTeamId: values.ownerTeamId, ownerId: values.ownerId, assetIds }, { onSuccess: onSaved });
     } else {
-      edit.mutate({ draft, assetIds }, { onSuccess: onSaved });
+      edit.mutate({ draft, assetIds }, { onSuccess: onSaved, onError: closeOnConflict });
     }
   };
   const onSubmit = handleSubmit((v) => {
@@ -241,7 +243,7 @@ export function ChangeFormDialog({ change, onSaved, onClose }: { change?: Change
           confirmLabel={t('invalidate.confirm')}
           isPending={edit.isPending}
           error={edit.error}
-          onConfirm={() => edit.mutate({ draft: pendingDraft.draft, assetIds }, { onSuccess: onSaved })}
+          onConfirm={() => edit.mutate({ draft: pendingDraft.draft, assetIds }, { onSuccess: onSaved, onError: closeOnConflict })}
           onCancel={() => setPendingDraft(null)}
         />
       )}

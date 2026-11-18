@@ -73,3 +73,8 @@ export function toApiError(status: number, body: unknown): ApiError {
   const code = typeof problem.code === 'string' ? problem.code : ERROR_CODES.unexpected;
   return new ApiError(status, code, readFieldErrors(problem.errors));
 }
+
+/** True when the server refused a write because the row changed after the client read it. */
+export function isConcurrencyConflict(error: unknown): boolean {
+  return error instanceof ApiError && error.code === ERROR_CODES.concurrencyConflict;
+}

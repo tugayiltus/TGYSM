@@ -16,7 +16,7 @@ import { useState, type ComponentProps, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { describeError, translateErrorCode } from '../../../shared/api/errorMessage';
-import { ApiError, ERROR_CODES } from '../../../shared/api/errors';
+import { isConcurrencyConflict } from '../../../shared/api/errors';
 import { FormAlert } from '../../../shared/feedback/FormAlert';
 import { ErrorState, LoadingState } from '../../../shared/feedback/States';
 import { formatDate } from '../../../shared/lib/format';
@@ -64,10 +64,6 @@ interface CalendarDraft {
 
 function toDraft(calendar: CalendarDetail): CalendarDraft {
   return { baseVersion: calendar.version, timeZone: calendar.timeZone, week: toWeekDraft(calendar.hours) };
-}
-
-function isConflict(error: unknown): boolean {
-  return error instanceof ApiError && error.code === ERROR_CODES.concurrencyConflict;
 }
 
 function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onReload: () => Promise<CalendarDetail | undefined> }) {
@@ -121,7 +117,7 @@ function CalendarForm({ calendar, onReload }: { calendar: CalendarDetail; onRelo
       <SectionCard title={t('slaCalendar.hoursTitle')}>
         <VStack gap={4}>
           <FormAlert message={alert} />
-          {problem === null && isConflict(update.error) && (
+          {problem === null && isConcurrencyConflict(update.error) && (
             <HStack>
               <Button label={t('slaCalendar.reload')} variant="secondary" onClick={() => void reload()} />
             </HStack>
