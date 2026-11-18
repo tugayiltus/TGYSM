@@ -52,6 +52,7 @@ public sealed record ChangeDetail(
     IReadOnlyList<ChangeAssetItem> Assets,
     IReadOnlyList<ChangePhaseGroup> TasksByPhase,
     ChangeApprovalInfo? Approval,
+    IReadOnlyList<ChangeConflict> Conflicts,
     bool HasEligibleApprover,
     bool CanWork,
     uint Version);

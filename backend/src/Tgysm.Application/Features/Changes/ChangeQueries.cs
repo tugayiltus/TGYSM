@@ -14,10 +14,10 @@ internal static class ChangeQueries
     private static readonly ChangePhase[] PlanPhases = [ChangePhase.Preparation, ChangePhase.Implementation, ChangePhase.Verification];
 
     public static async Task<ChangeView> LoadViewAsync(
-        IAppDbContext db, Guid changeId, ChangeViewer viewer, ChangeAccess access, CancellationToken cancellationToken) =>
+        IAppDbContext db, ChangeConflicts conflicts, Guid changeId, ChangeViewer viewer, ChangeAccess access, CancellationToken cancellationToken) =>
         access switch
         {
-            ChangeAccess.Full => new ChangeView(access, await LoadDetailAsync(db, changeId, viewer, cancellationToken), null),
+            ChangeAccess.Full => new ChangeView(access, await LoadDetailAsync(db, conflicts, changeId, viewer, cancellationToken), null),
             ChangeAccess.Summary => new ChangeView(access, null, await LoadSummaryAsync(db, changeId, viewer, cancellationToken)),
             _ => throw new NotFoundException(AuditEntityTypes.Change),
         };
@@ -38,7 +38,8 @@ internal static class ChangeQueries
             sawBackout ? change.BackoutPlan : null);
     }
 
-    public static async Task<ChangeDetail> LoadDetailAsync(IAppDbContext db, Guid changeId, ChangeViewer viewer, CancellationToken cancellationToken)
+    public static async Task<ChangeDetail> LoadDetailAsync(
+        IAppDbContext db, ChangeConflicts conflicts, Guid changeId, ChangeViewer viewer, CancellationToken cancellationToken)
     {
         var row = await db.ChangeRequests.AsNoTracking().Where(c => c.Id == changeId)
             .Select(c => new
@@ -71,7 +72,8 @@ internal static class ChangeQueries
             change.OwnerTeamId, row.OwnerTeamName, change.OwnerId, row.OwnerName, change.Status, change.Outcome,
             change.ActualStart, change.ActualEnd, change.BackoutStartedAt, change.VerificationNote, change.BackoutNote,
             change.ClosingNote, change.CancelReason, change.CreatedById, row.CreatedByName, change.CreatedAt, change.UpdatedAt,
-            change.ClosedAt, assets, groups, await LoadApprovalAsync(db, change, viewer, cancellationToken), hasEligibleApprover,
+            change.ClosedAt, assets, groups, await LoadApprovalAsync(db, change, viewer, cancellationToken),
+            (await conflicts.FindAsync([changeId], viewer, cancellationToken))[changeId], hasEligibleApprover,
             viewer.CanWork(change), change.Version);
     }
 

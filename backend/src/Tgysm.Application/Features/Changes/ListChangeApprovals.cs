@@ -9,10 +9,10 @@ public sealed record ListChangeApprovalsQuery;
 
 public sealed record ChangeApprovalItem(
     Guid Id, string ChangeNumber, string Title, Level Risk, DateTimeOffset? WindowStart, DateTimeOffset? WindowEnd,
-    string ImplementationPlanExcerpt, uint Version);
+    string ImplementationPlanExcerpt, int ConflictCount, uint Version);
 
 /// <summary>Pending change approvals the caller may decide (<see cref="ChangeApprovalFlow.Deciders"/>). Others get an empty list.</summary>
-public sealed class ListChangeApprovalsHandler(IAppDbContext db, ChangeScope scope)
+public sealed class ListChangeApprovalsHandler(IAppDbContext db, ChangeScope scope, ChangeConflicts conflicts)
 {
     public const int ExcerptLength = 200;
 
@@ -30,10 +30,11 @@ public sealed class ListChangeApprovalsHandler(IAppDbContext db, ChangeScope sco
             join c in db.ChangeRequests on a.ChangeId equals c.Id
             where a.Status == ChangeApprovalStatus.Pending && ChangeApprovalFlow.Deciders(db).Any(d => d.ChangeId == c.Id && d.UserId == me)
             orderby a.CreatedAt
-            select new { a.Id, c.Number, c.Title, c.Risk, c.WindowStart, c.WindowEnd, c.ImplementationPlan, a.Version })
+            select new { a.Id, ChangeId = c.Id, c.Number, c.Title, c.Risk, c.WindowStart, c.WindowEnd, c.ImplementationPlan, a.Version })
             .ToListAsync(cancellationToken);
+        var found = await conflicts.FindAsync([.. rows.Select(r => r.ChangeId)], viewer, cancellationToken);
         return [.. rows.Select(r => new ChangeApprovalItem(
-            r.Id, r.Number, r.Title, r.Risk, r.WindowStart, r.WindowEnd, Excerpt(r.ImplementationPlan), r.Version))];
+            r.Id, r.Number, r.Title, r.Risk, r.WindowStart, r.WindowEnd, Excerpt(r.ImplementationPlan), found[r.ChangeId].Count, r.Version))];
     }
 
     private static string Excerpt(string? plan) =>

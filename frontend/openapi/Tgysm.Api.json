@@ -10096,6 +10096,7 @@
           "windowStart",
           "windowEnd",
           "implementationPlanExcerpt",
+          "conflictCount",
           "version"
         ],
         "type": "object",
@@ -10129,6 +10130,10 @@
           },
           "implementationPlanExcerpt": {
             "type": "string"
+          },
+          "conflictCount": {
+            "type": "integer",
+            "format": "int32"
           },
           "version": {
             "type": "integer",
@@ -10178,6 +10183,47 @@
           }
         }
       },
+      "ChangeConflict": {
+        "required": [
+          "number",
+          "title",
+          "windowStart",
+          "windowEnd",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "windowStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "windowEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ChangeConflictReason"
+          }
+        }
+      },
+      "ChangeConflictReason": {
+        "enum": [
+          "asset",
+          "service"
+        ]
+      },
       "ChangeDetail": {
         "required": [
           "id",
@@ -10213,6 +10259,7 @@
           "assets",
           "tasksByPhase",
           "approval",
+          "conflicts",
           "hasEligibleApprover",
           "canWork",
           "version"
@@ -10394,6 +10441,12 @@
                 "$ref": "#/components/schemas/ChangeApprovalInfo"
               }
             ]
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeConflict"
+            }
           },
           "hasEligibleApprover": {
             "type": "boolean"

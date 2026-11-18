@@ -9240,6 +9240,8 @@ export interface components {
             /** Format: date-time */
             windowEnd: null | string;
             implementationPlanExcerpt: string;
+            /** Format: int32 */
+            conflictCount: number;
             /** Format: uint32 */
             version: number;
         };
@@ -9254,6 +9256,17 @@ export interface components {
             model: string;
             status: components["schemas"]["AssetStatus"];
         };
+        ChangeConflict: {
+            number: null | string;
+            title: null | string;
+            /** Format: date-time */
+            windowStart: string;
+            /** Format: date-time */
+            windowEnd: string;
+            reason: components["schemas"]["ChangeConflictReason"];
+        };
+        /** @enum {unknown} */
+        ChangeConflictReason: "asset" | "service";
         ChangeDetail: {
             /** Format: uuid */
             id: string;
@@ -9300,6 +9313,7 @@ export interface components {
             assets: components["schemas"]["ChangeAssetItem"][];
             tasksByPhase: components["schemas"]["ChangePhaseGroup"][];
             approval: null | components["schemas"]["ChangeApprovalInfo"];
+            conflicts: components["schemas"]["ChangeConflict"][];
             hasEligibleApprover: boolean;
             canWork: boolean;
             /** Format: uint32 */

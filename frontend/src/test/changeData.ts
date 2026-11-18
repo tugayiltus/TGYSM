@@ -42,6 +42,7 @@ export const CHANGE: ChangeDetail = {
     },
   ],
   approval: null,
+  conflicts: [],
   hasEligibleApprover: true,
   canWork: true,
   version: 3,
