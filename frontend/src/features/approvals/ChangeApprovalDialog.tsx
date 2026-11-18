@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { describeError } from '../../shared/api/errorMessage';
 import { FormAlert } from '../../shared/feedback/FormAlert';
 import { useDecideListedChangeApproval, type ApprovalDecision, type ChangeApprovalItem } from '../changes/api';
+import { useCloseOnConflict } from '../changes/useCloseOnConflict';
 
 const DIALOG_WIDTH = 480;
 const DECISION_VARIANT = { approve: 'primary', reject: 'destructive', return: 'secondary' } as const;
@@ -29,13 +30,14 @@ export function ChangeApprovalDialog({ pending, onClose }: { pending: ChangeDeci
   const { t } = useTranslation('changes');
   const { t: tc } = useTranslation();
   const decide = useDecideListedChangeApproval();
+  const closeOnConflict = useCloseOnConflict(onClose);
   const [reason, setReason] = useState('');
   const { item, decision } = pending;
   const needsReason = decision !== 'approve';
   const confirm = () =>
     decide.mutate(
       { number: item.changeNumber, decision, approvalVersion: item.version, reason: reason.trim() === '' ? null : reason.trim() },
-      { onSuccess: onClose },
+      { onSuccess: onClose, onError: closeOnConflict },
     );
   const close = (open: boolean) => {
     if (!open) {
