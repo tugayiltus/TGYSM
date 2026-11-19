@@ -133,11 +133,11 @@ describe('ReportsPage', () => {
     expect(await screen.findAllByTestId('distribution-chart')).not.toHaveLength(0);
   });
 
-  it('shows the four change figures with only the period and team filters', async () => {
+  it('shows the five change figures with only the period and team filters', async () => {
     const api = mockApi(routes());
     renderRoute(`/reports/changes?priority=p1&teamId=${TEAM_ID}`);
 
-    for (const title of ['Sonuca göre kapanan değişiklikler', 'Başarı oranı', 'Riske göre', 'İptal edilen değişiklikler']) {
+    for (const title of ['Sonuca göre kapanan değişiklikler', 'Başarı oranı', 'Riske göre', 'İptal edilen değişiklikler', 'Sorun çıkaran değişiklikler']) {
       expect(await screen.findByRole('article', { name: title })).toBeInTheDocument();
     }
     const success = screen.getByRole('article', { name: 'Başarı oranı' });

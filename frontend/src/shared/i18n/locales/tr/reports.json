@@ -87,6 +87,7 @@
     "success_rate": "Başarı oranı",
     "by_risk": "Riske göre",
     "cancelled": "İptal edilen değişiklikler",
+    "caused_incidents": "Sorun çıkaran değişiklikler",
     "overdue": "Gecikmiş görevler",
     "completion_time": "Tamamlanma süresi",
     "by_team": "Ekibe göre"

@@ -133,6 +133,7 @@ export const CHANGE_REPORT = reportResult('changes', [
   { ...baseFigure, metric: 'success_rate', shape: 'ratio', value: 0.75, numerator: 3, denominator: 4 },
   { ...baseFigure, metric: 'by_risk', shape: 'distribution', value: 5, buckets: bucketsOf(['low', 2], ['medium', 2], ['high', 1]) },
   { ...baseFigure, metric: 'cancelled', shape: 'count', value: 2 },
+  { ...baseFigure, metric: 'caused_incidents', shape: 'count', value: 1 },
 ]);
 
 /** Two tasks closed in 2 h and 4 h: average 3 h, median 2 h. */

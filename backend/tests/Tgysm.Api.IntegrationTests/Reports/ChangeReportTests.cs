@@ -5,6 +5,7 @@ using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Application.Common;
 using Tgysm.Application.Reports;
 using Tgysm.Application.Reports.Metrics;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
@@ -63,6 +64,53 @@ public sealed class ChangeReportTests(ApiFactory factory) : IAsyncLifetime
         var byRisk = Figure(result, ChangeMetrics.ByRisk);
         Assert.Equal(4, byRisk.Value); // created in March: the change created in February is not counted
         Assert.Equal((1L, 1L, 2L), (CountOf(byRisk, "low"), CountOf(byRisk, "medium"), CountOf(byRisk, "high")));
+    }
+
+    /// <summary>March: one change with a caused link, one with only a prompted link, a cancelled and a February-closed change with caused links.</summary>
+    private async Task<(ChangeReportFixture Fx, ChangeRequest Caused)> CausedSeededAsync()
+    {
+        var fx = new ChangeReportFixture(await ReportWorld.CreateAsync(factory));
+        var incident = await new ReportFixture(fx.World).IncidentAsync(T0);
+        var caused = await fx.ChangeAsync(ChangeEnding.Successful, T0);
+        var prompted = await fx.ChangeAsync(ChangeEnding.Successful, T0.AddDays(1));
+        var cancelled = await fx.ChangeAsync(ChangeEnding.Cancelled, T0.AddDays(2));
+        var february = await fx.ChangeAsync(ChangeEnding.Failed, new DateTimeOffset(2026, 2, 10, 9, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 2, 11, 9, 0, 0, TimeSpan.Zero));
+        await fx.LinkAsync(caused, incident, ChangeTicketLinkKind.Caused);
+        await fx.LinkAsync(prompted, incident, ChangeTicketLinkKind.Prompted);
+        await fx.LinkAsync(cancelled, incident, ChangeTicketLinkKind.Caused);
+        await fx.LinkAsync(february, incident, ChangeTicketLinkKind.Caused);
+        return (fx, caused);
+    }
+
+    [Fact]
+    public async Task Caused_incidents_counts_closed_changes_in_the_period_with_a_caused_link()
+    {
+        var (fx, _) = await CausedSeededAsync();
+
+        var own = await fx.RunAsync(ReportName.Changes, fx.World.Desk.Id, MarchFilter);
+        var foreign = await fx.RunAsync(ReportName.Changes, fx.World.Field.Id, MarchFilter);
+
+        Assert.Equal((MetricShape.Count, 1d), (Figure(own, ChangeMetrics.CausedIncidents).Shape, Figure(own, ChangeMetrics.CausedIncidents).Value));
+        Assert.Equal(0, Figure(foreign, ChangeMetrics.CausedIncidents).Value);
+    }
+
+    [Fact]
+    public async Task Caused_incidents_drilldown_lists_the_one_change_and_the_export_matches()
+    {
+        var (_, caused) = await CausedSeededAsync();
+        var (admin, _) = await ApiClient.LoginAsNewUserAsync(factory, UserRole.Admin, "boss@example.com");
+        var query = $"metric={ChangeMetrics.CausedIncidents}&{March}";
+
+        using var drill = await admin.GetAsync($"{ReportsPath}/drilldown?{query}&pageSize=100");
+        var body = await admin.ReadJsonAsync<JsonElement>(drill);
+        var row = Assert.Single(body.GetProperty("changes").GetProperty("items").EnumerateArray());
+        Assert.Equal(caused.Number, row.GetProperty("number").GetString());
+
+        using var export = await admin.GetAsync($"{ReportsPath}/export?{query}");
+        using var workbook = new XLWorkbook(new MemoryStream(await export.Content.ReadAsByteArrayAsync(Ct)));
+        var sheet = workbook.Worksheet(RecordsSheet);
+        Assert.Equal(2, sheet.LastRowUsed()!.RowNumber());
+        Assert.Equal(caused.Number, sheet.Cell(2, 1).GetString());
     }
 
     [Fact]

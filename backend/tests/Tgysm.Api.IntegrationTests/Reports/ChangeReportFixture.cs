@@ -55,6 +55,14 @@ internal sealed class ChangeReportFixture(ReportWorld world)
         return change;
     }
 
+    /// <summary>Stores a link between a change and an incident of the same team.</summary>
+    public async Task LinkAsync(ChangeRequest change, Ticket ticket, ChangeTicketLinkKind kind)
+    {
+        await using var db = World.Db();
+        db.ChangeTicketLinks.Add(ChangeTicketLink.Create(change.Id, ticket.Id, ticket.Kind, kind, World.Desk.Id, change.CreatedAt));
+        await db.SaveChangesAsync(Ct);
+    }
+
     private static void Advance(ChangeRequest change, ChangeEnding ending, DateTimeOffset createdAt, DateTimeOffset closedAt)
     {
         change.Submit(1, createdAt);

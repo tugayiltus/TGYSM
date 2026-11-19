@@ -16,6 +16,7 @@ public static class ChangeMetrics
     public const string SuccessRate = "success_rate";
     public const string ByRisk = "by_risk";
     public const string Cancelled = MetricKeys.Cancelled;
+    public const string CausedIncidents = "caused_incidents";
 
     private static readonly ChangeOutcome[] OutcomeOrder = [ChangeOutcome.Successful, ChangeOutcome.RolledBack, ChangeOutcome.Failed];
     private static readonly Level[] RiskOrder = [Level.Low, Level.Medium, Level.High];
@@ -29,6 +30,7 @@ public static class ChangeMetrics
         new SuccessRateMetric(),
         new EnumDistribution<Level>(ByRisk, ReportDateBasis.Created, c => true, c => c.Risk, RiskOrder),
         new CancelledMetric(),
+        new CausedIncidentsMetric(),
     ];
 
     /// <summary>Successful changes among those closed in the period; rolled-back and failed changes only enter the denominator.</summary>
@@ -66,6 +68,25 @@ public static class ChangeMetrics
 
         public override IQueryable<ChangeRequest> Rows(IQueryable<ChangeRequest> filtered, ReportContext context) =>
             filtered.Where(c => c.Status == ChangeStatus.Cancelled);
+
+        public override async Task<ReportFigure> ComputeAsync(IQueryable<ChangeRequest> filtered, ReportContext context, CancellationToken cancellationToken) =>
+            new(Key, Shape, await Rows(filtered, context).LongCountAsync(cancellationToken), null, null, null, MetricKeys.UnitChanges);
+    }
+
+    /// <summary>Changes closed in the period that have at least one ticket linked as caused by them (ADR-0033); counts changes, not links.</summary>
+    private sealed class CausedIncidentsMetric : ChangeReportMetric
+    {
+        public override string Key => CausedIncidents;
+
+        public override ReportName Report => ReportName.Changes;
+
+        public override ReportDateBasis DateBasis => ReportDateBasis.Completed;
+
+        public override MetricShape Shape => MetricShape.Count;
+
+        public override IQueryable<ChangeRequest> Rows(IQueryable<ChangeRequest> filtered, ReportContext context) =>
+            filtered.Where(c => c.Status == ChangeStatus.Closed
+                && context.Db.ChangeTicketLinks.Any(l => l.ChangeId == c.Id && l.Kind == ChangeTicketLinkKind.Caused));
 
         public override async Task<ReportFigure> ComputeAsync(IQueryable<ChangeRequest> filtered, ReportContext context, CancellationToken cancellationToken) =>
             new(Key, Shape, await Rows(filtered, context).LongCountAsync(cancellationToken), null, null, null, MetricKeys.UnitChanges);

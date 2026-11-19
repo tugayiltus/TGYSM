@@ -80,7 +80,8 @@ public sealed class ReportConsistencyTests(ApiFactory factory) : IAsyncLifetime
         await assets.AssetAsync(depot.Id, AssetType.Tablet, AssetStatus.Lost, new DateOnly(2026, 3, 25));
 
         var changes = new ChangeReportFixture(world);
-        await changes.ChangeAsync(ChangeEnding.Successful, T0, risk: Tgysm.Domain.Tickets.Level.Low);
+        var causing = await changes.ChangeAsync(ChangeEnding.Successful, T0, risk: Tgysm.Domain.Tickets.Level.Low);
+        await changes.LinkAsync(causing, await fx.IncidentAsync(T0.AddDays(2)), Tgysm.Domain.Changes.ChangeTicketLinkKind.Caused);
         await changes.ChangeAsync(ChangeEnding.Successful, T0.AddDays(1), risk: Tgysm.Domain.Tickets.Level.Medium);
         await changes.ChangeAsync(ChangeEnding.Failed, T0.AddDays(2), risk: Tgysm.Domain.Tickets.Level.High);
         await changes.ChangeAsync(ChangeEnding.RolledBack, T0.AddDays(3));
