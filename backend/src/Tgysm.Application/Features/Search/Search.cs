@@ -123,8 +123,6 @@ public sealed class SearchHandler(IAppDbContext db, TicketScope ticketScope, Cha
             var assets = db.Assets.AsNoTracking();
             var code = Asset.NormalizeTag(text);
             var codePattern = LikePattern.Containing(code);
-            var lower = text.ToLowerInvariant();
-            var lowerPattern = LikePattern.Containing(lower);
             if (exact is null)
             {
                 exact = await FirstAsync(
@@ -135,10 +133,8 @@ public sealed class SearchHandler(IAppDbContext db, TicketScope ticketScope, Cha
 
             AddGroup(groups, SearchHitType.Asset, await TopAsync(
                 assets.Where(a => EF.Functions.Like(a.NormalizedAssetTag, codePattern, LikePattern.EscapeText)
-                        || (a.NormalizedSerialNumber != null && EF.Functions.Like(a.NormalizedSerialNumber, codePattern, LikePattern.EscapeText))
-                        || EF.Functions.Like(a.Model.ToLower(), lowerPattern, LikePattern.EscapeText)
-                        || EF.Functions.Like(a.Brand.ToLower(), lowerPattern, LikePattern.EscapeText))
-                    .OrderBy(a => a.NormalizedAssetTag)
+                        || (a.NormalizedSerialNumber != null && EF.Functions.Like(a.NormalizedSerialNumber, codePattern, LikePattern.EscapeText)))
+                    .OrderByDescending(a => a.UpdatedAt).ThenByDescending(a => a.Id)
                     .Select(a => new Row(a.AssetTag, a.Brand + Separator + a.Model, a.Status.ToString())),
                 cancellationToken));
         }

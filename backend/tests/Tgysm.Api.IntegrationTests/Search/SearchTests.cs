@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Tgysm.Api.IntegrationTests.Assets;
 using Tgysm.Api.IntegrationTests.Changes;
 using Tgysm.Api.IntegrationTests.Infrastructure;
@@ -130,6 +131,26 @@ public sealed class SearchTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal([tag], Keys(byTag, AssetGroup));
         Assert.Equal([tag], Keys(bySerial, AssetGroup));
         Assert.Equal(tag, byFullTag.GetProperty("exact").GetProperty("key").GetString());
+    }
+
+    [Fact]
+    public async Task Asset_hits_are_ordered_by_most_recent_update()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var store = await TestData.LocationAsync(factory, "Depo");
+        var modelId = await TestData.ModelAsync(factory);
+        var first = await AssetCatalogueTests.CreateAsync(world.Desk, new { modelId, locationId = store.Id, serialNumber = "ORD-AAA-1" });
+        var second = await AssetCatalogueTests.CreateAsync(world.Desk, new { modelId, locationId = store.Id, serialNumber = "ORD-BBB-2" });
+        await TestData.SaveAsync(factory, db =>
+        {
+            var firstId = first.GetProperty("id").GetGuid();
+            var later = DateTimeOffset.UtcNow.AddHours(-1);
+            db.Assets.Where(a => a.Id == firstId).ExecuteUpdate(u => u.SetProperty(a => a.UpdatedAt, later));
+        });
+
+        var keys = Keys(await SearchAsync(world.Desk, "ord-"), AssetGroup);
+
+        Assert.Equal([second.GetProperty("assetTag").GetString(), first.GetProperty("assetTag").GetString()], keys);
     }
 
     [Fact]
