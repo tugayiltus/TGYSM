@@ -158,13 +158,21 @@ export async function seedSecondAdmin(admin: Session): Promise<SecondAdmin> {
 
 const CHANGE_WINDOW_START = '2030-03-01T22:00:00Z';
 const CHANGE_WINDOW_END = '2030-03-02T01:00:00Z';
+const DEFAULT_AFFECTED_SERVICE = 'Dosya sunucusu';
+
+export interface ChangeOptions {
+  windowStart?: string;
+  windowEnd?: string;
+  /** A unique service keeps changes of other specs from conflicting with this one by service name. */
+  affectedService?: string;
+}
 
 /** Creates a draft change with full plans through the API as the session's user, owned by the world's team. */
-export async function seedChange(author: Session, world: World, title: string, assetId: string | null): Promise<string> {
+export async function seedChange(author: Session, world: World, title: string, assetId: string | null, options: ChangeOptions = {}): Promise<string> {
   const created = await send(author.context.request, 'POST', '/api/v1/changes', {
     draft: {
-      title, justification: 'Planlı bakım', affectedService: 'Dosya sunucusu', risk: 'medium', impact: 'low',
-      windowStart: CHANGE_WINDOW_START, windowEnd: CHANGE_WINDOW_END,
+      title, justification: 'Planlı bakım', affectedService: options.affectedService ?? DEFAULT_AFFECTED_SERVICE, risk: 'medium', impact: 'low',
+      windowStart: options.windowStart ?? CHANGE_WINDOW_START, windowEnd: options.windowEnd ?? CHANGE_WINDOW_END,
       implementationPlan: 'Sunucuyu güncelle', verificationPlan: 'Paylaşımlara eriş', backoutPlan: 'Eski sürüme dön',
     },
     ownerTeamId: world.teamId,
@@ -186,6 +194,28 @@ export async function seedChangeTask(author: Session, changeNumber: string, phas
 export async function submitChange(author: Session, changeNumber: string): Promise<void> {
   const detail = (await (await author.context.request.get(`/api/v1/changes/${changeNumber}`)).json()) as { detail: { version: number } };
   await send(author.context.request, 'POST', `/api/v1/changes/${changeNumber}/submit`, { version: detail.detail.version });
+}
+
+async function versionOf(request: APIRequestContext, path: string, pick: (body: Record<string, unknown>) => unknown): Promise<number> {
+  return Number(pick((await (await request.get(path)).json()) as Record<string, unknown>));
+}
+
+/**
+ * Takes a scheduled change with one open Uygulama task through implementation and closes it as Başarılı, as the
+ * session's user (a member of the owner team). The task is claimed, started and completed on the way.
+ */
+export async function closeChangeSuccessfully(owner: Session, changeNumber: string, taskNumber: string): Promise<void> {
+  const request = owner.context.request;
+  const changeVersion = () => versionOf(request, `/api/v1/changes/${changeNumber}`, (body) => (body.detail as { version: number }).version);
+  const taskVersion = () => versionOf(request, `/api/v1/tasks/${taskNumber}`, (body) => body.version);
+  await send(request, 'POST', `/api/v1/changes/${changeNumber}/start-implementation`, { version: await changeVersion() });
+  await send(request, 'POST', `/api/v1/tasks/${taskNumber}/claim`, { version: await taskVersion() });
+  await send(request, 'POST', `/api/v1/tasks/${taskNumber}/start`, { version: await taskVersion() });
+  await send(request, 'POST', `/api/v1/tasks/${taskNumber}/complete`, { version: await taskVersion(), resultNote: 'Tamamlandı' });
+  await send(request, 'POST', `/api/v1/changes/${changeNumber}/finish-implementation`, { version: await changeVersion() });
+  await send(request, 'POST', `/api/v1/changes/${changeNumber}/close`, {
+    version: await changeVersion(), outcome: 'successful', verificationNote: 'Doğrulandı', backoutNote: null, closingNote: null, actualEnd: null,
+  });
 }
 
 export type ArticleVisibility = 'employees' | 'internal';

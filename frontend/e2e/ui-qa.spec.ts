@@ -41,7 +41,7 @@ test('every screen in light and dark mode', async ({ browser }, info) => {
   const paths = [
     '/', '/workspace', '/workspace/queue', '/tickets', `/tickets/${ticket ?? ''}`, '/tickets/new/incident', '/tickets/new/request', '/approvals',
     '/assets', assetUrl, '/assets/mine', '/assets/import', '/kb', `/kb/${article.id}`, `/kb/${article.id}/edit`, '/kb/new',
-    '/changes', `/changes/${changeNumber}`, `/tasks/${changeTask}`, '/reports', '/reports/incidents', '/reports/exports', '/profile', '/change-password',
+    '/changes', `/changes/${changeNumber}`, `/tasks/${changeTask}`, '/changes/calendar', '/reports', '/reports/incidents', '/reports/changes', '/reports/tasks', '/reports/exports', '/profile', '/change-password',
     '/admin', '/admin/users', '/admin/departments', '/admin/teams', '/admin/locations', '/admin/categories', '/admin/request-types',
     '/admin/brands', '/admin/models', '/admin/sla/policy', '/admin/sla/calendar', '/admin/email-templates', '/admin/email-deliveries',
     '/admin/audit', '/admin/system', '/nope-404',
