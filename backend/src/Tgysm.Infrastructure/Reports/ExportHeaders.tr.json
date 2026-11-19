@@ -36,8 +36,8 @@
     "outcome": "Sonuç",
     "risk": "Risk",
     "window_start": "Pencere başlangıcı",
-    "actual_end": "Fiili bitiş",
-    "due_date": "Son tarih"
+    "actual_end": "Gerçek bitiş",
+    "due_date": "Bitiş tarihi"
   },
   "filters": {
     "from": "Başlangıç tarihi",
@@ -125,7 +125,7 @@
     "medium": "Orta",
     "low": "Düşük",
     "open": "Açık",
-    "in_progress": "Üzerinde çalışılıyor",
+    "in_progress": "İşlemde",
     "on_hold": "Beklemede",
     "completed": "Tamamlandı",
     "median": "Ortanca"
@@ -179,7 +179,7 @@
     },
     "work_task_status": {
       "open": "Açık",
-      "in_progress": "Üzerinde çalışılıyor",
+      "in_progress": "İşlemde",
       "on_hold": "Beklemede",
       "completed": "Tamamlandı",
       "cancelled": "İptal edildi"

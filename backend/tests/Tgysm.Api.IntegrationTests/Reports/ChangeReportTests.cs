@@ -20,7 +20,7 @@ public sealed class ChangeReportTests(ApiFactory factory) : IAsyncLifetime
 
     private static readonly DateTimeOffset T0 = ReportFixture.T0;
     private static readonly ReportFilter MarchFilter = new() { From = new DateOnly(2026, 3, 1), To = new DateOnly(2026, 3, 31) };
-    private static readonly string[] ExpectedHeaders = ["Numara", "Başlık", "Durum", "Sonuç", "Risk", "Ekip", "Pencere başlangıcı", "Fiili bitiş"];
+    private static readonly string[] ExpectedHeaders = ["Numara", "Başlık", "Durum", "Sonuç", "Risk", "Ekip", "Pencere başlangıcı", "Gerçek bitiş"];
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 

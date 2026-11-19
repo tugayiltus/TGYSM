@@ -20,7 +20,7 @@ public sealed class TaskReportTests(ApiFactory factory) : IAsyncLifetime
 
     private static readonly DateTimeOffset T0 = ReportFixture.T0;
     private static readonly ReportFilter MarchFilter = new() { From = new DateOnly(2026, 3, 1), To = new DateOnly(2026, 3, 31) };
-    private static readonly string[] ExpectedHeaders = ["Numara", "Başlık", "Durum", "Öncelik", "Ekip", "Atanan", "Son tarih", "Oluşturulma", "Tamamlanma"];
+    private static readonly string[] ExpectedHeaders = ["Numara", "Başlık", "Durum", "Öncelik", "Ekip", "Atanan", "Bitiş tarihi", "Oluşturulma", "Tamamlanma"];
 
     // The test clock reads 2026-03-10 22:00 UTC, which is already 2026-03-11 in Istanbul.
     private static readonly DateOnly YesterdayInCompany = new(2026, 3, 10);
@@ -174,7 +174,7 @@ public sealed class TaskReportTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(ExpectedHeaders, sheet.Row(1).CellsUsed().Select(c => c.GetString()));
         Assert.Equal(rows.Count + 1, sheet.LastRowUsed()!.RowNumber());
         Assert.Equal(rows.Select(r => r.GetProperty("number").GetString()), [sheet.Cell(2, 1).GetString(), sheet.Cell(3, 1).GetString()]);
-        Assert.Equal(["Açık", "Üzerinde çalışılıyor"], [sheet.Cell(2, 3).GetString(), sheet.Cell(3, 3).GetString()]);
+        Assert.Equal(["Açık", "İşlemde"], [sheet.Cell(2, 3).GetString(), sheet.Cell(3, 3).GetString()]);
     }
 
     [Fact]

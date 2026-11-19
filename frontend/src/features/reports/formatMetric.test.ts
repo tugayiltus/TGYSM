@@ -87,6 +87,6 @@ describe('median line', () => {
   it('names the change and task buckets in Turkish', () => {
     expect(bucketLabel('by_outcome', { key: 'rolled_back', label: null })).toBe('Geri alındı');
     expect(bucketLabel('by_risk', { key: 'high', label: null })).toBe('Yüksek');
-    expect(bucketLabel('by_status', { key: 'in_progress', label: null })).toBe('Üzerinde çalışılıyor');
+    expect(bucketLabel('by_status', { key: 'in_progress', label: null })).toBe('İşlemde');
   });
 });
