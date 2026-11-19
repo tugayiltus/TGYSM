@@ -28,6 +28,7 @@ internal static class ApiRoutes
     public const string WorkItems = "/work-items";
     public const string Approvals = "/approvals";
     public const string Knowledge = "/kb";
+    public const string Search = "/search";
     public const string EmailTemplates = "/email-templates";
     public const string EmailDeliveries = "/email-deliveries";
     public const string Sla = "/sla";

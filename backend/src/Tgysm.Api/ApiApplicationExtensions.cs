@@ -67,6 +67,7 @@ internal static class ApiApplicationExtensions
         api.MapChangeEndpoints();
         api.MapApprovalEndpoints();
         api.MapKnowledgeEndpoints();
+        api.MapSearchEndpoints();
         api.MapReportEndpoints();
 
         // Unknown API routes are API errors, not SPA pages.

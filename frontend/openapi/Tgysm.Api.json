@@ -8742,6 +8742,44 @@
         }
       }
     },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/reports/{report}": {
       "get": {
         "tags": [
@@ -14185,6 +14223,88 @@
           "rejected"
         ]
       },
+      "SearchGroup": {
+        "required": [
+          "type",
+          "hits",
+          "hasMore"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/SearchHitType"
+          },
+          "hits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SearchHit": {
+        "required": [
+          "type",
+          "key",
+          "title",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/SearchHitType"
+          },
+          "key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SearchHitType": {
+        "enum": [
+          "ticket",
+          "change",
+          "task",
+          "asset",
+          "article"
+        ]
+      },
+      "SearchResult": {
+        "required": [
+          "exact",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "exact": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SearchHit"
+              }
+            ]
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchGroup"
+            }
+          }
+        }
+      },
       "SetPasswordRequest": {
         "required": [
           "token",
@@ -16106,6 +16226,9 @@
     },
     {
       "name": "Knowledge"
+    },
+    {
+      "name": "Search"
     },
     {
       "name": "Reports"
