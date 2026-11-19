@@ -124,3 +124,61 @@ export const REFERENCE_ROUTES = {
   'GET /api/v1/reference/departments': { status: 200, body: [{ id: 'd-1', name: 'Muhasebe' }] },
   'GET /api/v1/reference/locations': { status: 200, body: [{ id: 'l-1', path: 'Merkez' }] },
 } as const;
+
+const bucketsOf = (...entries: [string, number][]) => entries.map(([key, count]) => ({ key, label: null, count }));
+const baseFigure = { numerator: null, denominator: null, buckets: null, unit: null } as const;
+
+export const CHANGE_REPORT = reportResult('changes', [
+  { ...baseFigure, metric: 'by_outcome', shape: 'distribution', value: 4, buckets: bucketsOf(['successful', 3], ['rolled_back', 1], ['failed', 0]) },
+  { ...baseFigure, metric: 'success_rate', shape: 'ratio', value: 0.75, numerator: 3, denominator: 4 },
+  { ...baseFigure, metric: 'by_risk', shape: 'distribution', value: 5, buckets: bucketsOf(['low', 2], ['medium', 2], ['high', 1]) },
+  { ...baseFigure, metric: 'cancelled', shape: 'count', value: 2 },
+]);
+
+/** Two tasks closed in 2 h and 4 h: average 3 h, median 2 h. */
+export const TASK_COMPLETION: ReportFigure = {
+  ...baseFigure,
+  metric: 'completion_time',
+  shape: 'duration',
+  value: 3 * SECONDS_PER_HOUR,
+  denominator: 2,
+  buckets: bucketsOf(['median', 2 * SECONDS_PER_HOUR]),
+  unit: 'seconds',
+};
+
+export const TASK_REPORT = reportResult('tasks', [
+  { ...baseFigure, metric: 'overdue', shape: 'count', value: 3 },
+  { ...baseFigure, metric: 'by_status', shape: 'distribution', value: 5, buckets: bucketsOf(['open', 2], ['in_progress', 1], ['completed', 2]) },
+  TASK_COMPLETION,
+  { ...baseFigure, metric: 'by_team', shape: 'distribution', value: 5, buckets: [{ key: TEAM_ID, label: 'Ağ Ekibi', count: 5 }] },
+]);
+
+export const CHANGE_DRILLDOWN: DrilldownResult = {
+  kind: 'changes',
+  tickets: null,
+  assets: null,
+  tasks: null,
+  changes: {
+    items: [
+      { number: 'CHG-000001', title: 'Güvenlik duvarı güncellemesi', status: 'closed', outcome: 'rolled_back', risk: 'high', ownerTeamName: 'Ağ Ekibi', windowStart: '2026-09-10T20:00:00Z', actualEnd: '2026-09-10T22:00:00Z' },
+    ],
+    page: 1,
+    pageSize: 20,
+    totalCount: 1,
+  },
+};
+
+export const TASK_DRILLDOWN: DrilldownResult = {
+  kind: 'tasks',
+  tickets: null,
+  assets: null,
+  changes: null,
+  tasks: {
+    items: [
+      { number: 'TSK-000001', title: 'Kablo çek', status: 'in_progress', priority: 'p2', teamName: 'Ağ Ekibi', assigneeName: 'Can Demir', dueDate: '2026-09-12', createdAt: '2026-09-01T08:00:00Z', closedAt: null },
+    ],
+    page: 1,
+    pageSize: 20,
+    totalCount: 1,
+  },
+};

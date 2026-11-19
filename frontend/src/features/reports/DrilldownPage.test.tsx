@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
-import { ASSET_DRILLDOWN, INCIDENTS, reportResult, TEAM_ID, TEAM_LOAD, ticketDrilldown } from '../../test/reportData';
+import { ASSET_DRILLDOWN, CHANGE_DRILLDOWN, CHANGE_REPORT, INCIDENTS, reportResult, TEAM_ID, TASK_DRILLDOWN, TASK_REPORT, TEAM_LOAD, ticketDrilldown } from '../../test/reportData';
 
 const PAGE_SIZE = 20;
 const TOTAL = 25;
@@ -83,6 +83,37 @@ describe('DrilldownPage', () => {
     const table = screen.getByRole('table');
     expect(within(table).getByText('Lenovo T14')).toBeInTheDocument();
     expect(within(table).getByText('Dizüstü')).toBeInTheDocument();
+  });
+
+  it('lists changes with their columns and a link to each change', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      'GET /api/v1/reports/changes': { status: 200, body: CHANGE_REPORT },
+      'GET /api/v1/reports/changes/drilldown': { status: 200, body: CHANGE_DRILLDOWN },
+    });
+    renderRoute('/reports/changes/list?metric=by_outcome&bucket=rolled_back');
+
+    expect((await screen.findAllByRole('link', { name: 'CHG-000001' }))[0]).toHaveAttribute('href', '/changes/CHG-000001');
+    const table = screen.getByRole('table');
+    const headers = within(table).getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers).toEqual(['Numara', 'Başlık', 'Durum', 'Sonuç', 'Risk', 'Ekip', 'Pencere başlangıcı', 'Gerçek bitiş']);
+    expect(within(table).getByText('Geri alındı')).toBeInTheDocument();
+    expect(within(table).getByText('Yüksek')).toBeInTheDocument();
+  });
+
+  it('lists tasks with their columns and a link to each task', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      'GET /api/v1/reports/tasks': { status: 200, body: TASK_REPORT },
+      'GET /api/v1/reports/tasks/drilldown': { status: 200, body: TASK_DRILLDOWN },
+    });
+    renderRoute('/reports/tasks/list?metric=overdue');
+
+    expect((await screen.findAllByRole('link', { name: 'TSK-000001' }))[0]).toHaveAttribute('href', '/tasks/TSK-000001');
+    const table = screen.getByRole('table');
+    const headers = within(table).getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers).toEqual(['Numara', 'Başlık', 'Durum', 'Öncelik', 'Ekip', 'Atanan', 'Bitiş tarihi']);
+    expect(within(table).getByText('Can Demir')).toBeInTheDocument();
   });
 
   it('shows an empty list', async () => {

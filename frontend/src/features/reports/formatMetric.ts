@@ -14,6 +14,8 @@ const UNIT_SECONDS = 'seconds';
 /** Bucket keys of duration figures (MetricKeys.Sla) and of MTTR (IncidentMetrics.MttrSla, a total over the denominator). */
 const SLA_AVERAGE_BUCKET = 'sla';
 const MTTR_SLA_TOTAL_BUCKET = 'mttr_sla';
+/** Bucket key of the median of a duration figure (task completion time). */
+const MEDIAN_BUCKET = 'median';
 
 const numberFormat = new Intl.NumberFormat(TURKISH_LOCALE);
 const percentFormat = new Intl.NumberFormat(TURKISH_LOCALE, { style: 'percent', maximumFractionDigits: PERCENT_FRACTION_DIGITS });
@@ -79,6 +81,10 @@ function durationView(figure: ReportFigure, calendar: number, sla: number | unde
   const lines = [{ label: i18n.t('reports:figure.calendar'), text: formatDuration(calendar) }];
   if (sla !== undefined) {
     lines.push({ label: i18n.t('reports:figure.sla'), text: formatDuration(sla) });
+  }
+  const median = bucketCount(figure, MEDIAN_BUCKET);
+  if (median !== undefined) {
+    lines.push({ label: i18n.t('reports:buckets.median'), text: formatDuration(median) });
   }
   return { noData: false, headline: null, lines, note: sampleNote(figure) };
 }

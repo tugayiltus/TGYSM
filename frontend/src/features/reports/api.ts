@@ -15,11 +15,13 @@ export type ReportResult = Schemas['ReportResult'];
 export type DrilldownResult = Schemas['DrilldownResult'];
 export type DrilldownTicketRow = Schemas['DrilldownTicketRow'];
 export type DrilldownAssetRow = Schemas['DrilldownAssetRow'];
+export type DrilldownChangeRow = Schemas['DrilldownChangeRow'];
+export type DrilldownTaskRow = Schemas['DrilldownTaskRow'];
 export type ExportJobItem = Schemas['ExportJobItem'];
 export type ExportJobStatus = Schemas['ExportJobStatus'];
 
 /** Tab order of the reports page (spec §7.2). */
-export const REPORT_NAMES: readonly ReportName[] = ['incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty'];
+export const REPORT_NAMES: readonly ReportName[] = ['incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty', 'changes', 'tasks'];
 export const DEFAULT_REPORT: ReportName = 'incidents';
 
 export const isReportName = (value: string | undefined): value is ReportName => REPORT_NAMES.some((name) => name === value);

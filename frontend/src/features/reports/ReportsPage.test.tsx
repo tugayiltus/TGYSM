@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ADMIN_ME, EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
-import { INCIDENTS, REFERENCE_ROUTES, reportResult, SLA_COMPLIANCE, TEAM_LOAD, VOLUME } from '../../test/reportData';
+import { CHANGE_REPORT, INCIDENTS, REFERENCE_ROUTES, reportResult, SLA_COMPLIANCE, TASK_REPORT, TEAM_ID, TEAM_LOAD, VOLUME } from '../../test/reportData';
 import { chooseOption } from '../../test/select';
 
 /** An explicit range, so the default last-30-days period does not apply. */
@@ -17,6 +17,8 @@ const routes = (me: object = ADMIN_ME) => ({
   'GET /api/v1/reports/incidents': { status: 200, body: INCIDENTS },
   'GET /api/v1/reports/operations': { status: 200, body: reportResult('operations', [TEAM_LOAD], 'teams') },
   'GET /api/v1/reports/assets': { status: 200, body: reportResult('assets', []) },
+  'GET /api/v1/reports/changes': { status: 200, body: CHANGE_REPORT },
+  'GET /api/v1/reports/tasks': { status: 200, body: TASK_REPORT },
   ...REFERENCE_ROUTES,
 });
 
@@ -28,7 +30,7 @@ describe('ReportsPage', () => {
     expect(await screen.findByRole('link', { name: 'Açılan kayıt' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/reports/incidents');
     const tabs = screen.getByRole('navigation', { name: 'Rapor türleri' });
-    const names = ['Olaylar', 'Talepler', 'Operasyon', 'Transferler', 'Envanter', 'Garanti'];
+    const names = ['Olaylar', 'Talepler', 'Operasyon', 'Transferler', 'Envanter', 'Garanti', 'Değişiklikler', 'Görevler'];
     expect(within(tabs).getAllByRole('link')).toHaveLength(names.length);
     for (const name of names) {
       expect(within(tabs).getByRole('link', { name })).toBeInTheDocument();
@@ -129,6 +131,44 @@ describe('ReportsPage', () => {
     expect(await screen.findByRole('link', { name: '8 gün ve üzeri' })).toHaveAttribute('href', `/reports/incidents/list?metric=open_backlog&bucket=8%2B&${RANGE}&priority=p1`);
     expect(screen.getByRole('link', { name: 'Tümünü listele (4)' })).toHaveAttribute('href', `/reports/incidents/list?metric=sla_compliance&part=denominator&${RANGE}&priority=p1`);
     expect(await screen.findAllByTestId('distribution-chart')).not.toHaveLength(0);
+  });
+
+  it('shows the four change figures with only the period and team filters', async () => {
+    const api = mockApi(routes());
+    renderRoute(`/reports/changes?priority=p1&teamId=${TEAM_ID}`);
+
+    for (const title of ['Sonuca göre kapanan değişiklikler', 'Başarı oranı', 'Riske göre', 'İptal edilen değişiklikler']) {
+      expect(await screen.findByRole('article', { name: title })).toBeInTheDocument();
+    }
+    const success = screen.getByRole('article', { name: 'Başarı oranı' });
+    expect(within(success).getByText('%75')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Ekip' })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Öncelik' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Durum' })).not.toBeInTheDocument();
+    const query = new URL(reportCalls(api, 'changes')[0]?.url ?? '').searchParams;
+    expect(query.get('priority')).toBeNull();
+    expect(query.get('from')).not.toBeNull();
+  });
+
+  it('shows the four task figures, with the median beside the average completion time', async () => {
+    mockApi(routes());
+    renderRoute('/reports/tasks');
+
+    for (const title of ['Gecikmiş görevler', 'Duruma göre', 'Tamamlanma süresi', 'Ekibe göre']) {
+      expect(await screen.findByRole('article', { name: title })).toBeInTheDocument();
+    }
+    const completion = screen.getByRole('article', { name: 'Tamamlanma süresi' });
+    expect(within(completion).getByText('Ortanca')).toBeInTheDocument();
+    expect(within(completion).getByText('2 sa 0 dk')).toBeInTheDocument();
+  });
+
+  it('drops filters the change and task tabs do not use', async () => {
+    mockApi(routes());
+    renderRoute(`/reports/incidents?priority=p1&teamId=${TEAM_ID}`);
+
+    const tabs = await screen.findByRole('navigation', { name: 'Rapor türleri' });
+    expect(within(tabs).getByRole('link', { name: 'Değişiklikler' })).toHaveAttribute('href', `/reports/changes?teamId=${TEAM_ID}`);
+    expect(within(tabs).getByRole('link', { name: 'Görevler' })).toHaveAttribute('href', `/reports/tasks?teamId=${TEAM_ID}`);
   });
 
   it('keeps only the filters the next tab understands', async () => {

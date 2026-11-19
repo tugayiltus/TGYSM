@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { exportFileName, figureListHref, isReportName, selectionQuery } from './api';
+import { exportFileName, figureListHref, isReportName, REPORT_NAMES, selectionQuery } from './api';
 import { filterQuery, isValidFilterValue, readReportFilter } from './useReportFilter';
 
 const GUID = '00000000-0000-7000-8000-0000000000b1';
@@ -44,6 +44,12 @@ describe('drill-down selection', () => {
   it('puts metric, bucket and the denominator part before the filters', () => {
     expect(selectionQuery({ metric: 'mttr', bucket: '', part: 'denominator' }, { priority: 'p1' }).toString()).toBe('metric=mttr&part=denominator&priority=p1');
     expect(figureListHref('incidents', 'open_backlog', { priority: 'p1' }, '8+')).toBe('/reports/incidents/list?metric=open_backlog&bucket=8%2B&priority=p1');
+  });
+
+  it('lists the change and task tabs last', () => {
+    expect(REPORT_NAMES.slice(-2)).toEqual(['changes', 'tasks']);
+    expect(isReportName('changes')).toBe(true);
+    expect(isReportName('tasks')).toBe(true);
   });
 
   it('knows the report names', () => {

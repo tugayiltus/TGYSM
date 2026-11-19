@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ADMIN_ME, mockApi } from '../../test/mockApi';
 import { renderRoute } from '../../test/renderRoute';
-import { INCIDENTS, ticketDrilldown } from '../../test/reportData';
+import { CHANGE_DRILLDOWN, CHANGE_REPORT, INCIDENTS, TASK_DRILLDOWN, TASK_REPORT, ticketDrilldown } from '../../test/reportData';
 
 const LIST_URL = '/reports/incidents/list?metric=open_backlog&bucket=8%2B&priority=p1';
 
@@ -41,6 +41,24 @@ describe('ExportButton', () => {
     expect(query.get('bucket')).toBe('8+');
     expect(query.get('priority')).toBe('p1');
     expect(createObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['changes', CHANGE_REPORT, CHANGE_DRILLDOWN, 'success_rate'],
+    ['tasks', TASK_REPORT, TASK_DRILLDOWN, 'overdue'],
+  ] as const)('exports the %s report', async (report, figures, rows, metric) => {
+    const api = mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: ADMIN_ME },
+      [`GET /api/v1/reports/${report}`]: { status: 200, body: figures },
+      [`GET /api/v1/reports/${report}/drilldown`]: { status: 200, body: rows },
+      [`GET /api/v1/reports/${report}/export`]: { status: 200, body: {} },
+    });
+    const { user } = renderRoute(`/reports/${report}/list?metric=${metric}`);
+
+    await user.click(await screen.findByRole('button', { name: "Excel'e aktar" }));
+
+    await waitFor(() => expect(click).toHaveBeenCalled());
+    expect(callsTo(api, 'GET', `/api/v1/reports/${report}/export`)).toHaveLength(1);
   });
 
   it('offers a background export when the list is too large, then links to my exports', async () => {

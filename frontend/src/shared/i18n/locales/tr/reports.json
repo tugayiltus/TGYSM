@@ -82,7 +82,14 @@
     "maintenance_lost_retired": "Bakım, kayıp ve hurda",
     "expired": "Garantisi bitmiş",
     "expiring": "Garantisi bitecek",
-    "no_warranty_date": "Garanti tarihi girilmemiş"
+    "no_warranty_date": "Garanti tarihi girilmemiş",
+    "by_outcome": "Sonuca göre kapanan değişiklikler",
+    "success_rate": "Başarı oranı",
+    "by_risk": "Riske göre",
+    "cancelled": "İptal edilen değişiklikler",
+    "overdue": "Gecikmiş görevler",
+    "completion_time": "Tamamlanma süresi",
+    "by_team": "Ekibe göre"
   },
   "buckets": {
     "0-1": "0–1 gün",
@@ -93,7 +100,18 @@
     "unassigned": "Atanmamış",
     "cancelled": "İptal edildi",
     "approval_rejected": "Onay reddedildi",
-    "service_request_required": "Hizmet talebi gerekli"
+    "service_request_required": "Hizmet talebi gerekli",
+    "successful": "Başarılı",
+    "rolled_back": "Geri alındı",
+    "failed": "Başarısız",
+    "high": "Yüksek",
+    "medium": "Orta",
+    "low": "Düşük",
+    "open": "Açık",
+    "in_progress": "Üzerinde çalışılıyor",
+    "on_hold": "Beklemede",
+    "completed": "Tamamlandı",
+    "median": "Ortanca"
   },
   "figure": {
     "noData": "Veri yok",
@@ -133,7 +151,14 @@
       "type": "Tür",
       "device": "Marka / model",
       "location": "Lokasyon",
-      "warrantyEndsOn": "Garanti bitişi"
+      "warrantyEndsOn": "Garanti bitişi",
+      "changeNumber": "Numara",
+      "title": "Başlık",
+      "outcome": "Sonuç",
+      "risk": "Risk",
+      "windowStart": "Pencere başlangıcı",
+      "actualEnd": "Gerçek bitiş",
+      "dueDate": "Bitiş tarihi"
     }
   },
   "export": {

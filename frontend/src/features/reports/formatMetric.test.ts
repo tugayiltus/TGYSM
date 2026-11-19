@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { BACKLOG, FIRST_RESPONSE_NO_DATA, MTTR, SLA_COMPLIANCE, TEAM_LOAD, VOLUME } from '../../test/reportData';
+import { BACKLOG, FIRST_RESPONSE_NO_DATA, MTTR, SLA_COMPLIANCE, TASK_COMPLETION, TEAM_LOAD, VOLUME } from '../../test/reportData';
 
 import { bucketLabel, describeFigure, formatDuration, metricLabel } from './formatMetric';
 
@@ -69,5 +69,24 @@ describe('empty figures', () => {
     expect(describeFigure({ ...SLA_COMPLIANCE, value: null, numerator: 0, denominator: 0 }).isEmpty).toBe(true);
     expect(describeFigure(VOLUME).isEmpty).toBe(false);
     expect(describeFigure(SLA_COMPLIANCE).isEmpty).toBe(false);
+  });
+});
+
+describe('median line', () => {
+  it('adds the median after the average when a median bucket exists', () => {
+    expect(describeFigure(TASK_COMPLETION).lines).toEqual([
+      { label: 'Takvim süresi', text: '3 sa 0 dk' },
+      { label: 'Ortanca', text: '2 sa 0 dk' },
+    ]);
+  });
+
+  it('leaves a duration figure without a median bucket as it was', () => {
+    expect(describeFigure({ ...TASK_COMPLETION, buckets: null }).lines).toEqual([{ label: 'Takvim süresi', text: '3 sa 0 dk' }]);
+  });
+
+  it('names the change and task buckets in Turkish', () => {
+    expect(bucketLabel('by_outcome', { key: 'rolled_back', label: null })).toBe('Geri alındı');
+    expect(bucketLabel('by_risk', { key: 'high', label: null })).toBe('Yüksek');
+    expect(bucketLabel('by_status', { key: 'in_progress', label: null })).toBe('Üzerinde çalışılıyor');
   });
 });

@@ -21,7 +21,7 @@ import { readPageParam } from '../../shared/lib/pageParam';
 import { DataList, type DataColumn } from '../../shared/list/DataList';
 import { PageHeader } from '../../shared/navigation/PageHeader';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
-import { assetPath, reportPath, ticketPath } from '../../shared/routes';
+import { assetPath, changePath, reportPath, taskPath, ticketPath } from '../../shared/routes';
 import { Icons } from '../../shared/ui/icons';
 
 import {
@@ -34,6 +34,8 @@ import {
   type DrillPart,
   type DrillSelection,
   type DrilldownAssetRow,
+  type DrilldownChangeRow,
+  type DrilldownTaskRow,
   type DrilldownTicketRow,
   type ReportName,
 } from './api';
@@ -116,6 +118,78 @@ function AssetCard({ row }: { row: DrilldownAssetRow }) {
   );
 }
 
+const NONE_DASH = '–';
+
+const changeStatus = (row: DrilldownChangeRow) => translateOr(`changes:statuses.${row.status}`, row.status ?? NONE_DASH);
+const changeOutcome = (row: DrilldownChangeRow) => (row.outcome === null ? NONE_DASH : translateOr(`changes:outcomes.${row.outcome}`, row.outcome));
+const changeRisk = (row: DrilldownChangeRow) => translateOr(`changes:levels.${row.risk}`, row.risk);
+const optionalDateTime = (value: string | null) => (value === null ? NONE_DASH : formatDateTime(value));
+
+function useChangeColumns(): DataColumn<DrilldownChangeRow>[] {
+  const { t } = useTranslation('reports');
+  return [
+    { key: 'number', header: t('drilldown.columns.changeNumber'), renderCell: (row) => <ChangeLink row={row} /> },
+    { key: 'title', header: t('drilldown.columns.title'), renderCell: (row) => row.title },
+    { key: 'status', header: t('drilldown.columns.status'), renderCell: changeStatus },
+    { key: 'outcome', header: t('drilldown.columns.outcome'), renderCell: changeOutcome },
+    { key: 'risk', header: t('drilldown.columns.risk'), renderCell: changeRisk },
+    { key: 'team', header: t('drilldown.columns.team'), renderCell: (row) => row.ownerTeamName },
+    { key: 'windowStart', header: t('drilldown.columns.windowStart'), renderCell: (row) => optionalDateTime(row.windowStart) },
+    { key: 'actualEnd', header: t('drilldown.columns.actualEnd'), renderCell: (row) => optionalDateTime(row.actualEnd) },
+  ];
+}
+
+function useTaskColumns(): DataColumn<DrilldownTaskRow>[] {
+  const { t } = useTranslation('reports');
+  return [
+    { key: 'number', header: t('drilldown.columns.changeNumber'), renderCell: (row) => <TaskLink row={row} /> },
+    { key: 'title', header: t('drilldown.columns.title'), renderCell: (row) => row.title },
+    { key: 'status', header: t('drilldown.columns.status'), renderCell: (row) => translateOr(`tasks:statuses.${row.status}`, row.status) },
+    { key: 'priority', header: t('drilldown.columns.priority'), renderCell: (row) => translateOr(`tickets:priorities.${row.priority}`, row.priority) },
+    { key: 'team', header: t('drilldown.columns.team'), renderCell: (row) => row.teamName },
+    { key: 'assignee', header: t('drilldown.columns.assignee'), renderCell: (row) => row.assigneeName ?? t('buckets.unassigned') },
+    { key: 'dueDate', header: t('drilldown.columns.dueDate'), renderCell: (row) => (row.dueDate === null ? NONE_DASH : formatDate(row.dueDate)) },
+  ];
+}
+
+function ChangeLink({ row }: { row: DrilldownChangeRow }) {
+  return <Link href={changePath(row.number)}>{row.number}</Link>;
+}
+
+function TaskLink({ row }: { row: DrilldownTaskRow }) {
+  return <Link href={taskPath(row.number)}>{row.number}</Link>;
+}
+
+function ChangeCard({ row }: { row: DrilldownChangeRow }) {
+  const meta = [changeStatus(row), changeOutcome(row), changeRisk(row), row.ownerTeamName].join(META_SEPARATOR);
+  return (
+    <VStack gap={0.5}>
+      <ChangeLink row={row} />
+      <Text wordBreak="break-word">{row.title}</Text>
+      <Text type="supporting">{meta}</Text>
+      <Text type="supporting">{optionalDateTime(row.windowStart)}</Text>
+    </VStack>
+  );
+}
+
+function TaskCard({ row }: { row: DrilldownTaskRow }) {
+  const { t } = useTranslation('reports');
+  const meta = [
+    translateOr(`tasks:statuses.${row.status}`, row.status),
+    translateOr(`tickets:priorities.${row.priority}`, row.priority),
+    row.teamName,
+    row.assigneeName ?? t('buckets.unassigned'),
+  ].join(META_SEPARATOR);
+  return (
+    <VStack gap={0.5}>
+      <TaskLink row={row} />
+      <Text wordBreak="break-word">{row.title}</Text>
+      <Text type="supporting">{meta}</Text>
+      {row.dueDate !== null && <Text type="supporting">{formatDate(row.dueDate)}</Text>}
+    </VStack>
+  );
+}
+
 interface RowsProps {
   report: ReportName;
   selection: DrillSelection;
@@ -128,9 +202,11 @@ function DrilldownRows({ report, selection, filter, page, onPageChange }: RowsPr
   const { t } = useTranslation('reports');
   const ticketColumns = useTicketColumns();
   const assetColumns = useAssetColumns();
+  const changeColumns = useChangeColumns();
+  const taskColumns = useTaskColumns();
   const rows = useDrilldown(report, selection, filter, page);
 
-  const paged = rows.data?.tickets ?? rows.data?.assets ?? null;
+  const paged = rows.data?.tickets ?? rows.data?.assets ?? rows.data?.changes ?? rows.data?.tasks ?? null;
   return (
     <VStack gap={3}>
       <Card padding={0}>
@@ -139,6 +215,12 @@ function DrilldownRows({ report, selection, filter, page, onPageChange }: RowsPr
         {rows.data !== undefined && (paged === null || paged.totalCount === 0) && <EmptyState message={t('drilldown.empty')} />}
         {rows.data?.tickets != null && rows.data.tickets.totalCount > 0 && (
           <DataList items={rows.data.tickets.items} columns={ticketColumns} getKey={(row) => row.number} renderCard={(row) => <TicketCard row={row} />} caption={t('drilldown.caption')} />
+        )}
+        {rows.data?.changes != null && rows.data.changes.totalCount > 0 && (
+          <DataList items={rows.data.changes.items} columns={changeColumns} getKey={(row) => row.number} renderCard={(row) => <ChangeCard row={row} />} caption={t('drilldown.caption')} />
+        )}
+        {rows.data?.tasks != null && rows.data.tasks.totalCount > 0 && (
+          <DataList items={rows.data.tasks.items} columns={taskColumns} getKey={(row) => row.number} renderCard={(row) => <TaskCard row={row} />} caption={t('drilldown.caption')} />
         )}
         {rows.data?.tickets == null && rows.data?.assets != null && rows.data.assets.totalCount > 0 && (
           <DataList items={rows.data.assets.items} columns={assetColumns} getKey={(row) => row.id} renderCard={(row) => <AssetCard row={row} />} caption={t('drilldown.caption')} />
