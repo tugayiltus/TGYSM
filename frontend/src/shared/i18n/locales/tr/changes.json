@@ -203,7 +203,9 @@
       "backout_started": "Geri dönüş başladı",
       "closed": "Kapatıldı",
       "cancelled": "İptal edildi",
-      "assets_changed": "Etkilenen varlıklar değişti"
+      "assets_changed": "Etkilenen varlıklar değişti",
+      "ticket_linked": "Kayıt bağlandı",
+      "ticket_unlinked": "Kayıt ayrıldı"
     }
   },
   "conflicts": {

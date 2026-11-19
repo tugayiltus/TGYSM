@@ -101,4 +101,6 @@ public enum TicketEventKind
     AssetUnlinked,
     Completed,
     Cancelled,
+    ChangeLinked,
+    ChangeUnlinked,
 }

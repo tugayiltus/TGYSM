@@ -4667,6 +4667,48 @@
         }
       }
     },
+    "/api/v1/tickets/{number}/changes": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedChangeItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tickets/{number}/comments": {
       "post": {
         "tags": [
@@ -7683,6 +7725,168 @@
         }
       }
     },
+    "/api/v1/changes/{number}/tickets": {
+      "get": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedTicketItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddChangeTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedTicketItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/changes/{number}/tickets/{ticketNumber}": {
+      "delete": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ticketNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedTicketItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/changes/{number}/approval/approve": {
       "post": {
         "tags": [
@@ -8924,6 +9128,21 @@
   },
   "components": {
     "schemas": {
+      "AddChangeTicketRequest": {
+        "required": [
+          "ticketNumber",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketNumber": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChangeTicketLinkKind"
+          }
+        }
+      },
       "AddHolidayCommand": {
         "required": [
           "date",
@@ -10640,7 +10859,9 @@
           "backout_started",
           "closed",
           "cancelled",
-          "assets_changed"
+          "assets_changed",
+          "ticket_linked",
+          "ticket_unlinked"
         ]
       },
       "ChangeListItem": {
@@ -10812,8 +11033,7 @@
           "implementing",
           "verifying",
           "closed",
-          "cancelled",
-          null
+          "cancelled"
         ]
       },
       "ChangeSummary": {
@@ -10917,6 +11137,12 @@
             ]
           }
         }
+      },
+      "ChangeTicketLinkKind": {
+        "enum": [
+          "prompted",
+          "caused"
+        ]
       },
       "ChangeTimelineItem": {
         "required": [
@@ -12442,6 +12668,58 @@
           }
         }
       },
+      "LinkedChangeItem": {
+        "required": [
+          "number",
+          "title",
+          "status",
+          "windowStart",
+          "windowEnd",
+          "ownerTeamName",
+          "linkKind",
+          "linkedAt",
+          "canOpen"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ChangeStatus"
+          },
+          "windowStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "windowEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "ownerTeamName": {
+            "type": "string"
+          },
+          "linkKind": {
+            "$ref": "#/components/schemas/ChangeTicketLinkKind"
+          },
+          "linkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "canOpen": {
+            "type": "boolean"
+          }
+        }
+      },
       "LinkedTicket": {
         "required": [
           "accessible",
@@ -12486,6 +12764,50 @@
                 "$ref": "#/components/schemas/TicketStatus"
               }
             ]
+          }
+        }
+      },
+      "LinkedTicketItem": {
+        "required": [
+          "number",
+          "title",
+          "kind",
+          "status",
+          "teamName",
+          "linkKind",
+          "linkedAt",
+          "linkedByName",
+          "canOpen"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TicketKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "linkKind": {
+            "$ref": "#/components/schemas/ChangeTicketLinkKind"
+          },
+          "linkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "linkedByName": {
+            "type": "string"
+          },
+          "canOpen": {
+            "type": "boolean"
           }
         }
       },
@@ -14674,7 +14996,9 @@
           "asset_linked",
           "asset_unlinked",
           "completed",
-          "cancelled"
+          "cancelled",
+          "change_linked",
+          "change_unlinked"
         ]
       },
       "TicketKind": {

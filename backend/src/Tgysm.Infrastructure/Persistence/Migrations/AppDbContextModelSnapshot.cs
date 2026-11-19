@@ -841,7 +841,7 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.ToTable("change_events", null, t =>
                         {
-                            t.HasCheckConstraint("ck_change_events_kind", "kind IN ('created', 'updated', 'submitted', 'withdrawn', 'approved', 'rejected', 'returned', 'approval_voided', 'implementation_started', 'implementation_finished', 'backout_started', 'closed', 'cancelled', 'assets_changed')");
+                            t.HasCheckConstraint("ck_change_events_kind", "kind IN ('created', 'updated', 'submitted', 'withdrawn', 'approved', 'rejected', 'returned', 'approval_voided', 'implementation_started', 'implementation_finished', 'backout_started', 'closed', 'cancelled', 'assets_changed', 'ticket_linked', 'ticket_unlinked')");
                         });
                 });
 
@@ -3101,7 +3101,7 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
 
                     b.ToTable("ticket_events", null, t =>
                         {
-                            t.HasCheckConstraint("ck_ticket_events_kind", "kind IN ('created', 'assigned', 'transferred', 'status_changed', 'public_comment', 'internal_note', 'priority_changed', 'approval_requested', 'approval_decided', 'approval_voided', 'approval_reassigned', 'related_request_created', 'asset_linked', 'asset_unlinked', 'completed', 'cancelled')");
+                            t.HasCheckConstraint("ck_ticket_events_kind", "kind IN ('created', 'assigned', 'transferred', 'status_changed', 'public_comment', 'internal_note', 'priority_changed', 'approval_requested', 'approval_decided', 'approval_voided', 'approval_reassigned', 'related_request_created', 'asset_linked', 'asset_unlinked', 'completed', 'cancelled', 'change_linked', 'change_unlinked')");
 
                             t.HasCheckConstraint("ck_ticket_events_visibility", "visibility IN ('public', 'internal')");
                         });

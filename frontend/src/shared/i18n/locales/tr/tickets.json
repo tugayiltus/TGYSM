@@ -67,6 +67,8 @@
     "related_request_created": "İlgili talep oluşturuldu",
     "asset_linked": "Cihaz bağlandı",
     "asset_unlinked": "Cihaz ayrıldı",
+    "change_linked": "Değişiklik bağlandı",
+    "change_unlinked": "Değişiklik ayrıldı",
     "completed": "Kayıt tamamlandı",
     "cancelled": "Kayıt iptal edildi"
   },

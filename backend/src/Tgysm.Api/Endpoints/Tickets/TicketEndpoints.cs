@@ -26,6 +26,9 @@ internal static partial class TicketEndpoints
         tickets.MapGet("/{number}", async (string number, GetTicketHandler handler, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleAsync(new GetTicketQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
 
+        tickets.MapGet("/{number}/changes", async (string number, Application.Features.Changes.ListTicketChangesHandler handler, CancellationToken ct) =>
+            TypedResults.Ok(await handler.HandleAsync(new Application.Features.Changes.ListTicketChangesQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+
         tickets.MapTicketActionEndpoints();
         return tickets;
     }

@@ -248,7 +248,9 @@
       "asset_unlinked": "Kayıttan cihaz ayrıldı",
       "related_request_created": "İlgili talep oluşturuldu",
       "article_linked": "Kayda makale bağlandı",
-      "article_unlinked": "Kayıttan makale ayrıldı"
+      "article_unlinked": "Kayıttan makale ayrıldı",
+      "change_linked": "Kayda değişiklik bağlandı",
+      "change_unlinked": "Kayıttan değişiklik ayrıldı"
     },
     "approvals": {
       "approved": "Talep onaylandı",
@@ -305,7 +307,9 @@
       "status_changed": "Değişiklik durumu değişti",
       "approval_decided": "Değişiklik onayı karara bağlandı",
       "approval_voided": "Değişiklik onayı geçersiz kılındı",
-      "closed": "Değişiklik kapatıldı"
+      "closed": "Değişiklik kapatıldı",
+      "ticket_linked": "Değişikliğe kayıt bağlandı",
+      "ticket_unlinked": "Değişiklikten kayıt ayrıldı"
     }
   },
   "emailEvents": {

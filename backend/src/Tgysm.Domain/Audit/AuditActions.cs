@@ -95,6 +95,10 @@ public static class AuditActions
     public const string ChangeApprovalDecided = "changes.approval_decided";
     public const string ChangeApprovalVoided = "changes.approval_voided";
     public const string ChangeClosed = "changes.closed";
+    public const string ChangeTicketLinked = "changes.ticket_linked";
+    public const string ChangeTicketUnlinked = "changes.ticket_unlinked";
+    public const string TicketChangeLinked = "tickets.change_linked";
+    public const string TicketChangeUnlinked = "tickets.change_unlinked";
     public const string RelatedRequestCreated = "tickets.related_request_created";
     public const string ApprovalApproved = "approvals.approved";
     public const string ApprovalRejected = "approvals.rejected";

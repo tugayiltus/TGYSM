@@ -33,4 +33,7 @@ public static class SerializationLocks
 
     /// <summary>Change state changes, approvals and change-task writes (ADR-0032): a close never races a task being completed.</summary>
     public const long ChangeWork = 7_009;
+
+    /// <summary>Adding a ticket link to a change: two adds of one pair never reach the unique index together.</summary>
+    public const long ChangeTicketLink = 7_010;
 }

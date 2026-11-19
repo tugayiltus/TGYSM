@@ -4910,6 +4910,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tickets/{number}/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkedChangeItem"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tickets/{number}/comments": {
         parameters: {
             query?: never;
@@ -7791,6 +7837,151 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/changes/{number}/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkedTicketItem"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddChangeTicketRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkedTicketItem"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/changes/{number}/tickets/{ticketNumber}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: string;
+                    ticketNumber: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkedTicketItem"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/changes/{number}/approval/approve": {
         parameters: {
             query?: never;
@@ -8955,6 +9146,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddChangeTicketRequest: {
+            ticketNumber: string;
+            kind: components["schemas"]["ChangeTicketLinkKind"];
+        };
         AddHolidayCommand: {
             /** Format: date */
             date: string;
@@ -9401,7 +9596,7 @@ export interface components {
             backoutPlan: null | string;
         };
         /** @enum {unknown} */
-        ChangeEventKind: "created" | "updated" | "submitted" | "withdrawn" | "approved" | "rejected" | "returned" | "approval_voided" | "implementation_started" | "implementation_finished" | "backout_started" | "closed" | "cancelled" | "assets_changed";
+        ChangeEventKind: "created" | "updated" | "submitted" | "withdrawn" | "approved" | "rejected" | "returned" | "approval_voided" | "implementation_started" | "implementation_finished" | "backout_started" | "closed" | "cancelled" | "assets_changed" | "ticket_linked" | "ticket_unlinked";
         ChangeListItem: {
             /** Format: uuid */
             id: string;
@@ -9439,7 +9634,7 @@ export interface components {
             reason: string;
         };
         /** @enum {unknown} */
-        ChangeStatus: "draft" | "pending_approval" | "scheduled" | "implementing" | "verifying" | "closed" | "cancelled" | null;
+        ChangeStatus: "draft" | "pending_approval" | "scheduled" | "implementing" | "verifying" | "closed" | "cancelled";
         ChangeSummary: {
             /** Format: uuid */
             id: string;
@@ -9466,6 +9661,8 @@ export interface components {
             teamName: string;
             assigneeName: null | string;
         };
+        /** @enum {unknown} */
+        ChangeTicketLinkKind: "prompted" | "caused";
         ChangeTimelineItem: {
             /** Format: uuid */
             id: string;
@@ -9852,12 +10049,38 @@ export interface components {
             phase: components["schemas"]["ChangePhase"];
             accessible: boolean;
         };
+        LinkedChangeItem: {
+            number: string;
+            title: string;
+            status: components["schemas"]["ChangeStatus"];
+            /** Format: date-time */
+            windowStart: null | string;
+            /** Format: date-time */
+            windowEnd: null | string;
+            ownerTeamName: string;
+            linkKind: components["schemas"]["ChangeTicketLinkKind"];
+            /** Format: date-time */
+            linkedAt: string;
+            canOpen: boolean;
+        };
         LinkedTicket: {
             accessible: boolean;
             number: null | string;
             kind: null | components["schemas"]["TicketKind"];
             title: null | string;
             status: null | components["schemas"]["TicketStatus"];
+        };
+        LinkedTicketItem: {
+            number: string;
+            title: string;
+            kind: components["schemas"]["TicketKind"];
+            status: components["schemas"]["TicketStatus"];
+            teamName: string;
+            linkKind: components["schemas"]["ChangeTicketLinkKind"];
+            /** Format: date-time */
+            linkedAt: string;
+            linkedByName: string;
+            canOpen: boolean;
         };
         LocationItem: {
             /** Format: uuid */
@@ -10444,7 +10667,7 @@ export interface components {
             tasks: components["schemas"]["TicketTaskItem"][];
         };
         /** @enum {unknown} */
-        TicketEventKind: "created" | "assigned" | "transferred" | "status_changed" | "public_comment" | "internal_note" | "priority_changed" | "approval_requested" | "approval_decided" | "approval_voided" | "approval_reassigned" | "related_request_created" | "asset_linked" | "asset_unlinked" | "completed" | "cancelled";
+        TicketEventKind: "created" | "assigned" | "transferred" | "status_changed" | "public_comment" | "internal_note" | "priority_changed" | "approval_requested" | "approval_decided" | "approval_voided" | "approval_reassigned" | "related_request_created" | "asset_linked" | "asset_unlinked" | "completed" | "cancelled" | "change_linked" | "change_unlinked";
         /** @enum {unknown} */
         TicketKind: "incident" | "request";
         TicketListItem: {

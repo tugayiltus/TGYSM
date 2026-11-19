@@ -18,6 +18,8 @@ public sealed record CloseChangeRequest(
 
 public sealed record CancelChangeRequest(uint Version, string Reason);
 
+public sealed record AddChangeTicketRequest(string TicketNumber, ChangeTicketLinkKind Kind);
+
 internal static class ChangeEndpoints
 {
     private const string Tag = "Changes";
@@ -30,6 +32,8 @@ internal static class ChangeEndpoints
     private const string ApproveSegment = "approve";
     private const string RejectSegment = "reject";
     private const string ReturnSegment = "return";
+    private const string TicketsSegment = "tickets";
+    private const string TicketNumberRoute = "{ticketNumber}";
 
     public static RouteGroupBuilder MapChangeEndpoints(this RouteGroupBuilder api)
     {
@@ -67,6 +71,14 @@ internal static class ChangeEndpoints
         changes.MapPost($"{NumberRoute}/cancel", async (string number, CancelChangeRequest r, CancelChangeHandler handler, CancellationToken ct) =>
                 TypedResults.Ok(await handler.HandleAsync(new CancelChangeCommand(number, r.Version, r.Reason), ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapGet($"{NumberRoute}/{TicketsSegment}", async (string number, ListChangeTicketsHandler handler, CancellationToken ct) =>
+            TypedResults.Ok(await handler.HandleAsync(new ListChangeTicketsQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
+        changes.MapPost($"{NumberRoute}/{TicketsSegment}", async (string number, AddChangeTicketRequest r, AddChangeTicketHandler handler, CancellationToken ct) =>
+                TypedResults.Created($"{ApiRoutes.V1}{ApiRoutes.Changes}/{number}/{TicketsSegment}", await handler.HandleAsync(new AddChangeTicketCommand(number, r.TicketNumber, r.Kind), ct)))
+            .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapDelete($"{NumberRoute}/{TicketsSegment}/{TicketNumberRoute}", async (string number, string ticketNumber, RemoveChangeTicketHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(new RemoveChangeTicketCommand(number, ticketNumber), ct)))
+            .ProducesProblem(StatusCodes.Status404NotFound);
         MapDecision(changes, ApproveSegment, ChangeApprovalDecision.Approve);
         MapDecision(changes, RejectSegment, ChangeApprovalDecision.Reject);
         MapDecision(changes, ReturnSegment, ChangeApprovalDecision.Return);
