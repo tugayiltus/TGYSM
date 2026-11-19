@@ -15,6 +15,7 @@ public static class MetricKeys
     public const string Calendar = "calendar";
     public const string Sla = "sla";
     public const string Cancelled = "cancelled";
+    public const string Median = "median";
 
     public const string UnitTickets = "tickets";
     public const string UnitAssets = "assets";

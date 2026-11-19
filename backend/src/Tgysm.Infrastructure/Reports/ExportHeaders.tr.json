@@ -127,7 +127,8 @@
     "open": "Açık",
     "in_progress": "Üzerinde çalışılıyor",
     "on_hold": "Beklemede",
-    "completed": "Tamamlandı"
+    "completed": "Tamamlandı",
+    "median": "Ortanca"
   },
   "values": {
     "ticket_kind": {

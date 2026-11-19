@@ -87,11 +87,13 @@ public sealed class TaskReportTests(ApiFactory factory) : IAsyncLifetime
         var result = await fx.RunAsync(ReportName.Tasks, fx.World.Admin.Id, MarchFilter);
 
         var time = Figure(result, TaskMetrics.CompletionTime);
-        Assert.Equal(8 * SecondsPerHour, time.Value);
+        Assert.Equal(14 * SecondsPerHour, time.Value); // average
         Assert.Equal(3, time.Denominator);
-        Assert.Equal((long)(14 * SecondsPerHour), time.Numerator);
+        Assert.Null(time.Numerator);
+        Assert.Equal((long)(8 * SecondsPerHour), CountOf(time, MetricKeys.Median));
         var even = Figure(await fx.RunAsync(ReportName.Tasks, fx.World.Desk.Id, MarchFilter with { To = new DateOnly(2026, 3, 10) }), TaskMetrics.CompletionTime);
-        Assert.Equal((17 * SecondsPerHour, 2L), (even.Value, even.Denominator)); // the 4 h and the 30 h tasks closed by the 10th: the median is their mean
+        Assert.Equal((17 * SecondsPerHour, 2L), (even.Value, even.Denominator)); // the 4 h and the 30 h tasks closed by the 10th
+        Assert.Equal((long)(17 * SecondsPerHour), CountOf(even, MetricKeys.Median));
     }
 
     [Fact]

@@ -78,8 +78,8 @@ public static class TaskMetrics
     }
 
     /// <summary>
-    /// Creation-to-closing time of tasks completed in the period (cancelled tasks do not count). The value is the median in seconds;
-    /// the numerator carries the average in whole seconds and the denominator the number of tasks.
+    /// Creation-to-closing time of tasks completed in the period (cancelled tasks do not count). Same shape as the other duration figures:
+    /// the value is the average in seconds, the denominator the number of tasks, and the <see cref="MetricKeys.Median"/> bucket the median.
     /// </summary>
     private sealed class CompletionTimeMetric : TaskReportMetric
     {
@@ -99,7 +99,8 @@ public static class TaskMetrics
             var seconds = Rows(filtered, context).Select(t => (long)(t.ClosedAt!.Value - t.CreatedAt).TotalSeconds);
             var (average, count) = await DurationStats.AverageAsync(seconds, cancellationToken);
             var median = await DurationStats.MedianAsync(seconds, cancellationToken);
-            return new ReportFigure(Key, Shape, median, average is { } mean ? (long)Math.Round(mean) : null, count, null, MetricKeys.UnitSeconds);
+            ReportBucket[]? buckets = median is { } middle ? [new ReportBucket(MetricKeys.Median, null, (long)Math.Round(middle))] : null;
+            return new ReportFigure(Key, Shape, average, null, count, buckets, MetricKeys.UnitSeconds);
         }
     }
 

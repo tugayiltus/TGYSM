@@ -22,7 +22,7 @@ public sealed class ExportHeadersCoverageTests
     /// <summary>Bucket keys that are not ids: ageing bands, the "no value" keys, excluded outcomes and the enum-named buckets.</summary>
     private static IEnumerable<string> FixedBucketKeys() =>
         ReportBuckets.AgeingDays.Select(b => b.Key)
-            .Concat([OperationsMetrics.None, OperationsMetrics.Unassigned, MetricKeys.Cancelled, IncidentMetrics.ServiceRequestRequired, RequestMetrics.ApprovalRejected])
+            .Concat([OperationsMetrics.None, OperationsMetrics.Unassigned, MetricKeys.Cancelled, MetricKeys.Median, IncidentMetrics.ServiceRequestRequired, RequestMetrics.ApprovalRejected])
             .Concat(new[] { typeof(HoldReason), typeof(AssetType), typeof(AssetStatus), typeof(ChangeOutcome), typeof(Level), typeof(WorkTaskStatus) }.SelectMany(t => Enum.GetNames(t)).Select(JsonNamingPolicy.SnakeCaseLower.ConvertName))
             .Distinct();
 
