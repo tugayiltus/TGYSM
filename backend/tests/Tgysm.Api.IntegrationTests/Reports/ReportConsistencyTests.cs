@@ -78,10 +78,18 @@ public sealed class ReportConsistencyTests(ApiFactory factory) : IAsyncLifetime
         await assets.AssetAsync(depot.Id, AssetType.Phone, AssetStatus.Maintenance, new DateOnly(2026, 8, 1));
         await assets.AssetAsync(depot.Id, AssetType.Phone, AssetStatus.Retired);
         await assets.AssetAsync(depot.Id, AssetType.Tablet, AssetStatus.Lost, new DateOnly(2026, 3, 25));
+
+        var changes = new ChangeReportFixture(world);
+        await changes.ChangeAsync(ChangeEnding.Successful, T0, risk: Tgysm.Domain.Tickets.Level.Low);
+        await changes.ChangeAsync(ChangeEnding.Successful, T0.AddDays(1), risk: Tgysm.Domain.Tickets.Level.Medium);
+        await changes.ChangeAsync(ChangeEnding.Failed, T0.AddDays(2), risk: Tgysm.Domain.Tickets.Level.High);
+        await changes.ChangeAsync(ChangeEnding.RolledBack, T0.AddDays(3));
+        await changes.ChangeAsync(ChangeEnding.Cancelled, T0.AddDays(4));
+        await changes.ChangeAsync(ChangeEnding.Open, T0.AddDays(5), teamId: world.FieldTeam.Id);
         return (fx, assets);
     }
 
-    private static long TotalOf(DrilldownResult result) => (result.Tickets?.TotalCount ?? result.Assets?.TotalCount)!.Value;
+    private static long TotalOf(DrilldownResult result) => (result.Tickets?.TotalCount ?? result.Assets?.TotalCount ?? result.Changes?.TotalCount)!.Value;
 
     [Fact]
     public async Task Every_figure_equals_its_drilldown_total_for_admin_and_it_staff()

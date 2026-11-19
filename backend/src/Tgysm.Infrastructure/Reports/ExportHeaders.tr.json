@@ -31,7 +31,12 @@
     "brand": "Marka",
     "model": "Model",
     "location": "Konum",
-    "warranty_ends_on": "Garanti bitişi"
+    "warranty_ends_on": "Garanti bitişi",
+    "title": "Başlık",
+    "outcome": "Sonuç",
+    "risk": "Risk",
+    "window_start": "Pencere başlangıcı",
+    "actual_end": "Fiili bitiş"
   },
   "filters": {
     "from": "Başlangıç tarihi",
@@ -77,7 +82,11 @@
     "maintenance_lost_retired": "Bakımda, kayıp veya hizmet dışı",
     "expired": "Garantisi bitmiş",
     "expiring": "Garantisi bitmek üzere",
-    "no_warranty_date": "Garanti bitiş tarihi yok"
+    "no_warranty_date": "Garanti bitiş tarihi yok",
+    "by_outcome": "Sonuca göre kapanan değişiklikler",
+    "success_rate": "Başarı oranı",
+    "by_risk": "Riske göre",
+    "cancelled": "İptal edilen değişiklikler"
   },
   "buckets": {
     "0-1": "0–1 gün",
@@ -104,7 +113,13 @@
     "assigned": "Zimmetli",
     "maintenance": "Bakımda",
     "lost": "Kayıp",
-    "retired": "Hizmet dışı"
+    "retired": "Hizmet dışı",
+    "successful": "Başarılı",
+    "rolled_back": "Geri alındı",
+    "failed": "Başarısız",
+    "high": "Yüksek",
+    "medium": "Orta",
+    "low": "Düşük"
   },
   "values": {
     "ticket_kind": {
@@ -149,7 +164,27 @@
       "operations": "Operasyon",
       "transfers": "Transferler",
       "assets": "Varlıklar",
-      "warranty": "Garanti"
+      "warranty": "Garanti",
+      "changes": "Değişiklikler"
+    },
+    "change_status": {
+      "draft": "Taslak",
+      "pending_approval": "Onay bekliyor",
+      "scheduled": "Planlandı",
+      "implementing": "Uygulanıyor",
+      "verifying": "Doğrulama",
+      "closed": "Kapalı",
+      "cancelled": "İptal"
+    },
+    "change_outcome": {
+      "successful": "Başarılı",
+      "rolled_back": "Geri alındı",
+      "failed": "Başarısız"
+    },
+    "level": {
+      "high": "Yüksek",
+      "medium": "Orta",
+      "low": "Düşük"
     },
     "report_drill_part": {
       "numerator": "Pay",

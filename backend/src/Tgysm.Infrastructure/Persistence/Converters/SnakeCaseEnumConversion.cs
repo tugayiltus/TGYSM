@@ -17,6 +17,9 @@ internal static class SnakeCaseEnumConversion<TEnum>
     public static readonly ValueConverter<TEnum, string> Converter = new(value => ToName[value], name => FromName[name]);
 
     /// <summary>SQL CHECK body allowing exactly the enum's names.</summary>
-    public static string CheckSql(string column) =>
-        $"{column} IN ({string.Join(", ", ToName.Values.Select(name => $"'{name}'"))})";
+    public static string CheckSql(string column) => CheckSql(column, []);
+
+    /// <summary>SQL CHECK body allowing the enum's names except those of <paramref name="excluded"/>.</summary>
+    public static string CheckSql(string column, IReadOnlyCollection<TEnum> excluded) =>
+        $"{column} IN ({string.Join(", ", ToName.Where(pair => !excluded.Contains(pair.Key)).Select(pair => $"'{pair.Value}'"))})";
 }

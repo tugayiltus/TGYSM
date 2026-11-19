@@ -1,5 +1,6 @@
 using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 
@@ -83,4 +84,27 @@ public abstract class AssetReportMetric : IReportMetric
         throw new NotSupportedException($"Metric '{Key}' has no buckets.");
 
     public abstract Task<ReportFigure> ComputeAsync(IQueryable<Asset> filtered, AssetReportContext context, CancellationToken cancellationToken);
+}
+
+/// <summary>A metric over change requests; same shape as <see cref="ReportMetric"/>, with the viewer's filtered changes as the base rows.</summary>
+public abstract class ChangeReportMetric : IReportMetric
+{
+    public abstract string Key { get; }
+
+    public abstract ReportName Report { get; }
+
+    public abstract ReportDateBasis DateBasis { get; }
+
+    public abstract MetricShape Shape { get; }
+
+    public abstract IQueryable<ChangeRequest> Rows(IQueryable<ChangeRequest> filtered, ReportContext context);
+
+    /// <summary>The <see cref="Rows"/> of one bucket of a distribution; its count equals the bucket's count. Only distributions have buckets.</summary>
+    public virtual IQueryable<ChangeRequest> BucketRows(IQueryable<ChangeRequest> filtered, ReportContext context, string bucket) =>
+        throw new NotSupportedException($"Metric '{Key}' has no buckets.");
+
+    /// <summary>Rows behind a ratio's denominator; null for other shapes.</summary>
+    public virtual IQueryable<ChangeRequest>? DenominatorRows(IQueryable<ChangeRequest> filtered, ReportContext context) => null;
+
+    public abstract Task<ReportFigure> ComputeAsync(IQueryable<ChangeRequest> filtered, ReportContext context, CancellationToken cancellationToken);
 }

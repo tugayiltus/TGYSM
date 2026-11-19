@@ -72,4 +72,20 @@ public sealed class ReportScopeTests(ApiFactory factory) : IAsyncLifetime
         await Assert.ThrowsAsync<ForbiddenException>(() => scope.ViewerForAsync(Guid.NewGuid(), Ct));
         await Assert.ThrowsAsync<AuthenticationFailedException>(() => scope.ViewerAsync(Ct));
     }
+
+    [Fact]
+    public async Task Changes_are_scoped_to_the_owner_team_and_employees_are_forbidden()
+    {
+        var world = await ReportWorld.CreateAsync(factory);
+        var fx = new ChangeReportFixture(world);
+        var own = await fx.ChangeAsync(ChangeEnding.Open, ReportFixture.T0);
+        await fx.ChangeAsync(ChangeEnding.Open, ReportFixture.T0, teamId: world.FieldTeam.Id);
+
+        await using var db = world.Db();
+        var admin = await ScopeFor(db, world.Admin.Id).ViewerAsync(Ct);
+        var staff = await ScopeFor(db, world.Desk.Id).ViewerAsync(Ct);
+        Assert.Equal(2, await ScopeFor(db, world.Admin.Id).ChangesFor(admin).CountAsync(Ct));
+        Assert.Equal([own.Id], await ScopeFor(db, world.Desk.Id).ChangesFor(staff).Select(c => c.Id).ToListAsync(Ct));
+        Assert.Throws<ForbiddenException>(() => ScopeFor(db, world.Desk.Id).ChangesFor(new ReportViewer(world.Employee.Id, Tgysm.Domain.Users.UserRole.Employee, [])));
+    }
 }

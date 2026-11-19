@@ -22,18 +22,31 @@ public static class ExportColumns
     public const string Model = "model";
     public const string Location = "location";
     public const string WarrantyEndsOn = "warranty_ends_on";
+    public const string Title = "title";
+    public const string Outcome = "outcome";
+    public const string Risk = "risk";
+    public const string WindowStart = "window_start";
+    public const string ActualEnd = "actual_end";
 
     public static readonly IReadOnlyList<string> Tickets =
         [Number, Kind, Subject, Status, Priority, Team, Assignee, CreatedAt, CompletedAt];
 
     public static readonly IReadOnlyList<string> Assets =
         [AssetTag, Type, Brand, Model, Status, Location, WarrantyEndsOn];
+
+    public static readonly IReadOnlyList<string> Changes =
+        [Number, Title, Status, Outcome, Risk, Team, WindowStart, ActualEnd];
 }
 
 /// <summary>Turns the ordered drill-down rows into export cells, so an export lists exactly the rows the drill-down pages through.</summary>
 public static class ReportExportRows
 {
-    public static IReadOnlyList<string> ColumnKeysOf(DrilldownKind kind) => kind == DrilldownKind.Assets ? ExportColumns.Assets : ExportColumns.Tickets;
+    public static IReadOnlyList<string> ColumnKeysOf(DrilldownKind kind) => kind switch
+    {
+        DrilldownKind.Assets => ExportColumns.Assets,
+        DrilldownKind.Changes => ExportColumns.Changes,
+        _ => ExportColumns.Tickets,
+    };
 
     /// <summary>The cell content for <paramref name="rows"/>; the rows are read lazily while the file is written.</summary>
     public static ReportExportContent ContentOf(
@@ -47,8 +60,12 @@ public static class ReportExportRows
         IReadOnlyDictionary<string, string> names) =>
         new(report, metric, bucket, part, filter, scopeLabel, ColumnKeysOf(rows.Kind), Cells(rows), names);
 
-    public static Task<int> CountAsync(DrilldownRows rows, CancellationToken cancellationToken) =>
-        rows.Kind == DrilldownKind.Assets ? rows.Assets!.CountAsync(cancellationToken) : rows.Tickets!.CountAsync(cancellationToken);
+    public static Task<int> CountAsync(DrilldownRows rows, CancellationToken cancellationToken) => rows.Kind switch
+    {
+        DrilldownKind.Assets => rows.Assets!.CountAsync(cancellationToken),
+        DrilldownKind.Changes => rows.Changes!.CountAsync(cancellationToken),
+        _ => rows.Tickets!.CountAsync(cancellationToken),
+    };
 
     private static async IAsyncEnumerable<IReadOnlyList<object?>> Cells(DrilldownRows rows)
     {
@@ -57,6 +74,16 @@ public static class ReportExportRows
             await foreach (var a in rows.Assets!.AsAsyncEnumerable())
             {
                 yield return [a.AssetTag, a.Type, a.Brand, a.Model, a.Status, a.LocationName, a.WarrantyEndsOn];
+            }
+
+            yield break;
+        }
+
+        if (rows.Kind == DrilldownKind.Changes)
+        {
+            await foreach (var c in rows.Changes!.AsAsyncEnumerable())
+            {
+                yield return [c.Number, c.Title, c.Status, c.Outcome, c.Risk, c.OwnerTeamName, c.WindowStart, c.ActualEnd];
             }
 
             yield break;

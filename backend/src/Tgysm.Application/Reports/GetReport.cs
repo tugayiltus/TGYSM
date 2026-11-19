@@ -23,6 +23,11 @@ public sealed class GetReportHandler(ReportScope scope, TicketReportSource sourc
             return await AssetReport(query, viewer, cancellationToken);
         }
 
+        if (query.Report == ReportName.Changes)
+        {
+            return await ChangeReport(query, viewer, cancellationToken);
+        }
+
         var now = clock.GetUtcNow();
         var effective = ReportCatalog.EffectiveFilter(query.Report, query.Filter);
         var figures = new List<ReportFigure>();
@@ -38,6 +43,20 @@ public sealed class GetReportHandler(ReportScope scope, TicketReportSource sourc
     /// <summary><see cref="AllScope"/> for admins, <see cref="TeamsScope"/> for IT staff; asset reports always see everything.</summary>
     public static string ScopeLabelOf(ReportViewer viewer, ReportName report) =>
         viewer.Role == UserRole.Admin || report is ReportName.Assets or ReportName.Warranty ? AllScope : TeamsScope;
+
+    /// <summary>The change report: each metric dates the changes on its own basis, inside the viewer's team scope.</summary>
+    private async Task<ReportResult> ChangeReport(GetReportQuery query, ReportViewer viewer, CancellationToken cancellationToken)
+    {
+        var now = clock.GetUtcNow();
+        var figures = new List<ReportFigure>();
+        foreach (var metric in ReportCatalog.Get(query.Report).OfType<ChangeReportMetric>())
+        {
+            var pipeline = ReportPipeline.Changes(scope, db, companyClock, viewer, query.Filter, metric.DateBasis, now);
+            figures.Add(await metric.ComputeAsync(pipeline.Filtered, pipeline.Context, cancellationToken));
+        }
+
+        return new ReportResult(query.Report, query.Filter, ScopeLabelOf(viewer, query.Report), figures);
+    }
 
     /// <summary>Asset and warranty reports are snapshots of all assets, for IT staff and admins alike.</summary>
     private async Task<ReportResult> AssetReport(GetReportQuery query, ReportViewer viewer, CancellationToken cancellationToken)

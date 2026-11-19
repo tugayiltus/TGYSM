@@ -1,6 +1,7 @@
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
 
@@ -11,6 +12,9 @@ public sealed record TicketPipeline(IQueryable<Ticket> Filtered, ReportContext C
 
 /// <summary>The scoped, filtered assets of an asset report with the context it computes in.</summary>
 public sealed record AssetPipeline(IQueryable<Asset> Filtered, AssetReportContext Context);
+
+/// <summary>The scoped, filtered changes of one change metric with the context it computes in.</summary>
+public sealed record ChangePipeline(IQueryable<ChangeRequest> Filtered, ReportContext Context);
 
 /// <summary>
 /// The one path from a viewer and a filter to the rows a metric reads: scope, effective filter, filter application, window. The
@@ -24,6 +28,13 @@ public static class ReportPipeline
         var effective = ReportCatalog.EffectiveFilter(report, filter);
         var filtered = source.Apply(scope.TicketsFor(viewer), effective, basis);
         return new TicketPipeline(filtered, new ReportContext(db, now, source.Window(effective)), effective);
+    }
+
+    public static ChangePipeline Changes(
+        ReportScope scope, IAppDbContext db, ICompanyClock companyClock, ReportViewer viewer, ReportFilter filter, ReportDateBasis basis, DateTimeOffset now)
+    {
+        var window = filter.Window(companyClock.Zone);
+        return new ChangePipeline(ChangeReportSource.Apply(scope.ChangesFor(viewer), filter, basis, window), new ReportContext(db, now, window));
     }
 
     public static AssetPipeline Assets(ReportScope scope, IAppDbContext db, ICompanyClock companyClock, ReportViewer viewer, ReportFilter filter, DateTimeOffset now) =>

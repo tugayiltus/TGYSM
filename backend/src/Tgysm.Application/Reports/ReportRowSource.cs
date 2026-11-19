@@ -3,6 +3,7 @@ using FluentValidation.Results;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Reports;
 using Tgysm.Domain.Tickets;
@@ -13,6 +14,7 @@ public enum DrilldownKind
 {
     Tickets,
     Assets,
+    Changes,
 }
 
 public sealed record DrilldownTicketRow(
@@ -22,8 +24,12 @@ public sealed record DrilldownTicketRow(
 public sealed record DrilldownAssetRow(
     Guid Id, string AssetTag, AssetType Type, string Brand, string Model, AssetStatus Status, string LocationName, DateOnly? WarrantyEndsOn);
 
-/// <summary>The ordered rows behind one figure: exactly one of <see cref="Tickets"/> / <see cref="Assets"/> is set, matching <see cref="Kind"/>.</summary>
-public sealed record DrilldownRows(DrilldownKind Kind, IQueryable<DrilldownTicketRow>? Tickets, IQueryable<DrilldownAssetRow>? Assets);
+public sealed record DrilldownChangeRow(
+    string Number, string Title, ChangeStatus Status, ChangeOutcome? Outcome, Level Risk, string OwnerTeamName, DateTimeOffset? WindowStart, DateTimeOffset? ActualEnd);
+
+/// <summary>The ordered rows behind one figure: exactly one of <see cref="Tickets"/> / <see cref="Assets"/> / <see cref="Changes"/> is set, matching <see cref="Kind"/>.</summary>
+public sealed record DrilldownRows(
+    DrilldownKind Kind, IQueryable<DrilldownTicketRow>? Tickets, IQueryable<DrilldownAssetRow>? Assets, IQueryable<DrilldownChangeRow>? Changes = null);
 
 /// <summary>
 /// The rows behind a report figure, ordered so any page of them is stable. The drill-down endpoint pages this query; the Excel
@@ -49,6 +55,11 @@ public sealed class ReportRowSource(ReportScope scope, TicketReportSource source
         if (metric is AssetReportMetric assetMetric)
         {
             return OpenAssets(viewer, assetMetric, bucket, part, filter, now);
+        }
+
+        if (metric is ChangeReportMetric changeMetric)
+        {
+            return OpenChanges(viewer, changeMetric, bucket, part, filter, now);
         }
 
         var ticketMetric = (ReportMetric)metric;
@@ -115,6 +126,38 @@ public sealed class ReportRowSource(ReportScope scope, TicketReportSource source
             .Select(a => new DrilldownAssetRow(
                 a.Id, a.AssetTag, a.Type, a.Brand, a.Model, a.Status,
                 db.Locations.Where(l => l.Id == a.LocationId).Select(l => l.Name).First(), a.WarrantyEndsOn)));
+    }
+
+    private DrilldownRows OpenChanges(ReportViewer viewer, ChangeReportMetric metric, string? bucket, ReportDrillPart part, ReportFilter filter, DateTimeOffset now)
+    {
+        var pipeline = ReportPipeline.Changes(scope, db, companyClock, viewer, filter, metric.DateBasis, now);
+        var rows = ChangeRows(metric, pipeline.Filtered, pipeline.Context, bucket, part);
+        return new DrilldownRows(DrilldownKind.Changes, null, null, rows.OrderBy(c => c.Number).ThenBy(c => c.Id)
+            .Select(c => new DrilldownChangeRow(
+                c.Number, c.Title, c.Status, c.Outcome, c.Risk,
+                db.Teams.Where(t => t.Id == c.OwnerTeamId).Select(t => t.Name).First(), c.WindowStart, c.ActualEnd)));
+    }
+
+    private static IQueryable<ChangeRequest> ChangeRows(ChangeReportMetric metric, IQueryable<ChangeRequest> filtered, ReportContext context, string? bucket, ReportDrillPart part)
+    {
+        if (part == ReportDrillPart.Denominator)
+        {
+            if (bucket is not null)
+            {
+                throw Invalid(BucketField);
+            }
+
+            return metric.DenominatorRows(filtered, context) ?? throw Invalid(PartField);
+        }
+
+        try
+        {
+            return bucket is null ? metric.Rows(filtered, context) : metric.BucketRows(filtered, context, bucket);
+        }
+        catch (NotSupportedException)
+        {
+            throw Invalid(BucketField);
+        }
     }
 
     private static ValidationException Invalid(string field) =>

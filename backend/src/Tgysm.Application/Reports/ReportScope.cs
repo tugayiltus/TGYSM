@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
+using Tgysm.Domain.Changes;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
 
@@ -43,6 +44,18 @@ public sealed class ReportScope(IAppDbContext db, ICurrentActor actor)
         {
             UserRole.Admin => db.Tickets,
             UserRole.ItStaff => db.Tickets.Where(t => teamIds.Contains(t.TeamId)),
+            _ => throw new ForbiddenException(),
+        };
+    }
+
+    /// <summary>Changes of every team for admins; IT staff see the changes their teams own.</summary>
+    public IQueryable<ChangeRequest> ChangesFor(ReportViewer viewer)
+    {
+        var teamIds = viewer.TeamIds;
+        return viewer.Role switch
+        {
+            UserRole.Admin => db.ChangeRequests,
+            UserRole.ItStaff => db.ChangeRequests.Where(c => teamIds.Contains(c.OwnerTeamId)),
             _ => throw new ForbiddenException(),
         };
     }

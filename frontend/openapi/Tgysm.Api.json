@@ -11707,10 +11707,65 @@
           }
         }
       },
+      "DrilldownChangeRow": {
+        "required": [
+          "number",
+          "title",
+          "status",
+          "outcome",
+          "risk",
+          "ownerTeamName",
+          "windowStart",
+          "actualEnd"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ChangeStatus"
+          },
+          "outcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChangeOutcome"
+              }
+            ]
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "ownerTeamName": {
+            "type": "string"
+          },
+          "windowStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "actualEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "DrilldownKind": {
         "enum": [
           "tickets",
-          "assets"
+          "assets",
+          "changes"
         ]
       },
       "DrilldownResult": {
@@ -11741,6 +11796,16 @@
               },
               {
                 "$ref": "#/components/schemas/PagedResultOfDrilldownAssetRow"
+              }
+            ]
+          },
+          "changes": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PagedResultOfDrilldownChangeRow"
               }
             ]
           }
@@ -12766,6 +12831,35 @@
           }
         }
       },
+      "PagedResultOfDrilldownChangeRow": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DrilldownChangeRow"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "PagedResultOfDrilldownTicketRow": {
         "required": [
           "items",
@@ -13548,7 +13642,8 @@
           "operations",
           "transfers",
           "assets",
-          "warranty"
+          "warranty",
+          "changes"
         ]
       },
       "ReportResult": {
