@@ -103,6 +103,11 @@ public static class ErrorCodes
     public const string ChangePhaseNotActive = "changes.phase_not_active";
     public const string ChangeOwnerNotInTeam = "changes.owner_not_in_team";
     public const string ChangeCalendarRange = "changes.calendar_range";
+    public const string ChangeTicketLinkExists = "changes.ticket_link_exists";
+    public const string ChangeTicketLinkKindInvalid = "changes.ticket_link_kind_invalid";
+    public const string ChangeTicketLinkCancelled = "changes.ticket_link_cancelled";
+
+    public const string SearchQueryInvalid = "search.query_invalid";
 
     public const string ApprovalNotApprover = "approvals.not_approver";
     public const string ApprovalNotPending = "approvals.not_pending";

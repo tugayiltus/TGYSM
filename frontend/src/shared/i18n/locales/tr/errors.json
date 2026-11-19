@@ -166,6 +166,12 @@
     "approval_not_pending": "Bu onay artık beklemiyor. Sayfayı yenileyin.",
     "phase_not_active": "Bu aşamanın görevleri değişikliğin mevcut durumunda başlatılamaz.",
     "owner_not_in_team": "Değişiklik sahibi, sahip ekibin aktif bir üyesi olmalı.",
-    "calendar_range": "Takvim aralığı gerekli, bitiş başlangıçtan önce olamaz ve en çok 62 gün olabilir."
+    "calendar_range": "Takvim aralığı gerekli, bitiş başlangıçtan önce olamaz ve en çok 62 gün olabilir.",
+    "ticket_link_exists": "Bu kayıt zaten bu değişikliğe bağlı.",
+    "ticket_link_kind_invalid": "Talep kayıtları için yalnızca \"tetikledi\" bağlantı türü kullanılabilir.",
+    "ticket_link_cancelled": "İptal edilmiş değişikliğe bağlantı eklenemez."
+  },
+  "search": {
+    "query_invalid": "Arama metni en az 2 karakter olmalı."
   }
 }

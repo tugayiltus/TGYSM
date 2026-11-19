@@ -1052,6 +1052,53 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeTicketLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChangeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("change_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_change_ticket_links");
+
+                    b.HasIndex("CreatedById")
+                        .HasDatabaseName("ix_change_ticket_links_created_by_id");
+
+                    b.HasIndex("TicketId")
+                        .HasDatabaseName("ix_change_ticket_links_ticket_id");
+
+                    b.HasIndex("ChangeId", "TicketId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_change_ticket_links_change_ticket");
+
+                    b.ToTable("change_ticket_links", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_change_ticket_links_kind", "kind IN ('prompted', 'caused')");
+                        });
+                });
+
             modelBuilder.Entity("Tgysm.Domain.Knowledge.ArticleRevision", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3500,6 +3547,30 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_change_requests_teams_owner_team_id");
+                });
+
+            modelBuilder.Entity("Tgysm.Domain.Changes.ChangeTicketLink", b =>
+                {
+                    b.HasOne("Tgysm.Domain.Changes.ChangeRequest", null)
+                        .WithMany()
+                        .HasForeignKey("ChangeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_ticket_links_change_requests_change_id");
+
+                    b.HasOne("Tgysm.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_ticket_links_users_created_by_id");
+
+                    b.HasOne("Tgysm.Domain.Tickets.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_change_ticket_links_tickets_ticket_id");
                 });
 
             modelBuilder.Entity("Tgysm.Domain.Knowledge.ArticleRevision", b =>
