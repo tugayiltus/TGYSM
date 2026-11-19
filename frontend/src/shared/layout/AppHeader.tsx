@@ -8,6 +8,8 @@ import { TopNav } from '@astryxdesign/core/TopNav';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { GlobalSearch } from '../../features/search/GlobalSearch';
+
 import { AccountMenu } from './AccountMenu';
 import { ThemeMenu } from './ThemeMenu';
 
@@ -23,6 +25,7 @@ export function AppHeader({ areaSwitch }: AppHeaderProps) {
       label={t('layout.topBar')}
       endContent={
         <HStack gap={1} vAlign="center">
+          <GlobalSearch />
           {areaSwitch}
           <ThemeMenu />
           <AccountMenu />

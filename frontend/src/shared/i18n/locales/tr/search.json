@@ -1,0 +1,13 @@
+{
+  "label": "Ara",
+  "hint": "Kayıt numarası, demirbaş etiketi veya kelime yazın",
+  "empty": "Sonuç bulunamadı",
+  "seeAll": "Tümünü gör",
+  "groups": {
+    "ticket": "Kayıtlar",
+    "change": "Değişiklikler",
+    "task": "Görevler",
+    "asset": "Envanter",
+    "article": "Bilgi bankası"
+  }
+}
