@@ -58,7 +58,10 @@ internal static class ChangeTicketLinkQueries
                 openable.Any(o => o.Id == t.Id))).ToListAsync(cancellationToken);
     }
 
-    /// <summary>Changes of a ticket, newest link first; <c>CanOpen</c> is full or summary access to the change.</summary>
+    /// <summary>
+    /// Changes of a ticket, newest link first; <c>CanOpen</c> is full or summary access to the change. Without it the
+    /// window stays null: the link discloses only number, title, status and team (ADR-0033).
+    /// </summary>
     public static async Task<IReadOnlyList<LinkedChangeItem>> ChangesOfTicketAsync(
         IAppDbContext db, ChangeScope changes, Guid ticketId, CancellationToken cancellationToken)
     {
@@ -69,11 +72,13 @@ internal static class ChangeTicketLinkQueries
             join c in db.ChangeRequests on l.ChangeId equals c.Id
             where l.TicketId == ticketId
             orderby l.CreatedAt descending, l.Id descending
+            let canOpen = openable.Any(o => o.Id == c.Id)
             select new LinkedChangeItem(
-                c.Number, c.Title, c.Status, c.WindowStart, c.WindowEnd,
+                c.Number, c.Title, c.Status,
+                canOpen ? c.WindowStart : null, canOpen ? c.WindowEnd : null,
                 db.Teams.Where(x => x.Id == c.OwnerTeamId).Select(x => x.Name).First(),
                 l.Kind, l.CreatedAt,
-                openable.Any(o => o.Id == c.Id))).ToListAsync(cancellationToken);
+                canOpen)).ToListAsync(cancellationToken);
     }
 }
 

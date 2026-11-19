@@ -95,6 +95,8 @@ public sealed class ChangeTicketLinkTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal("Sunucu güncellemesi", item.GetProperty("title").GetString());
         Assert.Equal("Servis Masası", item.GetProperty("ownerTeamName").GetString());
         Assert.False(item.GetProperty("canOpen").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, item.GetProperty("windowStart").ValueKind);
+        Assert.Equal(JsonValueKind.Null, item.GetProperty("windowEnd").ValueKind);
         using var open = await world.Field.GetAsync(ChangeWorld.PathOf(change));
         Assert.Equal(HttpStatusCode.NotFound, open.StatusCode);
     }
