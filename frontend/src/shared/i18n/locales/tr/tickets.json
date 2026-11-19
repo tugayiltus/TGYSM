@@ -205,7 +205,8 @@
     "mine": "Açtıklarım",
     "count": "{{count}} kayıt",
     "back": "İş listesine dön",
-    "sla_risk": "SLA Riski"
+    "sla_risk": "SLA Riski",
+    "all": "Tüm kayıtlar"
   },
   "approvals": {
     "title": "Onay bekleyenler",

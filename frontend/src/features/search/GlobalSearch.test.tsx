@@ -5,8 +5,10 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AstryxProvider } from '../../shared/ui/AstryxProvider';
-import { mockApi } from '../../test/mockApi';
+import { EMPLOYEE_ME, IT_ME, mockApi } from '../../test/mockApi';
 import { stubPhoneViewport } from '../../test/viewport';
+import type { Me } from '../auth/api';
+import { SessionContext } from '../auth/session';
 
 import { SEARCH_DEBOUNCE_MS } from './api';
 import { GlobalSearch } from './GlobalSearch';
@@ -22,13 +24,15 @@ const HITS = {
 };
 
 let lastRouter: ReturnType<typeof createMemoryRouter>;
-function renderSearch() {
+function renderSearch(me: Me = IT_ME as Me) {
   const router = createMemoryRouter([{ path: '*', element: <GlobalSearch /> }], { initialEntries: ['/start'] });
   lastRouter = router;
   render(
-    <AstryxProvider>
-      <RouterProvider router={router} />
-    </AstryxProvider>,
+    <SessionContext.Provider value={me}>
+      <AstryxProvider>
+        <RouterProvider router={router} />
+      </AstryxProvider>
+    </SessionContext.Provider>,
   );
 }
 
@@ -112,7 +116,7 @@ describe('GlobalSearch', () => {
     await waitFor(() => expect(where()).toBe('/assets?q=ASSET-2026-0007'));
   });
 
-  it('opens the list with the search filled in from Tümünü gör', async () => {
+  it('opens the staff ticket list without a queue filter from Tümünü gör for IT staff', async () => {
     mockApi({ [SEARCH_ROUTE]: { status: 200, body: HITS } });
     renderSearch();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -120,7 +124,46 @@ describe('GlobalSearch', () => {
     await user.type(input, 'dell');
     await act(() => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS * 2));
     await user.click(await screen.findByText('Tümünü gör'));
+    await waitFor(() => expect(where()).toBe('/workspace/queue?queue=all&q=dell'));
+  });
+
+  it('opens the own ticket list from Tümünü gör for an employee', async () => {
+    mockApi({ [SEARCH_ROUTE]: { status: 200, body: HITS } });
+    renderSearch(EMPLOYEE_ME as Me);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const input = await openBox(user);
+    await user.type(input, 'dell');
+    await act(() => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS * 2));
+    await user.click(await screen.findByText('Tümünü gör'));
     await waitFor(() => expect(where()).toBe('/tickets?q=dell'));
+  });
+
+  it('drops an older response that arrives after a newer query', async () => {
+    let releaseOld: (() => void) | undefined;
+    const OLD = { exact: null, groups: [{ type: 'ticket', hasMore: false, hits: [{ type: 'ticket', key: 'INC-OLD', title: 'Eski sonuç', status: 'Açık' }] }] };
+    mockApi({
+      [SEARCH_ROUTE]: async (request) => {
+        if (new URL(request.url).searchParams.get('q') === 'del') {
+          await new Promise<void>((resolve) => {
+            releaseOld = resolve;
+          });
+          return { status: 200, body: OLD };
+        }
+        return { status: 200, body: HITS };
+      },
+    });
+    renderSearch();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const input = await openBox(user);
+    await user.type(input, 'del');
+    await act(() => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS * 2));
+    await waitFor(() => expect(releaseOld).toBeDefined());
+    await user.type(input, 'l');
+    await act(() => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS * 2));
+    await screen.findByText(/Yazıcı bozuk/);
+    await act(async () => releaseOld?.());
+    expect(screen.queryByText(/Eski sonuç/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Yazıcı bozuk/)).toBeInTheDocument();
   });
 
   it('closes on Escape', async () => {
@@ -135,9 +178,9 @@ describe('GlobalSearch', () => {
   it('opens on the / key only when no field has focus', async () => {
     mockApi({ [SEARCH_ROUTE]: { status: 200, body: EMPTY } });
     render(
-      <AstryxProvider>
+      <SessionContext.Provider value={IT_ME as Me}><AstryxProvider>
         <RouterProvider router={createMemoryRouter([{ path: '*', element: (<><GlobalSearch /><TextInput label="Diğer alan" value="" onChange={() => undefined} /></>) }])} />
-      </AstryxProvider>,
+      </AstryxProvider></SessionContext.Provider>,
     );
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     await user.click(screen.getByLabelText('Diğer alan'));

@@ -6,6 +6,9 @@
 import type { components } from '../../shared/api/schema';
 import { SEARCH_PARAM } from '../../shared/list/useListParams';
 import { ROUTES, articlePath, changePath, taskPath, ticketPath } from '../../shared/routes';
+import type { Role } from '../auth/api';
+import { isItStaffOrAdmin } from '../auth/session';
+import { allTicketsPath } from '../workspace/queuePath';
 
 export type SearchHit = components['schemas']['SearchHit'];
 export type SearchHitType = components['schemas']['SearchHitType'];
@@ -18,8 +21,14 @@ const LIST_ROUTES: Record<SearchHitType, string> = {
   article: ROUTES.kb,
 };
 
-/** The list of one type with the search box filled in. */
-export function listPathForType(type: SearchHitType, query: string): string {
+/**
+ * The list of one type with the search box filled in. "/tickets" lists only the viewer's own tickets, so IT staff
+ * and admins get the staff list without a queue filter.
+ */
+export function listPathForType(type: SearchHitType, query: string, role: Role): string {
+  if (type === 'ticket' && isItStaffOrAdmin(role)) {
+    return allTicketsPath(query);
+  }
   return `${LIST_ROUTES[type]}?${new URLSearchParams({ [SEARCH_PARAM]: query }).toString()}`;
 }
 
@@ -27,7 +36,7 @@ export function listPathForType(type: SearchHitType, query: string): string {
  * The asset route takes the asset id, but a hit carries only the tag. An asset hit therefore opens the
  * asset list filtered by its tag.
  */
-export function pathForHit(hit: SearchHit): string {
+export function pathForHit(hit: SearchHit, role: Role): string {
   switch (hit.type) {
     case 'ticket':
       return ticketPath(hit.key);
@@ -38,6 +47,6 @@ export function pathForHit(hit: SearchHit): string {
     case 'article':
       return articlePath(hit.key);
     case 'asset':
-      return listPathForType('asset', hit.key);
+      return listPathForType('asset', hit.key, role);
   }
 }

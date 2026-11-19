@@ -18,7 +18,7 @@ import { WORKSPACE_QUEUES, type TicketQueue } from '../tickets/api';
 import { TicketList } from '../tickets/TicketList';
 
 import { QueueCard } from './QueueCard';
-import { QUEUE_PARAM } from './queuePath';
+import { ALL_QUEUE, QUEUE_PARAM } from './queuePath';
 
 const DEFAULT_QUEUE: TicketQueue = 'team';
 /** Task queues shown as cards beside the ticket queues (ADR-0031). */
@@ -50,11 +50,12 @@ export function QueuePage() {
   const { t } = useTranslation('tickets');
   const [params] = useSearchParams();
   const requested = params.get(QUEUE_PARAM);
+  const isAll = requested === ALL_QUEUE;
   const queue = WORKSPACE_QUEUES.find((q) => q === requested) ?? DEFAULT_QUEUE;
   return (
     <VStack gap={4}>
-      <PageHeader icon={ROUTE_META.workspaceQueue.icon} titleOverride={t(`workspace.${queue}`)} />
-      <TicketList key={queue} queue={queue} showWorkColumns />
+      <PageHeader icon={ROUTE_META.workspaceQueue.icon} titleOverride={isAll ? t('workspace.all') : t(`workspace.${queue}`)} />
+      <TicketList key={isAll ? ALL_QUEUE : queue} queue={isAll ? undefined : queue} showWorkColumns />
     </VStack>
   );
 }

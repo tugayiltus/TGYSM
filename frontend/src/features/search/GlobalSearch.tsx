@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router';
 
 import { useIsPhone } from '../../shared/list/useIsPhone';
 import { Icons } from '../../shared/ui/icons';
+import { useSession } from '../auth/session';
 
 import { fetchSearch, SEARCH_DEBOUNCE_MS, SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH } from './api';
 import { listPathForType, pathForHit } from './searchPaths';
@@ -39,10 +40,12 @@ function isShortcutBlocked(target: EventTarget | null): boolean {
 export function GlobalSearch() {
   const { t } = useTranslation('search');
   const navigate = useNavigate();
+  const { role } = useSession();
   const isPhone = useIsPhone();
   const [isOpen, setIsOpen] = useState(false);
   const latest = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const release = useRef<(() => void) | undefined>(undefined);
   const paths = useRef(new Map<string, string>());
 
   const go = useCallback(
@@ -67,9 +70,12 @@ export function GlobalSearch() {
   }, []);
 
   const source = useMemo<SearchSource<ResultItem>>(() => {
+    /** Settles the superseded wait with no items, so the palette never keeps a spinner for it. */
     const cancel = () => {
       latest.current += 1;
       clearTimeout(timer.current);
+      release.current?.();
+      release.current = undefined;
     };
     return {
       bootstrap: () => [],
@@ -82,6 +88,7 @@ export function GlobalSearch() {
           return [];
         }
         await new Promise<void>((resolve) => {
+          release.current = resolve;
           timer.current = setTimeout(resolve, SEARCH_DEBOUNCE_MS);
         });
         if (mine !== latest.current) {
@@ -92,25 +99,25 @@ export function GlobalSearch() {
           return [];
         }
         if (result.exact !== null) {
-          go(pathForHit(result.exact));
+          go(pathForHit(result.exact, role));
           return [];
         }
         const items: ResultItem[] = [];
         for (const group of result.groups) {
           const title = t(`groups.${group.type}`);
           for (const hit of group.hits) {
-            const path = pathForHit(hit);
+            const path = pathForHit(hit, role);
             items.push({ id: `${group.type}:${hit.key}`, label: `${hit.key} ${hit.title}`, path, auxiliaryData: { group: title } });
           }
           if (group.hasMore) {
-            items.push({ id: `all:${group.type}`, label: t('seeAll'), path: listPathForType(group.type, query), auxiliaryData: { group: title } });
+            items.push({ id: `all:${group.type}`, label: t('seeAll'), path: listPathForType(group.type, query, role), auxiliaryData: { group: title } });
           }
         }
         paths.current = new Map(items.map((item) => [item.id, item.path]));
         return items;
       },
     };
-  }, [t, go]);
+  }, [t, go, role]);
 
   const label = t('label');
   return (
