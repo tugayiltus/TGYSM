@@ -38,8 +38,8 @@ describe('Change ilgili kayıtlar panel', () => {
     expect(await within(region).findByText('Bu değişikliğe yol açan kayıtlar')).toBeInTheDocument();
     expect(within(region).getByText('Bu değişikliğin yol açtığı olaylar')).toBeInTheDocument();
     expect(within(region).getByRole('link', { name: /INC-2026-000007/ })).toHaveAttribute('href', '/tickets/INC-2026-000007');
-    expect(within(region).getByText('Değişikliğe yol açtı')).toBeInTheDocument();
-    expect(within(region).getByText('Değişiklik sonucu oluştu')).toBeInTheDocument();
+    expect(within(region).getByText(/Değişikliğe yol açtı/)).toBeInTheDocument();
+    expect(within(region).getByText(/Değişiklik sonucu oluştu/)).toBeInTheDocument();
   });
 
   it('shows a row the viewer cannot open as text with the team name', async () => {
@@ -49,8 +49,8 @@ describe('Change ilgili kayıtlar panel', () => {
     const region = await panel();
     expect(await within(region).findByText(/INC-2026-000009/)).toBeInTheDocument();
     expect(within(region).queryByRole('link', { name: /INC-2026-000009/ })).not.toBeInTheDocument();
-    expect(within(region).getByText('Güvenlik ekibinin kaydı')).toBeInTheDocument();
-    expect(within(region).getByText('Değişikliğe yol açtı')).toBeInTheDocument();
+    expect(within(region).getByText(/Güvenlik ekibinin kaydı/)).toBeInTheDocument();
+    expect(within(region).getByText(/Değişikliğe yol açtı/)).toBeInTheDocument();
     expect(within(region).getByText('İşlemde')).toBeInTheDocument();
   });
 

@@ -3,7 +3,6 @@
  * @output The changes linked to the ticket, each with its link kind and status.
  * @position Ticket detail page, main column (IT staff and admins only; employees make no request).
  */
-import { HStack } from '@astryxdesign/core/HStack';
 import { List, ListItem } from '@astryxdesign/core/List';
 import { Text } from '@astryxdesign/core/Text';
 import { useTranslation } from 'react-i18next';
@@ -36,17 +35,12 @@ function Row({ item }: { item: LinkedChangeItem }) {
           text
         )
       }
-      description={
-        item.canOpen
-          ? (item.windowStart === null ? [item.ownerTeamName] : [item.ownerTeamName, formatDateTime(item.windowStart)]).join(META_SEPARATOR)
-          : t('changeLinks.notOpenable', { team: item.ownerTeamName })
-      }
-      endContent={
-        <HStack gap={2} vAlign="center">
-          <Text type="supporting">{t(`changeLinks.kinds.${item.linkKind}`)}</Text>
-          <ChangeStatusBadge status={item.status} />
-        </HStack>
-      }
+      description={[
+        item.canOpen ? item.ownerTeamName : t('changeLinks.notOpenable', { team: item.ownerTeamName }),
+        t(`changeLinks.kinds.${item.linkKind}`),
+        ...(item.canOpen && item.windowStart !== null ? [formatDateTime(item.windowStart)] : []),
+      ].join(META_SEPARATOR)}
+      endContent={<ChangeStatusBadge status={item.status} />}
     />
   );
 }
