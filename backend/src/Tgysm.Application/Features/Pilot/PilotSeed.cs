@@ -21,6 +21,8 @@ public static class PilotSeedVolumes
     public const int Tickets = 2_000;
     public const int DaysBack = 90;
     public const int Articles = 20;
+    public const int Changes = 60;
+    public const int StandaloneTasks = 150;
 
     /// <summary>A scaled volume, never below one so every kind of data exists at any scale.</summary>
     public static int Scaled(int volume, double scale) =>
@@ -37,7 +39,9 @@ public sealed record PilotSeedResult(
     IReadOnlyDictionary<TicketStatus, int> TicketsByStatus,
     int Comments,
     int Articles,
-    int AuditEvents);
+    int AuditEvents,
+    int Changes,
+    int Tasks);
 
 /// <summary>
 /// Fills an empty database with pilot data (spec §5.1) through the application handlers, so business rules, SLA
@@ -105,7 +109,9 @@ public sealed class PilotSeed(IServiceScopeFactory scopes, PilotSeedActor actor,
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var now = PilotSeedClock.RealUtcNow;
         await db.OutboxEvents
-            .Where(e => e.Status == OutboxStatus.Pending && e.TicketId != null && ticketIds.Contains(e.TicketId.Value))
+            .Where(e => e.Status == OutboxStatus.Pending
+                && ((e.TicketId != null && ticketIds.Contains(e.TicketId.Value))
+                    || e.SubjectType == OutboxSubjectTypes.Change || e.SubjectType == OutboxSubjectTypes.Task))
             .ExecuteUpdateAsync(set => set.SetProperty(e => e.Status, OutboxStatus.Skipped).SetProperty(e => e.DispatchedAt, now), cancellationToken);
     }
 
@@ -124,6 +130,8 @@ public sealed class PilotSeed(IServiceScopeFactory scopes, PilotSeedActor actor,
             tickets.ToDictionary(t => t.Key, t => t.Count),
             await db.TicketComments.CountAsync(cancellationToken),
             await db.KnowledgeArticles.CountAsync(cancellationToken),
-            await db.AuditEvents.CountAsync(cancellationToken));
+            await db.AuditEvents.CountAsync(cancellationToken),
+            await db.ChangeRequests.CountAsync(cancellationToken),
+            await db.WorkTasks.CountAsync(cancellationToken));
     }
 }

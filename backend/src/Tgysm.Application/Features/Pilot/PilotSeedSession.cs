@@ -33,7 +33,7 @@ internal enum PilotTicketPlan
 }
 
 /// <summary>One run of the pilot seed: the random draws, the created ids and the moving "now".</summary>
-internal sealed class PilotSeedSession(
+internal sealed partial class PilotSeedSession(
     IServiceScopeFactory scopes, PilotSeedActor actor, PilotSeedClock clock, double scale, string password, DateTimeOffset realNow, CancellationToken cancellationToken)
 {
     // Organisation, catalog and assets are set up this long before the first ticket, one step per handler call.
@@ -123,6 +123,8 @@ internal sealed class PilotSeedSession(
     private DateTimeOffset _setupCursor;
     private Guid _adminId;
     private Guid _fieldTeamId;
+    private Guid _intakeTeamId;
+    private readonly List<Guid> _assetIds = [];
     private readonly List<Guid> _ticketIds = [];
 
     /// <summary>Every ticket this run opened; their notifications are closed once the run ends.</summary>
@@ -140,6 +142,8 @@ internal sealed class PilotSeedSession(
         await SeedAssetsAsync();
         await SeedArticlesAsync();
         await SeedTicketsAsync();
+        await SeedChangesAsync();
+        await SeedTasksAsync();
         return admin;
     }
 
@@ -191,6 +195,7 @@ internal sealed class PilotSeedSession(
         }
 
         var intake = await SetupAsync<CreateTeamHandler, TeamDetail>(_adminId, (h, ct) => h.HandleAsync(new CreateTeamCommand(PilotSeedData.IntakeTeam), ct));
+        _intakeTeamId = intake.Id;
         await SetupAsync<UpdateTeamHandler, TeamDetail>(_adminId, (h, ct) => h.HandleAsync(new UpdateTeamCommand(intake.Id, intake.Version, intake.Name, IsDefaultIntake: true), ct));
         var field = await SetupAsync<CreateTeamHandler, TeamDetail>(_adminId, (h, ct) => h.HandleAsync(new CreateTeamCommand(PilotSeedData.FieldTeam), ct));
         _fieldTeamId = field.Id;
@@ -273,6 +278,7 @@ internal sealed class PilotSeedSession(
                 purchased,
                 null);
             var asset = await SetupAsync<CreateAssetHandler, AssetItem>(_adminId, (h, ct) => h.HandleAsync(command, ct));
+            _assetIds.Add(asset.Id);
 
             var roll = _random.Next(Hundred);
             if (roll < AssignedPercent)

@@ -11,6 +11,8 @@ using Tgysm.Application.Features.Organization;
 using Tgysm.Application.Features.Pilot;
 using Tgysm.Domain.Audit;
 using Tgysm.Domain.Catalog;
+using Tgysm.Domain.Changes;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Notifications;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
@@ -28,6 +30,8 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
     private const string ProductionEnvironment = "Production";
     private const string SmallScale = "0.02";
     private const double SmallScaleFactor = 0.02;
+    private const string ChangeScale = "0.1";
+    private const double ChangeScaleFactor = 0.1;
     private const string ScaleOption = "--scale";
     private const string PasswordMarker = "(shown once): ";
     private const int TicketsBeforeFailure = 1;
@@ -136,6 +140,37 @@ public sealed class SeedPilotCommandTests(ApiFactory factory) : IAsyncLifetime
         var employee = await db.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Employee, Ct);
         Assert.True(passwords.Verify(employee.PasswordHash, password));
         Assert.False(employee.MustChangePassword);
+    }
+
+    [Fact]
+    public async Task Seeds_changes_with_overlapping_windows_on_shared_assets_and_work_tasks()
+    {
+        // 0.1 gives six changes and fifteen tasks: every change status the seed plans and an overlap by index.
+        var exit = await SeedPilotCommand.RunAsync(ServicesIn(SeedPilotCommand.PilotEnvironment), [ScaleOption, ChangeScale], TextWriter.Null, TextWriter.Null);
+
+        Assert.Equal(CliSuccess, exit);
+        await using var db = factory.Database.CreateDbContext();
+        var changes = await db.ChangeRequests.AsNoTracking().ToListAsync(Ct);
+        Assert.Equal(PilotSeedVolumes.Scaled(PilotSeedVolumes.Changes, ChangeScaleFactor), changes.Count);
+        Assert.Equal(
+            new[] { ChangeStatus.Draft, ChangeStatus.PendingApproval, ChangeStatus.Scheduled }.ToHashSet(), changes.Select(c => c.Status).ToHashSet());
+        Assert.All(changes, c => Assert.True(c.WindowStart < c.WindowEnd));
+        var links = await db.ChangeAssets.AsNoTracking().ToListAsync(Ct);
+        var overlapping = from first in changes
+                          from second in changes
+                          where first.Id.CompareTo(second.Id) < 0 && first.WindowStart < second.WindowEnd && second.WindowStart < first.WindowEnd
+                          where links.Any(a => a.ChangeId == first.Id && links.Any(b => b.ChangeId == second.Id && b.AssetId == a.AssetId))
+                          select first.Id;
+        Assert.NotEmpty(overlapping);
+
+        var tasks = await db.WorkTasks.AsNoTracking().ToListAsync(Ct);
+        Assert.Equal(
+            PilotSeedVolumes.Scaled(PilotSeedVolumes.StandaloneTasks, ChangeScaleFactor) + await db.WorkTasks.CountAsync(t => t.ChangeId != null, Ct), tasks.Count);
+        Assert.Equal(
+            new[] { WorkTaskStatus.Open, WorkTaskStatus.InProgress, WorkTaskStatus.Completed, WorkTaskStatus.Cancelled }.ToHashSet(),
+            tasks.Where(t => t.ChangeId == null).Select(t => t.Status).ToHashSet());
+        Assert.Contains(tasks, t => t.ChangeId != null);
+        Assert.False(await db.OutboxEvents.AnyAsync(e => e.Status == OutboxStatus.Pending, Ct));
     }
 
     [Fact]
