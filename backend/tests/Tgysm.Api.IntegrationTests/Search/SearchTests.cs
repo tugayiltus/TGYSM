@@ -134,6 +134,32 @@ public sealed class SearchTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_short_legacy_tag_that_prefixes_a_longer_one_gives_no_exact_hit()
+    {
+        const string ShortTag = "AB1";
+        const string LongTag = "AB1-OLD-0007";
+        var world = await TicketWorld.CreateAsync(factory);
+        var store = await TestData.LocationAsync(factory, "Depo");
+        var modelId = await TestData.ModelAsync(factory);
+        var first = await AssetCatalogueTests.CreateAsync(world.Desk, new { modelId, locationId = store.Id });
+        var second = await AssetCatalogueTests.CreateAsync(world.Desk, new { modelId, locationId = store.Id });
+        await using (var db = factory.Database.CreateDbContext())
+        {
+            var firstTag = first.GetProperty("assetTag").GetString()!;
+            var secondTag = second.GetProperty("assetTag").GetString()!;
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE assets SET asset_tag = {ShortTag}, normalized_asset_tag = {ShortTag} WHERE asset_tag = {firstTag}", TestContext.Current.CancellationToken);
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE assets SET asset_tag = {LongTag}, normalized_asset_tag = {LongTag} WHERE asset_tag = {secondTag}", TestContext.Current.CancellationToken);
+        }
+
+        var typing = await SearchAsync(world.Desk, ShortTag);
+        var full = await SearchAsync(world.Desk, LongTag);
+
+        Assert.Equal(JsonValueKind.Null, typing.GetProperty("exact").ValueKind);
+        Assert.Contains(ShortTag, Keys(typing, AssetGroup));
+        Assert.Equal(LongTag, full.GetProperty("exact").GetProperty("key").GetString());
+    }
+
+    [Fact]
     public async Task Asset_hits_are_ordered_by_most_recent_update()
     {
         var world = await TicketWorld.CreateAsync(factory);

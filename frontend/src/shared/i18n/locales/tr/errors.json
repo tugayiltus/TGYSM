@@ -172,6 +172,6 @@
     "ticket_link_cancelled": "İptal edilmiş değişikliğe bağlantı eklenemez."
   },
   "search": {
-    "query_invalid": "Arama metni en az 2 karakter olmalı."
+    "query_invalid": "Arama metni 2 ile 100 karakter arasında olmalı."
   }
 }

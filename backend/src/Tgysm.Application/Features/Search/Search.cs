@@ -37,6 +37,7 @@ public static class SearchLimits
     public const int MinLength = 2;
     public const int MaxLength = 100;
     public const int PerType = 5;
+    public const int MinExactTagLength = 4;
 }
 
 public sealed record SearchQuery(string? Text);
@@ -48,8 +49,11 @@ public sealed record SearchQuery(string? Text);
 public sealed class SearchHandler(IAppDbContext db, TicketScope ticketScope, ChangeScope changeScope, TaskScope taskScope)
 {
     private const string QueryField = "q";
-    private const string QueryInvalidMessage = "The search text must be 2 to 100 characters.";
+    private static readonly string QueryInvalidMessage = $"The search text must be {SearchLimits.MinLength} to {SearchLimits.MaxLength} characters.";
     private const string Separator = " ";
+
+    // A short legacy tag must not hijack typing: only a whole-looking tag is tried as an exact match.
+    private static bool LooksLikeTag(string text) => text.Length >= SearchLimits.MinExactTagLength && !text.Any(char.IsWhiteSpace);
 
     private sealed record Row(string Key, string Title, string Status);
 
@@ -123,7 +127,7 @@ public sealed class SearchHandler(IAppDbContext db, TicketScope ticketScope, Cha
             var assets = db.Assets.AsNoTracking();
             var code = Asset.NormalizeTag(text);
             var codePattern = LikePattern.Containing(code);
-            if (exact is null)
+            if (exact is null && LooksLikeTag(text))
             {
                 exact = await FirstAsync(
                     SearchHitType.Asset,
