@@ -10,6 +10,7 @@ import { Heading } from '@astryxdesign/core/Heading';
 import { HStack } from '@astryxdesign/core/HStack';
 import { Icon } from '@astryxdesign/core/Icon';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
+import { Spinner } from '@astryxdesign/core/Spinner';
 import { StackItem } from '@astryxdesign/core/Stack';
 import { Text } from '@astryxdesign/core/Text';
 import { Token } from '@astryxdesign/core/Token';
@@ -126,7 +127,7 @@ function Agenda({ days, byDay }: { days: string[]; byDay: Map<string, ChangeCale
     <VStack gap={4} role="group" aria-label={t('calendar.agendaCaption')}>
       {days.map((day) => (
         <VStack key={day} gap={2}>
-          <Heading level={2}>{dayHeadingFormatter.format(asDate(day))}</Heading>
+          <Heading level={3}>{dayHeadingFormatter.format(asDate(day))}</Heading>
           {(byDay.get(day) ?? []).map((item) => (
             <CalendarEntry key={item.number} item={item} detailed />
           ))}
@@ -188,7 +189,10 @@ export function ChangeCalendarPage() {
           <Button label={t('calendar.next')} variant="secondary" onClick={() => step(1)} />
         </HStack>
         <StackItem size="fill">
-          <Heading level={2}>{title}</Heading>
+          <HStack gap={2} vAlign="center">
+            <Heading level={2}>{title}</Heading>
+            {calendar.isPlaceholderData && <Spinner size="sm" shade="subtle" label={t('common:states.loading')} />}
+          </HStack>
         </StackItem>
         <SegmentedControl label={t('calendar.viewLabel')} value={view} onChange={(value) => update({ view: readView(value) })}>
           {VIEWS.map((value) => (

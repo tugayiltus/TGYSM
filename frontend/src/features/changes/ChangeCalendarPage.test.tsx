@@ -79,6 +79,27 @@ describe('ChangeCalendarPage', () => {
     await waitFor(() => expect(lastQuery(api).get('from')).toBe('2026-11-23'));
   });
 
+  it('shows a loading cue while the next range loads', async () => {
+    const api = calendar([ITEM]);
+    const { user } = renderRoute('/changes/calendar?view=week&date=2026-11-18');
+    await screen.findAllByRole('link', { name: `${ITEM.number} ${ITEM.title}` });
+    expect(screen.queryByRole('progressbar', { name: 'Yükleniyor…' })).not.toBeInTheDocument();
+
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    api.set(CALENDAR_ROUTE, async () => {
+      await gate;
+      return { status: 200, body: [] };
+    });
+    await user.click(screen.getByRole('button', { name: 'Sonraki' }));
+
+    expect(await screen.findByRole('progressbar', { name: 'Yükleniyor…' })).toBeInTheDocument();
+    release();
+    await waitFor(() => expect(screen.queryByRole('progressbar', { name: 'Yükleniyor…' })).not.toBeInTheDocument());
+  });
+
   it('switches the view from the segmented control', async () => {
     calendar([]);
     const { user, router } = renderRoute('/changes/calendar?date=2026-11-18');
@@ -95,7 +116,7 @@ describe('ChangeCalendarPage', () => {
     renderRoute('/changes/calendar?date=2026-11-18');
 
     const agenda = await screen.findByRole('group', { name: 'Gün gün planlı değişiklikler' });
-    expect(within(agenda).getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['18 Kasım Çarşamba', '19 Kasım Perşembe']);
+    expect(within(agenda).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['18 Kasım Çarşamba', '19 Kasım Perşembe']);
     expect(within(agenda).getAllByRole('link', { name: `${ITEM.number} ${ITEM.title}` })).toHaveLength(2);
   });
 
