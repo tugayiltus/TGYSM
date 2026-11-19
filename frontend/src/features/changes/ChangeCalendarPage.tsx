@@ -151,6 +151,7 @@ const readView = (value: string | null): CalendarView => VIEWS.find((view) => vi
 
 export function ChangeCalendarPage() {
   const { t } = useTranslation('changes');
+  const { t: tCommon } = useTranslation();
   const isPhone = useIsPhone();
   const [params, setParams] = useSearchParams();
   const view = readView(params.get(VIEW_PARAM));
@@ -191,7 +192,7 @@ export function ChangeCalendarPage() {
         <StackItem size="fill">
           <HStack gap={2} vAlign="center">
             <Heading level={2}>{title}</Heading>
-            {calendar.isPlaceholderData && <Spinner size="sm" shade="subtle" label={t('common:states.loading')} />}
+            {calendar.isPlaceholderData && <Spinner size="sm" shade="subtle" label={tCommon('states.loading')} />}
           </HStack>
         </StackItem>
         <SegmentedControl label={t('calendar.viewLabel')} value={view} onChange={(value) => update({ view: readView(value) })}>
