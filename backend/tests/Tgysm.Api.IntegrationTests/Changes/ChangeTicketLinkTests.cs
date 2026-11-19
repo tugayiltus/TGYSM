@@ -43,12 +43,17 @@ public sealed class ChangeTicketLinkTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Owner_team_links_its_incident_as_caused_with_audit_timeline_and_no_version_bump()
+    public async Task Owner_team_links_its_incident_as_caused_with_audit_timeline_and_no_change_version_bump()
     {
         var world = await TicketWorld.CreateAsync(factory);
         var change = await ChangeWorld.CreateAsync(world.Desk, world);
         var incident = await TicketWorld.CreateIncidentAsync(world.Employee);
-        var ticketBefore = await TicketWorld.ReadAsync(world.Desk, TicketWorld.PathOf(incident));
+        var ticketIdBefore = incident.GetProperty("id").GetGuid();
+        DateTimeOffset updatedBefore;
+        await using (var before = factory.Database.CreateDbContext())
+        {
+            updatedBefore = await before.Tickets.Where(t => t.Id == ticketIdBefore).Select(t => t.UpdatedAt).SingleAsync(Ct);
+        }
 
         var list = await LinkedAsync(world.Desk, change, incident, "caused");
 
@@ -66,12 +71,11 @@ public sealed class ChangeTicketLinkTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(1, await db.AuditEvents.CountAsync(a => a.Action == AuditActions.ChangeTicketLinked && a.EntityId == changeId, Ct));
         Assert.Equal(1, await db.AuditEvents.CountAsync(a => a.Action == AuditActions.TicketChangeLinked && a.EntityId == ticketId, Ct));
         Assert.Equal(1, await db.ChangeEvents.CountAsync(e => e.ChangeId == changeId && e.Kind == ChangeEventKind.TicketLinked, Ct));
+        Assert.True(await db.Tickets.Where(t => t.Id == ticketId).Select(t => t.UpdatedAt).SingleAsync(Ct) > updatedBefore);
         var ticketEvent = await db.TicketEvents.SingleAsync(e => e.TicketId == ticketId && e.Kind == TicketEventKind.ChangeLinked, Ct);
         Assert.Equal(Visibility.Internal, ticketEvent.Visibility);
         var changeAfter = await ChangeWorld.DetailAsync(world.Desk, change);
         Assert.Equal(ChangeWorld.VersionOf(change), ChangeWorld.VersionOf(changeAfter));
-        var ticketAfter = await TicketWorld.ReadAsync(world.Desk, TicketWorld.PathOf(incident));
-        Assert.Equal(TicketWorld.VersionOf(ticketBefore), TicketWorld.VersionOf(ticketAfter));
     }
 
     [Fact]
@@ -216,7 +220,10 @@ public sealed class ChangeTicketLinkTests(ApiFactory factory) : IAsyncLifetime
         var detail = await TicketWorld.ReadAsync(world.Employee, TicketWorld.PathOf(incident));
         var timeline = await TicketWorld.ReadAsync(world.Employee, TicketWorld.PathOf(incident, "timeline"));
 
+        using var changeTickets = await world.Employee.GetAsync(ChangeWorld.PathOf(change, TicketsSegment));
+
         Assert.Equal(HttpStatusCode.NotFound, links.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, changeTickets.StatusCode);
         Assert.DoesNotContain("change", detail.GetRawText(), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("change_linked", timeline.GetRawText(), StringComparison.Ordinal);
     }
@@ -229,6 +236,13 @@ public sealed class ChangeTicketLinkTests(ApiFactory factory) : IAsyncLifetime
         var incident = await TicketWorld.CreateIncidentAsync(world.Employee);
         await LinkedAsync(world.Desk, change, incident, "prompted");
 
+        var ticketId0 = incident.GetProperty("id").GetGuid();
+        DateTimeOffset updatedLinked;
+        await using (var linked = factory.Database.CreateDbContext())
+        {
+            updatedLinked = await linked.Tickets.Where(t => t.Id == ticketId0).Select(t => t.UpdatedAt).SingleAsync(Ct);
+        }
+
         using var removed = await world.Desk.DeleteAsync($"{ChangeWorld.PathOf(change, TicketsSegment)}/{TicketWorld.NumberOf(incident)}");
 
         Assert.Equal(HttpStatusCode.OK, removed.StatusCode);
@@ -240,6 +254,7 @@ public sealed class ChangeTicketLinkTests(ApiFactory factory) : IAsyncLifetime
         Assert.Equal(1, await db.AuditEvents.CountAsync(a => a.Action == AuditActions.TicketChangeUnlinked && a.EntityId == ticketId, Ct));
         Assert.Equal(1, await db.ChangeEvents.CountAsync(e => e.ChangeId == changeId && e.Kind == ChangeEventKind.TicketUnlinked, Ct));
         Assert.Equal(1, await db.TicketEvents.CountAsync(e => e.TicketId == ticketId && e.Kind == TicketEventKind.ChangeUnlinked, Ct));
+        Assert.True(await db.Tickets.Where(t => t.Id == ticketId).Select(t => t.UpdatedAt).SingleAsync(Ct) > updatedLinked);
         using var again = await world.Desk.DeleteAsync($"{ChangeWorld.PathOf(change, TicketsSegment)}/{TicketWorld.NumberOf(incident)}");
         Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
     }

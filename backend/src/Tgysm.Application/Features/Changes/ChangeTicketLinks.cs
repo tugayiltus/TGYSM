@@ -130,7 +130,7 @@ public sealed class AddChangeTicketHandler(
                 ?? throw new NotFoundException(AuditEntityTypes.Ticket);
             if (await db.ChangeTicketLinks.AnyAsync(l => l.ChangeId == change.Id && l.TicketId == ticket.Id, ct))
             {
-                throw LinkExists();
+                throw new DomainException(ErrorCodes.ChangeTicketLinkExists, LinkExistsMessage);
             }
 
             var now = clock.GetUtcNow();
@@ -140,19 +140,13 @@ public sealed class AddChangeTicketHandler(
             TicketTimeline.Record(db, ticket, TicketEventKind.ChangeLinked, Visibility.Internal, viewer.UserId, now, data);
             audit.Record(AuditActions.ChangeTicketLinked, AuditEntityTypes.Change, change.Id, newValues: data);
             audit.Record(AuditActions.TicketChangeLinked, AuditEntityTypes.Ticket, ticket.Id, newValues: data);
-            try
-            {
-                await db.SaveChangesAsync(ct);
-            }
-            catch (DomainException duplicate) when (duplicate.Code == ErrorCodes.Duplicate)
-            {
-                throw LinkExists();
-            }
+            await db.SaveTranslatingDuplicateAsync(ErrorCodes.ChangeTicketLinkExists, LinkExistsMessage, ct);
+            await TicketActivity.TouchAsync(db, ticket.Id, now, ct);
         }, cancellationToken);
         return await ChangeTicketLinkQueries.TicketsOfChangeAsync(db, tickets, changeId, cancellationToken);
     }
 
-    private static DomainException LinkExists() => new(ErrorCodes.ChangeTicketLinkExists, "The ticket is already linked to this change.");
+    private const string LinkExistsMessage = "The ticket is already linked to this change.";
 }
 
 public sealed class RemoveChangeTicketHandler(IAppDbContext db, ChangeScope scope, TicketScope tickets, IAuditLog audit, TimeProvider clock)
@@ -177,6 +171,7 @@ public sealed class RemoveChangeTicketHandler(IAppDbContext db, ChangeScope scop
             audit.Record(AuditActions.ChangeTicketUnlinked, AuditEntityTypes.Change, change.Id, oldValues: data);
             audit.Record(AuditActions.TicketChangeUnlinked, AuditEntityTypes.Ticket, ticket.Id, oldValues: data);
             await db.SaveChangesAsync(ct);
+            await TicketActivity.TouchAsync(db, ticket.Id, now, ct);
         }, cancellationToken);
         return await ChangeTicketLinkQueries.TicketsOfChangeAsync(db, tickets, changeId, cancellationToken);
     }
