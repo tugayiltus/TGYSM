@@ -7142,6 +7142,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/changes/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeCalendarItem"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/changes/{number}": {
         parameters: {
             query?: never;
@@ -9255,6 +9311,17 @@ export interface components {
             brand: string;
             model: string;
             status: components["schemas"]["AssetStatus"];
+        };
+        ChangeCalendarItem: {
+            number: string;
+            title: string;
+            status: components["schemas"]["ChangeStatus"];
+            risk: components["schemas"]["Level"];
+            /** Format: date-time */
+            windowStart: string;
+            /** Format: date-time */
+            windowEnd: string;
+            hasConflict: boolean;
         };
         ChangeConflict: {
             number: null | string;

@@ -165,6 +165,7 @@
     "self_approval": "Değişikliği oluşturan kişi ve sahibi onay veremez.",
     "approval_not_pending": "Bu onay artık beklemiyor. Sayfayı yenileyin.",
     "phase_not_active": "Bu aşamanın görevleri değişikliğin mevcut durumunda başlatılamaz.",
-    "owner_not_in_team": "Değişiklik sahibi, sahip ekibin aktif bir üyesi olmalı."
+    "owner_not_in_team": "Değişiklik sahibi, sahip ekibin aktif bir üyesi olmalı.",
+    "calendar_range": "Takvim aralığı gerekli, bitiş başlangıçtan önce olamaz ve en çok 62 gün olabilir."
   }
 }

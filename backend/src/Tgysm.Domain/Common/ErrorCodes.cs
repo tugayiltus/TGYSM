@@ -102,6 +102,7 @@ public static class ErrorCodes
     public const string ChangeApprovalNotPending = "changes.approval_not_pending";
     public const string ChangePhaseNotActive = "changes.phase_not_active";
     public const string ChangeOwnerNotInTeam = "changes.owner_not_in_team";
+    public const string ChangeCalendarRange = "changes.calendar_range";
 
     public const string ApprovalNotApprover = "approvals.not_approver";
     public const string ApprovalNotPending = "approvals.not_pending";

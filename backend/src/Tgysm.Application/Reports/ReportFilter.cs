@@ -155,7 +155,7 @@ public sealed record ReportFilter
     private static string? EnumName<TEnum>(TEnum? value)
         where TEnum : struct, Enum => value is { } v ? EnumName(v) : null;
 
-    private static DateTimeOffset StartOfDay(DateOnly day, TimeZoneInfo zone)
+    internal static DateTimeOffset StartOfDay(DateOnly day, TimeZoneInfo zone)
     {
         var local = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
         if (zone.IsInvalidTime(local))

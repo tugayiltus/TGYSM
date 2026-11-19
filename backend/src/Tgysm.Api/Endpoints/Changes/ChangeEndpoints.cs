@@ -22,6 +22,8 @@ internal static class ChangeEndpoints
 {
     private const string Tag = "Changes";
     private const string NumberRoute = "/{number}";
+    private const string CalendarRoute = "/calendar";
+    private const string DateFormat = "yyyy-MM-dd";
     private const string QueueParameter = "queue";
     private const string StatusParameter = "status";
     private const string RiskParameter = "risk";
@@ -34,6 +36,7 @@ internal static class ChangeEndpoints
         var changes = api.MapGroup(ApiRoutes.Changes).WithTags(Tag).RequireAuthorization();
         changes.MapPost("", async (CreateChangeCommand command, CreateChangeHandler handler, CancellationToken ct) => Created(await handler.HandleAsync(command, ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        changes.MapGet(CalendarRoute, CalendarAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound);
         changes.MapGet("", ListAsync).ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status404NotFound);
         changes.MapGet(NumberRoute, async (string number, GetChangeHandler handler, CancellationToken ct) =>
             TypedResults.Ok(await handler.HandleAsync(new GetChangeQuery(number), ct))).ProducesProblem(StatusCodes.Status404NotFound);
@@ -79,6 +82,14 @@ internal static class ChangeEndpoints
                 TypedResults.Ok(await handler.HandleAsync(new DecideChangeApprovalCommand(number, decision, r.ApprovalVersion, r.Reason), ct)))
             .ProducesProblem(StatusCodes.Status400BadRequest).ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+
+    private static async Task<Ok<IReadOnlyList<ChangeCalendarItem>>> CalendarAsync(
+        string? from, string? to, GetChangeCalendarHandler handler, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await handler.HandleAsync(new GetChangeCalendarQuery(ParseDay(from), ParseDay(to)), cancellationToken));
+
+    /// <summary>A missing or malformed day is null; the handler answers it with the calendar range error.</summary>
+    private static DateOnly? ParseDay(string? value) =>
+        DateOnly.TryParseExact(value, DateFormat, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var day) ? day : null;
 
     private static async Task<Ok<PagedResult<ChangeListItem>>> ListAsync(
         string? queue, string? status, string? risk, string? search, int? page, int? pageSize,

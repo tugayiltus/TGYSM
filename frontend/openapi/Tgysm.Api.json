@@ -7024,6 +7024,64 @@
         }
       }
     },
+    "/api/v1/changes/calendar": {
+      "get": {
+        "tags": [
+          "Changes"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChangeCalendarItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/changes/{number}": {
       "get": {
         "tags": [
@@ -10180,6 +10238,43 @@
           },
           "status": {
             "$ref": "#/components/schemas/AssetStatus"
+          }
+        }
+      },
+      "ChangeCalendarItem": {
+        "required": [
+          "number",
+          "title",
+          "status",
+          "risk",
+          "windowStart",
+          "windowEnd",
+          "hasConflict"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ChangeStatus"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Level"
+          },
+          "windowStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "windowEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasConflict": {
+            "type": "boolean"
           }
         }
       },

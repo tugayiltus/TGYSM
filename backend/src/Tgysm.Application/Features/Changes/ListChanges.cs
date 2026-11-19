@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Application.Common.Paging;
+using Tgysm.Application.Reports;
 using Tgysm.Domain.Changes;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Tickets;
@@ -14,6 +15,7 @@ public enum ChangeQueue
     Team,
     PendingApproval,
     Open,
+    ThisWeek,
 }
 
 /// <summary>List row. Outcome and owner names show only for viewers with full access; summary viewers get the working basics.</summary>
@@ -33,9 +35,22 @@ public sealed record ChangeListItem(
 public sealed record ListChangesQuery(ChangeQueue? Queue, ChangeStatus? Status, Level? Risk, string? Search, int Page, int PageSize);
 
 /// <summary>Lists changes in the viewer's scope; queues and filters only narrow it. Employees get not found.</summary>
-public sealed class ListChangesHandler(IAppDbContext db, ChangeScope scope)
+public sealed class ListChangesHandler(IAppDbContext db, ChangeScope scope, ICompanyClock companyClock, TimeProvider clock)
 {
     private const string NameSeparator = " ";
+
+    private const int DaysPerWeek = 7;
+
+    /// <summary>Scheduled or implementing changes starting in the current company week, Monday 00:00 up to the next Monday 00:00.</summary>
+    private IQueryable<ChangeRequest> ThisWeek(IQueryable<ChangeRequest> changes)
+    {
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), companyClock.Zone).DateTime);
+        var monday = today.AddDays(-(((int)today.DayOfWeek + DaysPerWeek - 1) % DaysPerWeek));
+        var weekStart = ReportFilter.StartOfDay(monday, companyClock.Zone);
+        var weekEnd = ReportFilter.StartOfDay(monday.AddDays(DaysPerWeek), companyClock.Zone);
+        return changes.Where(c => (c.Status == ChangeStatus.Scheduled || c.Status == ChangeStatus.Implementing)
+            && c.WindowStart >= weekStart && c.WindowStart < weekEnd);
+    }
 
     public async Task<PagedResult<ChangeListItem>> HandleAsync(ListChangesQuery query, CancellationToken cancellationToken)
     {
@@ -50,6 +65,7 @@ public sealed class ListChangesHandler(IAppDbContext db, ChangeScope scope)
             ChangeQueue.Team => changes.Where(c => teamIds.Contains(c.OwnerTeamId)),
             ChangeQueue.PendingApproval => changes.Where(c => c.Status == ChangeStatus.PendingApproval),
             ChangeQueue.Open => changes.Where(c => c.Status != ChangeStatus.Closed && c.Status != ChangeStatus.Cancelled),
+            ChangeQueue.ThisWeek => ThisWeek(changes),
             _ => changes,
         };
         if (query.Status is { } status)

@@ -91,6 +91,19 @@ public sealed class ChangeConflictTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_shared_asset_wins_over_the_same_service_text_as_the_reason()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var asset = await AssetAsync(world, "SRV-1");
+        var first = await ScheduledAsync(world, Draft("Birinci", MailService, Hour(8), Hour(10)), asset);
+        await ScheduledAsync(world, Draft("İkinci", MailService, Hour(9), Hour(11)), asset);
+
+        var conflict = Assert.Single((await ConflictsOfAsync(world.Desk, first)).EnumerateArray());
+
+        Assert.Equal("asset", conflict.GetProperty("reason").GetString());
+    }
+
+    [Fact]
     public async Task Overlapping_windows_without_a_shared_asset_or_service_do_not_conflict()
     {
         var world = await TicketWorld.CreateAsync(factory);

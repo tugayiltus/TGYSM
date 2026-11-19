@@ -45,6 +45,9 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) :
             case DomainException { Code: ErrorCodes.ChangeSelfApproval } selfApproval:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status403Forbidden, selfApproval.Code);
                 break;
+            case DomainException { Code: ErrorCodes.ChangeCalendarRange } calendarRange:
+                await ApiProblem.WriteAsync(context, StatusCodes.Status400BadRequest, calendarRange.Code);
+                break;
             case DomainException domain:
                 await ApiProblem.WriteAsync(context, StatusCodes.Status409Conflict, domain.Code);
                 break;
