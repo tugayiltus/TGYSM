@@ -46,6 +46,7 @@ export const ticketKeys = {
   comments: (number: string) => ['tickets', 'comments', number],
   timeline: (number: string) => ['tickets', 'timeline', number],
   assets: (number: string) => ['tickets', 'assets', number],
+  changes: (number: string) => ['tickets', 'changes', number],
   approvals: ['tickets', 'approvals'],
   /** Mutation key of a comment being sent: it changes the ticket version, so work actions wait for it. */
   addComment: ['tickets', 'add-comment'],
@@ -268,5 +269,15 @@ export function useReassignApprover() {
     mutationFn: ({ number, approverId, reason }: { number: string; approverId: string; reason: string }) =>
       unwrap(api.POST('/api/v1/tickets/{number}/approval/reassign', { params: { path: { number } }, body: { approverId, reason } })),
     onSuccess: invalidate,
+  });
+}
+
+export type LinkedChangeItem = components['schemas']['LinkedChangeItem'];
+
+export function useTicketChanges(number: string, enabled: boolean) {
+  return useQuery({
+    enabled,
+    queryKey: ticketKeys.changes(number),
+    queryFn: () => unwrap(api.GET('/api/v1/tickets/{number}/changes', { params: { path: { number } } })),
   });
 }

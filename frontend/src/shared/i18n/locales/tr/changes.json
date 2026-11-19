@@ -100,6 +100,24 @@
     "implementationPlan": "Uygulama planı",
     "backoutPlan": "Geri dönüş planı"
   },
+  "links": {
+    "title": "İlgili kayıtlar",
+    "promptedGroup": "Bu değişikliğe yol açan kayıtlar",
+    "causedGroup": "Bu değişikliğin yol açtığı olaylar",
+    "empty": "Bağlı kayıt yok.",
+    "add": "Kayıt bağla",
+    "confirmAdd": "Bağla",
+    "ticketNumber": "Kayıt numarası",
+    "kind": "Bağlantı türü",
+    "select": "Seçin",
+    "remove": "Kaldır",
+    "removeMessage": "Bu kayıt değişiklikten ayrılsın mı?",
+    "notOpenable": "{{team}} ekibinin kaydı",
+    "kinds": {
+      "prompted": "Değişikliğe yol açtı",
+      "caused": "Değişiklik sonucu oluştu"
+    }
+  },
   "tasks": {
     "add": "Görev ekle",
     "empty": "Bu aşamada görev yok.",

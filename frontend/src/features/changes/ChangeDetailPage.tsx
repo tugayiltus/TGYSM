@@ -34,6 +34,7 @@ import { ChangeOutcomeBadge, ChangeStatusBadge, RiskBadge } from './ChangeBadges
 import { ChangeConflictBanner } from './ChangeConflictBanner';
 import { ChangeSummaryView } from './ChangeSummaryView';
 import { ChangeTasks } from './ChangeTasks';
+import { ChangeTicketLinks } from './ChangeTicketLinks';
 import { ChangeTimeline } from './ChangeTimeline';
 import { Field, NodeField } from './Field';
 import { WindowText } from './WindowText';
@@ -117,6 +118,7 @@ function FullView({ change }: { change: ChangeDetail }) {
       <SectionCard title={t('detail.assetsSection')}>
         <AssetsList change={change} />
       </SectionCard>
+      <ChangeTicketLinks number={change.number} status={change.status} canEdit={change.canWork} />
       <SectionCard title={t('detail.tasksSection')}>
         <ChangeTasks change={change} />
       </SectionCard>

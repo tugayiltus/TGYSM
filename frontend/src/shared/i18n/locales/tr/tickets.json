@@ -117,6 +117,15 @@
       "updated": "Son işlem"
     }
   },
+  "changeLinks": {
+    "title": "İlgili değişiklikler",
+    "empty": "Bağlı değişiklik yok.",
+    "notOpenable": "{{team}} ekibinin kaydı",
+    "kinds": {
+      "prompted": "Değişikliğe yol açtı",
+      "caused": "Değişiklik sonucu oluştu"
+    }
+  },
   "detail": {
     "back": "Kayıtlara dön",
     "requester": "Talep sahibi",

@@ -14,6 +14,7 @@ import { SectionCard } from '../../shared/page/SectionCard';
 
 import type { ChangeSummary } from './api';
 import { ChangeStatusBadge, RiskBadge } from './ChangeBadges';
+import { ChangeTicketLinks } from './ChangeTicketLinks';
 import { Field, NodeField } from './Field';
 import { WindowText } from './WindowText';
 
@@ -36,6 +37,7 @@ export function ChangeSummaryView({ summary }: { summary: ChangeSummary }) {
           {summary.backoutPlan !== null && <Field label={t('summary.backoutPlan')} value={summary.backoutPlan} />}
         </MetadataList>
       </SectionCard>
+      <ChangeTicketLinks number={summary.number} status={summary.status} canEdit={false} />
     </VStack>
   );
 }

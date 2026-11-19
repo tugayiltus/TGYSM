@@ -25,7 +25,7 @@ import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { SectionCard } from '../../shared/page/SectionCard';
 import { ROUTES } from '../../shared/routes';
 import { Icons } from '../../shared/ui/icons';
-import { useSession } from '../auth/session';
+import { isItStaffOrAdmin, useSession } from '../auth/session';
 
 import { useComments, useTicket, useTimeline, type TicketDetail } from './api';
 import { CommentBox, CommentList } from './Comments';
@@ -33,6 +33,7 @@ import { SlaSummary } from './SlaBadge';
 import { TicketActions } from './TicketActions';
 import { TicketArticles } from './TicketArticles';
 import { PriorityBadge, TicketStatusBadge } from './TicketBadges';
+import { TicketChangeLinks } from './TicketChangeLinks';
 import { TicketLinks } from './TicketLinks';
 import { TicketTasks } from './TicketTasks';
 import { Timeline } from './Timeline';
@@ -145,6 +146,7 @@ function TicketDetail({ number }: { number: string }) {
       </SectionCard>
       <TicketLinks ticket={item} isRequester={item.requesterId === me.id} />
       <TicketTasks ticket={item} />
+      <TicketChangeLinks ticket={item} isStaff={isItStaffOrAdmin(me.role)} />
       <TicketArticles ticket={item} />
       <SectionCard title={t('detail.comments')}>
         {comments.isError && <ErrorState error={comments.error} onRetry={() => void comments.refetch()} />}

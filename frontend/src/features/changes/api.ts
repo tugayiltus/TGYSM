@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { api, unwrap } from '../../shared/api/client';
 import type { components } from '../../shared/api/schema';
 import { taskKeys } from '../tasks/api';
+import { ticketKeys } from '../tickets/api';
 
 type Schemas = components['schemas'];
 export type ChangeView = Schemas['ChangeView'];
@@ -18,6 +19,8 @@ export type ChangeEventKind = Schemas['ChangeEventKind'];
 export type ChangeApprovalItem = Schemas['ChangeApprovalItem'];
 export type ChangeCalendarItem = Schemas['ChangeCalendarItem'];
 export type ChangeAssetItem = Schemas['ChangeAssetItem'];
+export type LinkedTicketItem = Schemas['LinkedTicketItem'];
+export type ChangeTicketLinkKind = Schemas['ChangeTicketLinkKind'];
 export type Level = Schemas['Level'];
 export type ChangeQueue = 'mine' | 'team' | 'pending_approval' | 'open' | 'this_week';
 
@@ -25,6 +28,7 @@ export const CHANGE_QUEUES: readonly ChangeQueue[] = ['mine', 'team', 'pending_a
 export const CHANGE_STATUSES: readonly ChangeStatus[] = ['draft', 'pending_approval', 'scheduled', 'implementing', 'verifying', 'closed', 'cancelled'];
 export const CHANGE_PHASES: readonly ChangePhase[] = ['preparation', 'implementation', 'verification', 'backout'];
 export const CHANGE_OUTCOMES: readonly ChangeOutcome[] = ['successful', 'rolled_back', 'failed'];
+export const CHANGE_TICKET_LINK_KINDS: readonly ChangeTicketLinkKind[] = ['prompted', 'caused'];
 export const LEVELS: readonly Level[] = ['low', 'medium', 'high'];
 
 export const changeKeys = {
@@ -32,6 +36,7 @@ export const changeKeys = {
   list: (params: ChangeListParams) => ['changes', 'list', params],
   detail: (number: string) => ['changes', 'detail', number],
   timeline: (number: string) => ['changes', 'timeline', number],
+  tickets: (number: string) => ['changes', 'tickets', number],
   approvals: ['changes', 'approvals'],
   calendar: (from: string, to: string) => ['changes', 'calendar', from, to],
 } as const;
@@ -238,5 +243,34 @@ export function useDecideListedChangeApproval() {
       postDecision(number, decision, approvalVersion, reason),
     onSuccess: invalidate,
     onError: reload,
+  });
+}
+
+export function useChangeTickets(number: string) {
+  return useQuery({ queryKey: changeKeys.tickets(number), queryFn: () => unwrap(api.GET('/api/v1/changes/{number}/tickets', { params: { path: { number } } })) });
+}
+
+/** A link write also changes the change timeline and the ticket's change list, so both caches refresh. */
+function useInvalidateLinks() {
+  const queryClient = useQueryClient();
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: changeKeys.all });
+    await queryClient.invalidateQueries({ queryKey: ticketKeys.all });
+  };
+}
+
+export function useLinkTicket(number: string) {
+  const invalidate = useInvalidateLinks();
+  return useMutation({
+    mutationFn: (body: { ticketNumber: string; kind: ChangeTicketLinkKind }) => unwrap(api.POST('/api/v1/changes/{number}/tickets', { params: { path: { number } }, body })),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUnlinkTicket(number: string) {
+  const invalidate = useInvalidateLinks();
+  return useMutation({
+    mutationFn: (ticketNumber: string) => unwrap(api.DELETE('/api/v1/changes/{number}/tickets/{ticketNumber}', { params: { path: { number, ticketNumber } } })),
+    onSuccess: invalidate,
   });
 }
