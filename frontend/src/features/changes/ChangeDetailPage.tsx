@@ -31,6 +31,7 @@ import { useChange, type ChangeDetail } from './api';
 import { ChangeActions } from './ChangeActions';
 import { ChangeApprovalBox } from './ChangeApprovalBox';
 import { ChangeOutcomeBadge, ChangeStatusBadge, RiskBadge } from './ChangeBadges';
+import { ChangeConflictBanner } from './ChangeConflictBanner';
 import { ChangeSummaryView } from './ChangeSummaryView';
 import { ChangeTasks } from './ChangeTasks';
 import { ChangeTimeline } from './ChangeTimeline';
@@ -102,6 +103,7 @@ function FullView({ change }: { change: ChangeDetail }) {
           {change.cancelReason && <Field label={t('detail.cancelReason')} value={change.cancelReason} />}
         </MetadataList>
       </SectionCard>
+      <ChangeConflictBanner conflicts={change.conflicts} />
       <SectionCard title={t('detail.planSection')}>
         <MetadataList label={{ position: 'top' }}>
           <NodeField label={t('detail.window')}>

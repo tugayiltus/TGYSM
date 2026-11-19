@@ -19,9 +19,9 @@ export type ChangeApprovalItem = Schemas['ChangeApprovalItem'];
 export type ChangeCalendarItem = Schemas['ChangeCalendarItem'];
 export type ChangeAssetItem = Schemas['ChangeAssetItem'];
 export type Level = Schemas['Level'];
-export type ChangeQueue = 'mine' | 'team' | 'pending_approval' | 'open';
+export type ChangeQueue = 'mine' | 'team' | 'pending_approval' | 'open' | 'this_week';
 
-export const CHANGE_QUEUES: readonly ChangeQueue[] = ['mine', 'team', 'pending_approval', 'open'];
+export const CHANGE_QUEUES: readonly ChangeQueue[] = ['mine', 'team', 'pending_approval', 'open', 'this_week'];
 export const CHANGE_STATUSES: readonly ChangeStatus[] = ['draft', 'pending_approval', 'scheduled', 'implementing', 'verifying', 'closed', 'cancelled'];
 export const CHANGE_PHASES: readonly ChangePhase[] = ['preparation', 'implementation', 'verification', 'backout'];
 export const CHANGE_OUTCOMES: readonly ChangeOutcome[] = ['successful', 'rolled_back', 'failed'];

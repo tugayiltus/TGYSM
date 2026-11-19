@@ -44,6 +44,7 @@ export function ChangeApprovalRow({ item, onDecide }: { item: ChangeApprovalItem
             <Text type="supporting">{item.changeNumber}</Text>
             <RiskBadge risk={item.risk} />
             <WindowText start={item.windowStart} end={item.windowEnd} />
+            {item.conflictCount > 0 && <Text type="supporting">{t('conflicts.count', { count: item.conflictCount })}</Text>}
           </HStack>
           {item.implementationPlanExcerpt !== '' && (
             <Text type="supporting" wordBreak="break-word">

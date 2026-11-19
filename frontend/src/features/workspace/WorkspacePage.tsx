@@ -38,7 +38,8 @@ export function WorkspacePage() {
         {TASK_CARD_QUEUES.map((queue) => (
           <TaskQueueCard key={queue} queue={queue} />
         ))}
-        <ChangeQueueCard />
+        <ChangeQueueCard queue="mine" />
+        <ChangeQueueCard queue="this_week" />
       </Grid>
       <WorkItemList />
     </VStack>

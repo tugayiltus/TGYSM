@@ -28,7 +28,8 @@
     "mine": "Benim değişikliklerim",
     "team": "Ekibimin değişiklikleri",
     "pending_approval": "Onay bekleyenler",
-    "open": "Açık değişiklikler"
+    "open": "Açık değişiklikler",
+    "this_week": "Bu hafta uygulanacak"
   },
   "list": {
     "title": "Değişiklikler",
@@ -52,6 +53,7 @@
       "updated": "Güncellendi"
     },
     "mineCard": "Değişikliklerim",
+    "thisWeekCard": "Bu hafta uygulanacak",
     "cardCount": "{{count}} değişiklik",
     "calendar": "Bakım takvimi"
   },
@@ -203,6 +205,16 @@
       "cancelled": "İptal edildi",
       "assets_changed": "Etkilenen varlıklar değişti"
     }
+  },
+  "conflicts": {
+    "title_one": "Bakım penceresi {{count}} değişiklikle çakışıyor",
+    "title_other": "Bakım penceresi {{count}} değişiklikle çakışıyor",
+    "reasons": {
+      "asset": "Ortak varlık",
+      "service": "Aynı hizmet"
+    },
+    "hidden": "Görmediğiniz bir değişiklik",
+    "count": "{{count}} çakışma"
   },
   "calendar": {
     "viewLabel": "Takvim görünümü",

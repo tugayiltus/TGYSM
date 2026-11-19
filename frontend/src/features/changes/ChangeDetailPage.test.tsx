@@ -37,6 +37,29 @@ describe('ChangeDetailPage', () => {
     expect(within(history).getByText('Pencere uygun değil')).toBeInTheDocument();
   });
 
+  it('warns about window conflicts and links the visible ones', async () => {
+    const conflicts = [
+      { number: 'CHG-2026-000009', title: 'Ağ bakımı', windowStart: '2026-12-01T22:00:00Z', windowEnd: '2026-12-02T01:00:00Z', reason: 'asset' as const },
+      { number: null, title: null, windowStart: '2026-12-01T23:00:00Z', windowEnd: '2026-12-02T03:00:00Z', reason: 'service' as const },
+    ];
+    mockApi(changeRoutes({ ...CHANGE, conflicts }) as never);
+    renderRoute(PATH);
+
+    expect(await screen.findByText('Bakım penceresi 2 değişiklikle çakışıyor')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /CHG-2026-000009/ })).toHaveAttribute('href', '/changes/CHG-2026-000009');
+    expect(screen.getByText(/Ortak varlık/)).toBeInTheDocument();
+    expect(screen.getByText(/Aynı hizmet/)).toBeInTheDocument();
+    expect(screen.getByText('Görmediğiniz bir değişiklik')).toBeInTheDocument();
+  });
+
+  it('shows no conflict banner when nothing conflicts', async () => {
+    mockApi(changeRoutes(CHANGE) as never);
+    renderRoute(PATH);
+
+    await screen.findByRole('region', { name: 'Plan' });
+    expect(screen.queryByText(/çakışıyor/)).not.toBeInTheDocument();
+  });
+
   it('adds a task with the phase of its group', async () => {
     let posted: unknown;
     mockApi(

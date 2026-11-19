@@ -26,6 +26,21 @@ describe('WorkspacePage', () => {
     await waitFor(() => expect(api.calls.some((c) => new URL(c.url).searchParams.get('pageSize') === '20' && new URL(c.url).searchParams.get('queue') === 'unassigned')).toBe(true));
   });
 
+  it('shows the this-week change card with its total and links to the queue', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: IT_ME },
+      'GET /api/v1/tickets': { status: 200, body: { items: [], page: 1, pageSize: 1, totalCount: 0 } },
+      'GET /api/v1/changes': (request) => {
+        const queue = new URL(request.url).searchParams.get('queue');
+        return { status: 200, body: { items: [], page: 1, pageSize: 1, totalCount: queue === 'this_week' ? 6 : 2 } };
+      },
+    });
+    renderRoute('/workspace');
+
+    const card = await screen.findByRole('link', { name: 'Bu hafta uygulanacak 6 değişiklik' });
+    expect(card).toHaveAttribute('href', '/changes?queue=this_week');
+  });
+
   it('opens the SLA risk queue from its card', async () => {
     mockApi({
       'GET /api/v1/auth/me': { status: 200, body: IT_ME },

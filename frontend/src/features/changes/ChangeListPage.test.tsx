@@ -32,6 +32,15 @@ describe('ChangeListPage', () => {
     );
   });
 
+  it('offers and sends the this-week queue', async () => {
+    const api = mockApi(changeRoutes(CHANGE, { 'GET /api/v1/changes': { status: 200, body: PAGE } }) as never);
+    renderRoute('/changes?queue=this_week');
+
+    expect(await screen.findAllByText(CHANGE.title)).not.toHaveLength(0);
+    expect(await screen.findByRole('heading', { name: 'Bu hafta uygulanacak' })).toBeInTheDocument();
+    expect(api.calls.some((c) => new URL(c.url).searchParams.get('queue') === 'this_week')).toBe(true);
+  });
+
   it('shows the empty message when no change matches', async () => {
     mockApi(changeRoutes(CHANGE, { 'GET /api/v1/changes': { status: 200, body: { items: [], page: 1, pageSize: 20, totalCount: 0 } } }) as never);
     renderRoute('/changes?queue=pending_approval');

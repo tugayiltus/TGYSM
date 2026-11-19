@@ -16,6 +16,7 @@ const CHANGE_ITEM = {
   windowStart: '2026-12-01T22:00:00Z',
   windowEnd: '2026-12-02T02:00:00Z',
   implementationPlanExcerpt: 'Yedeği al, yazılımı yükselt',
+  conflictCount: 1,
 };
 const USERS = { items: [{ id: 'adm-2', firstName: 'Onay', lastName: 'Veren', email: 'o@example.com', role: 'admin', isActive: true, departmentId: null, departmentName: null, locationId: null, locationName: null, version: 1 }], page: 1, pageSize: 100, totalCount: 1 };
 
@@ -95,6 +96,7 @@ describe('ApprovalsPage', () => {
     expect(within(list).getByText('Değişiklik')).toBeInTheDocument();
     expect(within(list).getByText('Risk: Yüksek')).toBeInTheDocument();
     expect(within(list).getByText('Yedeği al, yazılımı yükselt')).toBeInTheDocument();
+    expect(within(list).getByText('1 çakışma')).toBeInTheDocument();
     expect(within(list).getByRole('link', { name: 'Çekirdek anahtar yükseltmesi' })).toHaveAttribute('href', '/changes/CHG-2026-000007');
 
     await user.click(screen.getByRole('button', { name: 'Onayla CHG-2026-000007' }));
