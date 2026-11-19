@@ -50,6 +50,8 @@ describe('Change ilgili kayıtlar panel', () => {
     expect(await within(region).findByText(/INC-2026-000009/)).toBeInTheDocument();
     expect(within(region).queryByRole('link', { name: /INC-2026-000009/ })).not.toBeInTheDocument();
     expect(within(region).getByText('Güvenlik ekibinin kaydı')).toBeInTheDocument();
+    expect(within(region).getByText('Değişikliğe yol açtı')).toBeInTheDocument();
+    expect(within(region).getByText('İşlemde')).toBeInTheDocument();
   });
 
   it('binds a record with its number and kind', async () => {

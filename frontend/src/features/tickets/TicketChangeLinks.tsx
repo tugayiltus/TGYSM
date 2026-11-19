@@ -9,6 +9,7 @@ import { Text } from '@astryxdesign/core/Text';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
+import { ErrorState } from '../../shared/feedback/States';
 import { formatDateTime } from '../../shared/lib/format';
 import { linkState } from '../../shared/navigation/returnTo';
 import { StateLink } from '../../shared/navigation/StateLink';
@@ -42,8 +43,8 @@ function Row({ item }: { item: LinkedChangeItem }) {
       }
       endContent={
         <HStack gap={2} vAlign="center">
-          {item.canOpen && <Text type="supporting">{t(`changeLinks.kinds.${item.linkKind}`)}</Text>}
-          {item.canOpen && <ChangeStatusBadge status={item.status} />}
+          <Text type="supporting">{t(`changeLinks.kinds.${item.linkKind}`)}</Text>
+          <ChangeStatusBadge status={item.status} />
         </HStack>
       }
     />
@@ -60,6 +61,7 @@ export function TicketChangeLinks({ ticket, isStaff }: { ticket: TicketDetail; i
   const items = changes.data ?? [];
   return (
     <SectionCard title={t('changeLinks.title')}>
+      {changes.isError && <ErrorState error={changes.error} onRetry={() => void changes.refetch()} />}
       {items.length === 0 ? (
         changes.data && <Text type="supporting">{t('changeLinks.empty')}</Text>
       ) : (

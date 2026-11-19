@@ -32,9 +32,22 @@ describe('Ticket İlgili değişiklikler panel', () => {
 
     const region = await screen.findByRole('region', { name: 'İlgili değişiklikler' });
     expect(await within(region).findByRole('link', { name: /CHG-2026-000001/ })).toHaveAttribute('href', '/changes/CHG-2026-000001');
-    expect(within(region).getByText('Değişiklik sonucu oluştu')).toBeInTheDocument();
+    expect(within(region).getAllByText('Değişiklik sonucu oluştu')).toHaveLength(2);
+    expect(within(region).getAllByText('Planlandı')).toHaveLength(2);
     expect(within(region).queryByRole('link', { name: /CHG-2026-000002/ })).not.toBeInTheDocument();
     expect(within(region).getByText('Güvenlik ekibinin kaydı')).toBeInTheDocument();
+  });
+
+  it('shows an error with a retry when the list fails', async () => {
+    mockApi({
+      'GET /api/v1/auth/me': { status: 200, body: IT_ME },
+      ...detailRoutes(INCIDENT),
+      [`GET ${URL}`]: { status: 500, body: { title: 'x', status: 500 } },
+    } as never);
+    renderRoute(`/tickets/${INCIDENT.number}`);
+
+    const region = await screen.findByRole('region', { name: 'İlgili değişiklikler' });
+    expect(await within(region).findByRole('button', { name: 'Tekrar dene' })).toBeInTheDocument();
   });
 
   it('shows no panel to an employee and makes no request', async () => {

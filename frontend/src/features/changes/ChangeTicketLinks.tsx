@@ -85,8 +85,8 @@ function Row({ item, canEdit, onRemove }: { item: LinkedTicketItem; canEdit: boo
       description={item.canOpen ? item.teamName : t('links.notOpenable', { team: item.teamName })}
       endContent={
         <HStack gap={2} vAlign="center">
-          {item.canOpen && <Text type="supporting">{t(`links.kinds.${item.linkKind}`)}</Text>}
-          {item.canOpen && <TicketStatusBadge status={item.status} />}
+          <Text type="supporting">{t(`links.kinds.${item.linkKind}`)}</Text>
+          <TicketStatusBadge status={item.status} />
           {canEdit && <Button label={t('links.remove')} aria-label={recordActionLabel(t('links.remove'), item.number)} variant="ghost" onClick={() => onRemove(item)} />}
         </HStack>
       }
