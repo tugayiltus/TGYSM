@@ -21,6 +21,11 @@ const PERCENTILE_95 = 0.95;
 const MEDIAN = 0.5;
 const LIST_PAGE_SIZE = 50;
 const IMPORT_ROWS = 5000;
+/** The calendar's longest range (backend `ChangeCalendarLimits.MaxDays`), placed around today so seeded windows fall in it. */
+const CALENDAR_DAYS = 62;
+const CALENDAR_DAYS_BEFORE_TODAY = 20;
+const MS_PER_DAY = 86_400_000;
+const ISO_DAY_LENGTH = 10;
 const MIN_SEARCH_TERM_LENGTH = 4;
 const CSV_BOM = '﻿';
 const CSV_LINE_BREAK = '\r\n';
@@ -28,7 +33,7 @@ const CSV_HEADER = ['Demirbaş No', 'Tür', 'Marka', 'Model', 'Seri No', 'Konum'
 const IMPORT_STATUS = 'in_stock';
 const IMPORT_FILE_NAME = 'perf-import.csv';
 const IMPORT_MIME = 'text/csv';
-const REPORTS = ['incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty'] as const;
+const REPORTS = ['incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty', 'changes', 'tasks'] as const;
 const DRILLDOWN_REPORT = 'incidents';
 const MS_DIGITS = 0;
 /** The API lists a location path with this (backend `LocationPaths.Separator`); the CSV importer splits typed paths on '/'. */
@@ -167,6 +172,10 @@ function searchTerm(subject: string): string {
   return word ?? subject;
 }
 
+function isoDay(milliseconds: number): string {
+  return new Date(milliseconds).toISOString().slice(0, ISO_DAY_LENGTH);
+}
+
 function table(samples: Sample[]): string {
   const lines = ['| Operation | Runs | Median (ms) | p95 (ms) |', '|---|---:|---:|---:|'];
   for (const sample of samples) {
@@ -185,6 +194,8 @@ async function main(): Promise<void> {
 
   const firstTickets = await getJson<{ items: { subject: string }[]; totalCount: number }>(it, `/api/v1/tickets?pageSize=${LIST_PAGE_SIZE}`);
   const firstAssets = await getJson<{ totalCount: number }>(it, `/api/v1/assets?pageSize=${LIST_PAGE_SIZE}`);
+  const firstChanges = await getJson<{ totalCount: number }>(admin, `/api/v1/changes?pageSize=${LIST_PAGE_SIZE}`);
+  const firstTasks = await getJson<{ totalCount: number }>(admin, `/api/v1/tasks?pageSize=${LIST_PAGE_SIZE}`);
   const catalog = await getJson<CatalogBrand[]>(it, '/api/v1/assets/catalog');
   const locations = (await getJson<{ path: string }[]>(it, '/api/v1/reference/locations'))
     .map((location) => location.path.split(API_LOCATION_SEPARATOR).join(CSV_LOCATION_SEPARATOR));
@@ -196,6 +207,9 @@ async function main(): Promise<void> {
   samples.push(await measureGet(it, 'Workspace queue (unassigned)', `/api/v1/tickets?queue=unassigned&pageSize=${LIST_PAGE_SIZE}`, runs));
   samples.push(await measureGet(it, 'Asset list (page of 50)', `/api/v1/assets?pageSize=${LIST_PAGE_SIZE}`, runs));
   samples.push(await measureGet(it, 'Asset search (brand name)', `/api/v1/assets?search=${assetTerm}&pageSize=${LIST_PAGE_SIZE}`, runs));
+  const calendarFrom = isoDay(Date.now() - CALENDAR_DAYS_BEFORE_TODAY * MS_PER_DAY);
+  const calendarTo = isoDay(Date.now() + (CALENDAR_DAYS - CALENDAR_DAYS_BEFORE_TODAY - 1) * MS_PER_DAY);
+  samples.push(await measureGet(admin, `Change calendar (${CALENDAR_DAYS} days)`, `/api/v1/changes/calendar?from=${calendarFrom}&to=${calendarTo}`, runs));
   for (const report of REPORTS) {
     samples.push(await measureGet(admin, `Report: ${report}`, `/api/v1/reports/${report}`, runs));
   }
@@ -226,7 +240,7 @@ async function main(): Promise<void> {
 
   await it.dispose();
   await admin.dispose();
-  console.log(`VOLUME tickets=${firstTickets.totalCount} assets=${firstAssets.totalCount}`);
+  console.log(`VOLUME tickets=${firstTickets.totalCount} assets=${firstAssets.totalCount} changes=${firstChanges.totalCount} tasks=${firstTasks.totalCount}`);
   console.log(table(samples));
 }
 
