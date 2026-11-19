@@ -20,6 +20,7 @@ const SETTLE_MS = 800;
 const OVERFLOW_TOLERANCE_PX = 1;
 const MESSAGE_LENGTH = 200;
 const FILE_NAME_LENGTH = 80;
+const SEARCH_BUTTON = 'Ara';
 
 test('every screen in light and dark mode', async ({ browser }, info) => {
   test.setTimeout(SWEEP_TIMEOUT_MS);
@@ -69,6 +70,17 @@ test('every screen in light and dark mode', async ({ browser }, info) => {
       const name = `${mode}${target.replaceAll('/', '_') || '_home'}`.slice(0, FILE_NAME_LENGTH);
       await page.screenshot({ path: path.join(dir, `${name}.png`), fullPage: true });
     }
+  }
+  // The search palette in its open state, with a result list, per mode.
+  for (const mode of MODES) {
+    await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: COLOR_MODE_STORAGE_KEY, value: mode });
+    await page.goto('/workspace');
+    await page.waitForLoadState('load');
+    await page.getByRole('button', { name: SEARCH_BUTTON, exact: true }).first().click();
+    await page.keyboard.type('Dosya');
+    await page.waitForTimeout(SETTLE_MS);
+    await page.screenshot({ path: path.join(dir, `${mode}_search-open.png`) });
+    await page.keyboard.press('Escape');
   }
   writeFileSync(path.join(dir, 'problems.txt'), problems.join('\n'));
 });

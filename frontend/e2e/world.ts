@@ -122,6 +122,7 @@ export async function seedWorld(admin: Session): Promise<World> {
 }
 
 export interface SecondTeam {
+  teamId: string;
   teamName: string;
   email: string;
   password: string;
@@ -138,7 +139,7 @@ export async function seedSecondTeam(admin: Session): Promise<SecondTeam> {
   const teamName = `Veritabanı ${suffix}`;
   const team = await send(request, 'POST', '/api/v1/admin/teams', { name: teamName });
   await send(request, 'POST', `/api/v1/admin/teams/${String(team.id)}/members`, { userId: member.userId });
-  return { teamName, email, password: String(member.temporaryPassword) };
+  return { teamId: String(team.id), teamName, email, password: String(member.temporaryPassword) };
 }
 
 export interface SecondAdmin {
@@ -250,6 +251,15 @@ export async function seedIncidents(requester: Session, subjects: readonly strin
     numbers.push(String(ticket.number));
   }
   return numbers;
+}
+
+/** Hands a ticket to another team as the session's user (a member of the team that holds it). */
+export async function transferTicket(staff: Session, ticketNumber: string, teamId: string): Promise<void> {
+  const body = (await (await staff.context.request.get(`/api/v1/tickets/${ticketNumber}`)).json()) as { version?: number; detail?: { version: number } };
+  const version = body.version ?? body.detail?.version ?? 0;
+  await send(staff.context.request, 'POST', `/api/v1/tickets/${ticketNumber}/transfer`, {
+    version, teamId, assigneeId: null, reason: 'other_team_responsibility', note: null,
+  });
 }
 
 /** Queues a background export of a report figure's rows as the session's user; the query matches the drill-down URL. */

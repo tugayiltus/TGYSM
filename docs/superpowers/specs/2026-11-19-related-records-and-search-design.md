@@ -137,3 +137,8 @@ Calls made by the designer (owner may override):
 - ADR-0033 "Typed ticket ↔ change links and central search" (new table, kinds, search scope rules).
 - `tgysm.md` §2 and §19 updated with the module, as the owner rule for ITIL modules requires.
 - `capabilities.md`, user guide pages and `README.md` at the end of the module.
+
+## Amendment 2026-11-19
+
+- Section 6 (Search): "summary-only change absent" is wrong. Section 5.5 is right: summary-access changes are found, because search uses `ChangeScope.Visible`, the same set as the list and the calendar. A change with no access at all is absent.
+- Section 5.2: "403 with summary access" is wrong. Summary-access staff get 404 on add and remove, by the existing `LoadForWorkAsync` rule (ADR-0033).
