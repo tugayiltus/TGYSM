@@ -26,7 +26,7 @@ import { PageHeader } from '../../shared/navigation/PageHeader';
 import { linkState } from '../../shared/navigation/returnTo';
 import { ROUTE_META } from '../../shared/navigation/routeMeta';
 import { StateLink } from '../../shared/navigation/StateLink';
-import { changePath } from '../../shared/routes';
+import { changePath, ROUTES } from '../../shared/routes';
 import { Icons } from '../../shared/ui/icons';
 import { recordActionLabel } from '../../shared/ui/recordActionLabel';
 
@@ -111,7 +111,12 @@ export function ChangeListPage() {
       <PageHeader
         icon={ROUTE_META.changes.icon}
         titleOverride={queue ? t(`queues.${queue}`) : undefined}
-        actions={<Button label={t('list.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setCreating(true)} />}
+        actions={
+          <>
+            <Button label={t('list.calendar')} variant="secondary" icon={<Icon icon={Icons.calendar} />} href={ROUTES.changeCalendar} />
+            <Button label={t('list.new')} variant="primary" icon={<Icon icon={Icons.plus} />} onClick={() => setCreating(true)} />
+          </>
+        }
       />
       <ListToolbar
         title={t('list.title')}

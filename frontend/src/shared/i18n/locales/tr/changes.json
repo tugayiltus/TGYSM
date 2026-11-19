@@ -52,7 +52,8 @@
       "updated": "Güncellendi"
     },
     "mineCard": "Değişikliklerim",
-    "cardCount": "{{count}} değişiklik"
+    "cardCount": "{{count}} değişiklik",
+    "calendar": "Bakım takvimi"
   },
   "detail": {
     "back": "Listeye dön",
@@ -202,5 +203,21 @@
       "cancelled": "İptal edildi",
       "assets_changed": "Etkilenen varlıklar değişti"
     }
+  },
+  "calendar": {
+    "viewLabel": "Takvim görünümü",
+    "views": {
+      "month": "Ay",
+      "week": "Hafta"
+    },
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "today": "Bugün",
+    "conflict": "Çakışma",
+    "conflictHint": "Aynı sürede başka bir değişiklikle aynı varlık veya hizmet etkileniyor.",
+    "emptyMonth": "Bu ayda planlı değişiklik yok.",
+    "emptyWeek": "Bu haftada planlı değişiklik yok.",
+    "gridCaption": "Bakım takvimi",
+    "agendaCaption": "Gün gün planlı değişiklikler"
   }
 }

@@ -83,6 +83,7 @@ const appRoutes: RouteObject[] = [
               { id: 'tasks', path: ROUTES.tasks, lazy: async () => ({ Component: (await import('../features/tasks/TaskListPage')).TaskListPage }) },
               { id: 'taskDetail', path: `${ROUTES.tasks}/:number`, lazy: async () => ({ Component: (await import('../features/tasks/TaskDetailPage')).TaskDetailPage }) },
               { id: 'changes', path: ROUTES.changes, lazy: async () => ({ Component: (await import('../features/changes/ChangeListPage')).ChangeListPage }) },
+              { id: 'changeCalendar', path: ROUTES.changeCalendar, lazy: async () => ({ Component: (await import('../features/changes/ChangeCalendarPage')).ChangeCalendarPage }) },
               { id: 'changeDetail', path: `${ROUTES.changes}/:number`, lazy: async () => ({ Component: (await import('../features/changes/ChangeDetailPage')).ChangeDetailPage }) },
               { id: 'assets', path: ROUTES.assets, lazy: async () => ({ Component: (await import('../features/assets/AssetsPage')).AssetsPage }) },
               { id: 'assetImport', path: ROUTES.assetImport, lazy: async () => ({ Component: (await import('../features/assets/AssetImportPage')).AssetImportPage }) },

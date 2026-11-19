@@ -14,6 +14,7 @@ export const ROUTES = {
   tickets: '/tickets',
   tasks: '/tasks',
   changes: '/changes',
+  changeCalendar: '/changes/calendar',
   newIncident: '/tickets/new/incident',
   newRequest: '/tickets/new/request',
   kb: '/kb',

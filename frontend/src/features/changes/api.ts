@@ -16,6 +16,7 @@ export type ChangeOutcome = NonNullable<Schemas['ChangeOutcome']>;
 export type ChangeStatus = NonNullable<Schemas['ChangeStatus']>;
 export type ChangeEventKind = Schemas['ChangeEventKind'];
 export type ChangeApprovalItem = Schemas['ChangeApprovalItem'];
+export type ChangeCalendarItem = Schemas['ChangeCalendarItem'];
 export type ChangeAssetItem = Schemas['ChangeAssetItem'];
 export type Level = Schemas['Level'];
 export type ChangeQueue = 'mine' | 'team' | 'pending_approval' | 'open';
@@ -32,6 +33,7 @@ export const changeKeys = {
   detail: (number: string) => ['changes', 'detail', number],
   timeline: (number: string) => ['changes', 'timeline', number],
   approvals: ['changes', 'approvals'],
+  calendar: (from: string, to: string) => ['changes', 'calendar', from, to],
 } as const;
 
 export interface ChangeListParams {
@@ -61,6 +63,15 @@ export function useChanges(params: ChangeListParams) {
           },
         }),
       ),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Scheduled changes whose window touches the days `from` to `to` (company time, both included). */
+export function useChangeCalendar(from: string, to: string) {
+  return useQuery({
+    queryKey: changeKeys.calendar(from, to),
+    queryFn: () => unwrap(api.GET('/api/v1/changes/calendar', { params: { query: { from, to } } })),
     placeholderData: keepPreviousData,
   });
 }
