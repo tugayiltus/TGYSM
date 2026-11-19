@@ -45,7 +45,7 @@ public sealed class ExcelReportWriterTests
         Assert.Equal(["Numara", "Tür", "Konu", "Durum", "Öncelik", "Ekip", "Atanan", "Oluşturulma", "Tamamlanma"], sheet.Row(1).Cells(1, 9).Select(c => c.GetString()));
         Assert.Equal("İŞLEM ıslak şifre çağrı", sheet.Cell(2, 3).GetString());
         Assert.Equal("Arıza", sheet.Cell(2, 2).GetString());
-        Assert.Equal("Üzerinde çalışılıyor", sheet.Cell(2, 4).GetString());
+        Assert.Equal("İşlemde", sheet.Cell(2, 4).GetString());
         Assert.Equal("Çözüm Ekibi", sheet.Cell(2, 6).GetString());
         Assert.True(sheet.Cell(2, 7).IsEmpty());
         Assert.Equal(new DateTime(2026, 3, 11, 1, 30, 0), sheet.Cell(2, 8).GetDateTime());
