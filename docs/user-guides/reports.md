@@ -12,7 +12,7 @@ Bu sayfa IT personeli ve yöneticiler içindir: arıza, talep, operasyon ve enva
    - **Transferler**: Aktarma sayısı ve oranı, yeniden atamalar, arızadan açılan talepler.
    - **Envanter**: Türe ve duruma göre cihazlar, aktif zimmetler, stok.
    - **Garanti**: Garantisi bitmiş, bitecek ve garanti tarihi girilmemiş cihazlar.
-   - **Değişiklikler**: Döneme göre kapanan değişikliklerin sonuç dağılımı, başarı oranı, riske göre değişiklikler ve iptal edilenler.
+   - **Değişiklikler**: Döneme göre kapanan değişikliklerin sonuç dağılımı, başarı oranı, riske göre değişiklikler ve iptal edilenler. **Sorun çıkaran değişiklikler** kartı, dönemde kapanan ve en az bir arızaya yol açtığı bağlanan değişiklikleri sayar; sayıya basınca bu değişikliklerin listesi açılır.
    - **Görevler**: Gecikmiş görevler, duruma ve ekibe göre görevler, görevlerin tamamlanma süresi.
 
 ![Olaylar raporu](images/reports-incidents-desktop.png)

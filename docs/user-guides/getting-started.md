@@ -88,6 +88,17 @@ Yöneticiler üst çubukta **Yönetim** bağlantısını görür. Yönetim ekran
 
 Üst çubuğun altında bulunduğunuz sayfanın yolu görünür, örneğin "Ana sayfa / Kayıtlarım / INC-2026-001378". Yoldaki bir adıma basarak o sayfaya dönebilirsiniz. Bir listeden kayıt açtıysanız, yoldaki liste adımı sizi aynı filtrelerle aynı listeye geri götürür.
 
+## Arama
+
+Üst çubuktaki **Ara** düğmesine basın veya klavyede `/` tuşuna basın. Arama penceresi açılır.
+
+1. Kayıt numarası, demirbaş etiketi veya bir kelime yazın. Arama en az 2 karakterle başlar.
+2. Sonuçlar türe göre gruplanır: **Kayıtlar**, **Değişiklikler**, **Görevler**, **Envanter**, **Bilgi bankası**. Her türde en fazla 5 sonuç görünür.
+3. Bir sonuca basarak açın. Tam bir numara yazdıysanız o kayıt en üstte gösterilir.
+4. Bir grupta daha fazla sonuç varsa **Tümünü gör** ile ilgili listeyi aynı arama metniyle açın.
+
+Arama yalnızca görme yetkiniz olan kayıtları gösterir. Çalışanlar kendi kayıtlarını ve bilgi bankası makalelerini bulur. Değişiklik, görev ve envanter sonuçlarını IT personeli ve yöneticiler görür. Envanterde demirbaş etiketi veya seri numarasıyla arayın; marka ve model aramada çıkmaz, bunun için **Envanter** listesini kullanın.
+
 ## Hesap menüsü ve görünüm
 
 Sağ üstteki adınıza (telefonda baş harflerinize) basınca hesap menüsü açılır:

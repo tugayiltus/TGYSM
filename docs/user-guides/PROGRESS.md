@@ -6,16 +6,16 @@ against the seeded pilot database (`tools/seed-pilot.sh --fresh`); the shot list
 
 | Page | Status | Screenshots |
 |---|---|---|
-| `getting-started.md` | Done | `home-desktop.png`, `home-menu-mobile.png`, `home-mobile.png` |
+| `getting-started.md` | Done (Arama section added 2026-11-19, text only) | `home-desktop.png`, `home-menu-mobile.png`, `home-mobile.png` |
 | `incidents-and-requests.md` | Done | `tickets-new-incident-desktop.png`, `tickets-new-request-mobile.png` |
 | `my-tickets.md` | Done | `tickets-list-desktop.png`, `ticket-detail-desktop.png` |
 | `my-assets.md` | Done | `my-assets-mobile.png` |
 | `knowledge-base.md` | Done | `knowledge-base-desktop.png`, `kb-article-mobile.png`, `kb-new-desktop.png` |
 | `approvals.md` | Done (change approvals added 2026-11-18, conflict count 2026-11-19) | `approvals-desktop.png` (shows request approvals only) |
-| `it-workspace.md` | Done ("Bu hafta uygulanacak" card text 2026-11-19, no shot) | `workspace-desktop.png`, `workspace-queue-desktop.png`, `ticket-work-desktop.png`, `ticket-complete-desktop.png` |
-| `tasks-and-changes.md` | Done (text only, 2026-11-18; window conflicts and maintenance calendar added 2026-11-19) | Pending: task list, task detail, change list, change detail, change approval, conflict banner, calendar (month and phone agenda) |
+| `it-workspace.md` | Done ("Bu hafta uygulanacak" card text and İlgili değişiklikler card 2026-11-19, no shot) | `workspace-desktop.png`, `workspace-queue-desktop.png`, `ticket-work-desktop.png`, `ticket-complete-desktop.png` |
+| `tasks-and-changes.md` | Done (text only, 2026-11-18; window conflicts, maintenance calendar and İlgili kayıtlar added 2026-11-19) | Pending: task list, task detail, change list, change detail, change approval, conflict banner, calendar (month and phone agenda) |
 | `inventory.md` | Done | `assets-list-desktop.png`, `asset-new-desktop.png`, `asset-detail-desktop.png`, `assets-import-desktop.png` |
-| `reports.md` | Done (Değişiklikler and Görevler tabs added 2026-11-19, text only) | `reports-incidents-desktop.png`, `reports-incidents-mobile.png`, `reports-exports-desktop.png` |
+| `reports.md` | Done (Değişiklikler and Görevler tabs and Sorun çıkaran değişiklikler added 2026-11-19, text only) | `reports-incidents-desktop.png`, `reports-incidents-mobile.png`, `reports-exports-desktop.png` |
 | `first-setup.md` | Done | `admin-overview-desktop.png` |
 | `admin-users-and-organization.md` | Done | `admin-overview-desktop.png`, `admin-users-desktop.png`, `admin-user-new-desktop.png`, `admin-departments-desktop.png`, `admin-locations-desktop.png`, `admin-teams-desktop.png`, `admin-audit-desktop.png` |
 | `admin-catalogs.md` | Done | `admin-brands-desktop.png`, `admin-models-desktop.png`, `admin-categories-desktop.png`, `admin-request-types-desktop.png` |
@@ -27,5 +27,5 @@ against the seeded pilot database (`tools/seed-pilot.sh --fresh`); the shot list
 
 ## Screenshot status
 
-Every image in `images/` is referenced by a page and was taken from the pilot data. Pending: shots for `tasks-and-changes.md` (conflict banner and calendar included) and the Değişiklikler and Görevler tabs of `reports.md`. The pilot seed now holds changes with overlapping windows and tasks; the entries in `frontend/guide/manifest.ts` are still missing. Retake all with
+Every image in `images/` is referenced by a page and was taken from the pilot data. Pending: shots for `tasks-and-changes.md` (conflict banner, calendar and İlgili kayıtlar included), the search window and the Değişiklikler and Görevler tabs of `reports.md`. The pilot seed now holds changes with overlapping windows and tasks; the entries in `frontend/guide/manifest.ts` are still missing. Retake all with
 `GUIDE_PASSWORD=<pilot password> tools/guide-screenshots.sh`, or single shots by id.

@@ -34,13 +34,14 @@ Güncel: 2026-11-19.
 |---|---|---|---|---|
 | 7 — Görev | `TSK-` görevler, üstlenme/atama/aktarma/bekletme/tamamlama, geçmiş ve notlar, `task_assigned` e-postası, İş listem kartları ve birleşik liste, kayıtta Görevler bölümü | `docs/superpowers/plans/2026-11-13-phase-7-tasks.md` (9 görev) | 0031 | `master` (`2046892`) |
 | 8 — Değişiklik | Normal değişiklik (`CHG-`), durum makinesi, faz görevleri, plan parmak izli tek aşamalı yönetici onayı (plan yazanlar onaylayamaz), kapanış ve geri dönüş, Onaylar ve İş listem'de değişiklikler, üç değişiklik e-postası | `docs/superpowers/plans/2026-11-13-phase-8-changes.md` (10 görev) | 0032 | `master` (`0062691`) |
-| 9 — Takvim/Rapor | Bakım takvimi (ay, hafta, telefonda gün listesi), pencere çakışma uyarısı (değişiklik sayfası, Onaylar, takvim), "Bu hafta uygulanacak" kuyruğu ve kartı, değişiklik ve görev raporları (`by_outcome`, `success_rate`, `by_risk`, `cancelled`; `overdue`, `by_status`, `completion_time`, `by_team`), pilot veri ve performans ölçümü | `docs/superpowers/plans/2026-11-18-phase-9-calendar-reports.md` | 0032 (ek not) | `feature/phase-9-calendar-reports` (`1a6dafb`), `master`'a birleştirme sahibin onayını bekliyor |
+| 9 — Takvim/Rapor | Bakım takvimi (ay, hafta, telefonda gün listesi), pencere çakışma uyarısı (değişiklik sayfası, Onaylar, takvim), "Bu hafta uygulanacak" kuyruğu ve kartı, değişiklik ve görev raporları (`by_outcome`, `success_rate`, `by_risk`, `cancelled`; `overdue`, `by_status`, `completion_time`, `by_team`), pilot veri ve performans ölçümü | `docs/superpowers/plans/2026-11-18-phase-9-calendar-reports.md` | 0032 (ek not) | `master` (`3c4e618`) |
+| 10 — İlgili kayıtlar/Arama | Kayıt ↔ değişiklik bağlantısı (`prompted`, `caused`), "İlgili kayıtlar" ve "İlgili değişiklikler" panelleri, "Sorun çıkaran değişiklikler" rapor figürü, üst çubukta merkezi arama ("Ara", `/` kısayolu; kayıt, değişiklik, görev, varlık, makale; tam numarayla doğrudan açma), "Tüm kayıtlar" kuyruğu, performans ölçümü | `docs/superpowers/plans/2026-11-19-phase-10-related-records-search.md` (7 görev) | 0033 | `feature/phase-10-related-records-search` (`795ed59`), `master`'a birleştirme sahibin onayını bekliyor |
 
 ## Açık işler
 
 - SSO canlıya almadan önce: gerçek AD ile `TGYSM_TEST_LDAP_*` sözleşme testi; gerçek Entra ve AD ile elle giriş.
-- `SECURITY.md` QR, `ASSET-` etiketi, SSO, görevler ve değişiklikler için eski; sahibin isteğiyle güncellenir. `README.md` ve `capabilities.md` `1a6dafb` itibarıyla güncel.
-- Kullanıcı rehberinde görev ve değişiklik sayfası ile Faz 9 anlatımı (takvim, çakışma uyarısı, değişiklik/görev raporları) ekran görüntüsüz; görüntüler `tools/guide-screenshots.sh` ile eklenecek (pilot veri artık değişiklik ve görev içeriyor).
+- `SECURITY.md` QR, `ASSET-` etiketi, SSO, görevler ve değişiklikler için eski; sahibin isteğiyle güncellenir. `README.md` ve `capabilities.md` `795ed59` itibarıyla güncel.
+- Kullanıcı rehberinde görev ve değişiklik sayfası, Faz 9 anlatımı (takvim, çakışma uyarısı, değişiklik/görev raporları) ve Faz 10 anlatımı (ilgili kayıtlar, merkezi arama) ekran görüntüsüz; görüntüler `tools/guide-screenshots.sh` ile eklenecek (pilot veri artık değişiklik ve görev içeriyor).
 - Bekleyen Dependabot PR'ları.
-- Faz 9 dalının `master`'a birleştirilmesi: sahibin onayı gerekir (CI yeşil olmalı).
-- Sıradaki: hafif ITIL modülleri (her biri tasarım, ADR ve onay ister).
+- Faz 10 dalının `master`'a birleştirilmesi: sahibin onayı gerekir (CI yeşil olmalı).
+- Sıradaki: hafif Problem Yönetimi (`PRB-`), sonra hizmet kataloğu + hafif CMDB (her biri tasarım, ADR ve onay ister).

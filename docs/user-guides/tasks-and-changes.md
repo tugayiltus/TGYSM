@@ -145,6 +145,19 @@ Değişiklik listesindeki **Bakım takvimi** düğmesi takvimi açar.
 
 Takvimde yetkinizin olduğu değişiklikler gösterilir; **Taslak** ve **İptal edildi** durumundakiler gösterilmez. Penceresi başka bir değişiklikle çakışan değişikliğin yanında **Çakışma** işareti olur. İşaret yalnızca ayrıntısını tam gördüğünüz değişikliklerde çıkar. Seçilen aralıktaki değişiklikler yüklenirken bir yükleniyor göstergesi görünür. Takvim en fazla 62 günlük aralık gösterir.
 
+### İlgili kayıtlar
+
+Değişiklik sayfasındaki **İlgili kayıtlar** kartı değişikliğe bağlı arıza ve talepleri gösterir. Kayıtlar iki grupta görünür: **Bu değişikliğe yol açan kayıtlar** ve **Bu değişikliğin yol açtığı olaylar**.
+
+1. **Kayıt bağla** düğmesine basın.
+2. **Kayıt numarası** alanına kaydın numarasını yazın.
+3. **Bağlantı türü** seçin: **Değişikliğe yol açtı** (kayıt bu değişikliği gerektirdi) veya **Değişiklik sonucu oluştu** (değişiklik bu arızaya yol açtı; yalnızca arızalar için).
+4. **Bağla** düğmesine basın.
+
+Bir bağlantıyı kaldırmak için satırdaki **Kaldır** düğmesini kullanın. Bağlama ve kaldırma işlemini yöneticiler ve değişikliğin sahibi ekibin üyeleri yapar. İptal edilmiş bir değişikliğe yeni kayıt bağlanmaz, ama yanlış bir bağlantı kaldırılabilir.
+
+Açma yetkiniz olmayan bir kaydın numarası, başlığı, türü ve durumu görünür; satırda "... ekibinin kaydı" yazar ve kayıt açılmaz. Aynı bağlantı, arıza veya talep sayfasında **İlgili değişiklikler** kartında da görünür. Çalışanlar bu kartları görmez.
+
 ### Değişiklik listesi
 
 **Kuyruk** filtresiyle listeyi seçin: **Benim değişikliklerim**, **Ekibimin değişiklikleri**, **Onay bekleyenler**, **Açık değişiklikler**, **Bu hafta uygulanacak**. **Durum** ve **Risk** filtreleri ile **Numara veya başlıkta ara** kutusu listeyi daraltır. **İş listem** sayfasındaki **Değişikliklerim** kartı sahibi olduğunuz değişiklikleri, **Bu hafta uygulanacak** kartı bu hafta başlayacak olanları açar. Size veya ekibinize düşen değişiklikler İş listem'de risk ve pencereyle birlikte görünür.

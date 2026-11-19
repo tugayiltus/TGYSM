@@ -88,6 +88,17 @@ Yöneticiler üst çubukta **Yönetim** bağlantısını görür. Yönetim ekran
 
 Üst çubuğun altında bulunduğunuz sayfanın yolu görünür, örneğin "Ana sayfa / Kayıtlarım / INC-2026-001378". Yoldaki bir adıma basarak o sayfaya dönebilirsiniz. Bir listeden kayıt açtıysanız, yoldaki liste adımı sizi aynı filtrelerle aynı listeye geri götürür.
 
+## Arama
+
+Üst çubuktaki **Ara** düğmesine basın veya klavyede `/` tuşuna basın. Arama penceresi açılır.
+
+1. Kayıt numarası, demirbaş etiketi veya bir kelime yazın. Arama en az 2 karakterle başlar.
+2. Sonuçlar türe göre gruplanır: **Kayıtlar**, **Değişiklikler**, **Görevler**, **Envanter**, **Bilgi bankası**. Her türde en fazla 5 sonuç görünür.
+3. Bir sonuca basarak açın. Tam bir numara yazdıysanız o kayıt en üstte gösterilir.
+4. Bir grupta daha fazla sonuç varsa **Tümünü gör** ile ilgili listeyi aynı arama metniyle açın.
+
+Arama yalnızca görme yetkiniz olan kayıtları gösterir. Çalışanlar kendi kayıtlarını ve bilgi bankası makalelerini bulur. Değişiklik, görev ve envanter sonuçlarını IT personeli ve yöneticiler görür. Envanterde demirbaş etiketi veya seri numarasıyla arayın; marka ve model aramada çıkmaz, bunun için **Envanter** listesini kullanın.
+
 ## Hesap menüsü ve görünüm
 
 Sağ üstteki adınıza (telefonda baş harflerinize) basınca hesap menüsü açılır:
@@ -450,6 +461,7 @@ Mesajı **Mesajınız** alanına yazın, gerekirse **Dosya ekle** ile dosya ekle
 
 - **Bağlı cihazlar** kartında **Cihaz bağla** ile envanterden bir cihazı kayda bağlayın (**Demirbaş no ile ara**). **Ayır** bağlantıyı kaldırır.
 - **İlgili kayıtlar** kartında **İlgili talep oluştur**, bir arızadan yeni bir talep açar; örneğin onarılamayan bir bilgisayar için "Yeni bilgisayar" talebi. Yeni talep arızaya bağlı görünür.
+- **İlgili değişiklikler** kartı kayda bağlı değişiklikleri gösterir. Bağlantı değişiklik sayfasından kurulur (bkz. Görevler ve değişiklikler, İlgili kayıtlar).
 - **İlgili makaleler** kartında **Makale bağla** ile çözümü anlatan makaleyi kayda bağlayın.
 
 ## İpuçları
@@ -605,6 +617,19 @@ Değişiklik listesindeki **Bakım takvimi** düğmesi takvimi açar.
 
 Takvimde yetkinizin olduğu değişiklikler gösterilir; **Taslak** ve **İptal edildi** durumundakiler gösterilmez. Penceresi başka bir değişiklikle çakışan değişikliğin yanında **Çakışma** işareti olur. İşaret yalnızca ayrıntısını tam gördüğünüz değişikliklerde çıkar. Seçilen aralıktaki değişiklikler yüklenirken bir yükleniyor göstergesi görünür. Takvim en fazla 62 günlük aralık gösterir.
 
+### İlgili kayıtlar
+
+Değişiklik sayfasındaki **İlgili kayıtlar** kartı değişikliğe bağlı arıza ve talepleri gösterir. Kayıtlar iki grupta görünür: **Bu değişikliğe yol açan kayıtlar** ve **Bu değişikliğin yol açtığı olaylar**.
+
+1. **Kayıt bağla** düğmesine basın.
+2. **Kayıt numarası** alanına kaydın numarasını yazın.
+3. **Bağlantı türü** seçin: **Değişikliğe yol açtı** (kayıt bu değişikliği gerektirdi) veya **Değişiklik sonucu oluştu** (değişiklik bu arızaya yol açtı; yalnızca arızalar için).
+4. **Bağla** düğmesine basın.
+
+Bir bağlantıyı kaldırmak için satırdaki **Kaldır** düğmesini kullanın. Bağlama ve kaldırma işlemini yöneticiler ve değişikliğin sahibi ekibin üyeleri yapar. İptal edilmiş bir değişikliğe yeni kayıt bağlanmaz, ama yanlış bir bağlantı kaldırılabilir.
+
+Açma yetkiniz olmayan bir kaydın numarası, başlığı, türü ve durumu görünür; satırda "... ekibinin kaydı" yazar ve kayıt açılmaz. Aynı bağlantı, arıza veya talep sayfasında **İlgili değişiklikler** kartında da görünür. Çalışanlar bu kartları görmez.
+
 ### Değişiklik listesi
 
 **Kuyruk** filtresiyle listeyi seçin: **Benim değişikliklerim**, **Ekibimin değişiklikleri**, **Onay bekleyenler**, **Açık değişiklikler**, **Bu hafta uygulanacak**. **Durum** ve **Risk** filtreleri ile **Numara veya başlıkta ara** kutusu listeyi daraltır. **İş listem** sayfasındaki **Değişikliklerim** kartı sahibi olduğunuz değişiklikleri, **Bu hafta uygulanacak** kartı bu hafta başlayacak olanları açar. Size veya ekibinize düşen değişiklikler İş listem'de risk ve pencereyle birlikte görünür.
@@ -716,7 +741,7 @@ Bu sayfa IT personeli ve yöneticiler içindir: arıza, talep, operasyon ve enva
    - **Transferler**: Aktarma sayısı ve oranı, yeniden atamalar, arızadan açılan talepler.
    - **Envanter**: Türe ve duruma göre cihazlar, aktif zimmetler, stok.
    - **Garanti**: Garantisi bitmiş, bitecek ve garanti tarihi girilmemiş cihazlar.
-   - **Değişiklikler**: Döneme göre kapanan değişikliklerin sonuç dağılımı, başarı oranı, riske göre değişiklikler ve iptal edilenler.
+   - **Değişiklikler**: Döneme göre kapanan değişikliklerin sonuç dağılımı, başarı oranı, riske göre değişiklikler ve iptal edilenler. **Sorun çıkaran değişiklikler** kartı, dönemde kapanan ve en az bir arızaya yol açtığı bağlanan değişiklikleri sayar; sayıya basınca bu değişikliklerin listesi açılır.
    - **Görevler**: Gecikmiş görevler, duruma ve ekibe göre görevler, görevlerin tamamlanma süresi.
 
 ![Olaylar raporu](images/reports-incidents-desktop.png)
