@@ -107,7 +107,7 @@ export function GlobalSearch() {
           const title = t(`groups.${group.type}`);
           for (const hit of group.hits) {
             const path = pathForHit(hit, role);
-            items.push({ id: `${group.type}:${hit.key}`, label: `${hit.key} ${hit.title}`, path, auxiliaryData: { group: title } });
+            items.push({ id: `${group.type}:${hit.key}`, label: group.type === 'article' ? hit.title : `${hit.key} ${hit.title}`, path, auxiliaryData: { group: title } });
           }
           if (group.hasMore) {
             items.push({ id: `all:${group.type}`, label: t('seeAll'), path: listPathForType(group.type, query, role), auxiliaryData: { group: title } });

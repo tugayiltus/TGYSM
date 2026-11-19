@@ -1,3 +1,4 @@
+import { SEARCH_PARAM } from '../../shared/list/useListParams';
 import { ROUTES } from '../../shared/routes';
 import type { TicketQueue } from '../tickets/api';
 
@@ -8,4 +9,4 @@ export const queuePath = (queue: TicketQueue) => `${ROUTES.workspaceQueue}?${QUE
 /** Queue value for the staff ticket list without a queue filter: every ticket the viewer may see. */
 export const ALL_QUEUE = 'all';
 
-export const allTicketsPath = (search: string) => `${ROUTES.workspaceQueue}?${new URLSearchParams({ [QUEUE_PARAM]: ALL_QUEUE, q: search }).toString()}`;
+export const allTicketsPath = (search: string) => `${ROUTES.workspaceQueue}?${new URLSearchParams({ [QUEUE_PARAM]: ALL_QUEUE, [SEARCH_PARAM]: search }).toString()}`;

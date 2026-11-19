@@ -116,6 +116,18 @@ describe('GlobalSearch', () => {
     await waitFor(() => expect(where()).toBe('/assets?q=ASSET-2026-0007'));
   });
 
+  it('labels an article hit with its title only', async () => {
+    const ARTICLE_ID = '0192f0a8-7c1e-7d3a-9b2e-5f6a7b8c9d0e';
+    mockApi({ [SEARCH_ROUTE]: { status: 200, body: { exact: null, groups: [{ type: 'article', hasMore: false, hits: [{ type: 'article', key: ARTICLE_ID, title: 'VPN kurulumu', status: 'Yayında' }] }] } } });
+    renderSearch();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const input = await openBox(user);
+    await user.type(input, 'vpn');
+    await act(() => vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS * 2));
+    expect(await screen.findByText('VPN kurulumu')).toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(ARTICLE_ID))).not.toBeInTheDocument();
+  });
+
   it('opens the staff ticket list without a queue filter from Tümünü gör for IT staff', async () => {
     mockApi({ [SEARCH_ROUTE]: { status: 200, body: HITS } });
     renderSearch();
