@@ -192,7 +192,7 @@ async function main(): Promise<void> {
   const admin = await signIn(baseURL, env('PERF_ADMIN_EMAIL'), password);
   const samples: Sample[] = [];
 
-  const firstTickets = await getJson<{ items: { subject: string }[]; totalCount: number }>(it, `/api/v1/tickets?pageSize=${LIST_PAGE_SIZE}`);
+  const firstTickets = await getJson<{ items: { subject: string; number: string }[]; totalCount: number }>(it, `/api/v1/tickets?pageSize=${LIST_PAGE_SIZE}`);
   const firstAssets = await getJson<{ totalCount: number }>(it, `/api/v1/assets?pageSize=${LIST_PAGE_SIZE}`);
   const firstChanges = await getJson<{ totalCount: number }>(admin, `/api/v1/changes?pageSize=${LIST_PAGE_SIZE}`);
   const firstTasks = await getJson<{ totalCount: number }>(admin, `/api/v1/tasks?pageSize=${LIST_PAGE_SIZE}`);
@@ -200,10 +200,13 @@ async function main(): Promise<void> {
   const locations = (await getJson<{ path: string }[]>(it, '/api/v1/reference/locations'))
     .map((location) => location.path.split(API_LOCATION_SEPARATOR).join(CSV_LOCATION_SEPARATOR));
   const ticketTerm = encodeURIComponent(searchTerm(firstTickets.items[0]?.subject ?? ''));
+  const ticketNumber = encodeURIComponent(firstTickets.items[0]?.number ?? '');
   const assetTerm = encodeURIComponent(catalog[0]?.name ?? '');
 
   samples.push(await measureGet(it, 'Ticket list (page of 50)', `/api/v1/tickets?pageSize=${LIST_PAGE_SIZE}`, runs));
   samples.push(await measureGet(it, 'Ticket search', `/api/v1/tickets?search=${ticketTerm}&pageSize=${LIST_PAGE_SIZE}`, runs));
+  samples.push(await measureGet(it, 'Central search (title word)', `/api/v1/search?q=${ticketTerm}`, runs));
+  samples.push(await measureGet(it, 'Central search (full ticket number)', `/api/v1/search?q=${ticketNumber}`, runs));
   samples.push(await measureGet(it, 'Workspace queue (unassigned)', `/api/v1/tickets?queue=unassigned&pageSize=${LIST_PAGE_SIZE}`, runs));
   samples.push(await measureGet(it, 'Asset list (page of 50)', `/api/v1/assets?pageSize=${LIST_PAGE_SIZE}`, runs));
   samples.push(await measureGet(it, 'Asset search (brand name)', `/api/v1/assets?search=${assetTerm}&pageSize=${LIST_PAGE_SIZE}`, runs));
