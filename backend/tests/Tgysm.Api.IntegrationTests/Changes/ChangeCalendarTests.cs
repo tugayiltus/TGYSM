@@ -3,6 +3,7 @@ using System.Text.Json;
 using Tgysm.Api.IntegrationTests.Infrastructure;
 using Tgysm.Api.IntegrationTests.Tickets;
 using Tgysm.Application.Features.Changes;
+using Tgysm.Domain.Changes;
 
 namespace Tgysm.Api.IntegrationTests.Changes;
 
@@ -129,6 +130,24 @@ public sealed class ChangeCalendarTests(FakeClockApiFactory factory) : IClassFix
         var items = await CalendarAsync(world.Desk);
 
         Assert.Equal([true, true, false], items.Select(i => i.GetProperty("hasConflict").GetBoolean()).ToList());
+    }
+
+    [Fact]
+    public async Task Has_conflict_is_false_for_a_change_the_viewer_sees_only_as_a_summary()
+    {
+        var world = await TicketWorld.CreateAsync(factory);
+        var asset = await TestData.LegacyAssetAsync(factory, "SRV-1", world.Office.Id);
+        await DeskScheduledAsync(world, Draft("Birinci", Day(8, 8), Day(8, 10)), asset);
+        var second = await DeskScheduledAsync(world, Draft("İkinci", Day(8, 9), Day(8, 11)), asset);
+        await ChangeWorld.AddTaskAsync(factory, second, ChangePhase.Backout, world.FieldTeam.Id);
+
+        var asField = await CalendarAsync(world.Field);
+        var asDesk = await CalendarAsync(world.Desk);
+
+        var seen = Assert.Single(asField);
+        Assert.Equal(ChangeWorld.NumberOf(second), seen.GetProperty("number").GetString());
+        Assert.False(seen.GetProperty("hasConflict").GetBoolean());
+        Assert.All(asDesk, i => Assert.True(i.GetProperty("hasConflict").GetBoolean()));
     }
 
     [Theory]
