@@ -13,6 +13,7 @@ Menüden **İş listem** sayfasını açın. Her kart bir kuyruğu ve içindeki 
 | **Atanmamış** | Ekiplerinizde henüz kimsenin üstlenmediği kayıtlar. |
 | **Beklemede** | Ekiplerinizde beklemeye alınmış kayıtlar. |
 | **SLA Riski** | SLA hedefi yaklaşan veya geçmiş açık kayıtlar. Önce bunlara bakın. |
+| **Bu hafta uygulanacak** | Ekiplerinizin sahip olduğu, **Planlandı** veya **Uygulanıyor** durumundaki ve bakım penceresi bu hafta (pazartesiden pazara) başlayan değişiklikler. |
 
 ![İş listem](images/workspace-desktop.png)
 

@@ -354,7 +354,7 @@ Onaylanmış bir talebin kapsamı sonradan değişirse IT ekibi talep sayfasınd
 
 ## Değişiklikleri onaylama
 
-**Onay yönetimi** sayfasında, karar verebileceğiniz değişiklikler de listelenir. Her satırda değişiklik numarası, başlık, risk, bakım penceresi ve uygulama planının başı yazar.
+**Onay yönetimi** sayfasında, karar verebileceğiniz değişiklikler de listelenir. Her satırda değişiklik numarası, başlık, risk, bakım penceresi ve uygulama planının başı yazar. Bakım penceresi başka bir değişiklikle çakışıyorsa satırda "1 çakışma", "2 çakışma" gibi bir not yazar; ayrıntı için değişiklik sayfasına bakın. Çakışma yalnızca uyarıdır, kararınızı engellemez.
 
 1. Ayrıntıyı görmek için değişiklik numarasına basın.
 2. Karar verin:
@@ -383,6 +383,7 @@ Menüden **İş listem** sayfasını açın. Her kart bir kuyruğu ve içindeki 
 | **Atanmamış** | Ekiplerinizde henüz kimsenin üstlenmediği kayıtlar. |
 | **Beklemede** | Ekiplerinizde beklemeye alınmış kayıtlar. |
 | **SLA Riski** | SLA hedefi yaklaşan veya geçmiş açık kayıtlar. Önce bunlara bakın. |
+| **Bu hafta uygulanacak** | Ekiplerinizin sahip olduğu, **Planlandı** veya **Uygulanıyor** durumundaki ve bakım penceresi bu hafta (pazartesiden pazara) başlayan değişiklikler. |
 
 ![İş listem](images/workspace-desktop.png)
 
@@ -585,9 +586,28 @@ Geri dönüş başlayınca geri dönüş görevlerinin atananlarına e-posta gid
 
 **Taslak**, **Onay bekliyor** veya **Planlandı** durumundaki bir değişikliği **İptal et** ile iptal edebilirsiniz. Değişikliğin açık görevleri aynı nedenle iptal olur.
 
+### Pencere çakışması
+
+İki değişikliğin bakım pencereleri üst üste biniyorsa ve ikisi de aynı varlığı ya da aynı hizmeti etkiliyorsa değişiklik sayfasında "Bakım penceresi 1 değişiklikle çakışıyor" gibi bir uyarı çıkar (sayı çakışan değişiklik sayısıdır). Uyarıda her çakışan değişikliğin penceresi ve nedeni yazar: **Ortak varlık** veya **Aynı hizmet**. İki neden birlikte varsa **Ortak varlık** gösterilir. Biri bitince diğeri başlıyorsa pencereler çakışmış sayılmaz.
+
+- Uyarı yalnızca bilgi verir; onaya göndermeyi, onaylamayı veya planlamayı engellemez.
+- Çakışma yalnızca **Onay bekliyor**, **Planlandı** ve **Uygulanıyor** durumundaki değişikliklerle aranır.
+- Görme yetkiniz olmayan bir değişiklikle çakışma varsa numarası ve başlığı yerine **Görmediğiniz bir değişiklik** yazar.
+- Yalnızca çalışma özetini gören kişiler çakışma uyarısını görmez.
+
+### Bakım takvimi
+
+Değişiklik listesindeki **Bakım takvimi** düğmesi takvimi açar.
+
+1. **Ay** veya **Hafta** görünümünü seçin. Telefonda takvim yerine gün gün bir liste gösterilir.
+2. **Önceki**, **Sonraki** ve **Bugün** düğmeleriyle gezinin.
+3. Bir değişikliğe basarak sayfasını açın.
+
+Takvimde yetkinizin olduğu değişiklikler gösterilir; **Taslak** ve **İptal edildi** durumundakiler gösterilmez. Penceresi başka bir değişiklikle çakışan değişikliğin yanında **Çakışma** işareti olur. İşaret yalnızca ayrıntısını tam gördüğünüz değişikliklerde çıkar. Seçilen aralıktaki değişiklikler yüklenirken bir yükleniyor göstergesi görünür. Takvim en fazla 62 günlük aralık gösterir.
+
 ### Değişiklik listesi
 
-**Kuyruk** filtresiyle listeyi seçin: **Benim değişikliklerim**, **Ekibimin değişiklikleri**, **Onay bekleyenler**, **Açık değişiklikler**. **Durum** ve **Risk** filtreleri ile **Numara veya başlıkta ara** kutusu listeyi daraltır. **İş listem** sayfasındaki **Değişikliklerim** kartı da sahibi olduğunuz değişiklikleri açar. Size veya ekibinize düşen değişiklikler İş listem'de risk ve pencereyle birlikte görünür.
+**Kuyruk** filtresiyle listeyi seçin: **Benim değişikliklerim**, **Ekibimin değişiklikleri**, **Onay bekleyenler**, **Açık değişiklikler**, **Bu hafta uygulanacak**. **Durum** ve **Risk** filtreleri ile **Numara veya başlıkta ara** kutusu listeyi daraltır. **İş listem** sayfasındaki **Değişikliklerim** kartı sahibi olduğunuz değişiklikleri, **Bu hafta uygulanacak** kartı bu hafta başlayacak olanları açar. Size veya ekibinize düşen değişiklikler İş listem'de risk ve pencereyle birlikte görünür.
 
 ## İpuçları
 
@@ -696,6 +716,8 @@ Bu sayfa IT personeli ve yöneticiler içindir: arıza, talep, operasyon ve enva
    - **Transferler**: Aktarma sayısı ve oranı, yeniden atamalar, arızadan açılan talepler.
    - **Envanter**: Türe ve duruma göre cihazlar, aktif zimmetler, stok.
    - **Garanti**: Garantisi bitmiş, bitecek ve garanti tarihi girilmemiş cihazlar.
+   - **Değişiklikler**: Döneme göre kapanan değişikliklerin sonuç dağılımı, başarı oranı, riske göre değişiklikler ve iptal edilenler.
+   - **Görevler**: Gecikmiş görevler, duruma ve ekibe göre görevler, görevlerin tamamlanma süresi.
 
 ![Olaylar raporu](images/reports-incidents-desktop.png)
 
@@ -711,6 +733,13 @@ Filtrelerin altında **Kapsam: tüm kayıtlar** veya **Kapsam: yalnızca ekipler
 Telefonda filtreler gizlidir: **Filtreler (0)** düğmesine basın, seçimleri yapın ve **Uygula** ile kapatın. Parantez içindeki sayı seçili filtre sayısıdır.
 
 ![Olaylar raporu (telefon)](images/reports-incidents-mobile.png)
+
+**Değişiklikler** ve **Görevler** sekmelerinde yalnızca dönem ve **Ekip** filtresi vardır. IT personeli yalnızca ekiplerinin değişiklik ve görevlerini görür; yöneticiler hepsini görür.
+
+- **Başarı oranı**: Dönemde kapanan değişiklikler içinde **Başarılı** olanların oranı. **Geri alındı** ve **Başarısız** sonuçlar yalnızca paydaya girer. İptal edilen değişiklikler ayrı sayılır, orana girmez.
+- **Gecikmiş görevler**: Bitiş tarihi bugünden önce olan açık görevler. Bu rakam dönemden bağımsız, o anki durumu gösterir.
+- **Tamamlanma süresi**: Dönemde tamamlanan görevlerin açılıştan kapanışa ortalama ve medyan süresi. İptal edilen görevler sayılmaz.
+- **Duruma göre** ve **Ekibe göre** dağılımları ile **Riske göre** dağılımı dönemde açılan kayıtları sayar.
 
 Süreler iki türlü gösterilir: **Takvim süresi** gerçek geçen zamandır; **SLA süresi (mesai)** yalnızca SLA takvimindeki çalışma saatlerini sayar.
 

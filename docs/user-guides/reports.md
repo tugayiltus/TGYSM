@@ -12,6 +12,8 @@ Bu sayfa IT personeli ve yöneticiler içindir: arıza, talep, operasyon ve enva
    - **Transferler**: Aktarma sayısı ve oranı, yeniden atamalar, arızadan açılan talepler.
    - **Envanter**: Türe ve duruma göre cihazlar, aktif zimmetler, stok.
    - **Garanti**: Garantisi bitmiş, bitecek ve garanti tarihi girilmemiş cihazlar.
+   - **Değişiklikler**: Döneme göre kapanan değişikliklerin sonuç dağılımı, başarı oranı, riske göre değişiklikler ve iptal edilenler.
+   - **Görevler**: Gecikmiş görevler, duruma ve ekibe göre görevler, görevlerin tamamlanma süresi.
 
 ![Olaylar raporu](images/reports-incidents-desktop.png)
 
@@ -27,6 +29,13 @@ Filtrelerin altında **Kapsam: tüm kayıtlar** veya **Kapsam: yalnızca ekipler
 Telefonda filtreler gizlidir: **Filtreler (0)** düğmesine basın, seçimleri yapın ve **Uygula** ile kapatın. Parantez içindeki sayı seçili filtre sayısıdır.
 
 ![Olaylar raporu (telefon)](images/reports-incidents-mobile.png)
+
+**Değişiklikler** ve **Görevler** sekmelerinde yalnızca dönem ve **Ekip** filtresi vardır. IT personeli yalnızca ekiplerinin değişiklik ve görevlerini görür; yöneticiler hepsini görür.
+
+- **Başarı oranı**: Dönemde kapanan değişiklikler içinde **Başarılı** olanların oranı. **Geri alındı** ve **Başarısız** sonuçlar yalnızca paydaya girer. İptal edilen değişiklikler ayrı sayılır, orana girmez.
+- **Gecikmiş görevler**: Bitiş tarihi bugünden önce olan açık görevler. Bu rakam dönemden bağımsız, o anki durumu gösterir.
+- **Tamamlanma süresi**: Dönemde tamamlanan görevlerin açılıştan kapanışa ortalama ve medyan süresi. İptal edilen görevler sayılmaz.
+- **Duruma göre** ve **Ekibe göre** dağılımları ile **Riske göre** dağılımı dönemde açılan kayıtları sayar.
 
 Süreler iki türlü gösterilir: **Takvim süresi** gerçek geçen zamandır; **SLA süresi (mesai)** yalnızca SLA takvimindeki çalışma saatlerini sayar.
 

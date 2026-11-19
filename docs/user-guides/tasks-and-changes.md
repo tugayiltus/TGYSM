@@ -126,9 +126,28 @@ Geri dönüş başlayınca geri dönüş görevlerinin atananlarına e-posta gid
 
 **Taslak**, **Onay bekliyor** veya **Planlandı** durumundaki bir değişikliği **İptal et** ile iptal edebilirsiniz. Değişikliğin açık görevleri aynı nedenle iptal olur.
 
+### Pencere çakışması
+
+İki değişikliğin bakım pencereleri üst üste biniyorsa ve ikisi de aynı varlığı ya da aynı hizmeti etkiliyorsa değişiklik sayfasında "Bakım penceresi 1 değişiklikle çakışıyor" gibi bir uyarı çıkar (sayı çakışan değişiklik sayısıdır). Uyarıda her çakışan değişikliğin penceresi ve nedeni yazar: **Ortak varlık** veya **Aynı hizmet**. İki neden birlikte varsa **Ortak varlık** gösterilir. Biri bitince diğeri başlıyorsa pencereler çakışmış sayılmaz.
+
+- Uyarı yalnızca bilgi verir; onaya göndermeyi, onaylamayı veya planlamayı engellemez.
+- Çakışma yalnızca **Onay bekliyor**, **Planlandı** ve **Uygulanıyor** durumundaki değişikliklerle aranır.
+- Görme yetkiniz olmayan bir değişiklikle çakışma varsa numarası ve başlığı yerine **Görmediğiniz bir değişiklik** yazar.
+- Yalnızca çalışma özetini gören kişiler çakışma uyarısını görmez.
+
+### Bakım takvimi
+
+Değişiklik listesindeki **Bakım takvimi** düğmesi takvimi açar.
+
+1. **Ay** veya **Hafta** görünümünü seçin. Telefonda takvim yerine gün gün bir liste gösterilir.
+2. **Önceki**, **Sonraki** ve **Bugün** düğmeleriyle gezinin.
+3. Bir değişikliğe basarak sayfasını açın.
+
+Takvimde yetkinizin olduğu değişiklikler gösterilir; **Taslak** ve **İptal edildi** durumundakiler gösterilmez. Penceresi başka bir değişiklikle çakışan değişikliğin yanında **Çakışma** işareti olur. İşaret yalnızca ayrıntısını tam gördüğünüz değişikliklerde çıkar. Seçilen aralıktaki değişiklikler yüklenirken bir yükleniyor göstergesi görünür. Takvim en fazla 62 günlük aralık gösterir.
+
 ### Değişiklik listesi
 
-**Kuyruk** filtresiyle listeyi seçin: **Benim değişikliklerim**, **Ekibimin değişiklikleri**, **Onay bekleyenler**, **Açık değişiklikler**. **Durum** ve **Risk** filtreleri ile **Numara veya başlıkta ara** kutusu listeyi daraltır. **İş listem** sayfasındaki **Değişikliklerim** kartı da sahibi olduğunuz değişiklikleri açar. Size veya ekibinize düşen değişiklikler İş listem'de risk ve pencereyle birlikte görünür.
+**Kuyruk** filtresiyle listeyi seçin: **Benim değişikliklerim**, **Ekibimin değişiklikleri**, **Onay bekleyenler**, **Açık değişiklikler**, **Bu hafta uygulanacak**. **Durum** ve **Risk** filtreleri ile **Numara veya başlıkta ara** kutusu listeyi daraltır. **İş listem** sayfasındaki **Değişikliklerim** kartı sahibi olduğunuz değişiklikleri, **Bu hafta uygulanacak** kartı bu hafta başlayacak olanları açar. Size veya ekibinize düşen değişiklikler İş listem'de risk ve pencereyle birlikte görünür.
 
 ## İpuçları
 

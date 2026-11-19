@@ -42,7 +42,7 @@ Onaylanmış bir talebin kapsamı sonradan değişirse IT ekibi talep sayfasınd
 
 ## Değişiklikleri onaylama
 
-**Onay yönetimi** sayfasında, karar verebileceğiniz değişiklikler de listelenir. Her satırda değişiklik numarası, başlık, risk, bakım penceresi ve uygulama planının başı yazar.
+**Onay yönetimi** sayfasında, karar verebileceğiniz değişiklikler de listelenir. Her satırda değişiklik numarası, başlık, risk, bakım penceresi ve uygulama planının başı yazar. Bakım penceresi başka bir değişiklikle çakışıyorsa satırda "1 çakışma", "2 çakışma" gibi bir not yazar; ayrıntı için değişiklik sayfasına bakın. Çakışma yalnızca uyarıdır, kararınızı engellemez.
 
 1. Ayrıntıyı görmek için değişiklik numarasına basın.
 2. Karar verin:
