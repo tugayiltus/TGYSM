@@ -28,6 +28,11 @@ public sealed class GetReportHandler(ReportScope scope, TicketReportSource sourc
             return await ChangeReport(query, viewer, cancellationToken);
         }
 
+        if (query.Report == ReportName.Tasks)
+        {
+            return await TaskReport(query, viewer, cancellationToken);
+        }
+
         var now = clock.GetUtcNow();
         var effective = ReportCatalog.EffectiveFilter(query.Report, query.Filter);
         var figures = new List<ReportFigure>();
@@ -52,6 +57,20 @@ public sealed class GetReportHandler(ReportScope scope, TicketReportSource sourc
         foreach (var metric in ReportCatalog.Get(query.Report).OfType<ChangeReportMetric>())
         {
             var pipeline = ReportPipeline.Changes(scope, db, companyClock, viewer, query.Filter, metric.DateBasis, now);
+            figures.Add(await metric.ComputeAsync(pipeline.Filtered, pipeline.Context, cancellationToken));
+        }
+
+        return new ReportResult(query.Report, query.Filter, ScopeLabelOf(viewer, query.Report), figures);
+    }
+
+    /// <summary>The task report: each metric dates the tasks on its own basis, inside the viewer's team scope.</summary>
+    private async Task<ReportResult> TaskReport(GetReportQuery query, ReportViewer viewer, CancellationToken cancellationToken)
+    {
+        var now = clock.GetUtcNow();
+        var figures = new List<ReportFigure>();
+        foreach (var metric in ReportCatalog.Get(query.Report).OfType<TaskReportMetric>())
+        {
+            var pipeline = ReportPipeline.Tasks(scope, db, companyClock, viewer, query.Filter, metric.DateBasis, now);
             figures.Add(await metric.ComputeAsync(pipeline.Filtered, pipeline.Context, cancellationToken));
         }
 

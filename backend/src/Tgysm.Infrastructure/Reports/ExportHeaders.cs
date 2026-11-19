@@ -4,6 +4,7 @@ using Tgysm.Application.Reports;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Changes;
 using Tgysm.Domain.Reports;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Infrastructure.Reports;
@@ -48,7 +49,7 @@ public static class ExportHeaders
     public static readonly IReadOnlyList<Type> EnumTypes =
     [
         typeof(TicketKind), typeof(TicketStatus), typeof(Priority), typeof(AssetType), typeof(AssetStatus),
-        typeof(SlaStateFilter), typeof(ReportName), typeof(ReportDrillPart), typeof(ChangeStatus), typeof(ChangeOutcome), typeof(Level),
+        typeof(SlaStateFilter), typeof(ReportName), typeof(ReportDrillPart), typeof(ChangeStatus), typeof(ChangeOutcome), typeof(Level), typeof(WorkTaskStatus),
     ];
 
     /// <summary>Which enum type a filter key's value belongs to, for the keys whose value is an enum name.</summary>

@@ -10,6 +10,7 @@ public enum ReportName
     Assets,
     Warranty,
     Changes,
+    Tasks,
 }
 
 /// <summary>Which half of a ratio a drill-down or export lists. Only ratios have a <see cref="Denominator"/>.</summary>

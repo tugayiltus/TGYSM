@@ -1755,7 +1755,7 @@ namespace Tgysm.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_export_jobs_part", "part IN ('numerator', 'denominator')");
 
-                            t.HasCheckConstraint("ck_export_jobs_report", "report IN ('incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty')");
+                            t.HasCheckConstraint("ck_export_jobs_report", "report IN ('incidents', 'requests', 'operations', 'transfers', 'assets', 'warranty', 'changes', 'tasks')");
 
                             t.HasCheckConstraint("ck_export_jobs_status", "status IN ('pending', 'running', 'ready', 'failed', 'expired')");
                         });

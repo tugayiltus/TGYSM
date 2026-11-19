@@ -19,6 +19,7 @@ public static class MetricKeys
     public const string UnitTickets = "tickets";
     public const string UnitAssets = "assets";
     public const string UnitChanges = "changes";
+    public const string UnitTasks = "tasks";
     public const string UnitSeconds = "seconds";
 }
 

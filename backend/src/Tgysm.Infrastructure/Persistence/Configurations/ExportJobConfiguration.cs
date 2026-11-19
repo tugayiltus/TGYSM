@@ -10,15 +10,12 @@ internal sealed class ExportJobConfiguration : IEntityTypeConfiguration<ExportJo
 {
     private const string JsonColumnType = "jsonb";
 
-    // Phase 9 adds no migration, so the stored constraint still lists only the six older reports. Remove an entry here when a migration widens it.
-    private static readonly ReportName[] ReportsOutsideTheConstraint = [ReportName.Changes];
-
     public void Configure(EntityTypeBuilder<ExportJob> builder)
     {
         builder.ToTable("export_jobs", table =>
         {
             table.HasCheckConstraint("ck_export_jobs_status", SnakeCaseEnumConversion<ExportJobStatus>.CheckSql("status"));
-            table.HasCheckConstraint("ck_export_jobs_report", SnakeCaseEnumConversion<ReportName>.CheckSql("report", ReportsOutsideTheConstraint));
+            table.HasCheckConstraint("ck_export_jobs_report", SnakeCaseEnumConversion<ReportName>.CheckSql("report"));
             table.HasCheckConstraint("ck_export_jobs_part", SnakeCaseEnumConversion<ReportDrillPart>.CheckSql("part"));
         });
         builder.ConfigureEntityBase();

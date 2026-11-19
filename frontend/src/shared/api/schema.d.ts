@@ -9682,12 +9682,27 @@ export interface components {
             actualEnd: null | string;
         };
         /** @enum {unknown} */
-        DrilldownKind: "tickets" | "assets" | "changes";
+        DrilldownKind: "tickets" | "assets" | "changes" | "tasks";
         DrilldownResult: {
             kind: components["schemas"]["DrilldownKind"];
             tickets: null | components["schemas"]["PagedResultOfDrilldownTicketRow"];
             assets: null | components["schemas"]["PagedResultOfDrilldownAssetRow"];
-            changes?: null | components["schemas"]["PagedResultOfDrilldownChangeRow"];
+            changes: null | components["schemas"]["PagedResultOfDrilldownChangeRow"];
+            tasks: null | components["schemas"]["PagedResultOfDrilldownTaskRow"];
+        };
+        DrilldownTaskRow: {
+            number: string;
+            title: string;
+            status: components["schemas"]["WorkTaskStatus"];
+            priority: components["schemas"]["Priority"];
+            teamName: string;
+            assigneeName: null | string;
+            /** Format: date */
+            dueDate: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            closedAt: null | string;
         };
         DrilldownTicketRow: {
             number: string;
@@ -9972,6 +9987,15 @@ export interface components {
             /** Format: int32 */
             totalCount: number;
         };
+        PagedResultOfDrilldownTaskRow: {
+            items: components["schemas"]["DrilldownTaskRow"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
         PagedResultOfDrilldownTicketRow: {
             items: components["schemas"]["DrilldownTicketRow"][];
             /** Format: int32 */
@@ -10184,7 +10208,7 @@ export interface components {
             assetStatus?: null | components["schemas"]["AssetStatus"];
         };
         /** @enum {unknown} */
-        ReportName: "incidents" | "requests" | "operations" | "transfers" | "assets" | "warranty" | "changes";
+        ReportName: "incidents" | "requests" | "operations" | "transfers" | "assets" | "warranty" | "changes" | "tasks";
         ReportResult: {
             report: components["schemas"]["ReportName"];
             filter: components["schemas"]["ReportFilter"];

@@ -72,6 +72,7 @@ export const REPORT_FILTER_FIELDS: Record<ReportName, readonly ReportFilterKey[]
   assets: ASSET_FIELDS,
   warranty: ['from', 'to', ...ASSET_FIELDS],
   changes: ['from', 'to', 'teamId'],
+  tasks: ['from', 'to', 'teamId'],
 };
 
 /** Filters shown on first view; the rest of a report's filters sit under "Diğer filtreler". */

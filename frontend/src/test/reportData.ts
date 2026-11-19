@@ -77,11 +77,15 @@ export const ticketDrilldown = (page: number, count: number, totalCount: number)
   kind: 'tickets',
   tickets: { items: Array.from({ length: count }, (_, i) => ticketRow(i + 1 + (page - 1) * 20)), page, pageSize: 20, totalCount },
   assets: null,
+  changes: null,
+  tasks: null,
 });
 
 export const ASSET_DRILLDOWN: DrilldownResult = {
   kind: 'assets',
   tickets: null,
+  changes: null,
+  tasks: null,
   assets: {
     items: [
       {

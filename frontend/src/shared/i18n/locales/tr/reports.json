@@ -18,7 +18,8 @@
     "transfers": "Transferler",
     "assets": "Envanter",
     "warranty": "Garanti",
-    "changes": "Değişiklikler"
+    "changes": "Değişiklikler",
+    "tasks": "Görevler"
   },
   "scope": {
     "all": "Kapsam: tüm kayıtlar",

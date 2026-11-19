@@ -3,6 +3,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Application.Common;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Changes;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 using Tgysm.Domain.Users;
 
@@ -56,6 +57,18 @@ public sealed class ReportScope(IAppDbContext db, ICurrentActor actor)
         {
             UserRole.Admin => db.ChangeRequests,
             UserRole.ItStaff => db.ChangeRequests.Where(c => teamIds.Contains(c.OwnerTeamId)),
+            _ => throw new ForbiddenException(),
+        };
+    }
+
+    /// <summary>Tasks of every team for admins; IT staff see the tasks of their teams.</summary>
+    public IQueryable<WorkTask> TasksFor(ReportViewer viewer)
+    {
+        var teamIds = viewer.TeamIds;
+        return viewer.Role switch
+        {
+            UserRole.Admin => db.WorkTasks,
+            UserRole.ItStaff => db.WorkTasks.Where(t => teamIds.Contains(t.TeamId)),
             _ => throw new ForbiddenException(),
         };
     }

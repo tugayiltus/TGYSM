@@ -135,6 +135,24 @@ public sealed class ExportJobTests(FakeClockApiFactory factory) : IClassFixture<
         return job.Id;
     }
 
+    [Theory]
+    [InlineData("changes", "by_risk")]
+    [InlineData("tasks", "by_status")]
+    public async Task A_background_export_of_the_change_and_task_reports_is_stored_and_runs(string report, string metric)
+    {
+        var world = await SeedAsync();
+        await new ChangeReportFixture(world).ChangeAsync(ChangeEnding.Open, T0);
+        await new TaskReportFixture(world).TaskAsync(TaskEnding.Open, T0);
+        var admin = await LoginAsync(world.Admin.Email);
+
+        var id = await RequestAsync(admin, $"report={report}&metric={metric}&{March}");
+
+        Assert.Equal(1, await RunAsync(factory.Services));
+        var job = await JobAsync(id);
+        Assert.Equal(ExportJobStatus.Ready, job.Status);
+        Assert.Equal(1, job.RowCount);
+    }
+
     [Fact]
     public async Task A_requested_job_is_pending_then_ready_with_the_drilldown_rows_and_downloads_once_ready()
     {

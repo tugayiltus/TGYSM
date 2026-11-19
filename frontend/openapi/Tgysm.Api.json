@@ -11765,14 +11765,17 @@
         "enum": [
           "tickets",
           "assets",
-          "changes"
+          "changes",
+          "tasks"
         ]
       },
       "DrilldownResult": {
         "required": [
           "kind",
           "tickets",
-          "assets"
+          "assets",
+          "changes",
+          "tasks"
         ],
         "type": "object",
         "properties": {
@@ -11808,6 +11811,71 @@
                 "$ref": "#/components/schemas/PagedResultOfDrilldownChangeRow"
               }
             ]
+          },
+          "tasks": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PagedResultOfDrilldownTaskRow"
+              }
+            ]
+          }
+        }
+      },
+      "DrilldownTaskRow": {
+        "required": [
+          "number",
+          "title",
+          "status",
+          "priority",
+          "teamName",
+          "assigneeName",
+          "dueDate",
+          "createdAt",
+          "closedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkTaskStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "teamName": {
+            "type": "string"
+          },
+          "assigneeName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dueDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -12860,6 +12928,35 @@
           }
         }
       },
+      "PagedResultOfDrilldownTaskRow": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DrilldownTaskRow"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "PagedResultOfDrilldownTicketRow": {
         "required": [
           "items",
@@ -13643,7 +13740,8 @@
           "transfers",
           "assets",
           "warranty",
-          "changes"
+          "changes",
+          "tasks"
         ]
       },
       "ReportResult": {

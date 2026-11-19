@@ -86,10 +86,19 @@ public sealed class ReportConsistencyTests(ApiFactory factory) : IAsyncLifetime
         await changes.ChangeAsync(ChangeEnding.RolledBack, T0.AddDays(3));
         await changes.ChangeAsync(ChangeEnding.Cancelled, T0.AddDays(4));
         await changes.ChangeAsync(ChangeEnding.Open, T0.AddDays(5), teamId: world.FieldTeam.Id);
+
+        var tasks = new TaskReportFixture(world);
+        await tasks.TaskAsync(TaskEnding.Open, T0, new DateOnly(2026, 3, 10));
+        await tasks.TaskAsync(TaskEnding.InProgress, T0.AddDays(1), new DateOnly(2026, 3, 5));
+        await tasks.TaskAsync(TaskEnding.OnHold, T0.AddDays(2));
+        await tasks.TaskAsync(TaskEnding.Completed, T0.AddDays(3), null, TimeSpan.FromHours(4));
+        await tasks.TaskAsync(TaskEnding.Completed, T0.AddDays(4), null, TimeSpan.FromHours(8));
+        await tasks.TaskAsync(TaskEnding.Cancelled, T0.AddDays(5));
+        await tasks.TaskAsync(TaskEnding.Open, T0.AddDays(6), new DateOnly(2026, 3, 8), teamId: world.FieldTeam.Id);
         return (fx, assets);
     }
 
-    private static long TotalOf(DrilldownResult result) => (result.Tickets?.TotalCount ?? result.Assets?.TotalCount ?? result.Changes?.TotalCount)!.Value;
+    private static long TotalOf(DrilldownResult result) => (result.Tickets?.TotalCount ?? result.Assets?.TotalCount ?? result.Changes?.TotalCount ?? result.Tasks?.TotalCount)!.Value;
 
     [Fact]
     public async Task Every_figure_equals_its_drilldown_total_for_admin_and_it_staff()
@@ -226,6 +235,13 @@ public sealed class ReportConsistencyTests(ApiFactory factory) : IAsyncLifetime
         await AssertInvalidAsync(handler, Query(ReportName.Assets, AssetMetrics.ByType, "nope"), "bucket", ErrorCodes.ReportsInvalidFilter);
         await AssertInvalidAsync(handler, Query(ReportName.Assets, AssetMetrics.ByType, part: ReportDrillPart.Denominator), "part", ErrorCodes.ReportsInvalidFilter);
         await AssertInvalidAsync(handler, Query(ReportName.Incidents, MetricKeys.SlaCompliance, "open"), "bucket", ErrorCodes.ReportsInvalidFilter);
+        await AssertInvalidAsync(handler, Query(ReportName.Changes, ChangeMetrics.ByOutcome, "nope"), "bucket", ErrorCodes.ReportsInvalidFilter);
+        await AssertInvalidAsync(handler, Query(ReportName.Changes, ChangeMetrics.Cancelled, "failed"), "bucket", ErrorCodes.ReportsInvalidFilter);
+        await AssertInvalidAsync(handler, Query(ReportName.Changes, ChangeMetrics.ByRisk, part: ReportDrillPart.Denominator), "part", ErrorCodes.ReportsInvalidFilter);
+        await AssertInvalidAsync(handler, Query(ReportName.Tasks, TaskMetrics.ByStatus, "nope"), "bucket", ErrorCodes.ReportsInvalidFilter);
+        await AssertInvalidAsync(handler, Query(ReportName.Tasks, TaskMetrics.ByTeam, "not-a-guid"), "bucket", ErrorCodes.ReportsInvalidFilter);
+        await AssertInvalidAsync(handler, Query(ReportName.Tasks, TaskMetrics.Overdue, "open"), "bucket", ErrorCodes.ReportsInvalidFilter);
+        await AssertInvalidAsync(handler, Query(ReportName.Tasks, TaskMetrics.Overdue, part: ReportDrillPart.Denominator), "part", ErrorCodes.ReportsInvalidFilter);
     }
 
     [Fact]

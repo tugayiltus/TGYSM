@@ -22,6 +22,19 @@ public static class DurationStats
         return stats is null ? (null, 0) : (stats.Average, stats.Count);
     }
 
+    /// <summary>Median of <paramref name="seconds"/> (the mean of the two middle values for an even count); no values gives null. Read in memory: a median has no portable SQL form.</summary>
+    public static async Task<double?> MedianAsync(IQueryable<long> seconds, CancellationToken cancellationToken)
+    {
+        var sorted = await seconds.OrderBy(s => s).ToListAsync(cancellationToken);
+        if (sorted.Count == 0)
+        {
+            return null;
+        }
+
+        var middle = sorted.Count / 2;
+        return sorted.Count % 2 == 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2d;
+    }
+
     /// <summary>Count and the sums of the two per-row second expressions, as plain aggregates (EF cannot group a constructor projection).</summary>
     public static async Task<DurationSums> SumAsync<T>(
         IQueryable<T> rows, Expression<Func<T, long>> calendarSeconds, Expression<Func<T, long>> slaSeconds, CancellationToken cancellationToken)

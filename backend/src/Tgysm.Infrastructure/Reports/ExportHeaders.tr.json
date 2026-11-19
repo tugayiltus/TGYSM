@@ -36,7 +36,8 @@
     "outcome": "Sonuç",
     "risk": "Risk",
     "window_start": "Pencere başlangıcı",
-    "actual_end": "Fiili bitiş"
+    "actual_end": "Fiili bitiş",
+    "due_date": "Son tarih"
   },
   "filters": {
     "from": "Başlangıç tarihi",
@@ -86,7 +87,10 @@
     "by_outcome": "Sonuca göre kapanan değişiklikler",
     "success_rate": "Başarı oranı",
     "by_risk": "Riske göre",
-    "cancelled": "İptal edilen değişiklikler"
+    "cancelled": "İptal edilen değişiklikler",
+    "overdue": "Gecikmiş görevler",
+    "completion_time": "Tamamlanma süresi",
+    "by_team": "Ekibe göre"
   },
   "buckets": {
     "0-1": "0–1 gün",
@@ -119,7 +123,11 @@
     "failed": "Başarısız",
     "high": "Yüksek",
     "medium": "Orta",
-    "low": "Düşük"
+    "low": "Düşük",
+    "open": "Açık",
+    "in_progress": "Üzerinde çalışılıyor",
+    "on_hold": "Beklemede",
+    "completed": "Tamamlandı"
   },
   "values": {
     "ticket_kind": {
@@ -165,7 +173,15 @@
       "transfers": "Transferler",
       "assets": "Varlıklar",
       "warranty": "Garanti",
-      "changes": "Değişiklikler"
+      "changes": "Değişiklikler",
+      "tasks": "Görevler"
+    },
+    "work_task_status": {
+      "open": "Açık",
+      "in_progress": "Üzerinde çalışılıyor",
+      "on_hold": "Beklemede",
+      "completed": "Tamamlandı",
+      "cancelled": "İptal edildi"
     },
     "change_status": {
       "draft": "Taslak",

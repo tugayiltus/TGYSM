@@ -6,6 +6,7 @@ using Tgysm.Domain.Assets;
 using Tgysm.Domain.Changes;
 using Tgysm.Domain.Common;
 using Tgysm.Domain.Reports;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;
@@ -15,6 +16,7 @@ public enum DrilldownKind
     Tickets,
     Assets,
     Changes,
+    Tasks,
 }
 
 public sealed record DrilldownTicketRow(
@@ -27,9 +29,14 @@ public sealed record DrilldownAssetRow(
 public sealed record DrilldownChangeRow(
     string Number, string Title, ChangeStatus Status, ChangeOutcome? Outcome, Level Risk, string OwnerTeamName, DateTimeOffset? WindowStart, DateTimeOffset? ActualEnd);
 
-/// <summary>The ordered rows behind one figure: exactly one of <see cref="Tickets"/> / <see cref="Assets"/> / <see cref="Changes"/> is set, matching <see cref="Kind"/>.</summary>
+public sealed record DrilldownTaskRow(
+    string Number, string Title, WorkTaskStatus Status, Priority Priority, string TeamName, string? AssigneeName, DateOnly? DueDate,
+    DateTimeOffset CreatedAt, DateTimeOffset? ClosedAt);
+
+/// <summary>The ordered rows behind one figure: exactly one list is set, the one matching <see cref="Kind"/>.</summary>
 public sealed record DrilldownRows(
-    DrilldownKind Kind, IQueryable<DrilldownTicketRow>? Tickets, IQueryable<DrilldownAssetRow>? Assets, IQueryable<DrilldownChangeRow>? Changes = null);
+    DrilldownKind Kind, IQueryable<DrilldownTicketRow>? Tickets, IQueryable<DrilldownAssetRow>? Assets,
+    IQueryable<DrilldownChangeRow>? Changes, IQueryable<DrilldownTaskRow>? Tasks);
 
 /// <summary>
 /// The rows behind a report figure, ordered so any page of them is stable. The drill-down endpoint pages this query; the Excel
@@ -62,10 +69,15 @@ public sealed class ReportRowSource(ReportScope scope, TicketReportSource source
             return OpenChanges(viewer, changeMetric, bucket, part, filter, now);
         }
 
+        if (metric is TaskReportMetric taskMetric)
+        {
+            return OpenTasks(viewer, taskMetric, bucket, part, filter, now);
+        }
+
         var ticketMetric = (ReportMetric)metric;
         var pipeline = ReportPipeline.Tickets(scope, source, db, viewer, report, filter, ticketMetric.DateBasis, now);
         var rows = TicketRows(ticketMetric, pipeline.Filtered, pipeline.Context, bucket, part);
-        return new DrilldownRows(DrilldownKind.Tickets, ProjectTickets(rows), null);
+        return new DrilldownRows(DrilldownKind.Tickets, ProjectTickets(rows), null, null, null);
     }
 
     private static IQueryable<Ticket> TicketRows(ReportMetric metric, IQueryable<Ticket> filtered, ReportContext context, string? bucket, ReportDrillPart part)
@@ -125,7 +137,8 @@ public sealed class ReportRowSource(ReportScope scope, TicketReportSource source
         return new DrilldownRows(DrilldownKind.Assets, null, rows.OrderBy(a => a.AssetTag).ThenBy(a => a.Id)
             .Select(a => new DrilldownAssetRow(
                 a.Id, a.AssetTag, a.Type, a.Brand, a.Model, a.Status,
-                db.Locations.Where(l => l.Id == a.LocationId).Select(l => l.Name).First(), a.WarrantyEndsOn)));
+                db.Locations.Where(l => l.Id == a.LocationId).Select(l => l.Name).First(), a.WarrantyEndsOn)),
+            null, null);
     }
 
     private DrilldownRows OpenChanges(ReportViewer viewer, ChangeReportMetric metric, string? bucket, ReportDrillPart part, ReportFilter filter, DateTimeOffset now)
@@ -135,7 +148,34 @@ public sealed class ReportRowSource(ReportScope scope, TicketReportSource source
         return new DrilldownRows(DrilldownKind.Changes, null, null, rows.OrderBy(c => c.Number).ThenBy(c => c.Id)
             .Select(c => new DrilldownChangeRow(
                 c.Number, c.Title, c.Status, c.Outcome, c.Risk,
-                db.Teams.Where(t => t.Id == c.OwnerTeamId).Select(t => t.Name).First(), c.WindowStart, c.ActualEnd)));
+                db.Teams.Where(t => t.Id == c.OwnerTeamId).Select(t => t.Name).First(), c.WindowStart, c.ActualEnd)),
+            null);
+    }
+
+    private DrilldownRows OpenTasks(ReportViewer viewer, TaskReportMetric metric, string? bucket, ReportDrillPart part, ReportFilter filter, DateTimeOffset now)
+    {
+        if (part == ReportDrillPart.Denominator)
+        {
+            throw Invalid(PartField);
+        }
+
+        var pipeline = ReportPipeline.Tasks(scope, db, companyClock, viewer, filter, metric.DateBasis, now);
+        IQueryable<WorkTask> rows;
+        try
+        {
+            rows = bucket is null ? metric.Rows(pipeline.Filtered, pipeline.Context) : metric.BucketRows(pipeline.Filtered, pipeline.Context, bucket);
+        }
+        catch (NotSupportedException)
+        {
+            throw Invalid(BucketField);
+        }
+
+        return new DrilldownRows(DrilldownKind.Tasks, null, null, null, rows.OrderBy(t => t.Number).ThenBy(t => t.Id)
+            .Select(t => new DrilldownTaskRow(
+                t.Number, t.Title, t.Status, t.Priority,
+                db.Teams.Where(x => x.Id == t.TeamId).Select(x => x.Name).First(),
+                db.Users.Where(u => u.Id == t.AssigneeId).Select(u => u.FirstName + NameSeparator + u.LastName).FirstOrDefault(),
+                t.DueDate, t.CreatedAt, t.ClosedAt)));
     }
 
     private static IQueryable<ChangeRequest> ChangeRows(ChangeReportMetric metric, IQueryable<ChangeRequest> filtered, ReportContext context, string? bucket, ReportDrillPart part)

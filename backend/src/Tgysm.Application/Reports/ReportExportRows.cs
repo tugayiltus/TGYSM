@@ -27,6 +27,7 @@ public static class ExportColumns
     public const string Risk = "risk";
     public const string WindowStart = "window_start";
     public const string ActualEnd = "actual_end";
+    public const string DueDate = "due_date";
 
     public static readonly IReadOnlyList<string> Tickets =
         [Number, Kind, Subject, Status, Priority, Team, Assignee, CreatedAt, CompletedAt];
@@ -36,6 +37,10 @@ public static class ExportColumns
 
     public static readonly IReadOnlyList<string> Changes =
         [Number, Title, Status, Outcome, Risk, Team, WindowStart, ActualEnd];
+
+    /// <summary><c>completed_at</c> is the task's closing time, shared with the ticket column and its header.</summary>
+    public static readonly IReadOnlyList<string> Tasks =
+        [Number, Title, Status, Priority, Team, Assignee, DueDate, CreatedAt, CompletedAt];
 }
 
 /// <summary>Turns the ordered drill-down rows into export cells, so an export lists exactly the rows the drill-down pages through.</summary>
@@ -45,6 +50,7 @@ public static class ReportExportRows
     {
         DrilldownKind.Assets => ExportColumns.Assets,
         DrilldownKind.Changes => ExportColumns.Changes,
+        DrilldownKind.Tasks => ExportColumns.Tasks,
         _ => ExportColumns.Tickets,
     };
 
@@ -64,6 +70,7 @@ public static class ReportExportRows
     {
         DrilldownKind.Assets => rows.Assets!.CountAsync(cancellationToken),
         DrilldownKind.Changes => rows.Changes!.CountAsync(cancellationToken),
+        DrilldownKind.Tasks => rows.Tasks!.CountAsync(cancellationToken),
         _ => rows.Tickets!.CountAsync(cancellationToken),
     };
 
@@ -84,6 +91,16 @@ public static class ReportExportRows
             await foreach (var c in rows.Changes!.AsAsyncEnumerable())
             {
                 yield return [c.Number, c.Title, c.Status, c.Outcome, c.Risk, c.OwnerTeamName, c.WindowStart, c.ActualEnd];
+            }
+
+            yield break;
+        }
+
+        if (rows.Kind == DrilldownKind.Tasks)
+        {
+            await foreach (var k in rows.Tasks!.AsAsyncEnumerable())
+            {
+                yield return [k.Number, k.Title, k.Status, k.Priority, k.TeamName, k.AssigneeName, k.DueDate, k.CreatedAt, k.ClosedAt];
             }
 
             yield break;

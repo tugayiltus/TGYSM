@@ -2,6 +2,7 @@ using Tgysm.Application.Abstractions;
 using Tgysm.Domain.Assets;
 using Tgysm.Domain.Changes;
 using Tgysm.Domain.Reports;
+using Tgysm.Domain.Tasks;
 using Tgysm.Domain.Tickets;
 
 namespace Tgysm.Application.Reports;
@@ -107,4 +108,30 @@ public abstract class ChangeReportMetric : IReportMetric
     public virtual IQueryable<ChangeRequest>? DenominatorRows(IQueryable<ChangeRequest> filtered, ReportContext context) => null;
 
     public abstract Task<ReportFigure> ComputeAsync(IQueryable<ChangeRequest> filtered, ReportContext context, CancellationToken cancellationToken);
+}
+
+/// <summary>What a task metric needs besides the filtered tasks: the database, the current instant, the day window and today in the company zone.</summary>
+public sealed record TaskReportContext(IAppDbContext Db, DateTimeOffset Now, ReportWindow Window, DateOnly Today);
+
+/// <summary>A metric over work tasks; same shape as <see cref="ChangeReportMetric"/>, with the viewer's filtered tasks as the base rows.</summary>
+public abstract class TaskReportMetric : IReportMetric
+{
+    public abstract string Key { get; }
+
+    public abstract ReportName Report { get; }
+
+    public abstract ReportDateBasis DateBasis { get; }
+
+    public abstract MetricShape Shape { get; }
+
+    public abstract IQueryable<WorkTask> Rows(IQueryable<WorkTask> filtered, TaskReportContext context);
+
+    /// <summary>The <see cref="Rows"/> of one bucket of a distribution; its count equals the bucket's count. Only distributions have buckets.</summary>
+    public virtual IQueryable<WorkTask> BucketRows(IQueryable<WorkTask> filtered, TaskReportContext context, string bucket) =>
+        throw new NotSupportedException($"Metric '{Key}' has no buckets.");
+
+    /// <summary>Rows behind a ratio's denominator; null for other shapes.</summary>
+    public virtual IQueryable<WorkTask>? DenominatorRows(IQueryable<WorkTask> filtered, TaskReportContext context) => null;
+
+    public abstract Task<ReportFigure> ComputeAsync(IQueryable<WorkTask> filtered, TaskReportContext context, CancellationToken cancellationToken);
 }
