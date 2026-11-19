@@ -13,9 +13,28 @@ const HEADER_ROWS = 1;
 const CALENDAR_TEST_TIMEOUT_MS = 180_000;
 const MS_PER_HOUR = 3_600_000;
 const THIS_WEEK_START_OFFSET_HOURS = 1;
-const THIS_WEEK_END_OFFSET_HOURS = 2;
+const THIS_WEEK_LENGTH_HOURS = 1;
+/** Company time is Europe/Istanbul, a fixed UTC+3 with no daylight saving. */
+const COMPANY_UTC_OFFSET_HOURS = 3;
+const DAYS_PER_WEEK = 7;
+const MS_PER_DAY = 24 * 3_600_000;
+const MONDAY_INDEX = 1;
 const CONFLICT_TOKEN = 'Çakışma';
 const CONFLICT_BANNER = 'Bakım penceresi 1 değişiklikle çakışıyor';
+
+/**
+ * A one-hour window that starts inside the current company week (Monday start), even in the last hour of Sunday: the
+ * start is clamped so the window ends before the next Monday 00:00. The API accepts a start in the past.
+ */
+function thisWeekWindow(now: number): { windowStart: string; windowEnd: string } {
+  const offsetMs = COMPANY_UTC_OFFSET_HOURS * MS_PER_HOUR;
+  const companyNow = new Date(now + offsetMs);
+  const daysSinceMonday = (companyNow.getUTCDay() + DAYS_PER_WEEK - MONDAY_INDEX) % DAYS_PER_WEEK;
+  const mondayMs = Date.UTC(companyNow.getUTCFullYear(), companyNow.getUTCMonth(), companyNow.getUTCDate()) - daysSinceMonday * MS_PER_DAY - offsetMs;
+  const lastStartMs = mondayMs + DAYS_PER_WEEK * MS_PER_DAY - THIS_WEEK_LENGTH_HOURS * MS_PER_HOUR - MS_PER_HOUR;
+  const startMs = Math.min(now + THIS_WEEK_START_OFFSET_HOURS * MS_PER_HOUR, lastStartMs);
+  return { windowStart: new Date(startMs).toISOString(), windowEnd: new Date(startMs + THIS_WEEK_LENGTH_HOURS * MS_PER_HOUR).toISOString() };
+}
 
 async function approve(approver: Session, number: string): Promise<void> {
   await approver.page.goto('/approvals');
@@ -88,8 +107,7 @@ test('calendar: İş listem "Bu hafta uygulanacak" opens the filtered list', asy
   const approver = await userSession(browser, admin2Seed.email, admin2Seed.password);
   const now = Date.now();
   const number = await seedChange(owner, world, 'Bu haftaki bakım', null, {
-    windowStart: new Date(now + THIS_WEEK_START_OFFSET_HOURS * MS_PER_HOUR).toISOString(),
-    windowEnd: new Date(now + THIS_WEEK_END_OFFSET_HOURS * MS_PER_HOUR).toISOString(),
+    ...thisWeekWindow(now),
     affectedService: `Hizmet ${now.toString()}`,
   });
   await seedChangeTask(owner, number, 'implementation', 'Bakımı yap', world.teamId);
